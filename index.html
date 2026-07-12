@@ -3469,7 +3469,15 @@ function weekSummaryForOffset(offset = weekViewOffset) {
   const rows = days.map(d => {
     const dayKey = todayCallDateKey(d);
     const cfg = dayConfigFor(dayKey);
-    const isOff = !!(cfg && cfg.off);
+    // Bug reportado por el usuario ("busca bugs"): un día marcado libre en el
+    // horario semanal pero con actividad real (llamadas o shift real, ver
+    // dayIsEffectivelyOff) seguía apareciendo como "Libre" y sin Adherencia
+    // en Resumen semanal — el mismo caso que "Bloques del día" ya blinda
+    // (nota "Trabajaste en tu día libre..."), pero acá nunca se aplicó ese
+    // mismo criterio. isOff ahora exige AMBAS condiciones: que el horario lo
+    // marque libre Y que dayIsEffectivelyOff() confirme que de verdad no
+    // hubo actividad ese día.
+    const isOff = !!(cfg && cfg.off) && dayIsEffectivelyOff(dayKey);
     const isFuture = d > today;
     const dayCalls = callsForDay(dayKey);
     const bounds = dayShiftBounds(dayKey);
