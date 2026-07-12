@@ -385,6 +385,50 @@
       padding: 0;
     }
 
+    /* Selector de emojis (grid de botones) para el nombre del usuario: se usa
+       tanto en el popup de bienvenida (onboardingModal) como en Metas, junto
+       al input de texto de emoji — el input de texto sigue existiendo para
+       quien quiera escribir/pegar cualquier otro emoji que no esté en la
+       lista corta de abajo. */
+    .emoji-picker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 2px;
+    }
+
+    .emoji-option {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      font-size: 19px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+    }
+
+    .emoji-option:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.08);
+    }
+
+    .emoji-option.selected {
+      border-color: rgba(47, 213, 255, .6);
+      background: rgba(47, 213, 255, .14);
+    }
+
+    .emoji-option.emoji-clear {
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 800;
+    }
+
     /* Mismo problema de familia que .chips: dentro de .hero-day-row
        (flex-wrap: wrap), .summary-pill no tenía flex-shrink:0, así que en
        viewports angostos se podía comprimir y su contenido ("Día activo" +
@@ -1624,7 +1668,8 @@
 <input id="userEmojiInput" maxlength="8" placeholder="🙂" type="text"/>
 </div>
 </div>
-<div class="note" style="margin-top:-4px;">El emoji aparece junto a tu nombre en el saludo de arriba (ej. "Buenas tardes, Jonathan 🙂"). Déjalo vacío para no mostrar ninguno.</div>
+<div class="emoji-picker" id="emojiPickerMetas" aria-label="Elegir emoji para el saludo"></div>
+<div class="note" style="margin-top:-4px;">El emoji aparece junto a tu nombre en el saludo de arriba (ej. "Buenas tardes, Jonathan 🙂"). Toca uno de la lista o escribe cualquier otro en el cuadro de texto. Déjalo vacío para no mostrar ninguno.</div>
 <div class="goal-fields">
 <div class="field">
 <label for="productiveGoalInput">Meta en minutos</label>
@@ -1865,6 +1910,7 @@ $0.72"></textarea>
 <input id="onboardingEmojiInput" maxlength="8" placeholder="🙂" type="text"/>
 </div>
 </div>
+<div class="emoji-picker" id="emojiPickerOnboarding" aria-label="Elegir emoji para el saludo"></div>
 <div class="modal-actions">
 <button class="primary" id="onboardingSaveBtn" type="button">Guardar y empezar</button>
 </div>
@@ -1895,6 +1941,12 @@ $0.72"></textarea>
     // valor con el que se prellena el campo del popup de bienvenida y el
     // fallback si settings.userEmoji queda vacío/inválido.
     const DEFAULT_USER_EMOJI = '🙂';
+    // Lista corta de emojis para el selector visual (ver renderEmojiPicker).
+    // El primero ('') es la opción "Sin emoji" — un botón de limpiar, no un
+    // emoji real, para poder quitar el emoji sin tener que vaciar el campo
+    // de texto a mano. El input de texto sigue existiendo aparte para quien
+    // quiera escribir/pegar cualquier otro emoji que no esté en esta lista.
+    const EMOJI_CHOICES = ['', '🙂', '😄', '😎', '🤩', '🥳', '😴', '☕', '🔥', '💪', '🚀', '⭐', '🎯', '⚡', '🌟', '🙌', '👋', '🐱', '🌮', '🎧'];
     const DEFAULT_GOAL_MINUTES = 420;
     const DEFAULT_GOAL_DOLLARS = Number((DEFAULT_GOAL_MINUTES * RATE).toFixed(2));
 
@@ -3767,6 +3819,52 @@ function renderWeekSummary() {
     // guardar con el nombre vacío (greetingText() ya maneja ese caso), pero
     // una vez que se guarda una vez, no se vuelve a preguntar — si el
     // usuario quiere poner su nombre después, lo hace desde "Metas".
+    // Pinta los botones del selector visual de emoji dentro de `containerId`,
+    // marcando como .selected el que coincida con el valor actual del input.
+    // Se llama una sola vez por contenedor al arrancar (o al abrir el popup
+    // de bienvenida) — después, la selección se actualiza con
+    // syncEmojiPickerSelection() (toggle de clases, sin reconstruir el HTML)
+    // para no repintar 20 botones en cada tick del reloj.
+    function renderEmojiPicker(containerId, selected) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      el.innerHTML = EMOJI_CHOICES.map(e => {
+        const isClear = e === '';
+        const display = isClear ? '✕' : e;
+        const label = isClear ? 'Sin emoji' : `Elegir ${e}`;
+        return `<button type="button" class="emoji-option ${isClear ? 'emoji-clear' : ''} ${e === selected ? 'selected' : ''}" data-emoji="${e}" aria-label="${label}">${display}</button>`;
+      }).join('');
+    }
+
+    // Actualiza solo la clase .selected de los botones ya pintados, sin tocar
+    // el HTML — se usa en cada render() (formatGoalFields) para reflejar el
+    // valor actual de settings.userEmoji sin reconstruir el grid entero.
+    function syncEmojiPickerSelection(containerId, selected) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      el.querySelectorAll('.emoji-option').forEach(btn => {
+        btn.classList.toggle('selected', btn.getAttribute('data-emoji') === selected);
+      });
+    }
+
+    // Conecta los clicks del grid (delegado, un solo listener por contenedor)
+    // con el input de texto correspondiente: al tocar un emoji, se copia al
+    // input y se marca como seleccionado; `onPick` (opcional) deja que quien
+    // llama reaccione al cambio (ej. guardar en Metas de inmediato).
+    function wireEmojiPicker(containerId, inputId, onPick) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      el.addEventListener('click', (e) => {
+        const btn = e.target instanceof Element ? e.target.closest('.emoji-option') : null;
+        if (!btn) return;
+        const emoji = btn.getAttribute('data-emoji') || '';
+        const input = document.getElementById(inputId);
+        if (input) input.value = emoji;
+        el.querySelectorAll('.emoji-option').forEach(b => b.classList.toggle('selected', b === btn));
+        if (typeof onPick === 'function') onPick(emoji);
+      });
+    }
+
     function finishOnboarding() {
       const nameInput = document.getElementById('onboardingNameInput');
       const emojiInput = document.getElementById('onboardingEmojiInput');
@@ -4232,6 +4330,7 @@ function renderWeekSummary() {
       if (rateInput && document.activeElement !== rateInput) rateInput.value = Number(settings.rate || RATE).toFixed(2);
       if (exchangeInput && document.activeElement !== exchangeInput) exchangeInput.value = Number(settings.exchangeRate || 0).toFixed(2);
       if (currencyInput && document.activeElement !== currencyInput) currencyInput.value = String(settings.currencyLabel || '');
+      syncEmojiPickerSelection('emojiPickerMetas', String(settings.userEmoji || ''));
     }
 
     function formatHHMM(value) {
@@ -5365,6 +5464,22 @@ function render() {
       saveSettingsOnly();
       render();
     });
+    // Escribir/pegar un emoji a mano en el cuadro de texto también debe
+    // reflejarse en el grid (resaltar ese botón si coincide, o quitar el
+    // resaltado si no está en la lista corta).
+    document.getElementById('userEmojiInput').addEventListener('input', (e) => {
+      syncEmojiPickerSelection('emojiPickerMetas', e.target.value.trim());
+    });
+    document.getElementById('onboardingEmojiInput').addEventListener('input', (e) => {
+      syncEmojiPickerSelection('emojiPickerOnboarding', e.target.value.trim());
+    });
+    wireEmojiPicker('emojiPickerMetas', 'userEmojiInput', (emoji) => {
+      settings.userEmoji = emoji;
+      saveSettingsOnly();
+      render();
+    });
+    wireEmojiPicker('emojiPickerOnboarding', 'onboardingEmojiInput', null);
+    renderEmojiPicker('emojiPickerMetas', String(settings.userEmoji || ''));
     document.getElementById('onboardingSaveBtn').addEventListener('click', finishOnboarding);
     document.getElementById('rateInput').addEventListener('change', updateRate);
     document.getElementById('exchangeRateInput').addEventListener('change', updateCurrencySettings);
@@ -5427,8 +5542,10 @@ function render() {
     if (!settings.onboarded) {
       const onboardingNameInput = document.getElementById('onboardingNameInput');
       const onboardingEmojiInput = document.getElementById('onboardingEmojiInput');
+      const initialEmoji = settings.userEmoji || DEFAULT_USER_EMOJI;
       if (onboardingNameInput) onboardingNameInput.value = settings.userName || '';
-      if (onboardingEmojiInput) onboardingEmojiInput.value = settings.userEmoji || DEFAULT_USER_EMOJI;
+      if (onboardingEmojiInput) onboardingEmojiInput.value = initialEmoji;
+      renderEmojiPicker('emojiPickerOnboarding', initialEmoji);
       openModal('onboardingModal');
     }
 
