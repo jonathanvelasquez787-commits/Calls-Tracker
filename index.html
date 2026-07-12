@@ -1615,11 +1615,16 @@
 <button aria-label="Cerrar" class="modal-close" data-close-modal="goalsModal" type="button">×</button>
 </div>
 <div class="goal-fields">
-<div class="field" style="flex:1 1 100%;">
+<div class="field">
 <label for="userNameInput">Tu nombre</label>
 <input id="userNameInput" maxlength="40" placeholder="Ej. Jonathan" type="text"/>
 </div>
+<div class="field">
+<label for="userEmojiInput">Emoji (opcional)</label>
+<input id="userEmojiInput" maxlength="8" placeholder="🙂" type="text"/>
 </div>
+</div>
+<div class="note" style="margin-top:-4px;">El emoji aparece junto a tu nombre en el saludo de arriba (ej. "Buenas tardes, Jonathan 🙂"). Déjalo vacío para no mostrar ninguno.</div>
 <div class="goal-fields">
 <div class="field">
 <label for="productiveGoalInput">Meta en minutos</label>
@@ -1842,6 +1847,29 @@ $0.72"></textarea>
 </div>
 </div>
 </div>
+<div aria-hidden="true" class="modal-overlay" id="onboardingModal">
+<div aria-labelledby="onboardingModalTitle" aria-modal="true" class="modal-card" role="dialog">
+<div class="modal-head">
+<div>
+<h3 id="onboardingModalTitle">¡Bienvenido! 👋</h3>
+<p>Antes de empezar, ¿cómo te llamas? Puedes elegir un emoji para tu saludo también. Esto solo se pregunta esta vez — luego lo puedes cambiar cuando quieras desde "Metas".</p>
+</div>
+</div>
+<div class="goal-fields">
+<div class="field">
+<label for="onboardingNameInput">Tu nombre</label>
+<input id="onboardingNameInput" maxlength="40" placeholder="Ej. Jonathan" type="text"/>
+</div>
+<div class="field">
+<label for="onboardingEmojiInput">Emoji (opcional)</label>
+<input id="onboardingEmojiInput" maxlength="8" placeholder="🙂" type="text"/>
+</div>
+</div>
+<div class="modal-actions">
+<button class="primary" id="onboardingSaveBtn" type="button">Guardar y empezar</button>
+</div>
+</div>
+</div>
 <div aria-hidden="true" class="modal-overlay" id="confirmModal">
 <div aria-labelledby="confirmModalTitle" aria-modal="true" class="modal-card" role="dialog">
 <div class="modal-head">
@@ -1863,6 +1891,10 @@ $0.72"></textarea>
     const CALLS_KEY = 'propio_shift_tracker_calls_es_v4';
     const SETTINGS_KEY = 'propio_shift_tracker_settings_es_v1';
     const RATE = 0.12;
+    // Emoji que acompaña el nombre en el saludo (ver greetingText()). Es el
+    // valor con el que se prellena el campo del popup de bienvenida y el
+    // fallback si settings.userEmoji queda vacío/inválido.
+    const DEFAULT_USER_EMOJI = '🙂';
     const DEFAULT_GOAL_MINUTES = 420;
     const DEFAULT_GOAL_DOLLARS = Number((DEFAULT_GOAL_MINUTES * RATE).toFixed(2));
 
@@ -2067,6 +2099,18 @@ $0.72"></textarea>
         lateArrivalMode: 'anchor', // 'anchor' = la hora de fin no se mueve (pierdes el tiempo) | 'shift' = se corre todo el turno
         weeklySchedule: defaultWeeklySchedule(),
         userName: 'Jonathan',
+        // Emoji opcional que se muestra junto al nombre en el saludo (ver
+        // greetingText()), editable en Metas junto con "Tu nombre".
+        userEmoji: DEFAULT_USER_EMOJI,
+        // Pedido del usuario: la primera vez que alguien nuevo abre la app
+        // (localStorage completamente vacío, sin settings ni estado viejo)
+        // debe salir un popup pidiendo su nombre (y emoji) UNA SOLA VEZ. Este
+        // flag empieza en false solo quien de verdad no tiene NADA guardado
+        // — loadSettings() lo fuerza a true para cualquier usuario que ya
+        // tenía datos (settings o estado) antes de que existiera este campo,
+        // para no molestar a alguien que ya venía usando la app. Ver
+        // loadSettings() y finishOnboarding().
+        onboarded: false,
         // Pedido del usuario: la tasa por minuto ($0.12) ya no es fija en el
         // código — se vuelve editable en Metas (ver rateInput). Antes vivía
         // solo como la constante RATE, usada nada más para convertir la
@@ -2184,7 +2228,17 @@ $0.72"></textarea>
     function loadSettings() {
       try {
         const raw = localStorage.getItem(SETTINGS_KEY);
-        if (raw) return { ...defaultSettings(), ...JSON.parse(raw) };
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const merged = { ...defaultSettings(), ...parsed };
+          // Ya existía un SETTINGS_KEY guardado desde antes de que existiera
+          // el campo 'onboarded' (parsed no lo trae) → es un usuario que ya
+          // venía usando la app, no alguien "nuevo". Sin esto, el spread de
+          // arriba dejaría onboarded en el default (false) y el popup de
+          // bienvenida le saldría a alguien que ya configuró todo hace rato.
+          if (!('onboarded' in parsed)) merged.onboarded = true;
+          return merged;
+        }
       } catch {}
       try {
         const rawState = localStorage.getItem(STORAGE_KEY);
@@ -2195,11 +2249,19 @@ $0.72"></textarea>
           const shiftStart = String(parsed?.shiftStart || '07:00');
           const shiftEnd = String(parsed?.shiftEnd || '16:00');
           if (Number.isFinite(minutes) && minutes !== 59) {
+            // Mismo criterio: hay un STORAGE_KEY viejo (turnos/llamadas ya
+            // registrados) aunque nunca haya existido SETTINGS_KEY → tampoco
+            // es un usuario nuevo, se completa con los demás defaults
+            // (weeklySchedule, rate, etc. — antes esta rama devolvía un
+            // objeto parcial y dependía de ensureWeeklySchedule()/
+            // ensureCurrencySettings() para rellenar el resto más adelante;
+            // se mantiene ese mismo comportamiento, solo se agrega onboarded).
             return {
               productiveGoalMin: minutes,
               earningsGoal: Number.isFinite(dollars) ? dollars : Number((minutes * RATE).toFixed(2)),
               shiftStart,
               shiftEnd,
+              onboarded: true,
             };
           }
         }
@@ -2269,7 +2331,11 @@ $0.72"></textarea>
       const h = date.getHours();
       const base = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
       const name = String(settings.userName || '').trim();
-      return name ? `${base}, ${name}` : base;
+      const emoji = String(settings.userEmoji || '').trim();
+      // El emoji solo se muestra si también hay nombre — sin nombre no hay
+      // "Buenas tardes, {emoji}" (se vería raro), se cae al saludo solo.
+      if (!name) return base;
+      return emoji ? `${base}, ${name} ${emoji}` : `${base}, ${name}`;
     }
 
     // "Cosas variadas más" — el subtítulo bajo el saludo ya no es un solo
@@ -3695,6 +3761,23 @@ function renderWeekSummary() {
       saveSettingsOnly();
       render();
     }
+    // Guarda nombre + emoji capturados en el popup de bienvenida (ver
+    // onboardingModal) y marca settings.onboarded = true para que el popup
+    // no vuelva a salir en esta misma instalación/navegador. Se permite
+    // guardar con el nombre vacío (greetingText() ya maneja ese caso), pero
+    // una vez que se guarda una vez, no se vuelve a preguntar — si el
+    // usuario quiere poner su nombre después, lo hace desde "Metas".
+    function finishOnboarding() {
+      const nameInput = document.getElementById('onboardingNameInput');
+      const emojiInput = document.getElementById('onboardingEmojiInput');
+      settings.userName = String(nameInput?.value || '').trim().slice(0, 40);
+      settings.userEmoji = String(emojiInput?.value || '').trim().slice(0, 8);
+      settings.onboarded = true;
+      saveSettingsOnly();
+      closeModal('onboardingModal');
+      render();
+    }
+
     // Ventana de gracia antes del inicio planeado del turno: pedido del
     // usuario como capa extra de seguridad (además del fix de arriba) — no
     // se puede dar click en "Iniciar shift" más de este tiempo antes de la
@@ -4138,12 +4221,14 @@ function renderWeekSummary() {
       const minInput = document.getElementById('productiveGoalInput');
       const usdInput = document.getElementById('earningsGoalInput');
       const nameInput = document.getElementById('userNameInput');
+      const emojiInput = document.getElementById('userEmojiInput');
       const rateInput = document.getElementById('rateInput');
       const exchangeInput = document.getElementById('exchangeRateInput');
       const currencyInput = document.getElementById('currencyLabelInput');
       if (document.activeElement !== minInput) minInput.value = formatMinutes(settings.productiveGoalMin);
       if (document.activeElement !== usdInput) usdInput.value = Number(settings.earningsGoal || 0).toFixed(2);
       if (nameInput && document.activeElement !== nameInput) nameInput.value = String(settings.userName || '');
+      if (emojiInput && document.activeElement !== emojiInput) emojiInput.value = String(settings.userEmoji || '');
       if (rateInput && document.activeElement !== rateInput) rateInput.value = Number(settings.rate || RATE).toFixed(2);
       if (exchangeInput && document.activeElement !== exchangeInput) exchangeInput.value = Number(settings.exchangeRate || 0).toFixed(2);
       if (currencyInput && document.activeElement !== currencyInput) currencyInput.value = String(settings.currencyLabel || '');
@@ -5191,6 +5276,12 @@ function render() {
 
     document.querySelectorAll('.modal-overlay').forEach(modal => {
       modal.addEventListener('click', (e) => {
+        // El popup de bienvenida es la única excepción: no tiene botón "X" ni
+        // se cierra tocando el fondo, a propósito — la única salida es
+        // "Guardar y empezar" (ver finishOnboarding), para que de verdad solo
+        // se pregunte una vez y no quede a medias por un tap accidental fuera
+        // de la tarjeta.
+        if (modal.id === 'onboardingModal') return;
         if (e.target === modal) closeModal(modal.id);
       });
     });
@@ -5269,6 +5360,12 @@ function render() {
       saveSettingsOnly();
       render();
     });
+    document.getElementById('userEmojiInput').addEventListener('change', (e) => {
+      settings.userEmoji = e.target.value.trim().slice(0, 8);
+      saveSettingsOnly();
+      render();
+    });
+    document.getElementById('onboardingSaveBtn').addEventListener('click', finishOnboarding);
     document.getElementById('rateInput').addEventListener('change', updateRate);
     document.getElementById('exchangeRateInput').addEventListener('change', updateCurrencySettings);
     document.getElementById('currencyLabelInput').addEventListener('change', updateCurrencySettings);
@@ -5320,6 +5417,20 @@ function render() {
     }
     resetActiveDayIfStale();
     syncShiftModalFields();
+
+    // Popup de bienvenida: solo la primerísima vez que se abre la app en
+    // este navegador (settings.onboarded sigue en false porque nunca hubo
+    // ni SETTINGS_KEY ni STORAGE_KEY guardados — ver loadSettings()). Se
+    // prellenan los campos con lo que ya traiga settings por si acaso (ej.
+    // el nombre default 'Jonathan'), para que "Guardar y empezar" sin tocar
+    // nada deje el mismo resultado que ya tenía la app antes de este popup.
+    if (!settings.onboarded) {
+      const onboardingNameInput = document.getElementById('onboardingNameInput');
+      const onboardingEmojiInput = document.getElementById('onboardingEmojiInput');
+      if (onboardingNameInput) onboardingNameInput.value = settings.userName || '';
+      if (onboardingEmojiInput) onboardingEmojiInput.value = settings.userEmoji || DEFAULT_USER_EMOJI;
+      openModal('onboardingModal');
+    }
 
     setInterval(() => {
       // Si cambió el día de calendario real, checkDayRollover ya hace un
