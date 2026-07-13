@@ -4241,12 +4241,16 @@ function renderWeekSummary() {
           state.activePause = null;
         }
 
-        if (!calls.length) {
-          state.activeDayKey = dayKey;
-        } else if (!calls.some(c => callDateKeyFromValue(c.callDate) === dayKey)) {
-          const fallback = calls.map(c => callDateKeyFromValue(c.callDate)).filter(Boolean).sort((a, b) => callDateToDate(a) - callDateToDate(b))[0];
-          state.activeDayKey = fallback || todayCallDateKey();
-        }
+        // Antes: si aún quedaban llamadas en OTROS días, "Día activo" saltaba
+        // al día MÁS VIEJO con llamadas (`.sort(...)[0]` en orden ascendente)
+        // — remanente de cuando el selector de día (`<select>`) solo listaba
+        // fechas con datos y necesitaba caer en una "válida". Desde que el
+        // selector es un `<input type="date">` (v47), cualquier fecha es
+        // válida, así que ya no hace falta ese salto: simplemente nos
+        // quedamos viendo el mismo día que se acaba de vaciar (ahora en
+        // ceros), que es lo que se espera después de "reiniciar" ese día en
+        // particular — no "Hoy" ni el día más antiguo con historial.
+        state.activeDayKey = dayKey;
 
         saveAll();
         toast('Día reiniciado');
