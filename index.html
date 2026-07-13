@@ -3900,6 +3900,29 @@ function renderWeekSummary() {
       render();
     }
 
+    // Un día marcado como "libre" en el horario semanal no debe poder
+    // iniciarse manualmente con el botón "Iniciar shift" — pedido del
+    // usuario. El flujo ya existente para "trabajaste en tu día libre"
+    // (dayIsEffectivelyOff, usado en Bloques del día / Resumen semanal /
+    // Adherencia) sigue funcionando exactamente igual: si pegas llamadas ese
+    // día, el turno se estima automáticamente (dayShiftBounds) o se
+    // auto-inicia al presionar Break/Lunch (autoStartShiftFromCalls), sin
+    // pasar nunca por este botón. Este bloqueo es solo para el click MANUAL
+    // de "Iniciar shift" en un día que el horario dice que no deberías
+    // trabajar — no afecta esos otros caminos.
+    function todayIsOff() {
+      const cfg = dayConfigFor(todayCallDateKey());
+      return !!(cfg && cfg.off);
+    }
+
+    // Si no hay un turno en curso (o el de hoy ya se cerró), el próximo click
+    // en "Iniciar/Finalizar shift" va a INICIAR uno nuevo — a diferencia de
+    // cerrar uno que ya está corriendo, que nunca debe bloquearse sin
+    // importar el día (ver shiftActionDisabled/toggleShift).
+    function shiftWouldStartNew() {
+      return !state.shiftStartedAt || state.shiftEndedAt;
+    }
+
     // Ventana de gracia antes del inicio planeado del turno: pedido del
     // usuario como capa extra de seguridad (además del fix de arriba) — no
     // se puede dar click en "Iniciar shift" más de este tiempo antes de la
@@ -3945,9 +3968,15 @@ function renderWeekSummary() {
     // nunca sobre el día seleccionado en "Día activo". Ver isViewingToday().
     // Se agrega shiftStartTooEarly() como segunda condición: no se puede
     // iniciar un turno nuevo más de SHIFT_START_EARLY_GRACE_MIN minutos
-    // antes de la hora planeada de hoy.
+    // antes de la hora planeada de hoy. Tercera condición (pedido del
+    // usuario): tampoco se puede iniciar un turno nuevo si hoy está marcado
+    // como día libre en el horario semanal — ver todayIsOff(). Ninguna de
+    // las dos condiciones nuevas aplica si el turno YA está en curso
+    // (shiftWouldStartNew() === false): cerrar un turno activo nunca se
+    // bloquea, sin importar la hora o si el día es libre.
     function shiftActionDisabled() {
       if (!isViewingToday()) return true;
+      if (shiftWouldStartNew() && todayIsOff()) return true;
       return shiftStartTooEarly();
     }
 
@@ -4001,6 +4030,15 @@ function renderWeekSummary() {
         toast("Cambia el día activo a 'Hoy' para usar este control");
         return;
       }
+      // Misma defensa para "día libre": el botón ya debería estar
+      // deshabilitado en este caso (ver shiftActionDisabled), pero se
+      // protege por si se dispara de otra forma. Solo aplica al INICIAR un
+      // turno nuevo — si ya está en curso, "Finalizar shift" sigue
+      // funcionando siempre.
+      if (shiftWouldStartNew() && todayIsOff()) {
+        toast('Hoy está marcado como día libre en tu horario — no se puede iniciar un turno manualmente. Si trabajaste, pega tus llamadas y la app lo detecta sola.');
+        return;
+      }
       // Misma defensa para la restricción de los 5 minutos — el botón ya
       // debería estar deshabilitado en este caso, pero se protege por si se
       // dispara de otra forma.
@@ -4009,7 +4047,7 @@ function renderWeekSummary() {
         toast(`Muy temprano — puedes iniciar tu turno desde ${SHIFT_START_EARLY_GRACE_MIN} min antes de las ${timeLabel(formatHHMM(cfg.start))}`);
         return;
       }
-      if (!state.shiftStartedAt || state.shiftEndedAt) return startShift();
+      if (shiftWouldStartNew()) return startShift();
       return endShift();
     }
 
@@ -4880,7 +4918,9 @@ function renderHeader() {
   const shiftSub = document.getElementById('shiftControlSub');
   shiftLabel.textContent = shiftActionLabel();
   const shiftWindowLabel = `${timeLabel(getShiftWindow().start)} – ${timeLabel(getShiftWindow().end)}`;
-  const tooEarly = viewingToday && shiftStartTooEarly();
+  const startingNewShift = shiftWouldStartNew();
+  const isDayOffBlocking = viewingToday && startingNewShift && todayIsOff();
+  const tooEarly = viewingToday && !isDayOffBlocking && shiftStartTooEarly();
   let earlySubtext = '';
   if (tooEarly) {
     const cfgToday = dayConfigFor(todayCallDateKey());
@@ -4889,8 +4929,8 @@ function renderHeader() {
   }
   shiftSub.textContent = !viewingToday
     ? "Solo disponible viendo 'Hoy'"
-    : (!state.shiftStartedAt || state.shiftEndedAt)
-      ? (tooEarly ? earlySubtext : shiftWindowLabel)
+    : startingNewShift
+      ? (isDayOffBlocking ? 'Hoy es tu día libre' : (tooEarly ? earlySubtext : shiftWindowLabel))
       : `Activo · ${formatDuration(now.getTime() - new Date(state.shiftStartedAt).getTime())}`;
   shiftBtn.disabled = shiftActionDisabled();
   const shiftIsPrimary = shiftActionTone() === 'primary';
