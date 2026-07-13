@@ -1815,6 +1815,14 @@ $0.72"></textarea>
 <input accept="application/json,.json" id="importJsonFile" style="display:none;" type="file"/>
 </div>
 <div class="note">Después de importar, el campo se vacía y las filas se guardan localmente en el navegador. "Importar JSON" restaura un backup ya exportado (reemplaza llamadas/turnos/pausas actuales — tu horario y metas no se tocan).</div>
+<div class="divider"></div>
+<div class="field" style="margin-bottom:4px;">
+<label style="font-weight:900; color: var(--bad);">Zona de peligro</label>
+</div>
+<div class="modal-actions">
+<button class="bad" id="eraseAllDataBtn" type="button">Borrar todos los datos</button>
+</div>
+<div class="note">Borra TODO lo guardado por la app en este navegador: llamadas, turnos, pausas, horario semanal, metas, nombre/emoji — no solo el día activo (eso es "Reiniciar día", en Controles). No se puede deshacer.</div>
 
 </div>
 </div>
@@ -4127,6 +4135,56 @@ function renderWeekSummary() {
       if (!silent) toast('Regresaste');
     }
 
+    // A diferencia de resetDay() (borra SOLO el día activo), esto borra TODO
+    // lo que la app guarda en este navegador: las 3 llaves de localStorage
+    // completas (STORAGE_KEY/CALLS_KEY/SETTINGS_KEY), sin dejar nada — ni
+    // llamadas, ni turnos/pausas, ni horario semanal, ni metas, ni nombre/
+    // emoji. Vive en su propia "Zona de peligro" dentro de "Pegar Llamadas"
+    // (junto a Exportar/Importar JSON, donde ya vive el resto de la gestión
+    // de datos), separado del grid de Controles para reducir el riesgo de un
+    // tap accidental.
+    function eraseAllData() {
+      appConfirm('¿Borrar TODOS los datos del programa? Esto borra permanentemente todas las llamadas, turnos, pausas, horario semanal, metas y tu nombre/emoji guardados en este navegador. No se puede deshacer. La app queda como recién instalada (con el popup de bienvenida de nuevo).', () => {
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem(CALLS_KEY);
+          localStorage.removeItem(SETTINGS_KEY);
+        } catch {}
+
+        state = defaultState();
+        calls = [];
+        settings = defaultSettings();
+        ensureCurrencySettings();
+
+        // Vistas/edición en memoria que ya no tienen a qué apuntar tras el
+        // borrado — mismo criterio de limpieza que ya usan otros flujos
+        // (ej. resetDay() reacomoda activeDayKey). Sin esto, seguirían
+        // "vivas" pero apuntando a datos que ya no existen (inofensivo en la
+        // práctica, pero deja el estado en memoria más limpio y predecible).
+        weekViewOffset = 0;
+        cycleViewOffset = 0;
+        scheduleEditDay = 'mon';
+        editingGapContext = null;
+        editingCallId = null;
+
+        saveAll();
+        toast('Todos los datos fueron borrados');
+        closeModal('callsModal');
+
+        // Vuelve a mostrar el popup de bienvenida, igual que la primera vez
+        // que se abre la app — settings.onboarded quedó en false (default)
+        // tras el reset, así que este es el mismo flujo de FIXED_50/51, no
+        // uno nuevo.
+        const onboardingNameInput = document.getElementById('onboardingNameInput');
+        const onboardingEmojiInput = document.getElementById('onboardingEmojiInput');
+        const initialEmoji = settings.userEmoji || DEFAULT_USER_EMOJI;
+        if (onboardingNameInput) onboardingNameInput.value = '';
+        if (onboardingEmojiInput) onboardingEmojiInput.value = initialEmoji;
+        renderEmojiPicker('emojiPickerOnboarding', initialEmoji);
+        openModal('onboardingModal');
+      });
+    }
+
     function resetDay() {
       const dayKey = getActiveDayKey();
       appConfirm(`¿Reiniciar ${formatCallDayLabel(dayKey)}? Se borran llamadas, pausas, huecos y log de ese día.`, () => {
@@ -5529,6 +5587,7 @@ function render() {
     document.getElementById('breakControlBtn').addEventListener('click', () => togglePause('break'));
     document.getElementById('lunchControlBtn').addEventListener('click', () => togglePause('lunch'));
     document.getElementById('resetDayBtn').addEventListener('click', resetDay);
+    document.getElementById('eraseAllDataBtn').addEventListener('click', eraseAllData);
     document.getElementById('goalsBtn').addEventListener('click', () => openModal('goalsModal'));
     document.getElementById('pasteCallsBtn').addEventListener('click', () => openModal('callsModal'));
     document.getElementById('importBtn').addEventListener('click', importCalls);
