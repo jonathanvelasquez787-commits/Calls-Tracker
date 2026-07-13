@@ -1496,9 +1496,6 @@
 </div>
 <div class="chips">
 <div class="chip"><span class="dot-state" id="stateDot"></span><strong id="stateText">No iniciado</strong></div>
-<div class="chip">Shift: <strong id="shiftWindow">07:00 AM – 04:00 PM</strong></div>
-<div class="chip">Bloque: <strong id="currentBlockText">—</strong></div>
-<div class="chip">Siguiente: <strong id="nextEventText">Iniciar shift</strong></div>
 </div>
 <div class="hero-day-row">
 <div class="summary-pill">
@@ -2081,6 +2078,12 @@ $0.72"></textarea>
         gapAnnotations: {},
         productiveGoalMin: 59,
         earningsGoal: 7.08,
+        // Qué día de calendario real ("hoy") conocía la app la última vez
+        // que se revisó (al cargar la página o en cada tick del reloj). Se
+        // usa junto con activeDayKey para distinguir "estaba siguiendo Hoy
+        // pasivamente" de "elegí este día a propósito" — ver
+        // resetActiveDayIfStale()/checkDayRollover().
+        lastCalendarDay: null,
       };
     }
 
@@ -2470,16 +2473,10 @@ $0.72"></textarea>
     // estima el inicio desde la primera llamada real del día cuando nunca
     // diste click en "Iniciar shift" (mismo fallback que ya usan "Bloques
     // del día" y Adherencia), y congela el fin tras CONNECTED_LIVE_GRACE_MIN
-    // minutos sin llamadas nuevas. currentStateLabel(), currentBlock() y
-    // nextEvent() — los chips de arriba: estado, "Bloque actual",
-    // "Siguiente evento" — antes dependían EXCLUSIVAMENTE de
-    // state.shiftStartedAt/shiftEndedAt (el estado real, que solo se llena
-    // al dar click en un botón). Si solo pegabas llamadas y nunca tocabas
-    // NINGÚN botón, esos chips se quedaban diciendo "No iniciado" / "Antes
-    // del shift" / "Iniciar shift" todo el día, aunque ya hubiera un turno
-    // estimado válido corriendo. Este helper centraliza el mismo estimado ya
-    // usado en el resto de la app para que estos 3 chips (y el mini "Shift"
-    // de Resumen rápido, ver renderHeader) dejen de estar huérfanos de él.
+    // minutos sin llamadas nuevas. currentStateLabel() (el chip de Estado,
+    // el único que queda en el header) depende de este helper para no
+    // quedarse huérfano de ese estimado si solo pegaste llamadas y nunca
+    // tocaste ningún botón.
     function todayShiftBounds() {
       return dayShiftBounds(todayCallDateKey());
     }
@@ -2490,49 +2487,6 @@ $0.72"></textarea>
       if (bounds.end && !bounds.live) return 'Finalizado';
       if (state.activePause) return state.activePause.type === 'lunch' ? 'Lunch' : 'Break';
       return 'Working';
-    }
-
-    function currentBlock() {
-      const now = new Date();
-      const t = now.getHours() * 60 + now.getMinutes();
-      const { start, end } = getShiftWindow();
-      const startMin = toMinutes(start);
-      const endMin = toMinutes(end);
-      const bounds = todayShiftBounds();
-      if (!bounds.start) {
-        if (t < startMin) return { type: 'Pre', name: 'Antes del shift' };
-        if (t >= endMin) return { type: 'Post', name: 'Después del shift' };
-        return { type: 'Pre', name: 'Iniciar shift' };
-      }
-      if (bounds.end && !bounds.live) return { type: 'Post', name: 'Shift terminado' };
-      for (const slot of getEffectiveSchedule()) {
-        const s = toMinutes(slot.start), e = toMinutes(slot.end);
-        if (t >= s && t < e) return { ...slot, active: true };
-      }
-      if (t < startMin) return { type: 'Pre', name: 'Antes del shift' };
-      return { type: 'Post', name: 'Después del shift' };
-    }
-
-    function nextEvent() {
-      const now = new Date();
-      const t = now.getHours() * 60 + now.getMinutes();
-      const { start, end } = getShiftWindow();
-      const startMin = toMinutes(start);
-      const endMin = toMinutes(end);
-      const bounds = todayShiftBounds();
-      if (!bounds.start) {
-        if (t < startMin) return { label: 'Iniciar shift', mins: 0 };
-        if (t >= endMin) return { label: 'Shift terminado', mins: 0 };
-        return { label: 'Iniciar shift', mins: 0 };
-      }
-      if (bounds.end && !bounds.live) return { label: 'Finalizado', mins: 0 };
-      if (state.activePause) return { label: state.activePause.type === 'lunch' ? 'Volver de Lunch' : 'Volver de Break', mins: 0 };
-      for (const slot of getEffectiveSchedule()) {
-        const s = toMinutes(slot.start), e = toMinutes(slot.end);
-        if (t < s) return { label: `${slot.name} empieza en`, mins: s - t };
-        if (t >= s && t < e) return { label: `${slot.name} termina en`, mins: e - t };
-      }
-      return { label: 'Terminar shift', mins: Math.max(0, endMin - t) };
     }
 
     function importedCallStats(sourceCalls = calls, dayKey = getActiveDayKey()) {
@@ -2672,29 +2626,45 @@ function availableActivityDays(sourceCalls = calls, sourceEvents = state.events,
 
 
 // Si el día activo guardado quedó en un calendario anterior a hoy (sesión
-// vieja dejada abierta, o la pestaña siguió abierta y cruzó la medianoche),
-// lo reinicia a "hoy". Solo actúa cuando el día activo YA quedó viejo — no
-// pelea contra una selección manual del día de hoy (ver bug de "Hoy" que no
-// se quedaba fijo, corregido antes).
+// vieja dejada abierta, o la pestaña siguió abierta y cruzó la medianoche
+// sin recargar), lo reinicia a "hoy" — pero SOLO si el usuario estaba
+// siguiendo "Hoy" de forma pasiva la última vez que se guardó estado, nunca
+// si había navegado a propósito a otro día (pasado o futuro, vía el
+// date-picker o clickeando una fila del Resumen semanal).
+//
+// state.lastCalendarDay guarda qué día conocía la app como "hoy" la última
+// vez que se revisó (ver checkDayRollover, que corre cada segundo mientras
+// la pestaña sigue abierta). Si activeDayKey coincide con ese valor, el
+// usuario estaba siguiendo "Hoy" sin haber elegido nada distinto — se
+// avanza. Si NO coincide, es porque en algún momento se navegó a propósito
+// a otro día — eso se respeta, incluso después de cerrar y reabrir la app
+// varias veces, sin importar cuántos días hayan pasado.
+//
+// Antes esta función forzaba "Hoy" con solo mirar si el día guardado no
+// coincidía con la fecha real, sin ninguna señal de intención — cualquier
+// recarga de página (no solo el cruce de medianoche) te regresaba a "Hoy"
+// aunque estuvieras viendo otro día a propósito. lastCalendarDay es la
+// misma señal que ya usaba checkDayRollover() (ahí como variable en
+// memoria, aquí persistida en state para que sobreviva a un reload).
 function resetActiveDayIfStale() {
   const stored = callDateKeyFromValue(state.activeDayKey);
-  if (!stored) return;
-  const storedDate = callDateToDate(stored);
   const today = todayCallDateKey();
-  // Antes solo se corregía si el día guardado había quedado en el pasado
-  // (sesión vieja dejada abierta, o cruce de medianoche). Si el día activo
-  // guardado era una fecha FUTURA (ej. navegaste a "viernes" desde el
-  // Resumen semanal, que sí permite clickear días futuros de la semana
-  // actual, y cerraste la pestaña), este chequeo nunca disparaba porque solo
-  // comparaba "< todayRange()" — la app podía seguir abriendo siempre en ese
-  // día futuro, sesión tras sesión, hasta que el calendario real lo
-  // alcanzara o se cambiara a mano en el selector. Ahora se corrige en ambas
-  // direcciones: cualquier día guardado que no sea "Hoy" se reinicia a "Hoy"
-  // al cargar la página.
-  if (stored !== today && storedDate) {
-    state.activeDayKey = today;
-    saveStateOnly();
+  if (!stored) {
+    state.lastCalendarDay = today;
+    return;
   }
+  const storedDate = callDateToDate(stored);
+  // Si lastCalendarDay nunca se guardó (state de una versión anterior a
+  // este fix), se asume que la selección fue intencional — NO se fuerza el
+  // salto a "Hoy" ni siquiera esta primera vez. Preferible dejar quieto un
+  // día viejo que de verdad era pasivo, a romper una navegación intencional
+  // que es justo el bug que se está corrigiendo.
+  const wasFollowingToday = typeof state.lastCalendarDay === 'string' && stored === state.lastCalendarDay;
+  if (wasFollowingToday && stored !== today && storedDate) {
+    state.activeDayKey = today;
+  }
+  state.lastCalendarDay = today;
+  saveStateOnly();
 }
 
 // Detecta si cambió el día de calendario real mientras la pestaña sigue
@@ -2713,16 +2683,19 @@ function checkDayRollover() {
   // "hoy" (activeDayKey == el día que ERA hoy antes de este rollover). Si el
   // usuario había navegado a propósito a otro día (pasado o futuro) — vía el
   // selector o clickeando una fila del resumen semanal — lo dejamos como
-  // está. Antes esto llamaba a resetActiveDayIfStale(), que solo miraba si el
-  // día guardado era "viejo" y lo forzaba de vuelta a hoy sin importar si esa
-  // selección era intencional, haciendo que ver un día pasado justo al cruzar
-  // la medianoche te regresara solo a "Hoy" sin avisar.
+  // está.
   const wasFollowingToday = callDateKeyFromValue(state.activeDayKey) === lastKnownCalendarDay;
   lastKnownCalendarDay = today;
+  // state.lastCalendarDay (persistido) se actualiza SIEMPRE que se detecta
+  // un cambio de día real, haya avanzado activeDayKey o no — es lo que le
+  // permite a resetActiveDayIfStale() tomar la misma decisión correctamente
+  // en el próximo reload, aunque la pestaña se cierre justo después de este
+  // rollover.
+  state.lastCalendarDay = today;
   if (wasFollowingToday) {
     state.activeDayKey = today;
-    saveStateOnly();
   }
+  saveStateOnly();
   render();
   return true;
 }
@@ -4594,10 +4567,6 @@ function renderWeekSummary() {
       }));
     }
 
-    function getEffectiveSchedule() {
-      return getEffectiveScheduleForDay(todayCallDateKey());
-    }
-
     let scheduleEditDay = 'mon';
 
     function renderDayTabs() {
@@ -4854,8 +4823,6 @@ function renderHeader() {
   const dayCalls = callsForDay(dayKey);
   const shiftBounds = dayShiftBounds(dayKey);
   const hasShift = !!shiftBounds.start;
-  const current = currentBlock();
-  const next = nextEvent();
 
   document.getElementById('clockNow').textContent = fmtTime(now);
   document.getElementById('clockDate').textContent = fmtDate(now);
@@ -4867,20 +4834,6 @@ function renderHeader() {
   if (greetingSubtitleEl && greetingSubtitleEl.textContent !== greetingSubtitleText) {
     greetingSubtitleEl.textContent = greetingSubtitleText;
   }
-
-  // Antes esto llamaba a getShiftWindow() sin argumento, que por default cae
-  // en todayCallDateKey() — así que si estabas viendo un día pasado con otro
-  // horario configurado, el chip "Shift: X – Y" mostraba el horario de HOY,
-  // no el del día que realmente se está viendo. getShiftWindow(dayKey) usa
-  // el mismo default cuando no se le pasa nada (currentBlock()/nextEvent()
-  // siguen llamándolo sin argumento a propósito, porque calculan sobre el
-  // reloj real de ahora, no sobre el día activo).
-  const shiftWindow = getShiftWindow(dayKey);
-  document.getElementById('currentBlockText').textContent = current.name || '—';
-  document.getElementById('shiftWindow').textContent = hasShift
-    ? `${shiftBounds.estimated ? 'Estimado: ' : ''}${timeLabelFromDate(shiftBounds.start)} – ${shiftBounds.end ? timeLabelFromDate(shiftBounds.end) : 'En curso'}`
-    : `${timeLabel(shiftWindow.start)} – ${timeLabel(shiftWindow.end)}`;
-  document.getElementById('nextEventText').textContent = next.mins ? `${next.label} ${formatDuration(next.mins * 60000)}` : next.label;
 
   const daySelector = document.getElementById('daySelector');
   if (daySelector) {
