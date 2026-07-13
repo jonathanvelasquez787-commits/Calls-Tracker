@@ -1811,8 +1811,10 @@ $0.72"></textarea>
 <button class="primary" id="importBtn" type="button">Importar</button>
 <button class="warn" id="clearCallsBtn" type="button">Limpiar</button>
 <button id="exportBtn" type="button">Exportar JSON</button>
+<button id="importJsonBtn" type="button">Importar JSON</button>
+<input accept="application/json,.json" id="importJsonFile" style="display:none;" type="file"/>
 </div>
-<div class="note">Después de importar, el campo se vacía y las filas se guardan localmente en el navegador.</div>
+<div class="note">Después de importar, el campo se vacía y las filas se guardan localmente en el navegador. "Importar JSON" restaura un backup ya exportado (reemplaza llamadas/turnos/pausas actuales — tu horario y metas no se tocan).</div>
 
 </div>
 </div>
@@ -2080,35 +2082,53 @@ $0.72"></textarea>
     ensureCurrencySettings();
     let syncingGoals = false;
 
+    // Toma un objeto de "state" crudo (de localStorage o de un archivo JSON
+    // importado) y aplica el mismo merge + migración de ids que ya hacía
+    // loadState() en línea. Extraído a su propia función para poder
+    // reutilizarla también desde "Importar JSON" (ver applyImportedPayload),
+    // sin duplicar esta lógica en dos lugares.
+    function normalizeStateObject(parsed) {
+      const src = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+      const merged = {
+        ...defaultState(),
+        ...src,
+        pauseHistory: Array.isArray(src.pauseHistory) ? src.pauseHistory : [],
+        events: Array.isArray(src.events) ? src.events : [],
+        gapAnnotations: src.gapAnnotations && typeof src.gapAnnotations === 'object' ? src.gapAnnotations : {},
+        activeDayKey: src.activeDayKey ? String(src.activeDayKey) : null,
+      };
+      merged.events = merged.events.map(e => (e && !e.id) ? { ...e, id: makeLocalId() } : e);
+      merged.pauseHistory = merged.pauseHistory.map(p => (p && !p.id) ? { ...p, id: makeLocalId() } : p);
+      return merged;
+    }
+
+    // Mismo patrón que normalizeStateObject(): asigna un id estable a
+    // cualquier llamada que no lo traiga, reutilizado por loadCalls() y por
+    // "Importar JSON".
+    function normalizeCallsArray(parsed) {
+      const src = Array.isArray(parsed) ? parsed : [];
+      return src.map(c => {
+        const next = { ...c, importedAt: c.importedAt || null };
+        if (!next.id) next.id = makeLocalId();
+        return next;
+      });
+    }
+
     function loadState() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) return defaultState();
         const parsed = JSON.parse(raw);
-        const merged = {
-          ...defaultState(),
-          ...parsed,
-          pauseHistory: Array.isArray(parsed.pauseHistory) ? parsed.pauseHistory : [],
-          events: Array.isArray(parsed.events) ? parsed.events : [],
-          gapAnnotations: parsed.gapAnnotations && typeof parsed.gapAnnotations === 'object' ? parsed.gapAnnotations : {},
-          activeDayKey: parsed.activeDayKey ? String(parsed.activeDayKey) : null,
-        };
+        const merged = normalizeStateObject(parsed);
         // Migración: los eventos y pausas guardados antes de que existiera el
         // sistema de IDs no tienen 'id'. Su botón de borrar comparaba contra ''
         // y como ningún registro viejo tiene id === '', el filtro no quitaba
         // nada — la app decía "Borrado" sin borrar de verdad nada. Aquí les
         // asignamos un ID estable la primera vez que se cargan, y lo guardamos
         // de inmediato para que quede fijo en las próximas sesiones.
-        let migrated = false;
-        merged.events = merged.events.map(e => {
-          if (e && !e.id) { migrated = true; return { ...e, id: makeLocalId() }; }
-          return e;
-        });
-        merged.pauseHistory = merged.pauseHistory.map(p => {
-          if (p && !p.id) { migrated = true; return { ...p, id: makeLocalId() }; }
-          return p;
-        });
-        if (migrated) {
+        const hadMissingIds = (Array.isArray(parsed.events) && parsed.events.some(e => e && !e.id))
+          || (Array.isArray(parsed.pauseHistory) && parsed.pauseHistory.some(p => p && !p.id));
+        if (hadMissingIds) {
           try { localStorage.setItem(STORAGE_KEY, JSON.stringify(merged)); } catch {}
         }
         return merged;
@@ -2127,13 +2147,9 @@ $0.72"></textarea>
         // hora + duración + pago). Eso se rompe en cuanto editas la duración
         // o el pago de una llamada (la "llave" cambia a media edición). Aquí
         // se les asigna un id estable la primera vez que se cargan.
-        let migrated = false;
-        const withIds = parsed.map(c => {
-          const next = { ...c, importedAt: c.importedAt || null };
-          if (!next.id) { next.id = makeLocalId(); migrated = true; }
-          return next;
-        });
-        if (migrated) {
+        const withIds = normalizeCallsArray(parsed);
+        const hadMissingIds = parsed.some(c => c && !c.id);
+        if (hadMissingIds) {
           try { localStorage.setItem(CALLS_KEY, JSON.stringify(withIds)); } catch {}
         }
         return withIds;
@@ -4314,6 +4330,75 @@ function renderWeekSummary() {
       URL.revokeObjectURL(url);
     }
 
+    // Contraparte de exportJSON(): valida que el JSON tenga la forma exacta
+    // que exportJSON() produce ({ state: {...}, calls: [...], exportedAt }).
+    // No exige exportedAt (no lo usa nadie para decidir si es válido, solo
+    // para mostrarlo en el aviso de confirmación) ni campos específicos
+    // dentro de "state" — normalizeStateObject()/normalizeCallsArray() ya
+    // rellenan lo que falte con los defaults, igual que hacen loadState()/
+    // loadCalls() con datos guardados de versiones viejas.
+    function validateImportPayload(payload) {
+      if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+        return { ok: false, error: 'El archivo no contiene un objeto JSON válido.' };
+      }
+      if (!payload.state || typeof payload.state !== 'object' || Array.isArray(payload.state)) {
+        return { ok: false, error: 'Falta el campo "state" (o no es válido) en el archivo.' };
+      }
+      if (!Array.isArray(payload.calls)) {
+        return { ok: false, error: 'Falta el campo "calls" (o no es una lista) en el archivo.' };
+      }
+      return { ok: true };
+    }
+
+    // Reemplaza calls/state en memoria por los del archivo (ya validado) y
+    // los persiste. A propósito NO se toca `settings` (horario semanal,
+    // metas, tasa, moneda, nombre/emoji) — un JSON importado es un backup de
+    // turnos/llamadas, no de configuración, igual que exportJSON() tampoco
+    // incluye settings en el payload que genera.
+    function applyImportedPayload(payload) {
+      state = normalizeStateObject(payload.state);
+      calls = normalizeCallsArray(payload.calls);
+      if (!state.activeDayKey) state.activeDayKey = defaultActiveDayKey();
+      saveAll();
+    }
+
+    function handleImportJsonFile(e) {
+      const input = e.target;
+      const file = input.files && input.files[0];
+      // Se limpia de inmediato para poder volver a elegir el MISMO archivo
+      // después (ej. si se cancela la confirmación y se quiere reintentar) —
+      // sin esto, seleccionar dos veces seguidas el mismo archivo no dispara
+      // el evento 'change' la segunda vez.
+      input.value = '';
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        let payload;
+        try {
+          payload = JSON.parse(String(reader.result || ''));
+        } catch {
+          toast('Ese archivo no es JSON válido.');
+          return;
+        }
+        const check = validateImportPayload(payload);
+        if (!check.ok) {
+          toast(check.error);
+          return;
+        }
+        const callCount = payload.calls.length;
+        const exportedDate = payload.exportedAt ? new Date(payload.exportedAt) : null;
+        const exportedLabel = exportedDate && !Number.isNaN(exportedDate.getTime())
+          ? `${fmtDate(exportedDate)}, ${fmtTime(exportedDate)}`
+          : 'fecha desconocida';
+        appConfirm(`¿Importar este archivo (exportado el ${exportedLabel} · ${callCount} llamada(s))? Esto reemplaza TODAS tus llamadas, turnos y pausas actuales por las del archivo. Tu horario semanal y tus metas no se tocan. Esta acción no se puede deshacer.`, () => {
+          applyImportedPayload(payload);
+          toast(`${callCount} llamada(s) importada(s) desde el archivo`);
+        });
+      };
+      reader.onerror = () => toast('No se pudo leer el archivo.');
+      reader.readAsText(file);
+    }
+
 
     function formatGoalFields() {
       const minInput = document.getElementById('productiveGoalInput');
@@ -5449,6 +5534,8 @@ function render() {
     document.getElementById('importBtn').addEventListener('click', importCalls);
     document.getElementById('clearCallsBtn').addEventListener('click', clearCallInputBox);
     document.getElementById('exportBtn').addEventListener('click', exportJSON);
+    document.getElementById('importJsonBtn').addEventListener('click', () => document.getElementById('importJsonFile').click());
+    document.getElementById('importJsonFile').addEventListener('change', handleImportJsonFile);
     document.getElementById('callInput').addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') importCalls();
     });
