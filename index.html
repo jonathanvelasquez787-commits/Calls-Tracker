@@ -4849,7 +4849,7 @@ function renderHeader() {
     ? "Solo disponible viendo 'Hoy'"
     : startingNewShift
       ? (isDayOffBlocking ? 'Hoy es tu día libre' : (tooEarly ? earlySubtext : shiftWindowLabel))
-      : `Activo · ${formatDuration(now.getTime() - new Date(state.shiftStartedAt).getTime())}`;
+      : 'Activo';
   shiftBtn.disabled = shiftActionDisabled();
   const shiftIsPrimary = shiftActionTone() === 'primary';
   shiftBtn.style.background = shiftIsPrimary
