@@ -2199,7 +2199,7 @@ $0.72"></textarea>
         // editables en Metas. Con exchangeRate en 0 o currencyLabel vacío,
         // convertedAmountText() no muestra nada (ver esa función).
         currencyLabel: 'L',
-        exchangeRate: 24.70,
+        exchangeRate: 26.80,
         // Pedido del usuario: el ciclo de pago (ver cycleBoundsForDate) debe
         // poder ajustarse — según su tabla PAGOS 2025, Start Date cae en
         // viernes y End Date en jueves (verificado), pero el usuario indica
@@ -2208,11 +2208,11 @@ $0.72"></textarea>
         // cycleAnchorDate es CUALQUIER fecha conocida en la que arranca un
         // ciclo (default corrido +1 día respecto al ancla original, para que
         // caiga en sábado como pidió), y cyclePayOffsetDays son los días
-        // desde el fin del ciclo hasta el día de pago (default 7, igual que
-        // antes). La duración del ciclo se mantiene fija en 14 días (no se
+        // desde el fin del ciclo hasta el día de pago (default 5, pedido del
+        // usuario). La duración del ciclo se mantiene fija en 14 días (no se
         // pidió que eso fuera ajustable).
         cycleAnchorDate: '2025-05-03',
-        cyclePayOffsetDays: 7,
+        cyclePayOffsetDays: 5,
       };
     }
 
@@ -2254,7 +2254,12 @@ $0.72"></textarea>
 
     function cycleBoundsForDate(date = new Date()) {
       const anchor = cycleAnchorDate();
-      const payOffsetDays = Number(settings.cyclePayOffsetDays) >= 0 ? Number(settings.cyclePayOffsetDays) : 7;
+      // El "5" de aquí es solo un respaldo defensivo (ensureCurrencySettings()
+      // ya se asegura de que settings.cyclePayOffsetDays sea un número válido
+      // al cargar, cayendo también a este mismo default de fábrica si no lo
+      // es), pero se mantiene sincronizado con el default de defaultSettings()
+      // para no tener dos "defaults" distintos en el código.
+      const payOffsetDays = Number(settings.cyclePayOffsetDays) >= 0 ? Number(settings.cyclePayOffsetDays) : 5;
       const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       const diffDays = Math.floor((target.getTime() - anchor.getTime()) / 86400000);
       const cycleIndex = Math.floor(diffDays / CYCLE_LENGTH_DAYS);
@@ -5725,15 +5730,18 @@ function render() {
 
     // Popup de bienvenida: solo la primerísima vez que se abre la app en
     // este navegador (settings.onboarded sigue en false porque nunca hubo
-    // ni SETTINGS_KEY ni STORAGE_KEY guardados — ver loadSettings()). Se
-    // prellenan los campos con lo que ya traiga settings por si acaso (ej.
-    // el nombre default 'Jonathan'), para que "Guardar y empezar" sin tocar
-    // nada deje el mismo resultado que ya tenía la app antes de este popup.
+    // ni SETTINGS_KEY ni STORAGE_KEY guardados — ver loadSettings()). El
+    // nombre SIEMPRE arranca vacío aquí (placeholder "Ej. Jonathan" a modo
+    // de ejemplo, no de valor real) — settings.userName por default es
+    // 'Jonathan' (el dueño original de esta instancia), pero eso no debe
+    // aparecer prellenado como si fuera el nombre de quien recién está
+    // abriendo la app por primera vez. El emoji sí se prellena con el
+    // default (🙂), porque ahí no hay ambigüedad de "de quién es".
     if (!settings.onboarded) {
       const onboardingNameInput = document.getElementById('onboardingNameInput');
       const onboardingEmojiInput = document.getElementById('onboardingEmojiInput');
       const initialEmoji = settings.userEmoji || DEFAULT_USER_EMOJI;
-      if (onboardingNameInput) onboardingNameInput.value = settings.userName || '';
+      if (onboardingNameInput) onboardingNameInput.value = '';
       if (onboardingEmojiInput) onboardingEmojiInput.value = initialEmoji;
       renderEmojiPicker('emojiPickerOnboarding', initialEmoji);
       openModal('onboardingModal');
