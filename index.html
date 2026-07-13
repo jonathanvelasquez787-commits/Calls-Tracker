@@ -429,14 +429,13 @@
       font-weight: 800;
     }
 
-    /* Mismo problema de familia que .chips: dentro de .hero-day-row
-       (flex-wrap: wrap), .summary-pill no tenía flex-shrink:0, así que en
-       viewports angostos se podía comprimir y su contenido ("Día activo" +
-       el <select>) terminaba viéndose partido en vez de mantenerse como
-       una sola unidad en una sola línea. flex-shrink:0 + flex-wrap:nowrap
-       explícito lo fija como bloque; .day-scope-note (fuera de esta regla)
-       sigue siendo lo único que puede bajar a su propia línea dentro de
-       .hero-day-row, que es lo esperado. */
+    /* Mismo problema de familia que .chips: al mover "Día activo" dentro del
+       propio bloque .chips (junto al chip de Estado, pedido del usuario),
+       .summary-pill necesita el mismo flex-shrink:0 que ya tienen los
+       .chip — sin eso, en viewports angostos se podía comprimir y su
+       contenido ("Día activo" + el date-picker) terminaba viéndose partido
+       en vez de mantenerse como una sola unidad en una sola línea.
+       flex-wrap:nowrap explícito lo fija como bloque, igual que un .chip. */
     .summary-pill {
       padding: 10px 12px;
       border-radius: 16px;
@@ -658,31 +657,6 @@
     .day-tab.off {
       opacity: .55;
     }
-
-    /* Fila del selector "Día activo" + su nota, movidos aquí desde el extinto
-   accordion "Resumen rápido" (consolidación pedida por el usuario: Resumen
-   rápido + Métricas clave + Estadísticas del día + Tiempo llamadas/Total/
-   Billable/Dropped, todo junto dentro de "Buen día", debajo de los chips
-   Estado/Shift/Bloque/Siguiente). Reutiliza .summary-pill ya existente para
-   que el selector se vea igual que antes; .day-scope-note no tenía ninguna
-   regla CSS propia previamente (heredaba el tamaño de texto por default,
-   16px) — aquí se le da un tamaño chico consistente con el resto de este
-   bloque, en vez de quedar más grande que todo lo demás.
-*/
-.hero-day-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.day-scope-note {
-  color: var(--muted);
-  font-size: 12.5px;
-  line-height: 1.4;
-  max-width: 46ch;
-}
 
 .slot-body {
   display: grid;
@@ -1496,13 +1470,10 @@
 </div>
 <div class="chips">
 <div class="chip"><span class="dot-state" id="stateDot"></span><strong id="stateText">No iniciado</strong></div>
-</div>
-<div class="hero-day-row">
 <div class="summary-pill">
   <span>Día activo</span>
   <input id="daySelector" aria-label="Día activo" type="date"/>
 </div>
-<div class="day-scope-note" id="dayScopeNote">Viendo un solo día a la vez. El horario se puede editar y las llamadas se agrupan por su fecha real.</div>
 </div>
 </div>
 </section><section class="card span-12">
@@ -4851,21 +4822,6 @@ function renderHeader() {
     }
   }
   const viewingToday = isViewingToday();
-  const dayScopeNote = document.getElementById('dayScopeNote');
-  if (dayScopeNote) {
-    // Pedido del usuario: la nota tenía demasiada info y no se entendía,
-    // sobre todo en mobile ("Viendo vie 10 de jul sin shift guardado. Los
-    // controles de..."). Ya no hace falta repetir la fecha aquí — el propio
-    // selector-calendario de arriba ya la muestra — así que el texto se
-    // acorta a solo lo que aporta información nueva: si el shift de ese día
-    // es estimado/guardado/inexistente, y (solo si aplica) que los
-    // controles en vivo están limitados a "Hoy".
-    let note = hasShift
-      ? (shiftBounds.estimated ? 'Shift estimado desde las llamadas.' : 'Shift guardado.')
-      : 'Sin shift guardado.';
-    if (!viewingToday) note += ' Controles de Shift/Break/Lunch solo en "Hoy".';
-    dayScopeNote.textContent = note;
-  }
   const earningsTitle = document.getElementById('earningsSectionTitle');
   if (earningsTitle) earningsTitle.textContent = earningsSectionLabel(dayKey);
 
