@@ -78,7 +78,61 @@
       text-transform: uppercase;
       letter-spacing: .08em;
       font-size: 12px;
+    }
+
+    /* Fila superior del hero: brand a la izquierda, botones mini de acceso
+       rápido (Horario/Metas/Reiniciar día) a la derecha — pedido del
+       usuario, mismo estilo compacto que una referencia de otra app (icono
+       + label corto, esquinas redondeadas, fondo oscuro sutil). El
+       margin-bottom que antes tenía .brand solo (para separarse del
+       title-row de abajo) se mueve aquí, a la fila completa. */
+    .hero-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
       margin-bottom: 12px;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .hero-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      font-size: 12.5px;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: transform .14s ease, filter .14s ease, background .14s ease;
+    }
+
+    .hero-action-btn:hover,
+    .hero-action-btn:focus-visible {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.09);
+      outline: none;
+    }
+
+    .hero-action-btn.danger {
+      color: #fda4af;
+      border-color: rgba(251, 113, 133, .35);
+      background: rgba(251, 113, 133, .08);
+    }
+
+    .hero-action-btn.danger:hover {
+      background: rgba(251, 113, 133, .16);
     }
 
     .brand .dot {
@@ -476,53 +530,17 @@
       gap: 8px;
     }
 
-    .secondary-controls {
+    /* Horario/Metas/Reiniciar día se movieron a .hero-action-btn (arriba, en
+       el header). Solo queda "Pegar Llamadas" como acción secundaria de
+       Controles — con un solo botón ya no tenía sentido el acordeón "Más
+       acciones" (<details>/<summary>) que existía antes para agrupar 4;
+       esta regla reemplaza a .secondary-controls/.controls-grid-secondary
+       (eliminadas junto con el HTML del acordeón), conservando el mismo
+       espaciado (línea divisoria + margen) que ya tenía esa sección. */
+    .secondary-controls-static {
       margin-top: 10px;
       border-top: 1px solid var(--line);
       padding-top: 10px;
-    }
-
-    .secondary-controls > summary {
-      list-style: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--muted);
-      font-size: 12.5px;
-      font-weight: 700;
-      padding: 4px 2px;
-    }
-
-    .secondary-controls > summary::-webkit-details-marker { display: none; }
-
-    .chevron-mini {
-      display: inline-block;
-      transition: transform .18s ease;
-      font-size: 13px;
-    }
-
-    .secondary-controls[open] .chevron-mini {
-      transform: rotate(180deg);
-    }
-
-    .controls-grid-secondary {
-      margin-top: 8px;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .controls-grid-secondary .control-btn {
-      min-height: 48px;
-      padding: 8px 10px;
-    }
-
-    .controls-grid-secondary .control-label { font-size: 12px; }
-    .controls-grid-secondary .control-sub { font-size: 10px; }
-
-    @media (min-width: 640px) {
-      .controls-grid-secondary {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-      }
     }
 
     .table-tags-top {
@@ -538,9 +556,6 @@
       #breakControlBtn,
       #lunchControlBtn {
         min-height: 68px;
-      }
-      .controls-grid-secondary .control-btn {
-        min-height: 52px;
       }
     }
 
@@ -730,23 +745,11 @@
     }
     #lunchControlBtn .control-label { color: #a5b4fc; }
 
-    #goalsBtn {
-      background: linear-gradient(135deg, rgba(52, 211, 153, .16), rgba(16, 185, 129, .07));
-      border: 1px solid rgba(52, 211, 153, .38);
-    }
-    #goalsBtn .control-label { color: #6ee7b7; }
-
     #pasteCallsBtn {
       background: linear-gradient(135deg, rgba(96, 165, 250, .16), rgba(59, 130, 246, .07));
       border: 1px solid rgba(96, 165, 250, .38);
     }
     #pasteCallsBtn .control-label { color: #93c5fd; }
-
-    #resetDayBtn {
-      background: linear-gradient(135deg, rgba(251, 113, 133, .16), rgba(225, 29, 72, .07));
-      border: 1px solid rgba(251, 113, 133, .38);
-      color: #fda4af;
-    }
 
     .control-btn:hover,
     .control-btn:focus-visible {
@@ -760,11 +763,6 @@
       opacity: .45;
       transform: none;
       filter: grayscale(.4);
-    }
-
-    #shiftWindowBtn {
-      background: linear-gradient(180deg, rgba(167, 139, 250, 1), rgba(122, 92, 226, 1));
-      color: #fff;
     }
 
     .button-row {
@@ -1416,7 +1414,9 @@
       .goal-fields { grid-template-columns: 1fr; }
       .hero, .card, .table-card, .list-card, .mini { padding: 14px; }
       .hero { margin-bottom: 10px; }
-      .brand { padding: 6px 10px; font-size: 10.5px; margin-bottom: 8px; }
+      .brand { padding: 6px 10px; font-size: 10.5px; }
+      .hero-top-row { margin-bottom: 8px; }
+      .hero-action-btn { padding: 6px 9px; font-size: 11px; }
       .title-row { flex-direction: column; align-items: flex-start; gap: 2px; }
       .hero h1 { font-size: 21px; letter-spacing: -.03em; }
       .subtle { font-size: 12.5px; margin-top: 4px; }
@@ -1457,7 +1457,14 @@
 <body>
 <div class="app"><section class="hero">
 <div>
+<div class="hero-top-row">
 <div class="brand"><span class="dot-state"></span>Propio Shift Tracker</div>
+<div class="hero-actions">
+<button class="hero-action-btn" id="scheduleMiniBtn" type="button">🗓️ Horario</button>
+<button class="hero-action-btn" id="goalsMiniBtn" type="button">🎯 Metas</button>
+<button class="hero-action-btn danger" id="resetDayMiniBtn" type="button">♻️ Reiniciar</button>
+</div>
+</div>
 <div class="title-row">
 <div>
 <h1 id="greetingTitle">Buen día</h1>
@@ -1549,15 +1556,9 @@
 <span class="control-sub" id="lunchControlTimer">00:00:00</span>
 </button>
 </div>
-<details class="secondary-controls">
-<summary>Más acciones <span class="chevron-mini">⌄</span></summary>
-<div class="controls-grid controls-grid-secondary">
-<button class="control-btn secondary" id="shiftWindowBtn" type="button"><span class="control-label">Horario</span><span class="control-sub">Editar inicio y fin</span></button>
-<button class="control-btn secondary" id="goalsBtn" type="button"><span class="control-label">Metas</span><span class="control-sub">Editar objetivo</span></button>
+<div class="secondary-controls-static">
 <button class="control-btn secondary" id="pasteCallsBtn" type="button"><span class="control-label">Pegar Llamadas</span><span class="control-sub">Importar data</span></button>
-<button class="control-btn bad" id="resetDayBtn" type="button"><span class="control-label">Reiniciar día</span><span class="control-sub">Borra el día activo</span></button>
 </div>
-</details>
 </section>
 
 <details class="accordion-card" open>
@@ -5534,7 +5535,7 @@ function render() {
     });
 
     document.getElementById('shiftControlBtn').addEventListener('click', toggleShift);
-    document.getElementById('shiftWindowBtn').addEventListener('click', () => { scheduleEditDay = weekdayKeyForDayKey(getActiveDayKey()); syncShiftModalFields(); openModal('shiftModal'); });
+    document.getElementById('scheduleMiniBtn').addEventListener('click', () => { scheduleEditDay = weekdayKeyForDayKey(getActiveDayKey()); syncShiftModalFields(); openModal('shiftModal'); });
     document.getElementById('copyDayToAllBtn').addEventListener('click', copyDayToAll);
     document.getElementById('confirmModalOkBtn').addEventListener('click', () => {
       const action = pendingConfirmAction;
@@ -5544,9 +5545,9 @@ function render() {
     });
     document.getElementById('breakControlBtn').addEventListener('click', () => togglePause('break'));
     document.getElementById('lunchControlBtn').addEventListener('click', () => togglePause('lunch'));
-    document.getElementById('resetDayBtn').addEventListener('click', resetDay);
+    document.getElementById('resetDayMiniBtn').addEventListener('click', resetDay);
     document.getElementById('eraseAllDataBtn').addEventListener('click', eraseAllData);
-    document.getElementById('goalsBtn').addEventListener('click', () => openModal('goalsModal'));
+    document.getElementById('goalsMiniBtn').addEventListener('click', () => openModal('goalsModal'));
     document.getElementById('pasteCallsBtn').addEventListener('click', () => openModal('callsModal'));
     document.getElementById('importBtn').addEventListener('click', importCalls);
     document.getElementById('clearCallsBtn').addEventListener('click', clearCallInputBox);
