@@ -548,6 +548,21 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    /* 4to botón (Iniciar llamada) agregado al grid principal de Shift/Break/
+       Lunch — pedido del usuario. 4 columnas en desktop; en mobile (mismo
+       breakpoint que ya usa el resto de la app, 760px) baja a 2x2 para que
+       las etiquetas más largas ("Finalizar shift", "Iniciar llamada") no
+       queden apretadas en columnas angostas. */
+    .controls-grid-primary {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    @media (max-width: 760px) {
+      .controls-grid-primary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
     .table-tags-top {
       margin-bottom: 12px;
     }
@@ -559,7 +574,8 @@
     @media (min-width: 1201px) {
       #shiftControlBtn,
       #breakControlBtn,
-      #lunchControlBtn {
+      #lunchControlBtn,
+      #callControlBtn {
         min-height: 68px;
       }
     }
@@ -755,6 +771,12 @@
       border: 1px solid rgba(96, 165, 250, .38);
     }
     #pasteCallsBtn .control-label { color: #93c5fd; }
+
+    #callControlBtn {
+      background: linear-gradient(135deg, rgba(255, 111, 143, .16), rgba(225, 29, 72, .07));
+      border: 1px solid rgba(255, 111, 143, .38);
+    }
+    #callControlBtn .control-label { color: #ffb0c1; }
 
     .control-btn:hover,
     .control-btn:focus-visible {
@@ -1547,7 +1569,7 @@
 </div>
 </div>
 
-<div class="controls-grid">
+<div class="controls-grid controls-grid-primary">
 <button class="control-btn primary" id="shiftControlBtn" type="button">
 <span class="control-label" id="shiftControlLabel">Iniciar shift</span>
 <span class="control-sub" id="shiftControlSub">07:00 AM – 04:00 PM</span>
@@ -1559,6 +1581,10 @@
 <button class="control-btn warn" id="lunchControlBtn" type="button">
 <span class="control-label" id="lunchControlLabel">Iniciar Lunch</span>
 <span class="control-sub" id="lunchControlTimer">00:00:00</span>
+</button>
+<button class="control-btn call" id="callControlBtn" type="button">
+<span class="control-label" id="callControlLabel">Iniciar llamada</span>
+<span class="control-sub" id="callControlTimer">00:00:00</span>
 </button>
 </div>
 <div class="secondary-controls-static">
@@ -1884,7 +1910,7 @@ $0.72"></textarea>
 <div class="modal-head">
 <div>
 <h3 id="manualCallModalTitle">Agregar llamada manual</h3>
-<p>Para una llamada que no vino en la exportación de Propio. Se guarda igual que cualquier otra fila — mismo cálculo de huecos, ACW y ganancias.</p>
+<p id="manualCallModalSubtitle">Para una llamada que no vino en la exportación de Propio. Se guarda igual que cualquier otra fila — mismo cálculo de huecos, ACW y ganancias.</p>
 </div>
 <button aria-label="Cerrar" class="modal-close" data-close-modal="manualCallModal" type="button">×</button>
 </div>
@@ -2108,6 +2134,11 @@ $0.72"></textarea>
         shiftStartedAt: null,
         shiftEndedAt: null,
         activePause: null,
+        // Llamada en curso desde el botón "Iniciar llamada" (ver
+        // toggleCall()). A propósito es independiente de activePause —
+        // pedido del usuario: una llamada y un Break/Lunch pueden estar
+        // activos al mismo tiempo, sin bloquearse ni cancelarse entre sí.
+        activeCall: null,
         pauseHistory: [],
         events: [],
         activeDayKey: null,
@@ -4036,6 +4067,33 @@ function renderWeekSummary() {
       return '00:00:00';
     }
 
+    function callActionLabel() {
+      if (!isViewingToday()) return 'Iniciar llamada';
+      return state.activeCall ? 'Terminar llamada' : 'Iniciar llamada';
+    }
+
+    // A diferencia de pauseActionDisabled() (Break/Lunch), iniciar una
+    // llamada NO exige que ya haya llamadas de ese día para anclar el
+    // auto-inicio del turno — la llamada que se está por iniciar ES esa
+    // ancla (ver startCall()), así que no hace falta ninguna previa.
+    function callActionDisabled() {
+      if (!isViewingToday()) return true;
+      // Terminar una llamada ya en curso nunca se bloquea, sin importar el
+      // estado del turno — mismo criterio que "Finalizar shift" una vez
+      // iniciado.
+      if (state.activeCall) return false;
+      // Para INICIAR una llamada nueva: si el turno de hoy ya se cerró, no
+      // tiene sentido registrar una llamada nueva ese día desde este botón.
+      return !!state.shiftEndedAt;
+    }
+
+    function callActionTimer() {
+      if (state.activeCall) {
+        return formatDuration(Date.now() - new Date(state.activeCall.startedAt).getTime());
+      }
+      return '00:00:00';
+    }
+
     function toggleShift() {
       // Defensa adicional a shiftBtn.disabled: si esta función se llega a
       // disparar de otra forma (ej. otro código, un atajo) mientras se ve un
@@ -4187,6 +4245,60 @@ function renderWeekSummary() {
       if (!silent) toast('Regresaste');
     }
 
+    function toggleCall() {
+      // Misma defensa que toggleShift()/togglePause(): estos botones solo
+      // aplican al turno real de hoy, nunca al día seleccionado en "Día
+      // activo".
+      if (!isViewingToday()) {
+        toast("Cambia el día activo a 'Hoy' para usar este control");
+        return;
+      }
+      if (state.activeCall) return endCall();
+      return startCall();
+    }
+
+    function startCall() {
+      if (state.activeCall || state.shiftEndedAt) return;
+      const now = new Date();
+      // Igual que Break/Lunch (autoStartShiftFromCalls) y pegar llamadas: si
+      // no habías dado click en "Iniciar shift" todavía, iniciar una llamada
+      // en vivo también lo arranca solo — anclado a AHORA. A diferencia de
+      // autoStartShiftFromCalls() (que ancla a la primera llamada YA
+      // importada), aquí la llamada que se está iniciando es la primera
+      // actividad del día: todavía no existe como fila en `calls`, así que
+      // no hay una hora previa de la cual colgarse.
+      // Pedido del usuario: esto se permite incluso en un día marcado libre
+      // en el horario semanal — a diferencia de "Iniciar shift" (bloqueado
+      // por todayIsOff() desde v54), mismo criterio que ya aplica a pegar
+      // llamadas, que tampoco se bloquea en día libre.
+      if (!state.shiftStartedAt) {
+        state.shiftStartedAt = now.toISOString();
+        state.shiftEndedAt = null;
+        setEvent('shift', 'Shift iniciado automáticamente', fmtTime(now), 'auto');
+      }
+      state.activeCall = { startedAt: now.toISOString() };
+      saveAll();
+      toast('Llamada iniciada');
+    }
+
+    // Termina la llamada en curso y abre el modal de guardado (mismo modal
+    // que "Agregar llamada manual", ver openManualCallModalFromLiveCall)
+    // para confirmar Customer ID/billable/dropped/pago antes de guardarla —
+    // la llamada NO queda en `calls` hasta que se confirme ahí (cancelar el
+    // modal simplemente la descarta, igual que decidir no loguearla).
+    // Pedido del usuario: una llamada puede coexistir con Break/Lunch sin
+    // bloquearse ni auto-terminar nada entre sí, así que esta función no
+    // toca state.activePause para nada.
+    function endCall() {
+      if (!state.activeCall) return;
+      const startedAt = state.activeCall.startedAt;
+      const endedAt = new Date().toISOString();
+      state.activeCall = null;
+      saveStateOnly();
+      render();
+      openManualCallModalFromLiveCall(startedAt, endedAt);
+    }
+
     // A diferencia de resetDay() (borra SOLO el día activo), esto borra TODO
     // lo que la app guarda en este navegador: las 3 llaves de localStorage
     // completas (STORAGE_KEY/CALLS_KEY/SETTINGS_KEY), sin dejar nada — ni
@@ -4253,6 +4365,7 @@ function renderWeekSummary() {
           state.shiftStartedAt = null;
           state.shiftEndedAt = null;
           state.activePause = null;
+          state.activeCall = null;
         }
 
         // Antes: si aún quedaban llamadas en OTROS días, "Día activo" saltaba
@@ -4945,6 +5058,16 @@ function renderHeader() {
   breakBtn.style.boxShadow = breakActive ? '0 0 0 1px rgba(251, 191, 36, .25) inset' : 'none';
   lunchBtn.style.boxShadow = lunchActive ? '0 0 0 1px rgba(129, 140, 248, .25) inset' : 'none';
 
+  const callBtn = document.getElementById('callControlBtn');
+  const callLabel = document.getElementById('callControlLabel');
+  const callTimer = document.getElementById('callControlTimer');
+  callLabel.textContent = callActionLabel();
+  callTimer.textContent = viewingToday ? callActionTimer() : "Solo en 'Hoy'";
+  callBtn.disabled = callActionDisabled();
+  const callActive = !!state.activeCall;
+  callBtn.style.borderColor = callActive ? 'rgba(255, 111, 143, .75)' : 'rgba(255, 111, 143, .38)';
+  callBtn.style.boxShadow = callActive ? '0 0 0 1px rgba(255, 111, 143, .25) inset' : 'none';
+
   const connected = hasShift ? connectedMinutesForDay(dayKey) : 0;
   const productive = productiveMinutesForDay(dayKey);
   const stats = importedCallStats(dayCalls);
@@ -5209,8 +5332,11 @@ function manualCallEstimatedPay(durationMin) {
   return Number((durationMin * rate).toFixed(2));
 }
 
-function openManualCallModal() {
-  manualCallPayDirty = false;
+// Prellena los campos del modal — extraído de openManualCallModal() para
+// poder reutilizarlo también cuando el modal se abre al TERMINAR una
+// llamada en vivo (ver endCall()), con los mismos campos pero valores de
+// partida distintos (hora/duración ya capturadas en vez de "ahora, vacío").
+function prefillManualCallForm({ dayKey, startDate, durationMin }) {
   const dateInput = document.getElementById('manualCallDateInput');
   const startInput = document.getElementById('manualCallStartInput');
   const durationInput = document.getElementById('manualCallDurationInput');
@@ -5219,15 +5345,41 @@ function openManualCallModal() {
   const droppedInput = document.getElementById('manualCallDroppedInput');
   const customerIdInput = document.getElementById('manualCallCustomerIdInput');
 
-  const now = new Date();
-  if (dateInput) dateInput.value = isoDateFromDayKey(getActiveDayKey());
-  if (startInput) startInput.value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-  if (durationInput) durationInput.value = '';
+  if (dateInput) dateInput.value = isoDateFromDayKey(dayKey);
+  if (startInput) startInput.value = `${pad(startDate.getHours())}:${pad(startDate.getMinutes())}`;
+  if (durationInput) durationInput.value = durationMin === '' ? '' : String(durationMin);
   if (payInput) payInput.value = '';
   if (billableInput) billableInput.value = 'Yes';
   if (droppedInput) droppedInput.value = 'No';
   if (customerIdInput) customerIdInput.value = '';
   updateManualCallPreview();
+}
+
+function openManualCallModal() {
+  manualCallPayDirty = false;
+  const title = document.getElementById('manualCallModalTitle');
+  const subtitle = document.getElementById('manualCallModalSubtitle');
+  if (title) title.textContent = 'Agregar llamada manual';
+  if (subtitle) subtitle.textContent = 'Para una llamada que no vino en la exportación de Propio. Se guarda igual que cualquier otra fila — mismo cálculo de huecos, ACW y ganancias.';
+  prefillManualCallForm({ dayKey: getActiveDayKey(), startDate: new Date(), durationMin: '' });
+  openModal('manualCallModal');
+}
+
+// Variante que abre el mismo modal ya con inicio/fin/duración capturados de
+// una llamada real recién terminada con "Iniciar/Terminar llamada" (ver
+// endCall()) — el usuario solo confirma/ajusta Customer ID, billable,
+// dropped y pago antes de guardarla. Mismas validaciones de overlap/dedupe
+// que la entrada 100% manual, sin duplicar esa lógica.
+function openManualCallModalFromLiveCall(startedAtISO, endedAtISO) {
+  manualCallPayDirty = false;
+  const start = new Date(startedAtISO);
+  const end = new Date(endedAtISO);
+  const durationMin = Math.max(1, Math.round((end.getTime() - start.getTime()) / 60000));
+  const title = document.getElementById('manualCallModalTitle');
+  const subtitle = document.getElementById('manualCallModalSubtitle');
+  if (title) title.textContent = 'Guardar llamada';
+  if (subtitle) subtitle.textContent = `Llamada terminada: ${timeLabelFromDate(start)} – ${timeLabelFromDate(end)} (${formatDuration(durationMin * 60000)}). Ajusta lo que haga falta antes de guardarla.`;
+  prefillManualCallForm({ dayKey: todayCallDateKey(start), startDate: start, durationMin });
   openModal('manualCallModal');
 }
 
@@ -5762,6 +5914,7 @@ function render() {
     });
     document.getElementById('breakControlBtn').addEventListener('click', () => togglePause('break'));
     document.getElementById('lunchControlBtn').addEventListener('click', () => togglePause('lunch'));
+    document.getElementById('callControlBtn').addEventListener('click', toggleCall);
     document.getElementById('resetDayMiniBtn').addEventListener('click', resetDay);
     document.getElementById('eraseAllDataBtn').addEventListener('click', eraseAllData);
     document.getElementById('goalsMiniBtn').addEventListener('click', () => openModal('goalsModal'));
