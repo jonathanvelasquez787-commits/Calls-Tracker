@@ -531,16 +531,21 @@
     }
 
     /* Horario/Metas/Reiniciar día se movieron a .hero-action-btn (arriba, en
-       el header). Solo queda "Pegar Llamadas" como acción secundaria de
-       Controles — con un solo botón ya no tenía sentido el acordeón "Más
-       acciones" (<details>/<summary>) que existía antes para agrupar 4;
-       esta regla reemplaza a .secondary-controls/.controls-grid-secondary
-       (eliminadas junto con el HTML del acordeón), conservando el mismo
-       espaciado (línea divisoria + margen) que ya tenía esa sección. */
+       el header). "Pegar Llamadas" + "Agregar llamada" (manual, nuevo) son
+       las acciones secundarias de Controles — ya no hace falta el acordeón
+       "Más acciones" (<details>/<summary>) que existía antes para agrupar
+       4 botones; esta regla reemplaza a .secondary-controls/
+       .controls-grid-secondary (eliminadas junto con el HTML del
+       acordeón), conservando el mismo espaciado (línea divisoria + margen)
+       que ya tenía esa sección. */
     .secondary-controls-static {
       margin-top: 10px;
       border-top: 1px solid var(--line);
       padding-top: 10px;
+    }
+
+    .controls-grid-2col {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .table-tags-top {
@@ -1557,7 +1562,10 @@
 </button>
 </div>
 <div class="secondary-controls-static">
+<div class="controls-grid controls-grid-2col">
 <button class="control-btn secondary" id="pasteCallsBtn" type="button"><span class="control-label">Pegar Llamadas</span><span class="control-sub">Importar data</span></button>
+<button class="control-btn secondary" id="addCallManualBtn" type="button"><span class="control-label">Agregar llamada</span><span class="control-sub">Manual</span></button>
+</div>
 </div>
 </section>
 
@@ -1868,6 +1876,62 @@ $0.72"></textarea>
 <div class="modal-actions">
 <button class="primary" id="saveCallEditBtn" type="button">Guardar</button>
 <button class="warn" data-close-modal="callEditModal" type="button">Cancelar</button>
+</div>
+</div>
+</div>
+<div aria-hidden="true" class="modal-overlay" id="manualCallModal">
+<div aria-labelledby="manualCallModalTitle" aria-modal="true" class="modal-card" role="dialog">
+<div class="modal-head">
+<div>
+<h3 id="manualCallModalTitle">Agregar llamada manual</h3>
+<p>Para una llamada que no vino en la exportación de Propio. Se guarda igual que cualquier otra fila — mismo cálculo de huecos, ACW y ganancias.</p>
+</div>
+<button aria-label="Cerrar" class="modal-close" data-close-modal="manualCallModal" type="button">×</button>
+</div>
+<div class="goal-fields">
+<div class="field">
+<label for="manualCallDateInput">Fecha</label>
+<input id="manualCallDateInput" type="date"/>
+</div>
+<div class="field">
+<label for="manualCallStartInput">Hora de inicio</label>
+<input id="manualCallStartInput" type="time"/>
+</div>
+</div>
+<div class="goal-fields">
+<div class="field">
+<label for="manualCallDurationInput">Duración (min)</label>
+<input id="manualCallDurationInput" inputmode="numeric" min="1" step="1" type="number"/>
+</div>
+<div class="field">
+<label for="manualCallPayInput">Pago ($)</label>
+<input id="manualCallPayInput" inputmode="decimal" min="0" step="0.01" type="number"/>
+</div>
+</div>
+<div class="goal-fields">
+<div class="field">
+<label for="manualCallBillableInput">Billable</label>
+<select id="manualCallBillableInput">
+<option value="Yes">Yes</option>
+<option value="No">No</option>
+</select>
+</div>
+<div class="field">
+<label for="manualCallDroppedInput">Dropped</label>
+<select id="manualCallDroppedInput">
+<option value="No">No</option>
+<option value="Yes">Yes</option>
+</select>
+</div>
+</div>
+<div class="field" style="margin-top:10px;">
+<label for="manualCallCustomerIdInput">Customer ID (opcional)</label>
+<input id="manualCallCustomerIdInput" maxlength="30" placeholder="Vacío = se guarda como Manual" type="text"/>
+</div>
+<div class="note" id="manualCallPreviewText" style="margin-top:10px;">Completa los campos para agregar la llamada.</div>
+<div class="modal-actions">
+<button class="primary" id="saveManualCallBtn" type="button">+ Agregar</button>
+<button class="warn" data-close-modal="manualCallModal" type="button">Cancelar</button>
 </div>
 </div>
 </div>
@@ -5110,6 +5174,158 @@ function deleteCallRecord(callId) {
   return true;
 }
 
+// ---- Agregar llamada manual ----
+// Para llamadas que nunca llegan en la exportación de Propio (ej. una
+// llamada tomada fuera de la plataforma, o una que se te olvidó pegar).
+// Produce el mismo objeto que ya arma parseCalls() a partir del texto
+// exportado, así que todo lo demás (huecos/ACW, Adherencia, Margen,
+// Ganancias) lo trata exactamente igual sin importar de dónde vino.
+
+// Si el usuario edita el campo de Pago a mano, dejamos de recalcularlo
+// automáticamente al cambiar la duración — mismo patrón "dirty flag" que ya
+// usa scheduleFormIsDirty() para no pisar una edición en curso.
+let manualCallPayDirty = false;
+
+// Convierte "HH:MM" (24h, valor crudo de <input type="time">) al formato
+// "h:mm AM/PM" que usa internamente callStart (el mismo formato que
+// toDateFromInputs()/parseCalls() esperan al leer la exportación real de
+// Propio) — para que una llamada manual sea indistinguible, en formato, de
+// una importada.
+function callStartLabelFromHHMM(hhmm) {
+  const normalized = formatHHMM(hhmm);
+  const [h, m] = normalized.split(':').map(Number);
+  const hour12 = h % 12 || 12;
+  const suffix = h >= 12 ? 'PM' : 'AM';
+  return `${hour12}:${pad(m)} ${suffix}`;
+}
+
+// Estimado de pago = duración × tasa por minuto (settings.rate, la misma
+// que ya se usa en Metas para convertir Meta en minutos <-> Meta en
+// dólares). Es solo un punto de partida editable — el pago real de Propio
+// no siempre es duración×tasa exacta, por eso el campo se puede corregir a
+// mano antes de guardar.
+function manualCallEstimatedPay(durationMin) {
+  const rate = Number(settings.rate) > 0 ? Number(settings.rate) : RATE;
+  return Number((durationMin * rate).toFixed(2));
+}
+
+function openManualCallModal() {
+  manualCallPayDirty = false;
+  const dateInput = document.getElementById('manualCallDateInput');
+  const startInput = document.getElementById('manualCallStartInput');
+  const durationInput = document.getElementById('manualCallDurationInput');
+  const payInput = document.getElementById('manualCallPayInput');
+  const billableInput = document.getElementById('manualCallBillableInput');
+  const droppedInput = document.getElementById('manualCallDroppedInput');
+  const customerIdInput = document.getElementById('manualCallCustomerIdInput');
+
+  const now = new Date();
+  if (dateInput) dateInput.value = isoDateFromDayKey(getActiveDayKey());
+  if (startInput) startInput.value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  if (durationInput) durationInput.value = '';
+  if (payInput) payInput.value = '';
+  if (billableInput) billableInput.value = 'Yes';
+  if (droppedInput) droppedInput.value = 'No';
+  if (customerIdInput) customerIdInput.value = '';
+  updateManualCallPreview();
+  openModal('manualCallModal');
+}
+
+function updateManualCallPreview() {
+  const durationInput = document.getElementById('manualCallDurationInput');
+  const payInput = document.getElementById('manualCallPayInput');
+  const preview = document.getElementById('manualCallPreviewText');
+  const duration = Number(durationInput?.value);
+  const validDuration = Number.isFinite(duration) && duration > 0;
+
+  if (validDuration && !manualCallPayDirty && payInput) {
+    payInput.value = manualCallEstimatedPay(duration).toFixed(2);
+  }
+  if (preview) {
+    preview.textContent = validDuration
+      ? `Se guardará como ${formatDuration(duration * 60000)} de llamada.`
+      : 'Completa los campos para agregar la llamada.';
+  }
+}
+
+function saveManualCall() {
+  const dateInput = document.getElementById('manualCallDateInput');
+  const startInput = document.getElementById('manualCallStartInput');
+  const durationInput = document.getElementById('manualCallDurationInput');
+  const payInput = document.getElementById('manualCallPayInput');
+  const billableInput = document.getElementById('manualCallBillableInput');
+  const droppedInput = document.getElementById('manualCallDroppedInput');
+  const customerIdInput = document.getElementById('manualCallCustomerIdInput');
+
+  const callDate = dayKeyFromIsoDate(dateInput?.value);
+  if (!callDate) {
+    toast('Elige una fecha válida');
+    return;
+  }
+  const duration = Number(durationInput?.value);
+  if (!Number.isFinite(duration) || duration <= 0) {
+    toast('La duración debe ser un número mayor a 0');
+    return;
+  }
+  const callStart = callStartLabelFromHHMM(startInput?.value);
+  const start = toDateFromInputs(callDate, callStart);
+  if (!start) {
+    toast('Fecha u hora inválida');
+    return;
+  }
+  const end = new Date(start.getTime() + duration * 60000);
+
+  const billable = billableInput?.value === 'Yes' ? 'Yes' : 'No';
+  const dropped = droppedInput?.value === 'Yes' ? 'Yes' : 'No';
+  const pay = parseMoney(payInput?.value || manualCallEstimatedPay(duration)).toFixed(2);
+  // Mismo patrón que ya se ve en pantalla para llamadas manuales (Tabla
+  // completa/tarjetas mobile ya renderizan "#Manual" cuando no hay customer
+  // ID real) — aquí es donde ese valor se origina cuando se deja vacío.
+  const customerId = String(customerIdInput?.value || '').trim() || 'Manual';
+
+  const candidate = {
+    id: makeLocalId(),
+    customerId,
+    callDate,
+    callStart,
+    durationMin: duration,
+    billable,
+    dropped,
+    pay,
+    startISO: start.toISOString(),
+    endISO: end.toISOString(),
+    countsAsProductive: billable === 'Yes' && dropped === 'No',
+    // Se marca "importada ahora" igual que una fila pegada (importCalls()) —
+    // así, si agregas HOY una llamada de un día pasado, se sigue viendo
+    // correctamente como "Importación histórica" en Tabla completa, mismo
+    // criterio que ya usa callImportFlag().
+    importedAt: new Date().toISOString(),
+  };
+
+  // Mismas dos validaciones que ya protegen la importación y la edición de
+  // llamadas (importCalls()/saveCallEditor()): no se permite traslape de
+  // horario con otra llamada real, ni una duplicada exacta.
+  const overlapsWith = calls.find(c => callsOverlap(c, candidate));
+  if (overlapsWith) {
+    toast(`Esa hora se traslapa con la llamada #${overlapsWith.customerId} (${overlapsWith.callStart}). Ajusta la hora o la duración.`);
+    return;
+  }
+  const key = callDedupeKey(candidate);
+  if (calls.some(c => callDedupeKey(c) === key)) {
+    toast('Ya existe una llamada idéntica guardada (mismo cliente, fecha, hora, duración, pago, billable y dropped).');
+    return;
+  }
+
+  calls = [...calls, candidate].sort((a, b) => new Date(a.startISO) - new Date(b.startISO));
+  // Igual que importCalls(), si agregaste la llamada para un día distinto al
+  // que estabas viendo, "Día activo" salta a ese día para que la veas de
+  // inmediato reflejada.
+  state.activeDayKey = callDate;
+  closeModal('manualCallModal');
+  saveAll();
+  toast('Llamada agregada');
+}
+
 function renderSchedule() {
       const dayKey = getActiveDayKey();
       const dayCalls = callsForDay(dayKey);
@@ -5454,6 +5670,7 @@ function render() {
       closeModal('shiftModal');
       closeModal('gapModal');
       closeModal('callEditModal');
+      closeModal('manualCallModal');
       closeModal('confirmModal');
     }
 
@@ -5549,6 +5766,13 @@ function render() {
     document.getElementById('eraseAllDataBtn').addEventListener('click', eraseAllData);
     document.getElementById('goalsMiniBtn').addEventListener('click', () => openModal('goalsModal'));
     document.getElementById('pasteCallsBtn').addEventListener('click', () => openModal('callsModal'));
+    document.getElementById('addCallManualBtn').addEventListener('click', openManualCallModal);
+    document.getElementById('manualCallDurationInput').addEventListener('input', updateManualCallPreview);
+    document.getElementById('manualCallPayInput').addEventListener('input', () => { manualCallPayDirty = true; });
+    document.getElementById('saveManualCallBtn').addEventListener('click', saveManualCall);
+    document.getElementById('manualCallModal').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) saveManualCall();
+    });
     document.getElementById('importBtn').addEventListener('click', importCalls);
     document.getElementById('clearCallsBtn').addEventListener('click', clearCallInputBox);
     document.getElementById('exportBtn').addEventListener('click', exportJSON);
