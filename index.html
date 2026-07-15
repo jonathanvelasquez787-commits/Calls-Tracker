@@ -531,36 +531,16 @@
     }
 
     /* Horario/Metas/Reiniciar día se movieron a .hero-action-btn (arriba, en
-       el header). "Pegar Llamadas" + "Agregar llamada" (manual, nuevo) son
-       las acciones secundarias de Controles — ya no hace falta el acordeón
-       "Más acciones" (<details>/<summary>) que existía antes para agrupar
-       4 botones; esta regla reemplaza a .secondary-controls/
-       .controls-grid-secondary (eliminadas junto con el HTML del
-       acordeón), conservando el mismo espaciado (línea divisoria + margen)
-       que ya tenía esa sección. */
+       el header). Controles quedó en dos filas de 3 (pedido del usuario):
+       Shift/Break/Lunch arriba, y Iniciar llamada/Pegar Llamadas/Agregar
+       llamada abajo — ambas usan el mismo .controls-grid de 3 columnas, sin
+       necesidad de una variante especial. Esta regla reemplaza al viejo
+       acordeón "Más acciones" (<details>/<summary>), conservando el mismo
+       espaciado (línea divisoria + margen) que ya tenía esa sección. */
     .secondary-controls-static {
       margin-top: 10px;
       border-top: 1px solid var(--line);
       padding-top: 10px;
-    }
-
-    .controls-grid-2col {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    /* 4to botón (Iniciar llamada) agregado al grid principal de Shift/Break/
-       Lunch — pedido del usuario. 4 columnas en desktop; en mobile (mismo
-       breakpoint que ya usa el resto de la app, 760px) baja a 2x2 para que
-       las etiquetas más largas ("Finalizar shift", "Iniciar llamada") no
-       queden apretadas en columnas angostas. */
-    .controls-grid-primary {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-
-    @media (max-width: 760px) {
-      .controls-grid-primary {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
     }
 
     .table-tags-top {
@@ -1569,7 +1549,7 @@
 </div>
 </div>
 
-<div class="controls-grid controls-grid-primary">
+<div class="controls-grid">
 <button class="control-btn primary" id="shiftControlBtn" type="button">
 <span class="control-label" id="shiftControlLabel">Iniciar shift</span>
 <span class="control-sub" id="shiftControlSub">07:00 AM – 04:00 PM</span>
@@ -1582,13 +1562,13 @@
 <span class="control-label" id="lunchControlLabel">Iniciar Lunch</span>
 <span class="control-sub" id="lunchControlTimer">00:00:00</span>
 </button>
+</div>
+<div class="secondary-controls-static">
+<div class="controls-grid">
 <button class="control-btn call" id="callControlBtn" type="button">
 <span class="control-label" id="callControlLabel">Iniciar llamada</span>
 <span class="control-sub" id="callControlTimer">00:00:00</span>
 </button>
-</div>
-<div class="secondary-controls-static">
-<div class="controls-grid controls-grid-2col">
 <button class="control-btn secondary" id="pasteCallsBtn" type="button"><span class="control-label">Pegar Llamadas</span><span class="control-sub">Importar data</span></button>
 <button class="control-btn secondary" id="addCallManualBtn" type="button"><span class="control-label">Agregar llamada</span><span class="control-sub">Manual</span></button>
 </div>
