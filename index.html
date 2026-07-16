@@ -3272,12 +3272,27 @@ function pauseForSlot(slot, dayKey = getActiveDayKey()) {
   return assignment[slotIndex] || null;
 }
 
-function slotStats(slot, dayCalls = calls, dayPauses = dayPauseIntervals(getActiveDayKey()), shiftStart = null, shiftEnd = null, dayKey = getActiveDayKey()) {
+function slotStats(slot, dayCalls = calls, dayPauses = dayPauseIntervals(getActiveDayKey()), shiftStart = null, shiftEnd = null, dayKey = getActiveDayKey(), extendStart = null, extendEnd = null) {
   const base = callDateToDate(dayKey) || new Date();
   const slotStart = dateAtTime(base, slot.start);
   const slotEnd = dateAtTime(base, slot.end);
   const durationMin = Math.max(0, (slotEnd.getTime() - slotStart.getTime()) / 60000);
   const sortedCalls = [...dayCalls].sort((a, b) => new Date(a.startISO) - new Date(b.startISO));
+
+  // Bug reportado por el usuario: el tiempo de llamadas en "Bloques del día"
+  // no coincidía con "Tiempo llamadas" de Ganancias de hoy. Causa: este
+  // cálculo solo contaba llamadas dentro de [slotStart, slotEnd] — la
+  // ventana PLANEADA del bloque. Una llamada tomada antes de tu hora de
+  // inicio planeada, o después de tu hora de fin planeada (te quedaste
+  // trabajando tarde), no caía dentro de NINGÚN bloque: invisible aquí,
+  // aunque sí se sumara en el total del día. `extendStart`/`extendEnd` (solo
+  // se pasan para el primer/último bloque de Trabajo del día, ver
+  // renderSchedule) extienden la ventana usada ÚNICAMENTE para decidir qué
+  // llamadas "pertenecen" a este bloque — nunca lo mostrado como rango del
+  // bloque (slot.start/slot.end) ni `durationMin` (así que el % usado sigue
+  // capado en 100%, no se rompe el layout).
+  const callWindowStart = (extendStart && extendStart.getTime() < slotStart.getTime()) ? extendStart : slotStart;
+  const callWindowEnd = (extendEnd && extendEnd.getTime() > slotEnd.getTime()) ? extendEnd : slotEnd;
 
   let callMin = 0;
   let acwMin = 0;
@@ -3306,7 +3321,7 @@ function slotStats(slot, dayCalls = calls, dayPauses = dayPauseIntervals(getActi
   const slotTypeLower = String(slot.type || '').toLowerCase();
 
   for (const c of sortedCalls) {
-    const overlap = overlapMinutes(slotStart, slotEnd, new Date(c.startISO), new Date(c.endISO));
+    const overlap = overlapMinutes(callWindowStart, callWindowEnd, new Date(c.startISO), new Date(c.endISO));
     callMin += overlap;
     if (c.countsAsProductive !== false) productiveCallMin += overlap;
   }
@@ -3314,7 +3329,7 @@ function slotStats(slot, dayCalls = calls, dayPauses = dayPauseIntervals(getActi
   for (let i = 1; i < sortedCalls.length; i++) {
     const prevEnd = new Date(sortedCalls[i - 1].endISO);
     const curStart = new Date(sortedCalls[i].startISO);
-    if (curStart > prevEnd) acwMin += overlapMinutes(slotStart, slotEnd, prevEnd, curStart);
+    if (curStart > prevEnd) acwMin += overlapMinutes(callWindowStart, callWindowEnd, prevEnd, curStart);
   }
 
   // Intervalos de llamadas reales, sin recortar a la ventana del slot, para
@@ -3410,7 +3425,7 @@ function slotStats(slot, dayCalls = calls, dayPauses = dayPauseIntervals(getActi
     const overlappingCalls = sortedCalls.filter(c => {
       const cs = new Date(c.startISO);
       const ce = new Date(c.endISO);
-      return ce > slotStart && cs < slotEnd;
+      return ce > callWindowStart && cs < callWindowEnd;
     });
     if (overlappingCalls.length) {
       const starts = overlappingCalls.map(c => new Date(c.startISO).getTime());
@@ -5689,11 +5704,23 @@ function renderSchedule() {
       let dayMarginWorked = 0;
       let dayMarginProductive = 0;
 
-      const slotRows = plannedSlots.map(slot => {
+      // Índices del primer y último bloque de Trabajo del día — se usan
+      // para extender la ventana de conteo de llamadas SOLO en esos dos
+      // bloques (ver slotStats()/callWindowStart/callWindowEnd), cuando de
+      // verdad empezaste antes o terminaste después de lo planeado.
+      const firstWorkIndex = plannedSlots.findIndex(s => s.type === 'Work');
+      let lastWorkIndex = -1;
+      for (let i = plannedSlots.length - 1; i >= 0; i--) {
+        if (plannedSlots[i].type === 'Work') { lastWorkIndex = i; break; }
+      }
+
+      const slotRows = plannedSlots.map((slot, slotIdx) => {
         const s = toMinutes(slot.start), e = toMinutes(slot.end);
         const active = t >= s && t < e && dayKey === todayCallDateKey();
         const done = dayKey === todayCallDateKey() ? t >= e : !!(shiftEnd && shiftEnd >= dateAtTime(callDateToDate(dayKey) || new Date(), slot.end));
-        const stats = slotStats(slot, dayCalls, dayPauses, shiftStart, shiftEnd, dayKey);
+        const extendStart = slotIdx === firstWorkIndex ? shiftStart : null;
+        const extendEnd = slotIdx === lastWorkIndex ? shiftEnd : null;
+        const stats = slotStats(slot, dayCalls, dayPauses, shiftStart, shiftEnd, dayKey, extendStart, extendEnd);
         const statusText = active ? 'Actual' : done ? 'Hecho' : 'Próximo';
         const statusClass = stats.statusTone === 'good' ? 'good' : stats.statusTone === 'warn' ? 'warn' : stats.statusTone === 'bad' ? 'bad' : '';
         const progressLabel = slot.type === 'Work'
