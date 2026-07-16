@@ -1521,7 +1521,7 @@
 </div>
 </div>
 </section>
-<details class="accordion-card" open>
+<details class="accordion-card">
 <summary>
   <div class="accordion-head">
     <h2>Ganancias del ciclo</h2>
@@ -1544,6 +1544,11 @@
 <div class="goal-badge goal-soft" id="cycleRangeBadge">Ciclo: — – —</div>
 <div class="goal-badge goal-soft" id="cyclePayDateBadge">Pago: —</div>
 </div>
+</div>
+<div class="table-tags" style="margin-top:4px;">
+<span class="tag" id="cycleWeek1ProductiveTag">Semana 1: 00:00:00</span>
+<span class="tag" id="cycleWeek2ProductiveTag">Semana 2: 00:00:00</span>
+<span class="tag good" id="cycleTotalProductiveTag">Total: 00:00:00</span>
 </div>
 </div>
 </details>
@@ -2378,7 +2383,29 @@ $0.72"></textarea>
         return d && d >= start && d <= end;
       });
       const earnings = inCycleCalls.reduce((a, c) => a + parseMoney(c.pay), 0);
-      return { start, end, payDate, earnings, callCount: inCycleCalls.length };
+
+      // Pedido del usuario: horas productivas de cada semana del ciclo (el
+      // ciclo siempre dura CYCLE_LENGTH_DAYS=14 días, sin importar en qué
+      // día de la semana calendario empiece) + el total de ambas. Semana 1
+      // = los primeros 7 días desde `start`; Semana 2 = los siguientes 7.
+      // Reutiliza productiveMinutesForDay() día por día — el mismo cálculo
+      // que ya usa "Resumen semanal", solo que agrupado distinto (por mitad
+      // de ciclo, no por semana de calendario lunes-domingo).
+      let week1ProductiveMin = 0;
+      let week2ProductiveMin = 0;
+      for (let i = 0; i < CYCLE_LENGTH_DAYS; i++) {
+        const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+        const dayKey = todayCallDateKey(d);
+        const productive = productiveMinutesForDay(dayKey);
+        if (i < 7) week1ProductiveMin += productive;
+        else week2ProductiveMin += productive;
+      }
+
+      return {
+        start, end, payDate, earnings, callCount: inCycleCalls.length,
+        week1ProductiveMin, week2ProductiveMin,
+        totalProductiveMin: week1ProductiveMin + week2ProductiveMin,
+      };
     }
 
     // Suma las ganancias del ciclo que contiene a dayKey (día activo).
@@ -5223,6 +5250,12 @@ function renderHeader() {
   if (cycleRangeEl) cycleRangeEl.textContent = `Ciclo: ${formatCallDayLabel(todayCallDateKey(cycle.start))} – ${formatCallDayLabel(todayCallDateKey(cycle.end))}${cycleViewOffset === 0 ? ' (actual)' : ''}`;
   const cyclePayEl = document.getElementById('cyclePayDateBadge');
   if (cyclePayEl) cyclePayEl.textContent = `Pago: ${formatCallDayLabel(todayCallDateKey(cycle.payDate))}`;
+  const cycleWeek1El = document.getElementById('cycleWeek1ProductiveTag');
+  if (cycleWeek1El) cycleWeek1El.textContent = `Semana 1: ${formatDuration(cycle.week1ProductiveMin * 60000)}`;
+  const cycleWeek2El = document.getElementById('cycleWeek2ProductiveTag');
+  if (cycleWeek2El) cycleWeek2El.textContent = `Semana 2: ${formatDuration(cycle.week2ProductiveMin * 60000)}`;
+  const cycleTotalEl = document.getElementById('cycleTotalProductiveTag');
+  if (cycleTotalEl) cycleTotalEl.textContent = `Total: ${formatDuration(cycle.totalProductiveMin * 60000)}`;
   // Antes esto era un solo <div class="big-meta"> con texto plano ("X
   // llamada(s) · Y completados · ACW Z"). Pedido del usuario: mostrar esta
   // info como los mismos tags/pills que ya usa "Tabla completa" (misma
