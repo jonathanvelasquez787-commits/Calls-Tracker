@@ -1778,6 +1778,11 @@
 </select>
 </div>
 <div class="note">Este modo aplica a todos los días. Los breaks/lunch se comparan contra su hora planeada, tanto en inicio como en duración.</div>
+<div class="field" style="margin-top:10px;">
+<label for="shiftAlertMinInput">Avisarme antes de mi turno (min)</label>
+<input id="shiftAlertMinInput" inputmode="numeric" min="0" step="1" type="number"/>
+</div>
+<div class="note">Aviso con sonido (mientras la pestaña esté abierta) esta cantidad de minutos antes de tu hora de inicio de hoy, si todavía no le diste a "Iniciar shift". Se repite hasta que inicies o llegue la hora. Déjalo en 0 para desactivarlo. Se guarda solo, sin necesidad de "Guardar día".</div>
 <div class="divider"></div>
 <div class="field" style="margin-bottom:4px;">
 <label style="font-weight:900;">Ciclo de pago</label>
@@ -2335,6 +2340,11 @@ $0.72"></textarea>
         // pidió que eso fuera ajustable).
         cycleAnchorDate: '2025-05-03',
         cyclePayOffsetDays: 5,
+        // Pedido del usuario: aviso con sonido X minutos antes de la hora de
+        // inicio planeada de hoy, si todavía no diste click en "Iniciar
+        // shift". Editable en Horario, global (no por día) — 0 lo desactiva.
+        // Ver checkShiftAlarm()/startShiftAlarm() más abajo.
+        alertBeforeShiftMin: 2,
       };
     }
 
@@ -2348,6 +2358,7 @@ $0.72"></textarea>
       if (typeof settings.currencyLabel !== 'string') settings.currencyLabel = fallback.currencyLabel;
       if (!/^\d{4}-\d{2}-\d{2}$/.test(String(settings.cycleAnchorDate || ''))) settings.cycleAnchorDate = fallback.cycleAnchorDate;
       if (!Number.isFinite(Number(settings.cyclePayOffsetDays)) || Number(settings.cyclePayOffsetDays) < 0) settings.cyclePayOffsetDays = fallback.cyclePayOffsetDays;
+      if (!Number.isFinite(Number(settings.alertBeforeShiftMin)) || Number(settings.alertBeforeShiftMin) < 0) settings.alertBeforeShiftMin = fallback.alertBeforeShiftMin;
     }
 
     // Texto "≈ L 123.45" para mostrar el equivalente en la moneda secundaria
@@ -2839,6 +2850,96 @@ function checkDayRollover() {
   saveStateOnly();
   render();
   return true;
+}
+
+// ---- Aviso "Conéctate ya" antes del turno ----
+// Pedido del usuario: un aviso (toast + sonido de alarma) X minutos antes de
+// la hora de inicio planeada de HOY, si todavía no le diste click a "Iniciar
+// shift". X es configurable en Horario (settings.alertBeforeShiftMin, 0 =
+// desactivado). Solo funciona con la pestaña abierta (sin Notification API
+// ni Service Worker, tal como se pidió) — se revisa en el mismo setInterval
+// del reloj que ya corre cada segundo.
+let shiftAlarmIntervalId = null;
+let shiftAlarmFiredForDate = null;
+let shiftAlarmAudioCtx = null;
+const SHIFT_ALARM_REPEAT_MS = 6000;
+
+// Beep sintetizado con Web Audio (dos tonos cortos ascendentes) — sin
+// archivo de audio externo ni petición de red, funciona completamente
+// offline/sandboxed. Si el navegador bloquea el audio por política de
+// autoplay (AudioContext arranca 'suspended' sin interacción previa del
+// usuario), se intenta reanudar; si de todos modos falla, se ignora en
+// silencio (el toast visual sigue mostrándose igual).
+function playShiftAlarmBeep() {
+  try {
+    if (!shiftAlarmAudioCtx) shiftAlarmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = shiftAlarmAudioCtx;
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    const now = ctx.currentTime;
+    [0, 0.18].forEach((offset, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = i === 0 ? 880 : 1046.5;
+      gain.gain.setValueAtTime(0.0001, now + offset);
+      gain.gain.exponentialRampToValueAtTime(0.25, now + offset + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.16);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + offset);
+      osc.stop(now + offset + 0.2);
+    });
+  } catch {}
+}
+
+function startShiftAlarm() {
+  if (shiftAlarmIntervalId) return; // ya está sonando, no duplicar el interval
+  playShiftAlarmBeep();
+  shiftAlarmIntervalId = setInterval(playShiftAlarmBeep, SHIFT_ALARM_REPEAT_MS);
+}
+
+function stopShiftAlarm() {
+  if (shiftAlarmIntervalId) {
+    clearInterval(shiftAlarmIntervalId);
+    shiftAlarmIntervalId = null;
+  }
+}
+
+// Revisa cada segundo (mismo tick que checkDayRollover/renderHeader) si hoy
+// entramos a la ventana [hora planeada − alertBeforeShiftMin, hora planeada).
+// El toast se muestra UNA sola vez por día (shiftAlarmFiredForDate); el
+// sonido se repite (startShiftAlarm) hasta que inicies el shift o llegue la
+// hora planeada (ahí se apaga y se cede el aviso al flujo ya existente de
+// "Entrada tarde").
+function checkShiftAlarm() {
+  const cfg = dayConfigFor(todayCallDateKey());
+  const alertMin = Number(settings.alertBeforeShiftMin);
+  const shiftIsLive = !!state.shiftStartedAt && !state.shiftEndedAt;
+
+  if (!cfg || cfg.off || !cfg.start || !Number.isFinite(alertMin) || alertMin <= 0 || shiftIsLive) {
+    stopShiftAlarm();
+    return;
+  }
+
+  const now = new Date();
+  const plannedStart = dateAtTime(now, formatHHMM(cfg.start));
+  const alertTime = new Date(plannedStart.getTime() - alertMin * 60000);
+  const todayKey = todayCallDateKey();
+
+  if (now >= plannedStart) {
+    stopShiftAlarm();
+    return;
+  }
+
+  if (now >= alertTime) {
+    if (shiftAlarmFiredForDate !== todayKey) {
+      shiftAlarmFiredForDate = todayKey;
+      toast(`🔔 ¡Conéctate ya! Tu turno empieza a las ${timeLabel(formatHHMM(cfg.start))}`);
+    }
+    startShiftAlarm();
+  } else {
+    stopShiftAlarm();
+  }
 }
 
 function mergeIntervals(intervals = []) {
@@ -4141,7 +4242,7 @@ function renderWeekSummary() {
     // hora planeada para hoy. Sin turno planeado (día libre) no se
     // restringe nada, para no bloquear el flujo ya existente de "día libre
     // trabajado" (ver dayIsEffectivelyOff).
-    const SHIFT_START_EARLY_GRACE_MIN = 5;
+    const SHIFT_START_EARLY_GRACE_MIN = 10;
 
     function shiftStartTooEarly() {
       // Solo aplica cuando se está por INICIAR un turno nuevo — si ya está
@@ -4359,6 +4460,10 @@ function renderWeekSummary() {
       state.shiftEndedAt = null;
       setEvent('shift', 'Shift iniciado', fmtTime(now), 'manual');
       saveAll();
+      // El aviso de "Conéctate ya" ya no tiene razón de seguir sonando —
+      // checkShiftAlarm() lo apagaría solo en el próximo tick (hasta 1s de
+      // retraso), pero apagarlo aquí de inmediato evita ese beep extra.
+      stopShiftAlarm();
 
       // Mientras no dabas click en "Iniciar shift", el fallback de
       // dayShiftBounds ya estimaba tu inicio real desde la primera llamada
@@ -4950,6 +5055,10 @@ function renderWeekSummary() {
       if (ls) ls.value = formatHHMM(cfg.lunch?.start || '13:00');
       if (ld) ld.value = cfg.lunch?.dur ?? 50;
       if (lateSelect) lateSelect.value = settings.lateArrivalMode || 'anchor';
+      // Aviso antes del turno: también es global (no por día), mismo criterio
+      // que el Ciclo de pago — se sincroniza sin importar scheduleEditDay.
+      const shiftAlertMinInput = document.getElementById('shiftAlertMinInput');
+      if (shiftAlertMinInput && document.activeElement !== shiftAlertMinInput) shiftAlertMinInput.value = settings.alertBeforeShiftMin;
       // Ciclo de pago: son settings globales (no por día de la semana), así
       // que se sincronizan siempre igual sin importar scheduleEditDay.
       ensureCurrencySettings();
@@ -5131,6 +5240,19 @@ function renderWeekSummary() {
       saveSettingsOnly();
       render();
       toast('Ciclo de pago actualizado');
+    }
+
+    // Pedido del usuario: minutos de aviso antes del turno (ver
+    // checkShiftAlarm()), ajustable desde Horario. Mismo patrón que
+    // updateCycleSettings(): se guarda solo al cambiar, sin esperar a
+    // "Guardar día". Un valor inválido o negativo simplemente no se aplica
+    // (se mantiene el valor anterior de settings, igual que cycleAnchorInput).
+    function updateShiftAlertSettings() {
+      const input = document.getElementById('shiftAlertMinInput');
+      const mins = Number(input?.value);
+      if (Number.isFinite(mins) && mins >= 0) settings.alertBeforeShiftMin = mins;
+      saveSettingsOnly();
+      toast(settings.alertBeforeShiftMin > 0 ? `Aviso configurado: ${formatMinutes(settings.alertBeforeShiftMin)} min antes de tu turno` : 'Aviso de turno desactivado');
     }
 
 
@@ -6222,6 +6344,7 @@ function render() {
     document.getElementById('dayOffInput').addEventListener('change', saveShiftWindow);
     document.getElementById('cycleAnchorInput').addEventListener('change', updateCycleSettings);
     document.getElementById('cyclePayOffsetInput').addEventListener('change', updateCycleSettings);
+    document.getElementById('shiftAlertMinInput').addEventListener('change', updateShiftAlertSettings);
     document.getElementById('daySelector').addEventListener('change', (e) => {
       const key = dayKeyFromIsoDate(e.target.value);
       if (key) setActiveDayKey(key);
@@ -6288,6 +6411,7 @@ function render() {
       // llamada duplicada a renderHeader en ese mismo tick.
       if (checkDayRollover()) return;
       renderHeader();
+      checkShiftAlarm();
     }, 1000);
     render();
   </script>
