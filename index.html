@@ -1505,8 +1505,8 @@
 <div class="helper" id="earningsConvertedText"></div>
 </div>
 <div class="goal-stack">
-<div class="goal-badge" id="goalAmountBadge">Meta $0.00</div>
-<div class="helper" id="goalAmountConvertedText" style="margin-top:-4px;"></div>
+<div class="goal-badge goal-soft" id="goalAmountBadge">Meta $0.00</div>
+<div class="goal-badge goal-soft" id="goalAmountConvertedText"></div>
 <div class="goal-badge goal-soft" id="goalMinBadge">Meta 59.0 min</div>
 </div>
 </div>
@@ -1868,14 +1868,14 @@ $0.72"></textarea>
 <label for="dayNoteCategoryInput">Categoría</label>
 <select id="dayNoteCategoryInput">
 <option value="">Sin categoría</option>
-<option value="rest">😌 Descanso</option>
-<option value="holiday">🎉 Día festivo</option>
-<option value="sick">🤒 Sick</option>
-<option value="power_outage">🔌 Power outage</option>
-<option value="internet_outage">📡 Internet outage</option>
-<option value="platform_issues">⚠️ Platform issues</option>
-<option value="burnout">🥵 Burnout</option>
-<option value="other">📝 Otro</option>
+<option value="rest">Descanso</option>
+<option value="holiday">Día festivo</option>
+<option value="sick">Sick</option>
+<option value="power_outage">Power outage</option>
+<option value="internet_outage">Internet outage</option>
+<option value="platform_issues">Platform issues</option>
+<option value="burnout">Burnout</option>
+<option value="other">Otro</option>
 </select>
 </div>
 <div class="field" style="margin-top:10px;">
@@ -3727,14 +3727,14 @@ function formatWeekRangeLabel(start, end) {
 // defaultState().dayNotes) — no altera Adherencia/Margen/Ganancias, solo el
 // tag visible en cada fila de Resumen semanal.
 const DAY_NOTE_CATEGORIES = [
-  { value: 'rest', label: 'Descanso', emoji: '😌', tagClass: '' },
-  { value: 'holiday', label: 'Día festivo', emoji: '🎉', tagClass: 'good' },
-  { value: 'sick', label: 'Sick', emoji: '🤒', tagClass: 'warn' },
-  { value: 'power_outage', label: 'Power outage', emoji: '🔌', tagClass: 'bad' },
-  { value: 'internet_outage', label: 'Internet outage', emoji: '📡', tagClass: 'bad' },
-  { value: 'platform_issues', label: 'Platform issues', emoji: '⚠️', tagClass: 'bad' },
-  { value: 'burnout', label: 'Burnout', emoji: '🥵', tagClass: 'warn' },
-  { value: 'other', label: 'Otro', emoji: '📝', tagClass: '' },
+  { value: 'rest', label: 'Descanso', tagClass: '' },
+  { value: 'holiday', label: 'Día festivo', tagClass: 'good' },
+  { value: 'sick', label: 'Sick', tagClass: 'warn' },
+  { value: 'power_outage', label: 'Power outage', tagClass: 'bad' },
+  { value: 'internet_outage', label: 'Internet outage', tagClass: 'bad' },
+  { value: 'platform_issues', label: 'Platform issues', tagClass: 'bad' },
+  { value: 'burnout', label: 'Burnout', tagClass: 'warn' },
+  { value: 'other', label: 'Otro', tagClass: '' },
 ];
 
 function dayNoteCategoryMeta(value) {
@@ -3846,7 +3846,7 @@ function renderWeekSummary() {
     // Una nota con categoría (ej. "Sick", "Power outage") pisa el status
     // genérico — es una razón más específica e intencional que "Libre"/
     // "Sin datos"/"Trabajado", así que tiene prioridad visual.
-    if (noteMeta) statusTag = `<span class="tag ${noteMeta.tagClass}">${noteMeta.emoji} ${escapeHtml(noteMeta.label)}</span>`;
+    if (noteMeta) statusTag = `<span class="tag ${noteMeta.tagClass}">${escapeHtml(noteMeta.label)}</span>`;
     else if (r.isOff) statusTag = '<span class="tag">Libre</span>';
     else if (r.isFuture) statusTag = '<span class="tag">Futuro</span>';
     else if (!r.hasShift && !r.calls) statusTag = '<span class="tag bad">Sin datos</span>';
@@ -3893,7 +3893,7 @@ function renderWeekSummary() {
     const dayLabel = WEEKDAY_LABELS[weekdayKeyForDayKey(r.dayKey)];
     const noteMeta = r.note ? dayNoteCategoryMeta(r.note.category) : null;
     let statusTag = '';
-    if (noteMeta) statusTag = `<span class="tag ${noteMeta.tagClass}">${noteMeta.emoji} ${escapeHtml(noteMeta.label)}</span>`;
+    if (noteMeta) statusTag = `<span class="tag ${noteMeta.tagClass}">${escapeHtml(noteMeta.label)}</span>`;
     else if (r.isOff) statusTag = '<span class="tag">Libre</span>';
     else if (r.isFuture) statusTag = '<span class="tag">Futuro</span>';
     else if (!r.hasShift && !r.calls) statusTag = '<span class="tag bad">Sin datos</span>';
@@ -5235,7 +5235,16 @@ function renderHeader() {
   document.getElementById('goalPctBadge').textContent = `${Math.round(goalPct)}%`;
   document.getElementById('goalAmountBadge').textContent = `Meta ${money(goalUsd)}`;
   const goalAmountConvertedEl = document.getElementById('goalAmountConvertedText');
-  if (goalAmountConvertedEl) goalAmountConvertedEl.textContent = convertedAmountText(goalUsd);
+  if (goalAmountConvertedEl) {
+    const goalConvertedText = convertedAmountText(goalUsd);
+    goalAmountConvertedEl.textContent = goalConvertedText;
+    // Sin tasa de cambio/símbolo configurado, convertedAmountText() devuelve
+    // ''. Como texto plano eso era invisible sin más; ahora que es una
+    // píldora (.goal-badge.goal-soft, ver Fix), un texto vacío se vería
+    // como una caja verde vacía — se oculta el elemento por completo en vez
+    // de dejarla ahí sin contenido.
+    goalAmountConvertedEl.style.display = goalConvertedText ? '' : 'none';
+  }
   document.getElementById('goalMinBadge').textContent = `Meta ${formatMinutes(goalMin)} min`;
   document.getElementById('remainingText').textContent = `${formatMinutes(remainingMin)} min restantes`;
 
