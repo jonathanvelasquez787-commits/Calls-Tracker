@@ -1691,6 +1691,10 @@
 <label for="earningsGoalInput">Meta en dólares</label>
 <input id="earningsGoalInput" inputmode="decimal" min="0" step="0.01" type="number"/>
 </div>
+<div class="field" id="goalCurrencyField" style="display:none;">
+<label for="goalCurrencyInput" id="goalCurrencyLabel">Meta en tu moneda</label>
+<input id="goalCurrencyInput" inputmode="decimal" min="0" step="0.01" type="number"/>
+</div>
 </div>
 <div class="goal-fields">
 <div class="field">
@@ -4100,8 +4104,10 @@ function renderWeekSummary() {
       syncingGoals = true;
       const minInput = document.getElementById('productiveGoalInput');
       const usdInput = document.getElementById('earningsGoalInput');
+      const currencyInput = document.getElementById('goalCurrencyInput');
       let minutes = Number(minInput.value);
       let dollars = Number(usdInput.value);
+      let currencyAmount = Number(currencyInput?.value);
       if (!Number.isFinite(minutes)) minutes = settings.productiveGoalMin;
       if (!Number.isFinite(dollars)) dollars = settings.earningsGoal;
       // Antes usaba la constante fija RATE (0.12 quemado en el código). Pedido
@@ -4109,14 +4115,26 @@ function renderWeekSummary() {
       // — ahora la conversión de la meta usa settings.rate (editable, ver
       // rateInput/updateRate), con RATE solo como valor semilla inicial.
       const rate = Number(settings.rate) > 0 ? Number(settings.rate) : RATE;
+      // Pedido del usuario: "Meta en tu moneda" (ej. Lempiras), sincronizada
+      // en ambos sentidos con Meta en dólares/minutos usando la tasa de
+      // cambio ya configurada en Metas (settings.exchangeRate). Sin tasa de
+      // cambio configurada (0), esta fuente no hace nada — el campo ni
+      // siquiera se muestra en ese caso (ver formatGoalFields()).
+      const exchangeRate = Number(settings.exchangeRate) > 0 ? Number(settings.exchangeRate) : 0;
       if (source === 'minutes') dollars = minutes * rate;
       if (source === 'dollars') minutes = dollars / rate;
+      if (source === 'currency' && exchangeRate > 0) {
+        if (!Number.isFinite(currencyAmount)) currencyAmount = dollars * exchangeRate;
+        dollars = currencyAmount / exchangeRate;
+        minutes = dollars / rate;
+      }
       settings.productiveGoalMin = Number(minutes);
       settings.earningsGoal = Number(dollars);
       state.productiveGoalMin = settings.productiveGoalMin;
       state.earningsGoal = settings.earningsGoal;
       minInput.value = formatMinutes(settings.productiveGoalMin);
       usdInput.value = settings.earningsGoal.toFixed(2);
+      if (currencyInput && exchangeRate > 0) currencyInput.value = (settings.earningsGoal * exchangeRate).toFixed(2);
       saveStateOnly();
       saveSettingsOnly();
       syncingGoals = false;
@@ -4917,6 +4935,24 @@ function renderWeekSummary() {
       if (rateInput && document.activeElement !== rateInput) rateInput.value = Number(settings.rate || RATE).toFixed(2);
       if (exchangeInput && document.activeElement !== exchangeInput) exchangeInput.value = Number(settings.exchangeRate || 0).toFixed(2);
       if (currencyInput && document.activeElement !== currencyInput) currencyInput.value = String(settings.currencyLabel || '');
+      // Pedido del usuario: "Meta en tu moneda" en el modal Metas — oculto
+      // hasta que haya tasa de cambio Y símbolo de moneda configurados
+      // (mismo criterio que ya usa convertedAmountText() para ocultar el
+      // helper "≈ L..." del header). Se revisa en cada render(), así que
+      // aparece/desaparece solo en cuanto se configura la moneda, sin
+      // recargar la página.
+      const goalCurrencyField = document.getElementById('goalCurrencyField');
+      const goalCurrencyInput = document.getElementById('goalCurrencyInput');
+      const goalCurrencyLabelEl = document.getElementById('goalCurrencyLabel');
+      const currencyLabelTrimmed = String(settings.currencyLabel || '').trim();
+      const hasCurrency = Number(settings.exchangeRate) > 0 && !!currencyLabelTrimmed;
+      if (goalCurrencyField) goalCurrencyField.style.display = hasCurrency ? '' : 'none';
+      if (hasCurrency) {
+        if (goalCurrencyLabelEl) goalCurrencyLabelEl.textContent = `Meta en ${currencyLabelTrimmed}`;
+        if (goalCurrencyInput && document.activeElement !== goalCurrencyInput) {
+          goalCurrencyInput.value = (Number(settings.earningsGoal || 0) * Number(settings.exchangeRate)).toFixed(2);
+        }
+      }
       syncEmojiPickerSelection('emojiPickerMetas', String(settings.userEmoji || ''));
     }
 
@@ -6304,6 +6340,7 @@ function render() {
     });
     document.getElementById('productiveGoalInput').addEventListener('change', () => syncGoals('minutes'));
     document.getElementById('earningsGoalInput').addEventListener('change', () => syncGoals('dollars'));
+    document.getElementById('goalCurrencyInput').addEventListener('change', () => syncGoals('currency'));
     document.getElementById('userNameInput').addEventListener('change', (e) => {
       settings.userName = e.target.value.trim().slice(0, 40);
       saveSettingsOnly();
