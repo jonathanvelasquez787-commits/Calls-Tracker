@@ -4000,17 +4000,36 @@ let weekViewOffset = 0; // 0 = semana actual, -1 = semana pasada, +1 = próxima
 // activo", igual que weekViewOffset es independiente de él.
 let cycleViewOffset = 0;
 
-// Lunes (00:00) de la semana que contiene `date`.
-function startOfWeek(date = new Date()) {
-  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const day = d.getDay(); // 0=Dom..6=Sáb
-  const diffToMonday = (day === 0 ? -6 : 1 - day);
-  d.setDate(d.getDate() + diffToMonday);
-  return d;
+// Pedido del usuario: "Resumen semanal" usaba semanas Lunes-Domingo fijas,
+// sin relación con cuándo arranca de verdad el ciclo de pago de 14 días
+// (cycleAnchorDate/cyclePayOffsetDays, ver Horario). Ahora cada "semana" es
+// un bloque de 7 días anclado a esa misma fecha — si el ciclo arranca
+// sábado, las semanas van de sábado a viernes, no de lunes a domingo.
+// weekIndex puede ser negativo (fechas antes del ancla) sin problema: sirve
+// tanto para calcular el inicio de la semana (startOfCycleWeek) como para
+// saber si es la 1ra o 2da mitad del ciclo (cycleWeekNumberForWeekStart),
+// ya que cada ciclo de 14 días equivale a exactamente 2 de estos bloques.
+function startOfCycleWeek(date = new Date()) {
+  const anchor = cycleAnchorDate();
+  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.floor((target.getTime() - anchor.getTime()) / 86400000);
+  const weekIndex = Math.floor(diffDays / 7);
+  return new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate() + weekIndex * 7);
+}
+
+// Semana 1 o 2 dentro de su ciclo de 14 días, a partir del inicio de esa
+// semana (ya alineado por startOfCycleWeek). Mismo cálculo de weekIndex que
+// startOfCycleWeek, para no duplicar la lógica de redondeo/signo.
+function cycleWeekNumberForWeekStart(weekStartDate) {
+  const anchor = cycleAnchorDate();
+  const diffDays = Math.round((weekStartDate.getTime() - anchor.getTime()) / 86400000);
+  const weekIndex = Math.floor(diffDays / 7);
+  const mod = ((weekIndex % 2) + 2) % 2;
+  return mod === 0 ? 1 : 2;
 }
 
 function weekDaysForOffset(offset = weekViewOffset) {
-  const base = startOfWeek(new Date());
+  const base = startOfCycleWeek(new Date());
   base.setDate(base.getDate() + offset * 7);
   const days = [];
   for (let i = 0; i < 7; i++) {
@@ -4139,8 +4158,9 @@ function renderWeekSummary() {
 
   const summary = weekSummaryForOffset(weekViewOffset);
   const rangeLabel = formatWeekRangeLabel(summary.weekStart, summary.weekEnd);
+  const cycleWeekLabel = `Semana ${cycleWeekNumberForWeekStart(summary.weekStart)} del ciclo`;
   if (subtitle) {
-    subtitle.textContent = weekViewOffset === 0 ? `Semana actual · ${rangeLabel}` : rangeLabel;
+    subtitle.textContent = `${weekViewOffset === 0 ? `Semana actual · ${rangeLabel}` : rangeLabel} · ${cycleWeekLabel}`;
   }
 
   const rowsHtml = summary.days.map(r => {
