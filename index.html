@@ -3947,13 +3947,30 @@ function computeMinuteAdherence({ plannedSlots, actualIntervals, realStartMin, r
   return { total, exceptionMinutes, adherentMinutes, pct };
 }
 
+// Slots planeados ORIGINALES (sin correr, ver decisión de diseño arriba)
+// para un día — aplica el mismo ajuste que getEffectiveScheduleForDay() para
+// "día libre trabajado" (dayIsEffectivelyOff): si el horario dice que hoy es
+// libre pero SÍ hubo actividad real, se arman los bloques igual que un día
+// laboral normal, en vez de devolver [] (que es lo que hacía buildPlannedSlots
+// con cfg.off=true sin este ajuste).
+// Bug encontrado al agregar la adherencia por bloque: minuteAdherenceForDay()
+// llamaba a buildPlannedSlots(cfg) directo, sin este ajuste — así que en un
+// día libre trabajado, la adherencia minuto a minuto se caía en silencio al
+// promedio de checkpoints (el sistema viejo), justo el caso que más la
+// necesita. Extraído a su propia función para que ambas (minuteAdherenceForDay
+// y la nueva slotMinuteAdherence) usen siempre el mismo ajuste, sin duplicar.
+function originalPlannedSlotsForDay(dayKey) {
+  const cfg = dayConfigFor(dayKey);
+  const effectiveCfg = (cfg && cfg.off && !dayIsEffectivelyOff(dayKey)) ? { ...cfg, off: false } : cfg;
+  return buildPlannedSlots(effectiveCfg);
+}
+
 // Arma los inputs de computeMinuteAdherence() a partir del estado real de la
 // app para un día dado — separado de dayAdherence() para poder probarse (y
 // reutilizarse) sin depender de todo el flujo de checkpoints.
 function minuteAdherenceForDay(dayKey, bounds) {
   const normalized = callDateKeyFromValue(dayKey);
-  const cfg = dayConfigFor(normalized);
-  const plannedRaw = buildPlannedSlots(cfg); // SIEMPRE sin correr, ver nota de diseño arriba
+  const plannedRaw = originalPlannedSlotsForDay(normalized);
   if (!plannedRaw.length) return null;
 
   const plannedSlots = plannedRaw.map(s => ({ type: s.type.toLowerCase(), startMin: toMinutes(s.start), endMin: toMinutes(s.end) }));
@@ -3967,6 +3984,43 @@ function minuteAdherenceForDay(dayKey, bounds) {
   const rangeStart = plannedSlots[0].startMin;
   const lastSlotEnd = plannedSlots[plannedSlots.length - 1].endMin;
   const rangeEnd = (isToday && !bounds.end) ? Math.min(minuteOfDay(new Date()), lastSlotEnd) : lastSlotEnd;
+
+  const graceMin = Number.isFinite(Number(settings.adherenceGraceMin)) && Number(settings.adherenceGraceMin) >= 0 ? Number(settings.adherenceGraceMin) : 3;
+  return computeMinuteAdherence({ plannedSlots, actualIntervals, realStartMin, realEndMin, rangeStart, rangeEnd, graceMin });
+}
+
+// Pedido del usuario: cada bloque individual ("Bloques del día") lleva su
+// PROPIA adherencia minuto a minuto, además (aparte) del % global de arriba
+// (que sigue viniendo de minuteAdherenceForDay(), sin cambios). Mismo motor
+// (computeMinuteAdherence), acotado a la ventana de un solo bloque:
+// - Bloque ya terminado (día pasado, o ya pasó su hora hoy): se mide
+//   completo, capado en su propio fin.
+// - Bloque EN CURSO hoy: se mide hasta "ahora" — como render() corre cada
+//   segundo, este % se actualiza solo, en vivo, sin lógica extra.
+// - Bloque FUTURO (su hora de inicio aún no llega): null, no se penaliza de
+//   más por algo que todavía no pasa.
+// `originalSlot` debe venir de originalPlannedSlotsForDay() (mismo índice
+// que el slot mostrado en pantalla desde getEffectiveScheduleForDay() — ver
+// renderSchedule(), que empareja ambas listas por posición ya que
+// getEffectiveScheduleForDay() preserva el orden y solo corre los horarios).
+function slotMinuteAdherence(dayKey, originalSlot, bounds) {
+  const normalized = callDateKeyFromValue(dayKey);
+  const plannedRaw = originalPlannedSlotsForDay(normalized);
+  if (!plannedRaw.length) return null;
+
+  const plannedSlots = plannedRaw.map(s => ({ type: s.type.toLowerCase(), startMin: toMinutes(s.start), endMin: toMinutes(s.end) }));
+  const isToday = normalized === todayCallDateKey();
+  const minuteOfDay = (date) => date.getHours() * 60 + date.getMinutes();
+
+  const actualIntervals = dayPauseIntervals(normalized).map(p => ({ type: p.type, startMin: minuteOfDay(p.start), endMin: minuteOfDay(p.end) }));
+  const realStartMin = bounds.start ? minuteOfDay(bounds.start) : null;
+  const realEndMin = bounds.end ? minuteOfDay(bounds.end) : null;
+
+  const slotStartMin = toMinutes(originalSlot.start);
+  const slotEndMin = toMinutes(originalSlot.end);
+  const rangeStart = slotStartMin;
+  const rangeEnd = (isToday && !bounds.end) ? Math.min(minuteOfDay(new Date()), slotEndMin) : slotEndMin;
+  if (!(rangeEnd > rangeStart)) return null; // el bloque aún no empieza
 
   const graceMin = Number.isFinite(Number(settings.adherenceGraceMin)) && Number(settings.adherenceGraceMin) >= 0 ? Number(settings.adherenceGraceMin) : 3;
   return computeMinuteAdherence({ plannedSlots, actualIntervals, realStartMin, realEndMin, rangeStart, rangeEnd, graceMin });
@@ -6242,6 +6296,14 @@ function renderSchedule() {
       const subtitle = document.getElementById('scheduleSubtitle');
       const dayCfg = dayConfigFor(dayKey);
       const plannedSlots = getEffectiveScheduleForDay(dayKey);
+      // Slots ORIGINALES (sin correr) para la adherencia por bloque — mismo
+      // orden que plannedSlots (getEffectiveScheduleForDay preserva orden e
+      // índices, solo corre horarios en modo 'shift'), así que se pueden
+      // emparejar por posición (slotIdx) más abajo. bounds se arma una sola
+      // vez aquí para no llamar dayShiftBounds() de nuevo (ya se desestructuró
+      // arriba en shiftStart/shiftEnd/live/estimated).
+      const originalPlannedSlots = originalPlannedSlotsForDay(dayKey);
+      const bounds = { start: shiftStart, end: shiftEnd, live, estimated };
       if (subtitle) {
         subtitle.textContent = dayIsEffectivelyOff(dayKey)
           ? 'Día libre según tu horario semanal.'
@@ -6330,6 +6392,20 @@ function renderSchedule() {
           }
         }
 
+        // Pedido del usuario: cada bloque lleva su PROPIA adherencia minuto a
+        // minuto, aparte del % global de arriba (adherenceBadge, sin cambios).
+        // originalPlannedSlots[slotIdx] es el slot SIN correr correspondiente
+        // (mismo índice); null si el bloque todavía no empieza (ver
+        // slotMinuteAdherence) — en ese caso no se muestra nada, igual que
+        // marginLineHtml no se muestra para bloques de Trabajo sin actividad.
+        let slotAdherenceLineHtml = '';
+        const slotAdherence = slotMinuteAdherence(dayKey, originalPlannedSlots[slotIdx] || slot, bounds);
+        if (slotAdherence) {
+          const tone = slotAdherence.pct >= 90 ? 'good' : slotAdherence.pct >= 70 ? 'warn' : 'bad';
+          const text = `Adherencia bloque: ${slotAdherence.pct}% (${slotAdherence.adherentMinutes}/${slotAdherence.total} min)`;
+          slotAdherenceLineHtml = `<div class="slot-status ${tone}" style="margin-top:4px;">${escapeHtml(text)}</div>`;
+        }
+
         return `
           <div class="slot ${active ? 'active' : ''} ${done ? 'done' : ''}">
             <div>
@@ -6345,6 +6421,7 @@ function renderSchedule() {
               <div class="slot-status ${statusClass}">${escapeHtml(stats.status)}</div>
               <div class="meta">${progressLabel}</div>
               ${marginLineHtml}
+              ${slotAdherenceLineHtml}
             </div>
             <div class="type">${slot.type}</div>
           </div>
