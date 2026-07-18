@@ -3970,15 +3970,29 @@ function originalPlannedSlotsForDay(dayKey) {
 // reutilizarse) sin depender de todo el flujo de checkpoints.
 function minuteAdherenceForDay(dayKey, bounds) {
   const normalized = callDateKeyFromValue(dayKey);
+  const isToday = normalized === todayCallDateKey();
+  // Bug reportado por el usuario: sin turno iniciado (bounds.start null),
+  // realStartMin quedaba en null, y actualStateAt() trataba "null" como "sin
+  // restricción" — asumiendo 'work' para CUALQUIER minuto, como si hubieras
+  // estado presente desde siempre. Debe ser lo contrario: sin dato real de
+  // inicio, no hay minutos que medir todavía (hoy) o se falló el día
+  // completo (pasado) — nunca "se asume trabajo por defecto". Hoy en la
+  // práctica dayAdherence() ya filtra este caso antes de llamar aquí, pero
+  // se blinda igual por si se reutiliza esta función en otro lado.
+  if (!bounds.start && isToday) return null;
+
   const plannedRaw = originalPlannedSlotsForDay(normalized);
   if (!plannedRaw.length) return null;
 
   const plannedSlots = plannedRaw.map(s => ({ type: s.type.toLowerCase(), startMin: toMinutes(s.start), endMin: toMinutes(s.end) }));
-  const isToday = normalized === todayCallDateKey();
   const minuteOfDay = (date) => date.getHours() * 60 + date.getMinutes();
 
   const actualIntervals = dayPauseIntervals(normalized).map(p => ({ type: p.type, startMin: minuteOfDay(p.start), endMin: minuteOfDay(p.end) }));
-  const realStartMin = bounds.start ? minuteOfDay(bounds.start) : null;
+  // Infinity (no null) cuando no hay turno real: fuerza que TODO minuto se
+  // trate como "no presente" (ver computeMinuteAdherence/actualStateAt),
+  // reflejando el mismo fallo que ya marca dayAdherence() para el día
+  // completo (0%) en vez de asumir trabajo por defecto.
+  const realStartMin = bounds.start ? minuteOfDay(bounds.start) : Infinity;
   const realEndMin = bounds.end ? minuteOfDay(bounds.end) : null;
 
   const rangeStart = plannedSlots[0].startMin;
@@ -4005,15 +4019,29 @@ function minuteAdherenceForDay(dayKey, bounds) {
 // getEffectiveScheduleForDay() preserva el orden y solo corre los horarios).
 function slotMinuteAdherence(dayKey, originalSlot, bounds) {
   const normalized = callDateKeyFromValue(dayKey);
+  const isToday = normalized === todayCallDateKey();
+  // Bug reportado por el usuario: "la adherencia está mal si no he empezado
+  // shift". Causa: con bounds.start null (sin turno iniciado), realStartMin
+  // quedaba en null, y actualStateAt() interpretaba "null" como "sin
+  // restricción" en vez de "nunca estuviste presente" — así que CUALQUIER
+  // bloque cuya hora planeada ya hubiera pasado según el reloj (aunque
+  // nunca le dieras click a "Iniciar shift") se marcaba como 'work' por
+  // defecto, mostrando una adherencia buena/alta que no correspondía a la
+  // realidad. Ahora: hoy sin turno iniciado → null (nada que medir
+  // todavía, ni bueno ni malo). Día pasado sin turno → más abajo,
+  // realStartMin se vuelve Infinity en vez de null, forzando que TODO el
+  // bloque cuente como "no presente" — mismo criterio de fallo que ya usa
+  // dayAdherence() para el día completo (0%), no una asunción optimista.
+  if (!bounds.start && isToday) return null;
+
   const plannedRaw = originalPlannedSlotsForDay(normalized);
   if (!plannedRaw.length) return null;
 
   const plannedSlots = plannedRaw.map(s => ({ type: s.type.toLowerCase(), startMin: toMinutes(s.start), endMin: toMinutes(s.end) }));
-  const isToday = normalized === todayCallDateKey();
   const minuteOfDay = (date) => date.getHours() * 60 + date.getMinutes();
 
   const actualIntervals = dayPauseIntervals(normalized).map(p => ({ type: p.type, startMin: minuteOfDay(p.start), endMin: minuteOfDay(p.end) }));
-  const realStartMin = bounds.start ? minuteOfDay(bounds.start) : null;
+  const realStartMin = bounds.start ? minuteOfDay(bounds.start) : Infinity;
   const realEndMin = bounds.end ? minuteOfDay(bounds.end) : null;
 
   const slotStartMin = toMinutes(originalSlot.start);
