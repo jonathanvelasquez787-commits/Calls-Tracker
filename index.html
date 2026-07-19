@@ -1560,8 +1560,16 @@
          en .chip, sin cambios), pero la fila completa si necesita más
          espacio simplemente baja una línea — se ven los 4 sin gesto
          alguno. Se anula el overflow-x/fade de escritorio (ya no aplica
-         al no haber scroll) para que no quede un desvanecido colgado. */
-      .chips {
+         al no haber scroll) para que no quede un desvanecido colgado.
+         Selector reforzado a ".chips.is-scrollable" (en vez de solo
+         ".chips") porque, si updateChipsScrollHint() llega a agregar la
+         clase is-scrollable en mobile, ".chips.is-scrollable" (2 clases,
+         fuera de este media query) tiene MÁS especificidad que ".chips"
+         sola (1 clase) — y gana sin importar que esté fuera del media
+         query, dejando el fade de escritorio colgado. Con el mismo par de
+         clases aquí, la especificidad empata y gana esta regla por venir
+         después en la hoja de estilos. */
+      .chips, .chips.is-scrollable {
         margin-top: 10px;
         gap: 6px;
         flex-wrap: wrap;
@@ -2917,41 +2925,6 @@ function callImportFlag(c) {
   }
   return { cls: 'imported-historic', label: 'Importación histórica' };
 }
-
-function availableCallDates(sourceCalls = calls) {
-  return [...new Set(sourceCalls.map(c => callDateKeyFromValue(c.callDate)).filter(Boolean))]
-    .sort((a, b) => callDateToDate(a) - callDateToDate(b));
-}
-
-// Mejora del backlog: el selector de "Día activo" solo listaba días con
-// llamadas importadas (availableCallDates()). Un día donde solo iniciaste o
-// terminaste turno (o tomaste un break/lunch) sin nunca importar llamadas
-// ese día no tenía ninguna fuente que lo agregara a la lista — no aparecía
-// en el dropdown salvo que en ese momento fuera "Hoy" o ya fuera el día
-// activo (ej. llegaste ahí clickeando una fila del Resumen semanal). En
-// cuanto navegabas a otro día, ese día "se perdía" del selector y solo se
-// podía volver a alcanzar desde el Resumen semanal. Esta función une tres
-// fuentes de actividad real: llamadas (igual que antes), eventos de tipo
-// 'shift' (Iniciar/Finalizar shift) y pauseHistory (Break/Lunch tomados).
-// availableCallDates() no se toca — sigue disponible tal cual por si algo
-// más la necesita basada solo en llamadas.
-function availableActivityDays(sourceCalls = calls, sourceEvents = state.events, sourcePauses = state.pauseHistory) {
-  const set = new Set(availableCallDates(sourceCalls));
-  (sourceEvents || []).forEach(e => {
-    if (e && e.type === 'shift' && e.ts) {
-      const key = todayCallDateKey(new Date(e.ts));
-      if (key) set.add(key);
-    }
-  });
-  (sourcePauses || []).forEach(p => {
-    if (p && p.startedAt) {
-      const key = todayCallDateKey(new Date(p.startedAt));
-      if (key) set.add(key);
-    }
-  });
-  return [...set].sort((a, b) => callDateToDate(a) - callDateToDate(b));
-}
-
 
 // Si el día activo guardado quedó en un calendario anterior a hoy (sesión
 // vieja dejada abierta, o la pestaña siguió abierta y cruzó la medianoche
@@ -6952,6 +6925,15 @@ function render() {
       if (e.target.closest('[data-day-note-edit]')) return;
       const dayKey = row.getAttribute('data-week-day');
       if (!dayKey) return;
+      // Pedido del usuario (backlog): clickear un día FUTURO navegaba en
+      // silencio, sin ninguna señal de que ese día todavía no llega (se ve
+      // vacío/"Futuro", pero sin explicación). Mismo criterio que ya usa
+      // weekSummaryForOffset() para marcar isFuture. No se bloquea la
+      // navegación, solo se avisa.
+      const dateObj = callDateToDate(dayKey);
+      if (dateObj && dateObj > todayRange()) {
+        toast('📅 Ese día todavía no llega — vas a ver un día futuro sin datos.');
+      }
       setActiveDayKey(dayKey);
       const earningsTitle = document.getElementById('earningsSectionTitle');
       if (earningsTitle) earningsTitle.scrollIntoView({ behavior: 'smooth', block: 'start' });
