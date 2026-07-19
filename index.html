@@ -245,6 +245,8 @@
       font-weight: 850;
       letter-spacing: -.06em;
       line-height: 1;
+      cursor: pointer;
+      user-select: none;
     }
 
     .date { color: var(--muted); font-size: 13px; margin-top: 6px; }
@@ -2350,6 +2352,12 @@ $0.72"></textarea>
     let settings = loadSettings();
     ensureCurrencySettings();
     let syncingGoals = false;
+    // Pedido del usuario: la hora es clickeable — al tocarla se oculta
+    // (muestra un placeholder enmascarado en vez del valor real) y al volver
+    // a tocarla se muestra de nuevo. Visible por defecto. Vive en memoria,
+    // no en localStorage — se resetea a visible en cada carga de página, a
+    // propósito (no es una preferencia persistente, solo un toggle rápido).
+    let clockTimeVisible = true;
 
     // Toma un objeto de "state" crudo (de localStorage o de un archivo JSON
     // importado) y aplica el mismo merge + migración de ids que ya hacía
@@ -5924,7 +5932,7 @@ function renderHeader() {
   const shiftBounds = dayShiftBounds(dayKey);
   const hasShift = !!shiftBounds.start;
 
-  document.getElementById('clockNow').textContent = fmtTime(now);
+  document.getElementById('clockNow').textContent = clockTimeVisible ? fmtTime(now) : '••:••:••';
   document.getElementById('clockDate').textContent = fmtDate(now);
   document.getElementById('stateText').textContent = currentStateLabel();
 
@@ -6967,6 +6975,10 @@ function render() {
     });
 
     document.getElementById('shiftControlBtn').addEventListener('click', toggleShift);
+    document.getElementById('clockNow').addEventListener('click', () => {
+      clockTimeVisible = !clockTimeVisible;
+      renderHeader();
+    });
     document.getElementById('scheduleMiniBtn').addEventListener('click', () => { scheduleEditDay = weekdayKeyForDayKey(getActiveDayKey()); syncShiftModalFields(); openModal('shiftModal'); });
     document.getElementById('copyDayToAllBtn').addEventListener('click', copyDayToAll);
     document.getElementById('confirmModalOkBtn').addEventListener('click', () => {
