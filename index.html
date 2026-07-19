@@ -453,6 +453,94 @@
       padding: 0;
     }
 
+    /* Pedido del usuario: la sección de avisos/Adherencia en Horario (llegada
+       tarde, aviso de turno, aviso de Break/Lunch, ventana de gracia) se veía
+       como una pared plana de campos + párrafos largos, todos del mismo peso
+       visual, sin agrupar — "se ve feo y no se entiende". Se agrupa en
+       tarjetas (.alert-group) con encabezado propio (ícono + título corto,
+       .alert-group-head) y una sola nota corta al final (.alert-hint) en vez
+       de un párrafo largo por campo — el detalle fino que antes vivía en esos
+       párrafos se resume a lo esencial, ya que el nombre del campo + su
+       agrupación visual comunican la mayor parte por sí solos. */
+    .alert-group {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255,255,255,.025);
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .alert-group-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .alert-group-icon {
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .alert-group-title {
+      font-weight: 900;
+      font-size: 14px;
+      letter-spacing: -.01em;
+      color: var(--text);
+    }
+
+    .alert-fields-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .alert-mini-field {
+      display: grid;
+      gap: 4px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.03);
+    }
+
+    .alert-mini-field label {
+      color: var(--muted);
+      font-size: 11.5px;
+      line-height: 1.25;
+    }
+
+    .alert-mini-field input {
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 800;
+      padding: 0;
+      width: 100%;
+    }
+
+    .alert-select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 13.5px;
+      padding: 10px 12px;
+      outline: none;
+    }
+
+    .alert-hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
     /* Selector de emojis (grid de botones) para el nombre del usuario: se usa
        tanto en el popup de bienvenida (onboardingModal) como en Metas, junto
        al input de texto de emoji — el input de texto sigue existiendo para
@@ -1433,6 +1521,7 @@
     @media (max-width: 760px) {
       .app { padding: 12px; }
       .goal-fields { grid-template-columns: 1fr; }
+      .alert-fields-row { grid-template-columns: 1fr; }
       .hero, .card, .table-card, .list-card, .mini { padding: 14px; }
       .hero { margin-bottom: 10px; }
       .brand { padding: 6px 10px; font-size: 10.5px; }
@@ -1776,35 +1865,49 @@
 <input id="lunchDurInput" inputmode="numeric" min="0" type="number"/>
 </div>
 </div>
-<div class="field" style="margin-top:10px;">
-<label for="lateArrivalModeInput">Si llegas tarde a tu turno...</label>
-<select id="lateArrivalModeInput">
+<div class="alert-group">
+<div class="alert-group-head">
+<span class="alert-group-icon">⏱️</span>
+<span class="alert-group-title">Si llegas tarde a tu turno</span>
+</div>
+<select class="alert-select" id="lateArrivalModeInput">
 <option value="anchor">La hora de fin no se mueve (ese tiempo se pierde)</option>
 <option value="shift">Se corre todo el turno esa misma cantidad de tiempo</option>
 </select>
+<p class="alert-hint">Aplica a todos los días. Solo afecta cómo se ve "Bloques del día" — no cambia tu Adherencia.</p>
 </div>
-<div class="note">Este modo aplica a todos los días. Los breaks/lunch se comparan contra su hora planeada, tanto en inicio como en duración.</div>
-<div class="field" style="margin-top:10px;">
-<label for="shiftAlertMinInput">Avisarme antes de mi turno (min)</label>
+<div class="alert-group">
+<div class="alert-group-head">
+<span class="alert-group-icon">🔔</span>
+<span class="alert-group-title">Avisos con sonido</span>
+</div>
+<div class="alert-fields-row">
+<div class="alert-mini-field">
+<label for="shiftAlertMinInput">Antes de mi turno (min)</label>
 <input id="shiftAlertMinInput" inputmode="numeric" min="0" step="1" type="number"/>
 </div>
-<div class="note">Aviso con sonido (mientras la pestaña esté abierta) esta cantidad de minutos antes de tu hora de inicio de hoy, si todavía no le diste a "Iniciar shift". Se repite hasta que inicies o llegue la hora. Déjalo en 0 para desactivarlo. Se guarda solo, sin necesidad de "Guardar día".</div>
-<div class="goal-fields" style="margin-top:10px;">
-<div class="field">
-<label for="breakAlertMinInput">Avisarme antes de mi Break/Lunch (min)</label>
+<div class="alert-mini-field">
+<label for="breakAlertMinInput">Antes de Break/Lunch (min)</label>
 <input id="breakAlertMinInput" inputmode="numeric" min="0" step="1" type="number"/>
 </div>
-<div class="field">
-<label for="breakEndAlertMinInput">Avisarme antes de que termine (min)</label>
+<div class="alert-mini-field">
+<label for="breakEndAlertMinInput">Antes de que termine (min)</label>
 <input id="breakEndAlertMinInput" inputmode="numeric" min="0" step="1" type="number"/>
 </div>
 </div>
-<div class="note">Mismos avisos con sonido, pero para tus Breaks/Lunch — independientes del de turno. El primero avisa antes de que empiece un Break/Lunch planeado (aunque todavía no lo inicies); el segundo avisa cuando ya casi se acaba un Break/Lunch que ya tienes en curso (según su duración planeada). Ambos en 0 desactivan ese aviso. Se guardan solos.</div>
-<div class="field" style="margin-top:10px;">
-<label for="adherenceGraceMinInput">Ventana de gracia para Adherencia (min)</label>
+<p class="alert-hint">Suenan mientras la pestaña esté abierta, si aún no le diste al botón correspondiente. 0 = desactivado. Se guardan solos.</p>
+</div>
+<div class="alert-group">
+<div class="alert-group-head">
+<span class="alert-group-icon">🎯</span>
+<span class="alert-group-title">Ventana de gracia — Adherencia</span>
+</div>
+<div class="alert-mini-field">
+<label for="adherenceGraceMinInput">Minutos de gracia</label>
 <input id="adherenceGraceMinInput" inputmode="numeric" min="0" step="1" type="number"/>
 </div>
-<div class="note">La Adherencia (en "Bloques del día") ahora se calcula minuto a minuto: compara tu estado real (Trabajo/Break/Lunch) contra el planeado en cada minuto del turno. Esta ventana perdona desvíos pequeños alrededor de cada transición del horario (ej. empezar un break unos minutos tarde) — 0 = cualquier desvío penaliza de inmediato. Se guarda solo.</div>
+<p class="alert-hint">"Bloques del día" calcula tu Adherencia minuto a minuto. Esta ventana perdona desvíos chicos cerca de cada transición del horario (ej. empezar un break unos minutos tarde). 0 = cualquier desvío penaliza de inmediato.</p>
+</div>
 <div class="divider"></div>
 <div class="field" style="margin-bottom:4px;">
 <label style="font-weight:900;">Ciclo de pago</label>
