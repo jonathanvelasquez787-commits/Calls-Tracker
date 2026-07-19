@@ -57,9 +57,19 @@
       backdrop-filter: blur(14px);
     }
 
+    /* Bug reportado por el usuario: los botones (Horario/Metas/Reiniciar) y
+       el reloj se veían "centrados" en vez de pegados al borde derecho real
+       de la tarjeta. Causa: .hero definía un grid de 2 columnas
+       (1.25fr .95fr), pero adentro solo hay UN único div que envuelve todo
+       el contenido — sin una segunda columna real que lo use, ese div
+       ocupaba solo el primer track (~57% del ancho), dejando el resto vacío
+       a la derecha. Los elementos alineados a la derecha (botones, reloj)
+       quedaban pegados al borde de ESE div, no al borde real de la tarjeta
+       — por eso se veían más hacia el centro. Una sola columna hace que el
+       único hijo ocupe el 100% del ancho. */
     .hero {
       display: grid;
-      grid-template-columns: 1.25fr .95fr;
+      grid-template-columns: 1fr;
       gap: 14px;
       padding: 16px;
       margin-bottom: 14px;
@@ -92,7 +102,7 @@
       justify-content: space-between;
       flex-wrap: wrap;
       gap: 8px;
-      margin-bottom: 12px;
+      margin-bottom: 22px;
     }
 
     .hero-actions {
