@@ -2789,6 +2789,13 @@ $0.72"></textarea>
       if (!bounds.start) return 'No iniciado';
       if (bounds.end && !bounds.live) return 'Finalizado';
       if (state.activePause) return state.activePause.type === 'lunch' ? 'Lunch' : 'Break';
+      // Pedido del usuario: el chip de Estado no distinguía "En llamada" —
+      // una llamada en vivo (state.activeCall, botón "Iniciar llamada")
+      // siempre caía en el genérico 'Working'. Se revisa DESPUÉS de
+      // Break/Lunch a propósito: llamada y pausa pueden estar activas al
+      // mismo tiempo (ver toggleCall()/togglePause(), no se bloquean entre
+      // sí), y en ese caso la pausa sigue mandando visualmente.
+      if (state.activeCall) return 'En llamada';
       return 'Working';
     }
 
@@ -3206,6 +3213,27 @@ function findPlannedSlotForActivePause(dayKey) {
   return null;
 }
 
+// Pedido del usuario (reconsiderando una decisión de diseño anterior): el
+// aviso de "va a terminar" antes solo funcionaba si la pausa real coincidía
+// EXACTO con un slot planeado — una pausa fuera de horario se quedaba sin
+// aviso, sin excepción. Ahora, sin coincidencia exacta, se usa como
+// referencia la duración planeada del PRIMER Break/Lunch configurado ese
+// día (no importa a qué hora se planeó, solo cuánto debería durar) — un
+// estimado razonable en vez de ningún aviso. Solo si ni siquiera hay un
+// Break/Lunch de ese tipo configurado ese día (planned.length === 0) sigue
+// sin haber nada con qué estimar, y ahí sí no se muestra aviso.
+function referenceDurationMinForActivePause(dayKey) {
+  if (!state.activePause) return null;
+  const matchedSlot = findPlannedSlotForActivePause(dayKey);
+  if (matchedSlot) return toMinutes(matchedSlot.end) - toMinutes(matchedSlot.start);
+
+  const type = String(state.activePause.type || '').toLowerCase();
+  const planned = getEffectiveScheduleForDay(dayKey).filter(s => s.type.toLowerCase() === type);
+  if (!planned.length) return null;
+  const first = planned[0];
+  return toMinutes(first.end) - toMinutes(first.start);
+}
+
 function checkBreakEndAlarm() {
   const alertMin = Number(settings.alertBeforeBreakEndMin);
 
@@ -3215,18 +3243,14 @@ function checkBreakEndAlarm() {
   }
 
   const dayKey = todayCallDateKey();
-  const slot = findPlannedSlotForActivePause(dayKey);
-  if (!slot) {
-    // Pausa real sin slot planeado que la respalde (ej. un break tomado
-    // fuera de horario) — no hay con qué estimar cuándo "debería" terminar.
+  const plannedDurationMin = referenceDurationMinForActivePause(dayKey);
+  if (plannedDurationMin === null) {
+    // Ni siquiera hay un Break/Lunch de ese tipo configurado hoy — no hay
+    // ninguna duración razonable con qué estimar el fin.
     stopBreakEndAlarm();
     return;
   }
 
-  const base = callDateToDate(dayKey) || new Date();
-  const slotStart = dateAtTime(base, slot.start);
-  const slotEnd = dateAtTime(base, slot.end);
-  const plannedDurationMin = (slotEnd.getTime() - slotStart.getTime()) / 60000;
   const startedAt = new Date(state.activePause.startedAt);
   const predictedEnd = new Date(startedAt.getTime() + plannedDurationMin * 60000);
   const alertTime = new Date(predictedEnd.getTime() - alertMin * 60000);
@@ -3288,6 +3312,15 @@ function overlapMinutesWithIntervals(rangeStart, rangeEnd, intervals = []) {
 // horas). Sigue siendo editable a mano con "Editar hueco" si el usuario
 // prefiere otra etiqueta.
 const GAP_AUTO_OTHER_THRESHOLD_MIN = 90;
+
+// Cota de distancia para pauseAssignmentCache(): no se fuerza el
+// emparejamiento de una pausa real (botón o hueco manual) con un slot
+// planeado (Break1/Break2/Lunch) si quedan a más de esta cantidad de
+// minutos de diferencia. Sin esta cota, el algoritmo greedy de distancia
+// mínima terminaba emparejando CUALQUIER pausa sobrante con CUALQUIER slot
+// sobrante, sin importar qué tan lejos estuvieran — inflando el conteo de
+// Break2 (por ejemplo) con una pausa que en realidad no le correspondía.
+const PAUSE_SLOT_MAX_DISTANCE_MIN = 180;
 
 function gapLabelText(label) {
   const map = { acw: 'ACW', break: 'Break', lunch: 'Lunch', other: 'Otro' };
@@ -3665,11 +3698,36 @@ function manualGapPauseIntervals(dayKey, type) {
 // ese mismo break se "clonaba" también en el Break 2 que nunca tomaste. Ahora,
 // si no hay una pausa real que le corresponda a un slot, ese slot devuelve null
 // (no tomado) en vez de heredar datos de otro slot.
+// Fusiona entradas de `history` (ya filtradas por tipo) que se traslapan en
+// tiempo, en una sola por cada ocurrencia real. Pedido del usuario: una
+// pausa real (botón) y un hueco manual clasificado encima de esa misma
+// ventana de tiempo generaban 2 entradas separadas para lo que en realidad
+// es 1 sola ocurrencia — el emparejamiento greedy de más abajo terminaba
+// asignando esa "pausa duplicada" a un SEGUNDO slot planeado (ej. Break2)
+// que nunca se tomó de verdad, inflando el conteo. Se conserva el
+// startedAt/type/source de la entrada más temprana del grupo traslapado, y
+// se extiende su endedAt hasta el fin más tardío de todas las traslapadas.
+function mergeOverlappingPauseEntries(history) {
+  const withTimes = history
+    .map(h => ({ ...h, _s: new Date(h.startedAt).getTime(), _e: new Date(h.endedAt).getTime() }))
+    .sort((a, b) => a._s - b._s);
+  const merged = [];
+  for (const cur of withTimes) {
+    const last = merged[merged.length - 1];
+    if (last && cur._s < last._e) {
+      if (cur._e > last._e) { last.endedAt = cur.endedAt; last._e = cur._e; }
+    } else {
+      merged.push({ ...cur });
+    }
+  }
+  return merged.map(({ _s, _e, ...rest }) => rest);
+}
+
 function pauseAssignmentCache(dayKey, type) {
   const normalized = callDateKeyFromValue(dayKey);
   const base = callDateToDate(normalized) || new Date();
 
-  const history = state.pauseHistory
+  const rawHistory = state.pauseHistory
     .filter(p => p.type === type && sameCallDay(p.startedAt, normalized))
     .map(p => ({ type: p.type, startedAt: p.startedAt, endedAt: p.endedAt }));
 
@@ -3677,11 +3735,16 @@ function pauseAssignmentCache(dayKey, type) {
   // editor de huecos (ver manualGapPauseIntervals). Antes solo entraba el
   // botón, así que clasificar un hueco como Lunch en la tabla nunca se
   // reflejaba en "Bloques del día" ni en Adherencia — quedaba huérfano.
-  history.push(...manualGapPauseIntervals(normalized, type));
+  rawHistory.push(...manualGapPauseIntervals(normalized, type));
 
   if (normalized === todayCallDateKey() && state.activePause && state.activePause.type === type && !state.shiftEndedAt) {
-    history.push({ type, startedAt: state.activePause.startedAt, endedAt: new Date().toISOString() });
+    rawHistory.push({ type, startedAt: state.activePause.startedAt, endedAt: new Date().toISOString() });
   }
+
+  // Fusiona duplicados traslapados (ver mergeOverlappingPauseEntries) ANTES
+  // de emparejar contra los slots — así una pausa real + un hueco manual
+  // clasificado encima cuentan como UNA sola ocurrencia, no dos.
+  const history = mergeOverlappingPauseEntries(rawHistory);
 
   // Antes esto recalculaba los slots planeados desde cero con
   // buildPlannedSlots(dayConfigFor(...)), que SIEMPRE ignora el corrimiento
@@ -3702,6 +3765,11 @@ function pauseAssignmentCache(dayKey, type) {
   matchingSlots.forEach((s, si) => {
     history.forEach((p, pi) => {
       const dist = Math.abs(new Date(p.startedAt).getTime() - slotStarts[si]);
+      // Cota de distancia: no se fuerza el emparejamiento si quedan a más de
+      // PAUSE_SLOT_MAX_DISTANCE_MIN minutos — mejor dejar el slot "no
+      // tomado" que atribuirle una pausa que en realidad no le corresponde
+      // (ver PAUSE_SLOT_MAX_DISTANCE_MIN más arriba).
+      if (dist > PAUSE_SLOT_MAX_DISTANCE_MIN * 60000) return;
       pairs.push({ si, pi, dist });
     });
   });
@@ -5878,9 +5946,12 @@ function renderHeader() {
 
   const status = currentStateLabel();
   const dot = document.getElementById('stateDot');
-  const color = status === 'Working' ? 'var(--good)' : status === 'Break' ? 'var(--warn)' : status === 'Lunch' ? 'var(--blue)' : status === 'Finalizado' ? 'var(--bad)' : 'var(--muted)';
+  // 'En llamada' usa cian (--cyan), color que no se repite con ninguno de
+  // los otros estados (Working=verde, Break=amarillo, Lunch=azul,
+  // Finalizado=rosado), para que se distinga de un vistazo.
+  const color = status === 'Working' ? 'var(--good)' : status === 'Break' ? 'var(--warn)' : status === 'Lunch' ? 'var(--blue)' : status === 'Finalizado' ? 'var(--bad)' : status === 'En llamada' ? 'var(--cyan)' : 'var(--muted)';
   dot.style.background = color;
-  dot.style.boxShadow = `0 0 18px rgba(${status === 'Working' ? '102,226,165' : status === 'Break' ? '255,209,92' : status === 'Lunch' ? '124,140,255' : status === 'Finalizado' ? '255,111,143' : '145,163,184'}, .45)`;
+  dot.style.boxShadow = `0 0 18px rgba(${status === 'Working' ? '102,226,165' : status === 'Break' ? '255,209,92' : status === 'Lunch' ? '124,140,255' : status === 'Finalizado' ? '255,111,143' : status === 'En llamada' ? '47,213,255' : '145,163,184'}, .45)`;
 
   const shiftBtn = document.getElementById('shiftControlBtn');
   const shiftLabel = document.getElementById('shiftControlLabel');
