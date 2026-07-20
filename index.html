@@ -1242,6 +1242,21 @@
       margin-bottom: 6px;
     }
 
+    /* Pedido del usuario: "Margen" y "Adherencia bloque" (dentro de cada
+       tarjeta de bloque en Bloques del día) se veían apiladas verticalmente,
+       una píldora .slot-status debajo de la otra — repetitivo, sumado a la
+       píldora principal de status que ya tiene la tarjeta (hasta 3 apiladas).
+       Mismo patrón que .day-metrics-row (arriba, para el resumen global del
+       día): fila flex con wrap, para que ambas queden lado a lado en vez de
+       una debajo de la otra. */
+    .slot-metrics-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
     /* Mini-accordion propio para el detalle de Adherencia: mismo mecanismo
        nativo <details> que .accordion-card, pero sin el padding/borde/sombra
        de tarjeta completa — aquí es solo un badge con un toggle de texto al
@@ -6591,7 +6606,7 @@ function renderSchedule() {
             const marginText = m.ok
               ? `Margen: ${formatMinutes(m.used)}m de ${formatMinutes(m.allowed)}m permitidos`
               : `Margen excedido por ${formatMinutes(m.excess)}m (permitido ${formatMinutes(m.allowed)}m)`;
-            marginLineHtml = `<div class="slot-status ${marginTone}" style="margin-top:4px;">${escapeHtml(marginText)}</div>`;
+            marginLineHtml = `<div class="slot-status ${marginTone}">${escapeHtml(marginText)}</div>`;
           }
         }
 
@@ -6606,8 +6621,17 @@ function renderSchedule() {
         if (slotAdherence) {
           const tone = slotAdherence.pct >= 90 ? 'good' : slotAdherence.pct >= 70 ? 'warn' : 'bad';
           const text = `Adherencia bloque: ${slotAdherence.pct}% (${slotAdherence.adherentMinutes}/${slotAdherence.total} min)`;
-          slotAdherenceLineHtml = `<div class="slot-status ${tone}" style="margin-top:4px;">${escapeHtml(text)}</div>`;
+          slotAdherenceLineHtml = `<div class="slot-status ${tone}">${escapeHtml(text)}</div>`;
         }
+
+        // Pedido del usuario: en vez de apilar Margen y Adherencia bloque uno
+        // debajo del otro (2 píldoras sueltas, repetitivo junto a la píldora
+        // principal de status), van en una sola fila (.slot-metrics-row,
+        // mismo patrón que .day-metrics-row arriba). Si ninguna de las 2
+        // aplica todavía, no se agrega fila vacía.
+        const slotMetricsRowHtml = (marginLineHtml || slotAdherenceLineHtml)
+          ? `<div class="slot-metrics-row">${marginLineHtml}${slotAdherenceLineHtml}</div>`
+          : '';
 
         return `
           <div class="slot ${active ? 'active' : ''} ${done ? 'done' : ''}">
@@ -6623,8 +6647,7 @@ function renderSchedule() {
               </div>
               <div class="slot-status ${statusClass}">${escapeHtml(stats.status)}</div>
               <div class="meta">${progressLabel}</div>
-              ${marginLineHtml}
-              ${slotAdherenceLineHtml}
+              ${slotMetricsRowHtml}
             </div>
             <div class="type">${slot.type}</div>
           </div>
