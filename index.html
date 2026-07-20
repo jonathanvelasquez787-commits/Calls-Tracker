@@ -872,6 +872,16 @@
     }
     #callControlBtn .control-label { color: #ffb0c1; }
 
+    /* Antes sin regla propia — caía al gris genérico .control-btn.secondary,
+       se veía plano al lado de #pasteCallsBtn/#callControlBtn (que sí tienen
+       degradado propio). Verde/teal porque "agregar" es una acción de
+       creación, coherente con --good de la paleta. */
+    #addCallManualBtn {
+      background: linear-gradient(135deg, rgba(102, 226, 165, .16), rgba(52, 178, 122, .07));
+      border: 1px solid rgba(102, 226, 165, .38);
+    }
+    #addCallManualBtn .control-label { color: #8fedbd; }
+
     .control-btn:hover,
     .control-btn:focus-visible {
       transform: translateY(-1px);
@@ -1721,11 +1731,11 @@
 <div class="secondary-controls-static">
 <div class="controls-grid">
 <button class="control-btn call" id="callControlBtn" type="button">
-<span class="control-label" id="callControlLabel">Iniciar llamada</span>
+<span class="control-label" id="callControlLabel">📞 Iniciar llamada</span>
 <span class="control-sub" id="callControlTimer">00:00:00</span>
 </button>
-<button class="control-btn secondary" id="pasteCallsBtn" type="button"><span class="control-label">Pegar Llamadas</span><span class="control-sub">Importar data</span></button>
-<button class="control-btn secondary" id="addCallManualBtn" type="button"><span class="control-label">Agregar llamada</span><span class="control-sub">Manual</span></button>
+<button class="control-btn secondary" id="pasteCallsBtn" type="button"><span class="control-label">📋 Pegar Llamadas</span><span class="control-sub">Importar data</span></button>
+<button class="control-btn secondary" id="addCallManualBtn" type="button"><span class="control-label">➕ Agregar llamada</span><span class="control-sub">Manual</span></button>
 </div>
 </div>
 </section>
@@ -4933,8 +4943,8 @@ function renderWeekSummary() {
     }
 
     function callActionLabel() {
-      if (!isViewingToday()) return 'Iniciar llamada';
-      return state.activeCall ? 'Terminar llamada' : 'Iniciar llamada';
+      if (!isViewingToday()) return '📞 Iniciar llamada';
+      return state.activeCall ? '📞 Terminar llamada' : '📞 Iniciar llamada';
     }
 
     // A diferencia de pauseActionDisabled() (Break/Lunch), iniciar una
