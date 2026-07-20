@@ -4255,6 +4255,14 @@ function dayAdherence(dayKey) {
 
   if (!bounds.start) {
     if (isToday) return null; // el día aún no empieza, no cuenta todavía
+    // Bug reportado por el usuario: un día FUTURO (navegado a propósito con
+    // el selector de "Día activo") caía en la misma rama que un día PASADO
+    // sin turno — marcándose 0%/"No se inició el turno" para un día que ni
+    // siquiera ha llegado. weekSummaryForOffset() ya se protegía de esto
+    // (excluye días futuros antes de llamar aquí), pero "Bloques del día"
+    // llama a dayAdherence() directo, sin esa protección — se agrega aquí,
+    // en el origen, para cubrir ambos casos de una vez.
+    if (base > todayRange()) return null;
     return { dayKey: normalized, checkpoints: [{ label: 'Turno', ok: false, score: 0, note: 'No se inició el turno' }], scorePct: 0 };
   }
 
