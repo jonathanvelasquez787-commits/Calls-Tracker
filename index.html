@@ -1240,6 +1240,20 @@
       background: rgba(255, 111, 143, .10);
     }
 
+    /* Pedido del usuario (mejora B): indicador en vivo cuando, AHORA MISMO,
+       estás acumulando un minuto fuera de adherencia (ver
+       isRightNowOutOfAdherence()). Pulso sutil para llamar la atención sin
+       ser demasiado agresivo — mismo tono "bad" que ya usa .slot-status.bad,
+       solo se le agrega la animación. */
+    @keyframes adherence-live-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 111, 143, .35); }
+      50% { box-shadow: 0 0 0 5px rgba(255, 111, 143, 0); }
+    }
+
+    .slot-status.live-exception {
+      animation: adherence-live-pulse 1.8s ease-in-out infinite;
+    }
+
     /* Fila de resumen "Adherencia"/"Margen del día" agregada arriba de la
        lista de bloques (ver Bloques del día). Reutiliza .slot-status para
        que los dos badges se vean igual que los que ya usa cada bloque
@@ -1758,6 +1772,8 @@
       </summary>
       <div class="mini-accordion-body" id="adherenceCheckpointList"></div>
     </details>
+    <span class="slot-status" id="adherenceGoalBadge" style="display:none;"></span>
+    <span class="slot-status bad live-exception" id="adherenceLiveBadge" style="display:none;">⚠️ Fuera de adherencia ahora</span>
     <span class="slot-status" id="marginBadge">Margen: —</span>
   </div>
   <div class="schedule" id="scheduleList"></div>
@@ -1945,13 +1961,19 @@
 <div class="alert-group">
 <div class="alert-group-head">
 <span class="alert-group-icon">🎯</span>
-<span class="alert-group-title">Ventana de gracia — Adherencia</span>
+<span class="alert-group-title">Adherencia</span>
 </div>
+<div class="alert-fields-row">
 <div class="alert-mini-field">
 <label for="adherenceGraceMinInput">Minutos de gracia</label>
 <input id="adherenceGraceMinInput" inputmode="numeric" min="0" step="1" type="number"/>
 </div>
-<p class="alert-hint">"Bloques del día" calcula tu Adherencia minuto a minuto. Esta ventana perdona desvíos chicos cerca de cada transición del horario (ej. empezar un break unos minutos tarde). 0 = cualquier desvío penaliza de inmediato.</p>
+<div class="alert-mini-field">
+<label for="adherenceGoalPctInput">Meta de Adherencia (%)</label>
+<input id="adherenceGoalPctInput" inputmode="numeric" max="100" min="1" step="1" type="number"/>
+</div>
+</div>
+<p class="alert-hint">"Bloques del día" calcula tu Adherencia minuto a minuto. La ventana de gracia perdona desvíos chicos cerca de cada transición del horario (ej. empezar un break unos minutos tarde) — 0 = cualquier desvío penaliza de inmediato. La Meta es tu objetivo personal de %, se compara contra tu Adherencia del día.</p>
 </div>
 <div class="divider"></div>
 <div class="field" style="margin-bottom:4px;">
@@ -2535,6 +2557,10 @@ $0.72"></textarea>
         // desvío penaliza de inmediato, salvo el minuto exacto de la
         // transición, que siempre se perdona a sí mismo por diseño).
         adherenceGraceMin: 3,
+        // Pedido del usuario (mejora D): meta de Adherencia en % (como ya
+        // existen Meta en minutos/dólares/moneda), editable en Horario junto
+        // a la ventana de gracia. Default 95 — umbral típico de un WFM real.
+        adherenceGoalPct: 95,
       };
     }
 
@@ -2552,6 +2578,7 @@ $0.72"></textarea>
       if (!Number.isFinite(Number(settings.alertBeforeBreakMin)) || Number(settings.alertBeforeBreakMin) < 0) settings.alertBeforeBreakMin = fallback.alertBeforeBreakMin;
       if (!Number.isFinite(Number(settings.alertBeforeBreakEndMin)) || Number(settings.alertBeforeBreakEndMin) < 0) settings.alertBeforeBreakEndMin = fallback.alertBeforeBreakEndMin;
       if (!Number.isFinite(Number(settings.adherenceGraceMin)) || Number(settings.adherenceGraceMin) < 0) settings.adherenceGraceMin = fallback.adherenceGraceMin;
+      if (!Number.isFinite(Number(settings.adherenceGoalPct)) || Number(settings.adherenceGoalPct) <= 0 || Number(settings.adherenceGoalPct) > 100) settings.adherenceGoalPct = fallback.adherenceGoalPct;
     }
 
     // Texto "≈ L 123.45" para mostrar el equivalente en la moneda secundaria
@@ -4100,6 +4127,38 @@ function adherenceProximityScore(deltaAbsMin, falloffMin) {
 // distancia 0 a sí mismo, así que con graceMin=0 igual se perdona a sí
 // mismo (comportamiento esperado del redondeo a minutos enteros, no un
 // bug — con graceMin>=1 esto es irrelevante en la práctica).
+// Pedido del usuario (mejora A): cada minuto de excepción se clasifica por
+// MOTIVO (qué combinación de planeado→real lo causó), no solo se cuenta.
+// Etiquetas pensadas para leerse como "perdiste X min por: <label>".
+const EXCEPTION_REASON_LABELS = {
+  ausente: 'Ausencia/llegada tarde',
+  break_extra: 'Break tomado fuera de horario',
+  lunch_extra: 'Lunch tomado fuera de horario',
+  break_perdido: 'Break no tomado a tiempo',
+  lunch_perdido: 'Lunch no tomado a tiempo',
+  lunch_encima_break: 'Lunch encima de tu Break',
+  break_encima_lunch: 'Break encima de tu Lunch',
+};
+
+// Mapa planeado|real → motivo. Combinaciones no listadas (ej. algo fuera de
+// cualquier slot planeado) no producen motivo — solo restan al total, igual
+// que antes.
+const EXCEPTION_REASON_MAP = {
+  'work|none': 'ausente', 'work|break': 'break_extra', 'work|lunch': 'lunch_extra',
+  'break|work': 'break_perdido', 'break|none': 'ausente', 'break|lunch': 'lunch_encima_break',
+  'lunch|work': 'lunch_perdido', 'lunch|none': 'ausente', 'lunch|break': 'break_encima_lunch',
+};
+
+// Motivo dominante (el que más minutos acumuló) de un objeto `reasons` — para
+// mostrar un solo motivo corto junto al %, en vez de la lista completa.
+function dominantExceptionReason(reasons) {
+  const entries = Object.entries(reasons || {}).filter(([, m]) => m > 0);
+  if (!entries.length) return null;
+  entries.sort((a, b) => b[1] - a[1]);
+  const [key, minutes] = entries[0];
+  return { key, minutes, label: EXCEPTION_REASON_LABELS[key] || key };
+}
+
 function computeMinuteAdherence({ plannedSlots, actualIntervals, realStartMin, realEndMin, rangeStart, rangeEnd, graceMin }) {
   if (!(rangeEnd > rangeStart)) return null; // sin minutos medibles todavía
 
@@ -4119,6 +4178,7 @@ function computeMinuteAdherence({ plannedSlots, actualIntervals, realStartMin, r
 
   let total = 0;
   let exceptionMinutes = 0;
+  const reasons = {};
   for (let m = rangeStart; m < rangeEnd; m++) {
     total++;
     const planned = plannedStateAt(m);
@@ -4127,11 +4187,13 @@ function computeMinuteAdherence({ plannedSlots, actualIntervals, realStartMin, r
     const nearTransition = transitions.some(t => Math.abs(m - t) <= graceMin);
     if (nearTransition) continue; // perdonado por la ventana de gracia
     exceptionMinutes++;
+    const reasonKey = EXCEPTION_REASON_MAP[`${planned}|${actual}`];
+    if (reasonKey) reasons[reasonKey] = (reasons[reasonKey] || 0) + 1;
   }
 
   const adherentMinutes = total - exceptionMinutes;
   const pct = total > 0 ? Math.round((adherentMinutes / total) * 100) : 100;
-  return { total, exceptionMinutes, adherentMinutes, pct };
+  return { total, exceptionMinutes, adherentMinutes, pct, reasons };
 }
 
 // Slots planeados ORIGINALES (sin correr, ver decisión de diseño arriba)
@@ -4188,6 +4250,29 @@ function minuteAdherenceForDay(dayKey, bounds) {
 
   const graceMin = Number.isFinite(Number(settings.adherenceGraceMin)) && Number(settings.adherenceGraceMin) >= 0 ? Number(settings.adherenceGraceMin) : 3;
   return computeMinuteAdherence({ plannedSlots, actualIntervals, realStartMin, realEndMin, rangeStart, rangeEnd, graceMin });
+}
+
+// Pedido del usuario (mejora B): saber si AHORA MISMO (este minuto) estás
+// fuera de adherencia — para un indicador en vivo, no solo el % acumulado
+// del día. Reutiliza el mismo motor (computeMinuteAdherence) pero con una
+// ventana de un solo minuto centrada en "ahora". Solo tiene sentido con el
+// turno de HOY en curso (no terminado) — un día pasado o sin turno no tiene
+// "ahora mismo" que evaluar.
+function isRightNowOutOfAdherence() {
+  if (!state.shiftStartedAt || state.shiftEndedAt) return false;
+  const dayKey = todayCallDateKey();
+  const plannedRaw = originalPlannedSlotsForDay(dayKey);
+  if (!plannedRaw.length) return false;
+
+  const plannedSlots = plannedRaw.map(s => ({ type: s.type.toLowerCase(), startMin: toMinutes(s.start), endMin: toMinutes(s.end) }));
+  const minuteOfDay = (date) => date.getHours() * 60 + date.getMinutes();
+  const actualIntervals = dayPauseIntervals(dayKey).map(p => ({ type: p.type, startMin: minuteOfDay(p.start), endMin: minuteOfDay(p.end) }));
+  const realStartMin = minuteOfDay(new Date(state.shiftStartedAt));
+  const nowMin = minuteOfDay(new Date());
+  const graceMin = Number.isFinite(Number(settings.adherenceGraceMin)) && Number(settings.adherenceGraceMin) >= 0 ? Number(settings.adherenceGraceMin) : 3;
+
+  const result = computeMinuteAdherence({ plannedSlots, actualIntervals, realStartMin, realEndMin: null, rangeStart: nowMin, rangeEnd: nowMin + 1, graceMin });
+  return !!(result && result.exceptionMinutes > 0);
 }
 
 // Pedido del usuario: cada bloque individual ("Bloques del día") lleva su
@@ -4373,7 +4458,7 @@ function dayAdherence(dayKey) {
     const totalScore = checkpoints.reduce((a, c) => a + (Number.isFinite(c.score) ? c.score : (c.ok ? 1 : 0)), 0);
     scorePct = checkpoints.length ? Math.round((totalScore / checkpoints.length) * 100) : 100;
   }
-  return { dayKey: normalized, checkpoints, scorePct };
+  return { dayKey: normalized, checkpoints, scorePct, reasons: minuteResult ? minuteResult.reasons : {} };
 }
 
 function now_isBefore(date) { return new Date() < date; }
@@ -5706,6 +5791,8 @@ function renderWeekSummary() {
       if (breakEndAlertMinInput && document.activeElement !== breakEndAlertMinInput) breakEndAlertMinInput.value = settings.alertBeforeBreakEndMin;
       const adherenceGraceMinInput = document.getElementById('adherenceGraceMinInput');
       if (adherenceGraceMinInput && document.activeElement !== adherenceGraceMinInput) adherenceGraceMinInput.value = settings.adherenceGraceMin;
+      const adherenceGoalPctInput = document.getElementById('adherenceGoalPctInput');
+      if (adherenceGoalPctInput && document.activeElement !== adherenceGoalPctInput) adherenceGoalPctInput.value = settings.adherenceGoalPct;
       // Ciclo de pago: son settings globales (no por día de la semana), así
       // que se sincronizan siempre igual sin importar scheduleEditDay.
       ensureCurrencySettings();
@@ -5926,6 +6013,16 @@ function renderWeekSummary() {
       saveSettingsOnly();
       render();
       toast(`Ventana de gracia de Adherencia: ${formatMinutes(settings.adherenceGraceMin)} min`);
+    }
+
+    // Meta de Adherencia (%, mejora D) — mismo patrón de auto-guardado.
+    function updateAdherenceGoalSettings() {
+      const input = document.getElementById('adherenceGoalPctInput');
+      const pct = Number(input?.value);
+      if (Number.isFinite(pct) && pct > 0 && pct <= 100) settings.adherenceGoalPct = pct;
+      saveSettingsOnly();
+      render();
+      toast(`Meta de Adherencia: ${settings.adherenceGoalPct}%`);
     }
 
 
@@ -6638,7 +6735,12 @@ function renderSchedule() {
         const slotAdherence = slotMinuteAdherence(dayKey, originalPlannedSlots[slotIdx] || slot, bounds);
         if (slotAdherence) {
           const tone = slotAdherence.pct >= 90 ? 'good' : slotAdherence.pct >= 70 ? 'warn' : 'bad';
-          const text = `Adherencia bloque: ${slotAdherence.pct}% (${slotAdherence.adherentMinutes}/${slotAdherence.total} min)`;
+          // Pedido del usuario (mejora A): mostrar el motivo dominante (no
+          // solo el %) — ej. "· Ausencia/llegada tarde (6m)". Sin sufijo si
+          // no hubo minutos de excepción (bloque perfecto).
+          const dominant = dominantExceptionReason(slotAdherence.reasons);
+          const reasonSuffix = dominant ? ` · ${dominant.label} (${formatMinutes(dominant.minutes)}m)` : '';
+          const text = `Adherencia bloque: ${slotAdherence.pct}% (${slotAdherence.adherentMinutes}/${slotAdherence.total} min)${reasonSuffix}`;
           slotAdherenceLineHtml = `<div class="slot-status ${tone}">${escapeHtml(text)}</div>`;
         }
 
@@ -6708,10 +6810,59 @@ function renderSchedule() {
           adherenceBadge.className = `slot-status ${tone}`;
         }
       }
+
+      // Pedido del usuario (mejora D): comparar tu Adherencia del día contra
+      // tu Meta personal (settings.adherenceGoalPct). Oculto si no hay
+      // adherencia calculable todavía (mismo caso que el badge principal).
+      const adherenceGoalBadge = document.getElementById('adherenceGoalBadge');
+      if (adherenceGoalBadge) {
+        const goalPct = Number.isFinite(Number(settings.adherenceGoalPct)) ? Number(settings.adherenceGoalPct) : 95;
+        if (!adherence) {
+          adherenceGoalBadge.style.display = 'none';
+        } else {
+          const diff = adherence.scorePct - goalPct;
+          adherenceGoalBadge.style.display = '';
+          if (diff >= 0) {
+            adherenceGoalBadge.textContent = `✅ Meta alcanzada (${goalPct}%)`;
+            adherenceGoalBadge.className = 'slot-status good';
+          } else {
+            adherenceGoalBadge.textContent = `Meta ${goalPct}% — te faltan ${Math.abs(diff)}pts`;
+            adherenceGoalBadge.className = 'slot-status warn';
+          }
+        }
+      }
+
+      // Pedido del usuario (mejora B): indicador en vivo — solo aplica
+      // viendo "Hoy" con el turno en curso; isRightNowOutOfAdherence() ya
+      // filtra internamente cualquier otro caso (día pasado, sin turno,
+      // turno terminado) devolviendo false.
+      const adherenceLiveBadge = document.getElementById('adherenceLiveBadge');
+      if (adherenceLiveBadge) {
+        const isLiveException = dayKey === todayCallDateKey() && isRightNowOutOfAdherence();
+        adherenceLiveBadge.style.display = isLiveException ? '' : 'none';
+      }
+
       if (checkpointList) {
+        // Pedido del usuario (mejora C): un resumen corto de MOTIVOS (mismo
+        // motor que ahora categoriza la adherencia por bloque, ver
+        // dominantExceptionReason) arriba del detalle fino por punto — no se
+        // reemplaza el detalle viejo (Entrada/Salida/Break/Lunch, sigue
+        // siendo información distinta y útil), solo se le agrega un "por
+        // qué" a simple vista antes de los puntos individuales.
+        let reasonSummaryHtml = '';
+        if (adherence && adherence.reasons) {
+          const entries = Object.entries(adherence.reasons).filter(([, m]) => m > 0).sort((a, b) => b[1] - a[1]);
+          if (entries.length) {
+            const rows = entries.map(([key, minutes]) => {
+              const label = EXCEPTION_REASON_LABELS[key] || key;
+              return `<div class="checkpoint-row"><strong>${escapeHtml(label)}</strong><span style="color:var(--warn);">${formatMinutes(minutes)}m</span></div>`;
+            }).join('');
+            reasonSummaryHtml = `<div class="mini-accordion-toggle" style="margin-bottom:4px;">Por qué:</div>${rows}<div class="divider" style="margin:8px 0;"></div>`;
+          }
+        }
         checkpointList.innerHTML = !adherence
           ? '<div class="note" style="margin:0;">Sin datos de adherencia todavía para este día.</div>'
-          : adherence.checkpoints.map(cp => {
+          : reasonSummaryHtml + adherence.checkpoints.map(cp => {
               const cpTone = cp.ok ? 'good' : (cp.score > 0 ? 'warn' : 'bad');
               const cpColor = cpTone === 'good' ? 'var(--good)' : cpTone === 'warn' ? 'var(--warn)' : 'var(--bad)';
               return `<div class="checkpoint-row"><strong>${escapeHtml(cp.label)}</strong><span style="color:${cpColor};">${escapeHtml(cp.note)}</span></div>`;
@@ -7079,6 +7230,7 @@ function render() {
     document.getElementById('breakAlertMinInput').addEventListener('change', updateBreakAlertSettings);
     document.getElementById('breakEndAlertMinInput').addEventListener('change', updateBreakAlertSettings);
     document.getElementById('adherenceGraceMinInput').addEventListener('change', updateAdherenceGraceSettings);
+    document.getElementById('adherenceGoalPctInput').addEventListener('change', updateAdherenceGoalSettings);
     document.getElementById('daySelector').addEventListener('change', (e) => {
       const key = dayKeyFromIsoDate(e.target.value);
       if (key) setActiveDayKey(key);
@@ -7145,6 +7297,13 @@ function render() {
       // llamada duplicada a renderHeader en ese mismo tick.
       if (checkDayRollover()) return;
       renderHeader();
+      // Bug encontrado al agregar el indicador en vivo de Adherencia (mejora
+      // B): este tick nunca llamaba a renderSchedule(), así que "Adherencia
+      // bloque" (agregada en v83) y el indicador en vivo NUNCA se
+      // actualizaban solos cada segundo — solo cuando algo más disparaba un
+      // render() completo (un click, importar llamadas, etc.). Se agrega
+      // aquí para que de verdad se sienta "en vivo".
+      renderSchedule();
       checkShiftAlarm();
       checkBreakStartAlarm();
       checkBreakEndAlarm();
