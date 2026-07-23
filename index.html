@@ -3735,6 +3735,24 @@ function manualGapPauseIntervals(dayKey, type) {
     .map(row => ({ type, startedAt: row.prev.endISO, endedAt: row.cur.startISO, source: 'gap', gapKey: row.gapKey }));
 }
 
+// Bug/inconsistencia reportada por el usuario (con export.json real): el
+// motor de Adherencia minuto a minuto (computeMinuteAdherence, vía
+// dayPauseIntervals()) solo conocía pausas REALES tomadas con el botón —
+// ignoraba por completo los huecos que el usuario reclasifica a mano como
+// Break/Lunch desde "Editar hueco" (manualGapPauseIntervals, que el sistema
+// VIEJO de checkpoints/pauseAssignmentCache sí respeta). Esto causaba que un
+// hueco marcado a mano como "Break" dentro de un bloque de Trabajo no se
+// reflejara en absoluto en el % de Adherencia ni en el motivo mostrado —
+// inconsistente con lo que el usuario ya clasificó en "Tabla completa".
+// Combina ambas fuentes en un solo arreglo de intervalos reales.
+function actualPauseIntervalsForDay(dayKey) {
+  const normalized = callDateKeyFromValue(dayKey);
+  const real = dayPauseIntervals(normalized).map(p => ({ type: p.type, start: p.start, end: p.end }));
+  const manualBreak = manualGapPauseIntervals(normalized, 'break').map(p => ({ type: 'break', start: new Date(p.startedAt), end: new Date(p.endedAt) }));
+  const manualLunch = manualGapPauseIntervals(normalized, 'lunch').map(p => ({ type: 'lunch', start: new Date(p.startedAt), end: new Date(p.endedAt) }));
+  return [...real, ...manualBreak, ...manualLunch];
+}
+
 // Empareja cada slot planeado (Break 1, Break 2, Lunch...) con la pausa REAL más
 // cercana en el tiempo, de forma 1:1 (greedy por distancia). Antes se hacía por
 // índice con fallback a history[0], lo que causaba que si solo tomabas un break,
@@ -4236,7 +4254,7 @@ function minuteAdherenceForDay(dayKey, bounds) {
   const plannedSlots = plannedRaw.map(s => ({ type: s.type.toLowerCase(), startMin: toMinutes(s.start), endMin: toMinutes(s.end) }));
   const minuteOfDay = (date) => date.getHours() * 60 + date.getMinutes();
 
-  const actualIntervals = dayPauseIntervals(normalized).map(p => ({ type: p.type, startMin: minuteOfDay(p.start), endMin: minuteOfDay(p.end) }));
+  const actualIntervals = actualPauseIntervalsForDay(normalized).map(p => ({ type: p.type, startMin: minuteOfDay(p.start), endMin: minuteOfDay(p.end) }));
   // Infinity (no null) cuando no hay turno real: fuerza que TODO minuto se
   // trate como "no presente" (ver computeMinuteAdherence/actualStateAt),
   // reflejando el mismo fallo que ya marca dayAdherence() para el día
@@ -4266,7 +4284,7 @@ function isRightNowOutOfAdherence() {
 
   const plannedSlots = plannedRaw.map(s => ({ type: s.type.toLowerCase(), startMin: toMinutes(s.start), endMin: toMinutes(s.end) }));
   const minuteOfDay = (date) => date.getHours() * 60 + date.getMinutes();
-  const actualIntervals = dayPauseIntervals(dayKey).map(p => ({ type: p.type, startMin: minuteOfDay(p.start), endMin: minuteOfDay(p.end) }));
+  const actualIntervals = actualPauseIntervalsForDay(dayKey).map(p => ({ type: p.type, startMin: minuteOfDay(p.start), endMin: minuteOfDay(p.end) }));
   const realStartMin = minuteOfDay(new Date(state.shiftStartedAt));
   const nowMin = minuteOfDay(new Date());
   const graceMin = Number.isFinite(Number(settings.adherenceGraceMin)) && Number(settings.adherenceGraceMin) >= 0 ? Number(settings.adherenceGraceMin) : 3;
@@ -4312,7 +4330,7 @@ function slotMinuteAdherence(dayKey, originalSlot, bounds) {
   const plannedSlots = plannedRaw.map(s => ({ type: s.type.toLowerCase(), startMin: toMinutes(s.start), endMin: toMinutes(s.end) }));
   const minuteOfDay = (date) => date.getHours() * 60 + date.getMinutes();
 
-  const actualIntervals = dayPauseIntervals(normalized).map(p => ({ type: p.type, startMin: minuteOfDay(p.start), endMin: minuteOfDay(p.end) }));
+  const actualIntervals = actualPauseIntervalsForDay(normalized).map(p => ({ type: p.type, startMin: minuteOfDay(p.start), endMin: minuteOfDay(p.end) }));
   const realStartMin = bounds.start ? minuteOfDay(bounds.start) : Infinity;
   const realEndMin = bounds.end ? minuteOfDay(bounds.end) : null;
 
