@@ -1686,6 +1686,7 @@
 </div>
 <div class="chips">
 <div class="chip"><span class="dot-state" id="stateDot"></span><strong id="stateText">No iniciado</strong></div>
+<div class="chip" id="acwLiveChip" style="display:none;" title="Tiempo que llevas disponible/en ACW ahora mismo — sin llamada activa ni Break/Lunch activo.">⏱️ ACW/Available <strong id="acwLiveTimer">00:00:00</strong></div>
 <div class="summary-pill">
   <span>Día activo</span>
   <input id="daySelector" aria-label="Día activo" type="date"/>
@@ -2936,6 +2937,32 @@ $0.72"></textarea>
       // sí), y en ese caso la pausa sigue mandando visualmente.
       if (state.activeCall) return 'En llamada';
       return 'Working';
+    }
+
+    // Pedido del usuario: indicador en vivo de cuánto tiempo llevas AHORA
+    // MISMO en "ACW/Available" (disponible, sin llamada activa ni Break/
+    // Lunch activo) — antes ACW solo se calculaba retroactivamente
+    // (gapClassification()/dayGapTotals()) después de que una llamada
+    // terminaba e importabas/registrabas la siguiente. Ancla al momento más
+    // reciente entre: el inicio real del turno, el fin de tu última llamada,
+    // y el fin de tu última pausa YA CERRADA — reutiliza callsForDay() y
+    // dayPauseIntervals() (que sin state.activePause activo solo trae
+    // pausas cerradas, sin la entrada sintética "en curso"). null si el
+    // turno no está en curso, o si hay una llamada/pausa activa ahora mismo
+    // (ahí manda su propio cronómetro, no el de ACW).
+    function computeCurrentAcwStart() {
+      if (!state.shiftStartedAt || state.shiftEndedAt) return null;
+      if (state.activePause) return null;
+      if (state.activeCall) return null;
+
+      const dayKey = todayCallDateKey();
+      const now = new Date();
+      const candidates = [new Date(state.shiftStartedAt).getTime()];
+      callsForDay(dayKey).forEach(c => candidates.push(new Date(c.endISO).getTime()));
+      dayPauseIntervals(dayKey).forEach(p => candidates.push(p.end.getTime()));
+      const valid = candidates.filter(t => Number.isFinite(t) && t <= now.getTime());
+      if (!valid.length) return null;
+      return new Date(Math.max(...valid));
     }
 
     function importedCallStats(sourceCalls = calls, dayKey = getActiveDayKey()) {
@@ -6175,6 +6202,22 @@ function renderHeader() {
   document.getElementById('clockNow').textContent = clockTimeVisible ? fmtTime(now) : '--:--:--';
   document.getElementById('clockDate').textContent = fmtDate(now);
   document.getElementById('stateText').textContent = currentStateLabel();
+
+  // Chip de ACW/Available en vivo — visible solo mientras aplica
+  // (computeCurrentAcwStart() ya filtra turno no iniciado/terminado y
+  // llamada/pausa activa). Se actualiza cada segundo, mismo tick que ya
+  // refresca el resto del header.
+  const acwLiveChip = document.getElementById('acwLiveChip');
+  const acwLiveTimer = document.getElementById('acwLiveTimer');
+  if (acwLiveChip && acwLiveTimer) {
+    const acwStart = computeCurrentAcwStart();
+    if (acwStart) {
+      acwLiveChip.style.display = '';
+      acwLiveTimer.textContent = formatDuration(now.getTime() - acwStart.getTime());
+    } else {
+      acwLiveChip.style.display = 'none';
+    }
+  }
 
   const greetingTitleEl = document.getElementById('greetingTitle');
   if (greetingTitleEl) greetingTitleEl.textContent = greetingText(now);
