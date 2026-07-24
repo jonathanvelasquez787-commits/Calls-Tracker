@@ -1813,7 +1813,7 @@
     </details>
     <span class="slot-status" id="adherenceGoalBadge" style="display:none;"></span>
     <span class="slot-status bad live-exception" id="adherenceLiveBadge" style="display:none;">⚠️ Fuera de adherencia ahora</span>
-    <span class="slot-status" id="marginBadge">Margen: —</span>
+    <span class="slot-status" id="marginBadge" title="Minutos NO productivos (ACW, huecos cortos) permitidos dentro de tu turno sin marcar exceso, calculados por cada 60 min trabajados. Editable en Horario → Margen.">Margen: —</span>
   </div>
   <div class="schedule" id="scheduleList"></div>
 </div>
@@ -2013,6 +2013,19 @@
 </div>
 </div>
 <p class="alert-hint">"Bloques del día" calcula tu Adherencia minuto a minuto. La ventana de gracia perdona desvíos chicos cerca de cada transición del horario (ej. empezar un break unos minutos tarde) — 0 = cualquier desvío penaliza de inmediato. La Meta es tu objetivo personal de %, se compara contra tu Adherencia del día.</p>
+</div>
+<div class="alert-group">
+<div class="alert-group-head">
+<span class="alert-group-icon">📐</span>
+<span class="alert-group-title">Margen</span>
+</div>
+<div class="alert-fields-row">
+<div class="alert-mini-field">
+<label for="marginAllowedMinPerHourInput" title="Minutos NO productivos (ACW, huecos cortos entre llamadas, etc.) que se permiten dentro de tu turno sin que se marque como excedido — se calculan por cada 60 min trabajados. Ej. con 5, en un bloque de 2 horas trabajadas se permiten 10 min no-productivos antes de marcar exceso.">Margen permitido (min/hora) ⓘ</label>
+<input id="marginAllowedMinPerHourInput" inputmode="numeric" min="0" step="1" type="number"/>
+</div>
+</div>
+<p class="alert-hint">Minutos no-productivos (ACW, huecos cortos) permitidos por cada 60 min trabajados, antes de que "Margen" (en Bloques del día) marque exceso. Aplica tanto al margen por bloque como al del día completo.</p>
 </div>
 <div class="divider"></div>
 <div class="field" style="margin-bottom:4px;">
@@ -2600,6 +2613,14 @@ $0.72"></textarea>
         // existen Meta en minutos/dólares/moneda), editable en Horario junto
         // a la ventana de gracia. Default 95 — umbral típico de un WFM real.
         adherenceGoalPct: 95,
+        // Pedido del usuario: el ratio de "Margen del día"/"Margen bloque"
+        // (minutos NO productivos permitidos por cada 60 min trabajados,
+        // ej. ACW o huecos cortos) estaba fijo en el código (5/60) en dos
+        // lugares (slotStats() y renderSchedule()). Ahora es un solo valor
+        // configurable, editable en Horario junto a Adherencia. Default 5
+        // — mismo valor que ya tenía la app, así que nadie ve un cambio de
+        // comportamiento hasta que lo edite a propósito.
+        marginAllowedMinPerHour: 5,
       };
     }
 
@@ -2618,6 +2639,7 @@ $0.72"></textarea>
       if (!Number.isFinite(Number(settings.alertBeforeBreakEndMin)) || Number(settings.alertBeforeBreakEndMin) < 0) settings.alertBeforeBreakEndMin = fallback.alertBeforeBreakEndMin;
       if (!Number.isFinite(Number(settings.adherenceGraceMin)) || Number(settings.adherenceGraceMin) < 0) settings.adherenceGraceMin = fallback.adherenceGraceMin;
       if (!Number.isFinite(Number(settings.adherenceGoalPct)) || Number(settings.adherenceGoalPct) <= 0 || Number(settings.adherenceGoalPct) > 100) settings.adherenceGoalPct = fallback.adherenceGoalPct;
+      if (!Number.isFinite(Number(settings.marginAllowedMinPerHour)) || Number(settings.marginAllowedMinPerHour) < 0) settings.marginAllowedMinPerHour = fallback.marginAllowedMinPerHour;
     }
 
     // Texto "≈ L 123.45" para mostrar el equivalente en la moneda secundaria
@@ -4000,7 +4022,7 @@ function slotStats(slot, dayCalls = calls, dayPauses = dayPauseIntervals(getActi
   // `productiveForMargin` se acota a no exceder ese mismo total (defensivo,
   // por si algo se traslapara de forma inesperada). marginExceso > 0 significa
   // que el bloque se pasó del margen permitido.
-  const MARGIN_RATIO = 5 / 60;
+  const MARGIN_RATIO = (Number.isFinite(Number(settings.marginAllowedMinPerHour)) && Number(settings.marginAllowedMinPerHour) >= 0 ? Number(settings.marginAllowedMinPerHour) : 5) / 60;
   let margin = null;
   if (slot.type === 'Work') {
     const workedForMargin = workUsed;
@@ -5860,6 +5882,8 @@ function renderWeekSummary() {
       if (adherenceGraceMinInput && document.activeElement !== adherenceGraceMinInput) adherenceGraceMinInput.value = settings.adherenceGraceMin;
       const adherenceGoalPctInput = document.getElementById('adherenceGoalPctInput');
       if (adherenceGoalPctInput && document.activeElement !== adherenceGoalPctInput) adherenceGoalPctInput.value = settings.adherenceGoalPct;
+      const marginAllowedMinPerHourInput = document.getElementById('marginAllowedMinPerHourInput');
+      if (marginAllowedMinPerHourInput && document.activeElement !== marginAllowedMinPerHourInput) marginAllowedMinPerHourInput.value = settings.marginAllowedMinPerHour;
       // Ciclo de pago: son settings globales (no por día de la semana), así
       // que se sincronizan siempre igual sin importar scheduleEditDay.
       ensureCurrencySettings();
@@ -6122,6 +6146,20 @@ function renderWeekSummary() {
       saveSettingsOnly();
       render();
       toast(`Meta de Adherencia: ${settings.adherenceGoalPct}%`);
+    }
+
+    // Pedido del usuario: ratio de "Margen" configurable (minutos no
+    // productivos permitidos por cada 60 min trabajados) — mismo patrón de
+    // auto-guardado que el resto de settings de Horario. slotStats() y
+    // renderSchedule() leen settings.marginAllowedMinPerHour directamente,
+    // así que no hace falta recalcular nada aquí más que re-renderizar.
+    function updateMarginSettings() {
+      const input = document.getElementById('marginAllowedMinPerHourInput');
+      const mins = Number(input?.value);
+      if (Number.isFinite(mins) && mins >= 0) settings.marginAllowedMinPerHour = mins;
+      saveSettingsOnly();
+      render();
+      toast(`Margen permitido: ${formatMinutes(settings.marginAllowedMinPerHour)} min por hora`);
     }
 
 
@@ -6820,7 +6858,7 @@ function renderSchedule() {
             const marginText = m.ok
               ? `Margen: ${formatMinutes(m.used)}m de ${formatMinutes(m.allowed)}m permitidos`
               : `Margen excedido por ${formatMinutes(m.excess)}m (permitido ${formatMinutes(m.allowed)}m)`;
-            marginLineHtml = `<div class="slot-status ${marginTone}">${escapeHtml(marginText)}</div>`;
+            marginLineHtml = `<div class="slot-status ${marginTone}" title="Minutos NO productivos (ACW, huecos cortos) permitidos en este bloque sin marcar exceso, calculados por cada 60 min trabajados. Editable en Horario → Margen.">${escapeHtml(marginText)}</div>`;
           }
         }
 
@@ -6892,7 +6930,7 @@ function renderSchedule() {
       wrap.innerHTML = slotRows.join('');
 
       // ---- Resumen del día: Adherencia + Margen (arriba de la lista) ----
-      const MARGIN_RATIO_DAY = 5 / 60;
+      const MARGIN_RATIO_DAY = (Number.isFinite(Number(settings.marginAllowedMinPerHour)) && Number(settings.marginAllowedMinPerHour) >= 0 ? Number(settings.marginAllowedMinPerHour) : 5) / 60;
       const dayMarginAllowed = dayMarginWorked * MARGIN_RATIO_DAY;
       const dayMarginUsed = Math.max(0, dayMarginWorked - dayMarginProductive);
       const dayMarginExcess = Math.max(0, dayMarginUsed - dayMarginAllowed);
@@ -7346,6 +7384,7 @@ function render() {
     document.getElementById('breakEndAlertMinInput').addEventListener('change', updateBreakAlertSettings);
     document.getElementById('adherenceGraceMinInput').addEventListener('change', updateAdherenceGraceSettings);
     document.getElementById('adherenceGoalPctInput').addEventListener('change', updateAdherenceGoalSettings);
+    document.getElementById('marginAllowedMinPerHourInput').addEventListener('change', updateMarginSettings);
     document.getElementById('daySelector').addEventListener('change', (e) => {
       const key = dayKeyFromIsoDate(e.target.value);
       if (key) setActiveDayKey(key);
