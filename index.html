@@ -837,6 +837,17 @@
   transition: width .18s ease;
 }
 
+/* Pedido del usuario: barra de Productividad dentro de cada bloque de
+   Trabajo, aparte de la barra de "Usado" que ya existe (.slot-progress
+   sola, sin modificador). Degradado distinto (verde→teal, en vez de
+   teal→azul) para distinguirla a simple vista de la barra de uso — verde
+   porque "productivo" ya es el color que usa el resto de la app para
+   "bien" (--good). Reutiliza la misma altura/borde/fondo de .slot-progress,
+   solo cambia el color del relleno. */
+.slot-progress.productivity > div {
+  background: linear-gradient(90deg, var(--good), var(--teal));
+}
+
     .control-btn {
       display: flex;
       flex-direction: column;
@@ -4000,6 +4011,16 @@ function slotStats(slot, dayCalls = calls, dayPauses = dayPauseIntervals(getActi
     margin = { worked: workedForMargin, productive: productiveForMargin, allowed, used, excess, ok: excess <= 0.05 };
   }
 
+  // Pedido del usuario: barra de Productividad dentro de cada bloque de
+  // Trabajo — % de la duración planeada del bloque que fue tiempo de
+  // llamada productiva (productiveCallMin, ya calculado arriba para
+  // "Margen"), no solo "tiempo usado" (que incluye ACW). Mismo capado a
+  // 100% que ya usa `pct`, y misma defensa contra durationMin=0. Solo
+  // aplica a slots de Trabajo — null para Break/Lunch, igual que `margin`.
+  const productivityPct = slot.type === 'Work'
+    ? (durationMin > 0 ? Math.min(100, (productiveCallMin / durationMin) * 100) : 0)
+    : null;
+
   const now = new Date();
   const actualPause = pauseForSlot(slot, dayKey);
   // Se calcula una sola vez aquí (antes solo existía dentro de la rama
@@ -4131,7 +4152,7 @@ function slotStats(slot, dayCalls = calls, dayPauses = dayPauseIntervals(getActi
     statusTone = 'warn';
   }
 
-  return { slotStart, slotEnd, durationMin, callMin, acwMin, pauseMin, filledMin, pct, detail, status, statusTone, actualPauseRange, realActivityRange, margin };
+  return { slotStart, slotEnd, durationMin, callMin, acwMin, pauseMin, filledMin, pct, productivityPct, detail, status, statusTone, actualPauseRange, realActivityRange, margin };
 }
 
 // ---- Adherencia: plan (horario semanal) vs real (lo que de verdad pasó) ----
@@ -6831,6 +6852,21 @@ function renderSchedule() {
           ? `<div class="slot-metrics-row">${marginLineHtml}${slotAdherenceLineHtml}</div>`
           : '';
 
+        // Pedido del usuario: barra de Productividad dentro de cada bloque
+        // de Trabajo, aparte de la barra de "Usado" (stats.pct). Solo
+        // aplica a Trabajo (stats.productivityPct es null en Break/Lunch,
+        // mismo criterio que stats.margin) — se arma como HTML aparte para
+        // no forzar el markup con un condicional feo dentro del template
+        // principal de abajo.
+        const productivityBarHtml = slot.type === 'Work' && stats.productivityPct !== null
+          ? `
+              <div class="meta">Productividad: ${Math.round(stats.productivityPct)}%</div>
+              <div class="slot-progress productivity" aria-label="${escapeHtml(slot.name)} productividad">
+                <div style="width:${stats.productivityPct}%"></div>
+              </div>
+            `
+          : '';
+
         return `
           <div class="slot ${active ? 'active' : ''} ${done ? 'done' : ''}">
             <div>
@@ -6843,6 +6879,7 @@ function renderSchedule() {
               <div class="slot-progress" aria-label="${escapeHtml(slot.name)} progreso">
                 <div style="width:${stats.pct}%"></div>
               </div>
+              ${productivityBarHtml}
               <div class="slot-status ${statusClass}">${escapeHtml(stats.status)}</div>
               <div class="meta">${progressLabel}</div>
               ${slotMetricsRowHtml}
