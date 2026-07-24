@@ -1114,6 +1114,33 @@
       gap: 10px;
     }
 
+    /* Pedido del usuario: lista dinámica de breaks en Horario (antes 2
+       pares de inputs fijos, Break 1/Break 2). Reutiliza el mismo
+       contenedor .gap-editor-list (gap vertical entre filas) que ya usaba
+       el editor de huecos, pero con su propia fila .break-row: inicio +
+       duración + botón eliminar, en una sola línea que envuelve en mobile. */
+    .break-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.03);
+    }
+
+    .break-row .field {
+      flex: 1 1 140px;
+      margin: 0;
+    }
+
+    .break-row .break-remove-btn {
+      flex: 0 0 auto;
+      height: 40px;
+      align-self: flex-end;
+    }
+
     .gap-row {
       display: grid;
       grid-template-columns: minmax(0, 1.4fr) minmax(220px, .9fr);
@@ -1936,25 +1963,12 @@
 <input id="dayEndInput" inputmode="numeric" type="time"/>
 </div>
 </div>
-<div class="goal-fields">
-<div class="field">
-<label for="break1StartInput">Break 1 — inicio</label>
-<input id="break1StartInput" inputmode="numeric" type="time"/>
+<div class="field" style="flex:1 1 100%; margin-bottom:0;">
+<label style="font-weight:900;">Breaks</label>
 </div>
-<div class="field">
-<label for="break1DurInput">Break 1 — min</label>
-<input id="break1DurInput" inputmode="numeric" min="0" type="number"/>
-</div>
-</div>
-<div class="goal-fields">
-<div class="field">
-<label for="break2StartInput">Break 2 — inicio</label>
-<input id="break2StartInput" inputmode="numeric" type="time"/>
-</div>
-<div class="field">
-<label for="break2DurInput">Break 2 — min</label>
-<input id="break2DurInput" inputmode="numeric" min="0" type="number"/>
-</div>
+<div class="gap-editor-list" id="breaksEditorList"></div>
+<div class="modal-actions" style="margin-top:0;">
+<button class="warn" id="addBreakBtn" type="button">+ Agregar break</button>
 </div>
 <div class="goal-fields">
 <div class="field">
@@ -2393,14 +2407,27 @@ $0.72"></textarea>
     function buildPlannedSlots(dayConfig) {
       if (!dayConfig || dayConfig.off || !dayConfig.start || !dayConfig.end) return [];
       const points = [];
-      (Array.isArray(dayConfig.breaks) ? dayConfig.breaks : []).forEach((b, i) => {
+      // Bug encontrado de paso (al permitir agregar breaks libremente, ver
+      // "+ Agregar break" en Horario): antes cada Break se nombraba "Break
+      // N" según su posición en el ARREGLO (índice i), ANTES de ordenar
+      // cronológicamente los bloques más abajo. Si un break quedaba con una
+      // hora anterior a otro que estaba antes en el arreglo (fácil de hacer
+      // sin querer con una lista libre de agregar/quitar), el nombre salía
+      // desincronizado del orden real en pantalla (ej. "Break 2" apareciendo
+      // antes que "Break 1"). Ahora el nombre se asigna DESPUÉS del sort,
+      // así que siempre refleja el orden cronológico real del día — el
+      // emparejamiento con pausas reales (pauseForSlot/pauseAssignmentCache)
+      // no se ve afectado porque compara por start/end, nunca por name.
+      (Array.isArray(dayConfig.breaks) ? dayConfig.breaks : []).forEach((b) => {
         if (!b || !b.start || !(Number(b.dur) > 0)) return;
-        points.push({ type: 'Break', name: `Break ${i + 1}`, start: formatHHMM(b.start), dur: Number(b.dur) });
+        points.push({ type: 'Break', name: null, start: formatHHMM(b.start), dur: Number(b.dur) });
       });
       if (dayConfig.lunch && dayConfig.lunch.start && Number(dayConfig.lunch.dur) > 0) {
         points.push({ type: 'Lunch', name: 'Lunch', start: formatHHMM(dayConfig.lunch.start), dur: Number(dayConfig.lunch.dur) });
       }
       points.sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
+      let breakIdx = 1;
+      points.forEach(p => { if (p.type === 'Break') p.name = `Break ${breakIdx++}`; });
 
       const slots = [];
       let cursorMin = toMinutes(formatHHMM(dayConfig.start));
@@ -5870,16 +5897,72 @@ function renderWeekSummary() {
       });
     }
 
+    // Pedido del usuario: permitir agregar/quitar bloques de Break libremente
+    // en Horario (antes fijo: Break 1 y Break 2, sin forma de agregar un
+    // tercero). El motor de horario (buildPlannedSlots/validateDayConfig/
+    // copyDayToAll/applyWeekendCopy) ya iteraba dayConfig.breaks como un
+    // arreglo de cualquier longitud — la única pieza que faltaba era esta
+    // capa de formulario.
+    function renderBreaksEditor(breaks) {
+      const list = document.getElementById('breaksEditorList');
+      if (!list) return;
+      const arr = Array.isArray(breaks) && breaks.length ? breaks : [];
+      list.innerHTML = arr.map((b, i) => `
+        <div class="break-row" data-break-row="${i}">
+          <div class="field">
+            <label>Break ${i + 1} — inicio</label>
+            <input type="time" class="break-start-input" inputmode="numeric" value="${formatHHMM(b?.start || '09:00')}"/>
+          </div>
+          <div class="field">
+            <label>Break ${i + 1} — min</label>
+            <input type="number" class="break-dur-input" inputmode="numeric" min="0" value="${Number(b?.dur) || 0}"/>
+          </div>
+          <button type="button" class="gap-edit-btn break-remove-btn" data-remove-break="${i}" style="background: rgba(255,111,143,.12); border-color: rgba(255,111,143,.3);" aria-label="Eliminar Break ${i + 1}">✕</button>
+        </div>
+      `).join('') || '<div class="note" style="margin:0;">Sin breaks configurados. Usa "+ Agregar break" si necesitas uno.</div>';
+    }
+
+    // Lee todas las filas .break-row actualmente en el DOM (en el mismo
+    // orden en que se renderizaron) y arma el arreglo `breaks` — reemplaza
+    // a los 2 pares de inputs fijos que leía antes readScheduleFormAsConfig().
+    function readBreaksFromEditor() {
+      const rows = document.querySelectorAll('#breaksEditorList .break-row');
+      return Array.from(rows).map(row => {
+        const startInput = row.querySelector('.break-start-input');
+        const durInput = row.querySelector('.break-dur-input');
+        return {
+          start: formatHHMM(startInput ? startInput.value : '09:00'),
+          dur: Math.max(0, Number(durInput ? durInput.value : 0) || 0),
+        };
+      });
+    }
+
+    // "+ Agregar break": toma lo que ya está en el formulario (para no
+    // perder ediciones a medio hacer en filas existentes) y le agrega una
+    // fila nueva al final, con un default razonable (09:00, 15 min) que el
+    // usuario ajusta a su gusto antes de "Guardar día".
+    function addBreakRow() {
+      const current = readBreaksFromEditor();
+      current.push({ start: '09:00', dur: 15 });
+      renderBreaksEditor(current);
+    }
+
+    // Eliminar una fila: se relee el estado actual del formulario (para no
+    // perder ediciones de las OTRAS filas) y se vuelve a pintar sin la fila
+    // quitada. Wiring (addBreakBtn + delegado en breaksEditorList) vive
+    // junto al resto de los listeners, al final del script.
+    function removeBreakRowAt(idx) {
+      const current = readBreaksFromEditor();
+      current.splice(idx, 1);
+      renderBreaksEditor(current);
+    }
+
     function syncShiftModalFields() {
       ensureWeeklySchedule();
       const cfg = settings.weeklySchedule[scheduleEditDay] || defaultDaySchedule(true);
       const dayOffInput = document.getElementById('dayOffInput');
       const startInput = document.getElementById('dayStartInput');
       const endInput = document.getElementById('dayEndInput');
-      const b1s = document.getElementById('break1StartInput');
-      const b1d = document.getElementById('break1DurInput');
-      const b2s = document.getElementById('break2StartInput');
-      const b2d = document.getElementById('break2DurInput');
       const ls = document.getElementById('lunchStartInput');
       const ld = document.getElementById('lunchDurInput');
       const lateSelect = document.getElementById('lateArrivalModeInput');
@@ -5888,10 +5971,7 @@ function renderWeekSummary() {
       if (dayOffInput) dayOffInput.checked = !!cfg.off;
       if (startInput) startInput.value = formatHHMM(cfg.start || '07:00');
       if (endInput) endInput.value = formatHHMM(cfg.end || '16:00');
-      if (b1s) b1s.value = formatHHMM(breaks[0]?.start || '09:10');
-      if (b1d) b1d.value = breaks[0]?.dur ?? 20;
-      if (b2s) b2s.value = formatHHMM(breaks[1]?.start || '11:40');
-      if (b2d) b2d.value = breaks[1]?.dur ?? 20;
+      renderBreaksEditor(breaks);
       if (ls) ls.value = formatHHMM(cfg.lunch?.start || '13:00');
       if (ld) ld.value = cfg.lunch?.dur ?? 50;
       if (lateSelect) lateSelect.value = settings.lateArrivalMode || 'anchor';
@@ -5925,10 +6005,6 @@ function renderWeekSummary() {
       const dayOffInput = document.getElementById('dayOffInput');
       const startInput = document.getElementById('dayStartInput');
       const endInput = document.getElementById('dayEndInput');
-      const b1s = document.getElementById('break1StartInput');
-      const b1d = document.getElementById('break1DurInput');
-      const b2s = document.getElementById('break2StartInput');
-      const b2d = document.getElementById('break2DurInput');
       const ls = document.getElementById('lunchStartInput');
       const ld = document.getElementById('lunchDurInput');
       if (!startInput || !endInput) return null;
@@ -5936,10 +6012,7 @@ function renderWeekSummary() {
         off: dayOffInput ? dayOffInput.checked : false,
         start: formatHHMM(startInput.value),
         end: formatHHMM(endInput.value),
-        breaks: [
-          { start: formatHHMM(b1s.value), dur: Math.max(0, Number(b1d.value) || 0) },
-          { start: formatHHMM(b2s.value), dur: Math.max(0, Number(b2d.value) || 0) },
-        ],
+        breaks: readBreaksFromEditor(),
         lunch: { start: formatHHMM(ls.value), dur: Math.max(0, Number(ld.value) || 0) },
       };
     }
@@ -5958,14 +6031,13 @@ function renderWeekSummary() {
       if (!cfg) return false;
       ensureWeeklySchedule();
       const stored = settings.weeklySchedule[scheduleEditDay];
+      const storedBreaks = (stored && Array.isArray(stored.breaks) ? stored.breaks : [])
+        .map(b => ({ start: formatHHMM((b && b.start) || '00:00'), dur: Math.max(0, Number(b && b.dur) || 0) }));
       const storedNormalized = {
         off: !!(stored && stored.off),
         start: formatHHMM((stored && stored.start) || '07:00'),
         end: formatHHMM((stored && stored.end) || '16:00'),
-        breaks: [0, 1].map(i => {
-          const b = stored && Array.isArray(stored.breaks) ? stored.breaks[i] : null;
-          return { start: formatHHMM((b && b.start) || '00:00'), dur: Math.max(0, Number(b && b.dur) || 0) };
-        }),
+        breaks: storedBreaks,
         lunch: {
           start: formatHHMM((stored && stored.lunch && stored.lunch.start) || '00:00'),
           dur: Math.max(0, Number(stored && stored.lunch && stored.lunch.dur) || 0),
@@ -7413,6 +7485,15 @@ function render() {
     document.getElementById('exchangeRateInput').addEventListener('change', updateCurrencySettings);
     document.getElementById('currencyLabelInput').addEventListener('change', updateCurrencySettings);
     document.getElementById('saveShiftWindowBtn').addEventListener('click', saveShiftWindow);
+    document.getElementById('addBreakBtn').addEventListener('click', addBreakRow);
+    // Delegado en el contenedor: las filas se reconstruyen por completo en
+    // cada renderBreaksEditor()/addBreakRow()/removeBreakRowAt(), así que un
+    // listener por botón individual se perdería cada vez que se repinta.
+    document.getElementById('breaksEditorList').addEventListener('click', (e) => {
+      const btn = e.target instanceof Element ? e.target.closest('[data-remove-break]') : null;
+      if (!btn) return;
+      removeBreakRowAt(Number(btn.getAttribute('data-remove-break')));
+    });
     // Pedido del usuario: al marcar (o desmarcar) "Día libre (sin turno)"
     // dentro del modal de Horario, el cambio se guarda solo, sin tener que
     // además clickear "Guardar día". validateDayConfig() ya regresa
