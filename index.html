@@ -5927,6 +5927,29 @@ function renderWeekSummary() {
       return { valid: errors.length === 0, errors };
     }
 
+    // Pedido del usuario: al guardar el horario de un día entre semana,
+    // preguntar si también se quiere aplicar ese mismo horario a Sábado y
+    // Domingo — una opción intermedia entre "solo este día" y "Copiar a
+    // todos los días" (los 7, ya existente). isWeekendDay() evita la
+    // pregunta sin sentido de "¿aplicar Sábado a Sábado y Domingo?" cuando
+    // el día que se acaba de guardar YA es parte del fin de semana.
+    function isWeekendDay(dayKey) {
+      return dayKey === 'sat' || dayKey === 'sun';
+    }
+
+    // Copia off/start/end/breaks/lunch de `cfg` a sat y sun. breaks/lunch se
+    // clonan por separado para cada uno (no comparten arrays/objetos entre
+    // sí ni con `cfg`), para que editar después solo Sábado (por ejemplo) no
+    // mueva también Domingo por referencia compartida.
+    function applyWeekendCopy(cfg) {
+      settings.weeklySchedule.sat = { off: cfg.off, start: cfg.start, end: cfg.end, breaks: cfg.breaks.map(b => ({ ...b })), lunch: { ...cfg.lunch } };
+      settings.weeklySchedule.sun = { off: cfg.off, start: cfg.start, end: cfg.end, breaks: cfg.breaks.map(b => ({ ...b })), lunch: { ...cfg.lunch } };
+      saveSettingsOnly();
+      saveAll();
+      renderDayTabs();
+      toast('Horario aplicado también a Sábado y Domingo');
+    }
+
     function saveShiftWindow() {
       ensureWeeklySchedule();
       const cfg = readScheduleFormAsConfig();
@@ -5946,6 +5969,15 @@ function renderWeekSummary() {
       saveAll();
       renderDayTabs();
       toast(`Horario de ${WEEKDAY_LABELS[scheduleEditDay]} guardado`);
+
+      // Mismo patrón que ya usa copyDayToAll() (appConfirm mientras el modal
+      // de Horario sigue abierto, ver z-index del toast/confirmModal —
+      // ya probado, no es la primera vez que se anida un confirm sobre este
+      // modal). Solo se pregunta si el día recién guardado NO es ya de fin
+      // de semana.
+      if (!isWeekendDay(scheduleEditDay)) {
+        appConfirm(`¿Aplicar este mismo horario (${WEEKDAY_LABELS[scheduleEditDay]}) también a Sábado y Domingo?`, () => applyWeekendCopy(cfg));
+      }
     }
 
     function copyDayToAll() {
