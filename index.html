@@ -2459,6 +2459,16 @@ $0.72"></textarea>
         // pedido del usuario: una llamada y un Break/Lunch pueden estar
         // activos al mismo tiempo, sin bloquearse ni cancelarse entre sí.
         activeCall: null,
+        // Pedido del usuario (bug encontrado en el indicador ACW/Available
+        // en vivo, FIXED_108): momento en que colgaste tu última llamada,
+        // aunque todavía no la hayas confirmado/guardado en el modal
+        // "Guardar llamada". Sin esto, computeCurrentAcwStart() no tenía
+        // forma de saber que "acabas de estar en una llamada" mientras esa
+        // llamada aún no existía en `calls` — el ancla se quedaba pegada al
+        // evento anterior (ej. inicio del turno), inflando el tiempo
+        // mostrado como ACW. Se actualiza en endCall(), independientemente
+        // de si la llamada termina guardándose o se cancela.
+        lastCallEndedAt: null,
         pauseHistory: [],
         events: [],
         activeDayKey: null,
@@ -2987,6 +2997,13 @@ $0.72"></textarea>
       const candidates = [new Date(state.shiftStartedAt).getTime()];
       callsForDay(dayKey).forEach(c => candidates.push(new Date(c.endISO).getTime()));
       dayPauseIntervals(dayKey).forEach(p => candidates.push(p.end.getTime()));
+      // Bug corregido: sin este candidato, colgar una llamada (endCall())
+      // no se reflejaba aquí hasta que se confirmaba en el modal de
+      // guardado — mientras tanto el ancla se quedaba en el evento
+      // anterior (ej. inicio del turno), inflando el tiempo mostrado como
+      // ACW. state.lastCallEndedAt se actualiza en endCall() sin importar
+      // si la llamada termina guardándose o cancelándose.
+      if (state.lastCallEndedAt) candidates.push(new Date(state.lastCallEndedAt).getTime());
       const valid = candidates.filter(t => Number.isFinite(t) && t <= now.getTime());
       if (!valid.length) return null;
       return new Date(Math.max(...valid));
@@ -5415,6 +5432,12 @@ function renderWeekSummary() {
       const startedAt = state.activeCall.startedAt;
       const endedAt = new Date().toISOString();
       state.activeCall = null;
+      // Bug corregido: sin esto, el chip "ACW/Available" en vivo (ver
+      // computeCurrentAcwStart()) no sabía que la llamada acababa de
+      // terminar hasta que se confirmaba en el modal de guardado (recién
+      // colgada, la llamada todavía no existe en `calls`) — el cronómetro
+      // se quedaba anclado al evento anterior, inflando el tiempo mostrado.
+      state.lastCallEndedAt = endedAt;
       saveStateOnly();
       render();
       openManualCallModalFromLiveCall(startedAt, endedAt);
