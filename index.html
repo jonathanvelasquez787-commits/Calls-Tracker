@@ -2438,13 +2438,13 @@ $0.72"></textarea>
       points.forEach(p => {
         const pStart = toMinutes(p.start);
         if (pStart > cursorMin) {
-          slots.push({ type: 'Work', name: `Trabajo ${workIdx++}`, start: toHHMM(cursorMin), end: toHHMM(pStart) });
+          slots.push({ type: 'Work', name: `Bloque de Trabajo ${workIdx++}`, start: toHHMM(cursorMin), end: toHHMM(pStart) });
         }
         slots.push({ type: p.type, name: p.name, start: toHHMM(pStart), end: toHHMM(pStart + p.dur) });
         cursorMin = pStart + p.dur;
       });
       if (endMin > cursorMin) {
-        slots.push({ type: 'Work', name: `Trabajo ${workIdx++}`, start: toHHMM(cursorMin), end: toHHMM(endMin) });
+        slots.push({ type: 'Work', name: `Bloque de Trabajo ${workIdx++}`, start: toHHMM(cursorMin), end: toHHMM(endMin) });
       }
       return slots;
     }
