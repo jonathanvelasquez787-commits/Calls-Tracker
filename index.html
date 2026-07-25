@@ -2849,6 +2849,20 @@ $0.72"></textarea>
       return `${pad(h)}:${pad(m)}:${pad(sec)}`;
     }
 
+    // Pedido del usuario: formato específico para "Tiempo llamadas" —
+    // H:MM:SSh (horas SIN cero a la izquierda, a diferencia de
+    // formatDuration()) + " - Nmins" (minutos totales redondeados). Solo se
+    // usa para esa etiqueta puntual; formatDuration() sigue igual para todo
+    // lo demás (cronómetros, duraciones de pausas, etc.).
+    function formatCallTimeLabel(totalMin) {
+      const totalSeconds = Math.max(0, Math.round((Number.isFinite(totalMin) ? totalMin : 0) * 60));
+      const h = Math.floor(totalSeconds / 3600);
+      const m = Math.floor((totalSeconds % 3600) / 60);
+      const s = totalSeconds % 60;
+      const roundedMin = Math.round(Number.isFinite(totalMin) ? totalMin : 0);
+      return `${h}:${pad(m)}:${pad(s)}h - ${roundedMin}mins`;
+    }
+
     function formatMinutes(mins) {
       const n = Number.isFinite(mins) ? mins : 0;
       const rounded = Math.round(n * 10) / 10;
@@ -6465,7 +6479,7 @@ function renderHeader() {
   // tamaño/espaciado sin escribir CSS nuevo.
   const earningsTagsHtml = [
     `<span class="tag ${hasShift ? 'good' : ''}">Conectado: ${hasShift ? formatDuration(connected * 60000) : '—'}</span>`,
-    `<span class="tag good">Tiempo llamadas: ${formatDuration(stats.total * 60000)}</span>`,
+    `<span class="tag good">Tiempo llamadas: ${formatCallTimeLabel(stats.total)}</span>`,
     `<span class="tag">Total: ${dayCalls.length}</span>`,
     `<span class="tag">Billable: ${stats.billable}</span>`,
     `<span class="tag">Dropped: ${stats.dropped}</span>`,
@@ -7254,7 +7268,7 @@ function renderTable() {
 
       const stats = importedCallStats(sorted, dayKey);
       const tagsHtml = `
-        <span class="tag good">Tiempo llamadas: ${formatDuration(stats.total * 60000)}</span>
+        <span class="tag good">Tiempo llamadas: ${formatCallTimeLabel(stats.total)}</span>
         <span class="tag">Total: ${sorted.length}</span>
         <span class="tag">Billable: ${stats.billable}</span>
         <span class="tag">Dropped: ${stats.dropped}</span>
