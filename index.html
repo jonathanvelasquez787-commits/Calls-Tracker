@@ -1114,12 +1114,14 @@
       gap: 10px;
     }
 
-    /* Pedido del usuario: lista dinámica de breaks en Horario (antes 2
-       pares de inputs fijos, Break 1/Break 2). Reutiliza el mismo
-       contenedor .gap-editor-list (gap vertical entre filas) que ya usaba
-       el editor de huecos, pero con su propia fila .break-row: inicio +
-       duración + botón eliminar, en una sola línea que envuelve en mobile. */
-    .break-row {
+    /* Pedido del usuario: lista dinámica UNIFICADA de bloques en Horario —
+       Trabajo/Break/Lunch todos editables igual (antes Break ya era
+       dinámico, Lunch era fijo, y Trabajo no era editable en absoluto).
+       Reutiliza el mismo contenedor .gap-editor-list (gap vertical entre
+       filas) que ya usaba el editor de huecos, con su propia fila
+       .block-row: Tipo + inicio + duración + botón eliminar, en una sola
+       línea que envuelve en mobile. */
+    .block-row {
       display: flex;
       align-items: flex-end;
       gap: 10px;
@@ -1130,12 +1132,12 @@
       background: rgba(255,255,255,.03);
     }
 
-    .break-row .field {
+    .block-row .field {
       flex: 1 1 140px;
       margin: 0;
     }
 
-    .break-row .break-remove-btn {
+    .block-row .block-remove-btn {
       flex: 0 0 auto;
       height: 40px;
       align-self: flex-end;
@@ -1964,21 +1966,11 @@
 </div>
 </div>
 <div class="field" style="flex:1 1 100%; margin-bottom:0;">
-<label style="font-weight:900;">Breaks</label>
+<label style="font-weight:900;">Bloques (Trabajo / Break / Lunch)</label>
 </div>
-<div class="gap-editor-list" id="breaksEditorList"></div>
+<div class="gap-editor-list" id="blocksEditorList"></div>
 <div class="modal-actions" style="margin-top:0;">
-<button class="warn" id="addBreakBtn" type="button">+ Agregar break</button>
-</div>
-<div class="goal-fields">
-<div class="field">
-<label for="lunchStartInput">Lunch — inicio</label>
-<input id="lunchStartInput" inputmode="numeric" type="time"/>
-</div>
-<div class="field">
-<label for="lunchDurInput">Lunch — min</label>
-<input id="lunchDurInput" inputmode="numeric" min="0" type="number"/>
-</div>
+<button class="warn" id="addBlockBtn" type="button">+ Agregar bloque</button>
 </div>
 <div class="alert-group">
 <div class="alert-group-head">
@@ -2332,13 +2324,29 @@ $0.72"></textarea>
     const WEEKDAY_LABELS = { mon: 'Lunes', tue: 'Martes', wed: 'Miércoles', thu: 'Jueves', fri: 'Viernes', sat: 'Sábado', sun: 'Domingo' };
     const WEEKDAY_LABELS_SHORT = { mon: 'Lun', tue: 'Mar', wed: 'Mié', thu: 'Jue', fri: 'Vie', sat: 'Sáb', sun: 'Dom' };
 
+    // Pedido del usuario: unificar Break/Lunch/Trabajo en UN solo modelo —
+    // antes breaks[] (dinámico desde v109) + lunch{} (fijo, un solo objeto).
+    // Ahora todo vive en `blocks[]`: cada bloque tiene {type: 'work'|'break'
+    // |'lunch', start, dur}, editable/agregable/eliminable exactamente igual
+    // sin importar el tipo. Ya NO hay auto-relleno de "lo que sobra" como
+    // Trabajo — todo bloque (incluyendo Trabajo) debe declararse explícito.
+    // Los mismos horarios de siempre (Break 09:10/20, Break 11:40/20, Lunch
+    // 13:00/50) se mantienen como default, con los bloques de Trabajo que
+    // antes se auto-calculaban ahora declarados explícitamente entre medio.
     function defaultDaySchedule(isWorkDay) {
       return {
         off: !isWorkDay,
         start: '07:00',
         end: '16:00',
-        breaks: [{ start: '09:10', dur: 20 }, { start: '11:40', dur: 20 }],
-        lunch: { start: '13:00', dur: 50 },
+        blocks: [
+          { type: 'work', start: '07:00', dur: 130 },
+          { type: 'break', start: '09:10', dur: 20 },
+          { type: 'work', start: '09:30', dur: 130 },
+          { type: 'break', start: '11:40', dur: 20 },
+          { type: 'work', start: '12:00', dur: 60 },
+          { type: 'lunch', start: '13:00', dur: 50 },
+          { type: 'work', start: '13:50', dur: 130 },
+        ],
       };
     }
 
@@ -2352,6 +2360,39 @@ $0.72"></textarea>
         sat: defaultDaySchedule(false),
         sun: defaultDaySchedule(false),
       };
+    }
+
+    // Migración: días guardados en el formato viejo (breaks[]/lunch{}, de
+    // antes de unificar todo en blocks[]) pasan al nuevo modelo la primera
+    // vez que se cargan. Reconstituye los bloques de Trabajo EXACTAMENTE
+    // como se veían antes (mismo algoritmo de huecos que buildPlannedSlots()
+    // ya usaba) — así nadie pierde nada ni ve un cambio visual al migrar.
+    // Un día que YA tiene `blocks` (formato nuevo) se retorna tal cual, sin
+    // volver a procesarlo.
+    function migrateDayConfigToBlocks(dayCfg) {
+      if (!dayCfg || typeof dayCfg !== 'object') return dayCfg;
+      if (Array.isArray(dayCfg.blocks)) return dayCfg;
+      const legacyBreaks = Array.isArray(dayCfg.breaks) ? dayCfg.breaks : [];
+      const legacyLunch = dayCfg.lunch;
+      const blocks = [];
+      legacyBreaks.forEach(b => {
+        if (b && b.start && Number(b.dur) > 0) blocks.push({ type: 'break', start: formatHHMM(b.start), dur: Number(b.dur) });
+      });
+      if (legacyLunch && legacyLunch.start && Number(legacyLunch.dur) > 0) {
+        blocks.push({ type: 'lunch', start: formatHHMM(legacyLunch.start), dur: Number(legacyLunch.dur) });
+      }
+      if (!dayCfg.off && dayCfg.start && dayCfg.end) {
+        const sortedNonWork = [...blocks].sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
+        let cursor = toMinutes(formatHHMM(dayCfg.start));
+        const endMin = toMinutes(formatHHMM(dayCfg.end));
+        sortedNonWork.forEach(b => {
+          const s = toMinutes(b.start);
+          if (s > cursor) blocks.push({ type: 'work', start: minutesToHHMM(cursor), dur: s - cursor });
+          cursor = Math.max(cursor, s + b.dur);
+        });
+        if (endMin > cursor) blocks.push({ type: 'work', start: minutesToHHMM(cursor), dur: endMin - cursor });
+      }
+      return { off: !!dayCfg.off, start: dayCfg.start, end: dayCfg.end, blocks };
     }
 
     function ensureWeeklySchedule() {
@@ -2369,6 +2410,7 @@ $0.72"></textarea>
         });
       }
       WEEKDAYS.forEach(k => { if (!settings.weeklySchedule[k]) settings.weeklySchedule[k] = defaultDaySchedule(k !== 'sat' && k !== 'sun'); });
+      WEEKDAYS.forEach(k => { settings.weeklySchedule[k] = migrateDayConfigToBlocks(settings.weeklySchedule[k]); });
       if (!settings.lateArrivalMode) settings.lateArrivalMode = 'anchor';
     }
 
@@ -2402,51 +2444,45 @@ $0.72"></textarea>
       return !dayShiftBounds(dayKey).start;
     }
 
-    // Convierte la config de un día (inicio/fin/breaks/lunch) en una lista de bloques
-    // Work/Break/Lunch, SIEMPRE anclada al plan — no a la hora real en que empezaste.
+    // Convierte la config de un día (inicio/fin + blocks[]) en una lista de
+    // slots Work/Break/Lunch, SIEMPRE anclados al plan — no a la hora real
+    // en que empezaste. Pedido del usuario: Trabajo/Break/Lunch unificados
+    // en un solo modelo (`dayConfig.blocks`, cada uno con {type, start,
+    // dur}) — YA NO hay auto-relleno de "lo que sobra" como Trabajo: todo
+    // bloque, incluyendo Trabajo, debe declararse explícito. Un hueco entre
+    // bloques que el usuario no cubrió simplemente no produce ningún slot
+    // (ver también el ajuste en computeMinuteAdherence(), que ya no penaliza
+    // minutos sin ningún bloque planeado encima).
     function buildPlannedSlots(dayConfig) {
       if (!dayConfig || dayConfig.off || !dayConfig.start || !dayConfig.end) return [];
+      const rawBlocks = Array.isArray(dayConfig.blocks) ? dayConfig.blocks : [];
       const points = [];
-      // Bug encontrado de paso (al permitir agregar breaks libremente, ver
-      // "+ Agregar break" en Horario): antes cada Break se nombraba "Break
-      // N" según su posición en el ARREGLO (índice i), ANTES de ordenar
-      // cronológicamente los bloques más abajo. Si un break quedaba con una
-      // hora anterior a otro que estaba antes en el arreglo (fácil de hacer
-      // sin querer con una lista libre de agregar/quitar), el nombre salía
-      // desincronizado del orden real en pantalla (ej. "Break 2" apareciendo
-      // antes que "Break 1"). Ahora el nombre se asigna DESPUÉS del sort,
-      // así que siempre refleja el orden cronológico real del día — el
-      // emparejamiento con pausas reales (pauseForSlot/pauseAssignmentCache)
-      // no se ve afectado porque compara por start/end, nunca por name.
-      (Array.isArray(dayConfig.breaks) ? dayConfig.breaks : []).forEach((b) => {
+      rawBlocks.forEach((b) => {
         if (!b || !b.start || !(Number(b.dur) > 0)) return;
-        points.push({ type: 'Break', name: null, start: formatHHMM(b.start), dur: Number(b.dur) });
+        const type = String(b.type || '').toLowerCase();
+        if (type !== 'break' && type !== 'lunch' && type !== 'work') return;
+        points.push({ rawType: type, start: formatHHMM(b.start), dur: Number(b.dur) });
       });
-      if (dayConfig.lunch && dayConfig.lunch.start && Number(dayConfig.lunch.dur) > 0) {
-        points.push({ type: 'Lunch', name: 'Lunch', start: formatHHMM(dayConfig.lunch.start), dur: Number(dayConfig.lunch.dur) });
-      }
+      // Mismo criterio que ya se usaba para Break (desde el fix de v109):
+      // el nombre ("Break 1", "Lunch 2", "Bloque de Trabajo 3"...) se asigna
+      // DESPUÉS de ordenar cronológicamente, no según el orden del arreglo
+      // — así el número siempre refleja el orden real en pantalla, sin
+      // importar en qué orden se agregaron los bloques. El emparejamiento
+      // con pausas reales (pauseForSlot/pauseAssignmentCache) no se ve
+      // afectado porque compara por start/end, nunca por name.
       points.sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
-      let breakIdx = 1;
-      points.forEach(p => { if (p.type === 'Break') p.name = `Break ${breakIdx++}`; });
 
-      const slots = [];
-      let cursorMin = toMinutes(formatHHMM(dayConfig.start));
-      const endMin = toMinutes(formatHHMM(dayConfig.end));
-      let workIdx = 1;
+      let breakIdx = 1, lunchIdx = 1, workIdx = 1;
       const toHHMM = (mins) => { const m = ((mins % 1440) + 1440) % 1440; return `${pad(Math.floor(m / 60))}:${pad(m % 60)}`; };
 
-      points.forEach(p => {
+      return points.map(p => {
         const pStart = toMinutes(p.start);
-        if (pStart > cursorMin) {
-          slots.push({ type: 'Work', name: `Bloque de Trabajo ${workIdx++}`, start: toHHMM(cursorMin), end: toHHMM(pStart) });
-        }
-        slots.push({ type: p.type, name: p.name, start: toHHMM(pStart), end: toHHMM(pStart + p.dur) });
-        cursorMin = pStart + p.dur;
+        let type, name;
+        if (p.rawType === 'break') { type = 'Break'; name = `Break ${breakIdx++}`; }
+        else if (p.rawType === 'lunch') { type = 'Lunch'; name = `Lunch ${lunchIdx++}`; }
+        else { type = 'Work'; name = `Bloque de Trabajo ${workIdx++}`; }
+        return { type, name, start: toHHMM(pStart), end: toHHMM(pStart + p.dur) };
       });
-      if (endMin > cursorMin) {
-        slots.push({ type: 'Work', name: `Bloque de Trabajo ${workIdx++}`, start: toHHMM(cursorMin), end: toHHMM(endMin) });
-      }
-      return slots;
     }
 
     function defaultState() {
@@ -4354,8 +4390,18 @@ function computeMinuteAdherence({ plannedSlots, actualIntervals, realStartMin, r
   let exceptionMinutes = 0;
   const reasons = {};
   for (let m = rangeStart; m < rangeEnd; m++) {
-    total++;
     const planned = plannedStateAt(m);
+    // Pedido del usuario (unificación de Trabajo/Break/Lunch, ya no hay
+    // auto-relleno de huecos como Trabajo): un minuto SIN ningún bloque
+    // planeado encima (planned === 'none') ahora es posible si el usuario
+    // deja un hueco deliberado sin cubrir. Antes esto no podía pasar dentro
+    // del rango del turno (Trabajo siempre rellenaba todo). Ese minuto no
+    // se mide en absoluto — ni suma ni resta — en vez de contar como
+    // excepción automática solo por no tener plan. Config migradas de antes
+    // de este cambio siguen cubriendo el día completo, así que esto no
+    // cambia nada para nadie que no use huecos a propósito.
+    if (planned === 'none') continue;
+    total++;
     const actual = actualStateAt(m);
     if (planned === actual) continue;
     const nearTransition = transitions.some(t => Math.abs(m - t) <= graceMin);
@@ -5934,64 +5980,82 @@ function renderWeekSummary() {
       });
     }
 
-    // Pedido del usuario: permitir agregar/quitar bloques de Break libremente
-    // en Horario (antes fijo: Break 1 y Break 2, sin forma de agregar un
-    // tercero). El motor de horario (buildPlannedSlots/validateDayConfig/
-    // copyDayToAll/applyWeekendCopy) ya iteraba dayConfig.breaks como un
-    // arreglo de cualquier longitud — la única pieza que faltaba era esta
-    // capa de formulario.
-    function renderBreaksEditor(breaks) {
-      const list = document.getElementById('breaksEditorList');
+    // Pedido del usuario: unificar Trabajo/Break/Lunch en UNA sola lista de
+    // bloques en Horario — cada fila tiene Tipo (selector) + inicio + min,
+    // todos editables/agregables/eliminables exactamente igual, sin importar
+    // el tipo. Antes Break ya era dinámico (v109) pero Lunch seguía siendo
+    // un solo objeto fijo, y Trabajo ni siquiera era editable (se
+    // auto-calculaba como "lo que sobra"). El motor (buildPlannedSlots/
+    // validateDayConfig/copyDayToAll/applyWeekendCopy) ya fue generalizado
+    // a `dayConfig.blocks` — esta es la capa de formulario correspondiente.
+    const BLOCK_TYPE_LABELS = { work: 'Trabajo', break: 'Break', lunch: 'Lunch' };
+
+    function renderBlocksEditor(blocks) {
+      const list = document.getElementById('blocksEditorList');
       if (!list) return;
-      const arr = Array.isArray(breaks) && breaks.length ? breaks : [];
-      list.innerHTML = arr.map((b, i) => `
-        <div class="break-row" data-break-row="${i}">
-          <div class="field">
-            <label>Break ${i + 1} — inicio</label>
-            <input type="time" class="break-start-input" inputmode="numeric" value="${formatHHMM(b?.start || '09:00')}"/>
+      const arr = Array.isArray(blocks) ? blocks : [];
+      list.innerHTML = arr.map((b, i) => {
+        const type = BLOCK_TYPE_LABELS[String(b?.type || '').toLowerCase()] ? String(b.type).toLowerCase() : 'work';
+        return `
+        <div class="block-row" data-block-row="${i}">
+          <div class="field" style="flex:0 0 130px;">
+            <label>Tipo</label>
+            <select class="alert-select block-type-input" style="margin-top:2px;">
+              <option value="work" ${type === 'work' ? 'selected' : ''}>Trabajo</option>
+              <option value="break" ${type === 'break' ? 'selected' : ''}>Break</option>
+              <option value="lunch" ${type === 'lunch' ? 'selected' : ''}>Lunch</option>
+            </select>
           </div>
           <div class="field">
-            <label>Break ${i + 1} — min</label>
-            <input type="number" class="break-dur-input" inputmode="numeric" min="0" value="${Number(b?.dur) || 0}"/>
+            <label>Inicio</label>
+            <input type="time" class="block-start-input" inputmode="numeric" value="${formatHHMM(b?.start || '09:00')}"/>
           </div>
-          <button type="button" class="gap-edit-btn break-remove-btn" data-remove-break="${i}" style="background: rgba(255,111,143,.12); border-color: rgba(255,111,143,.3);" aria-label="Eliminar Break ${i + 1}">✕</button>
+          <div class="field">
+            <label>Min</label>
+            <input type="number" class="block-dur-input" inputmode="numeric" min="0" value="${Number(b?.dur) || 0}"/>
+          </div>
+          <button type="button" class="gap-edit-btn block-remove-btn" data-remove-block="${i}" style="background: rgba(255,111,143,.12); border-color: rgba(255,111,143,.3);" aria-label="Eliminar bloque ${i + 1}">✕</button>
         </div>
-      `).join('') || '<div class="note" style="margin:0;">Sin breaks configurados. Usa "+ Agregar break" si necesitas uno.</div>';
+      `;
+      }).join('') || '<div class="note" style="margin:0;">Sin bloques configurados. Usa "+ Agregar bloque" para empezar (Trabajo también es un bloque explícito ahora).</div>';
     }
 
-    // Lee todas las filas .break-row actualmente en el DOM (en el mismo
-    // orden en que se renderizaron) y arma el arreglo `breaks` — reemplaza
-    // a los 2 pares de inputs fijos que leía antes readScheduleFormAsConfig().
-    function readBreaksFromEditor() {
-      const rows = document.querySelectorAll('#breaksEditorList .break-row');
+    // Lee todas las filas .block-row actualmente en el DOM (en el mismo
+    // orden en que se renderizaron) y arma el arreglo `blocks` — reemplaza
+    // a los editores separados de Break/Lunch que había antes.
+    function readBlocksFromEditor() {
+      const rows = document.querySelectorAll('#blocksEditorList .block-row');
       return Array.from(rows).map(row => {
-        const startInput = row.querySelector('.break-start-input');
-        const durInput = row.querySelector('.break-dur-input');
+        const typeInput = row.querySelector('.block-type-input');
+        const startInput = row.querySelector('.block-start-input');
+        const durInput = row.querySelector('.block-dur-input');
+        const type = BLOCK_TYPE_LABELS[typeInput ? typeInput.value : ''] ? typeInput.value : 'work';
         return {
+          type,
           start: formatHHMM(startInput ? startInput.value : '09:00'),
           dur: Math.max(0, Number(durInput ? durInput.value : 0) || 0),
         };
       });
     }
 
-    // "+ Agregar break": toma lo que ya está en el formulario (para no
+    // "+ Agregar bloque": toma lo que ya está en el formulario (para no
     // perder ediciones a medio hacer en filas existentes) y le agrega una
-    // fila nueva al final, con un default razonable (09:00, 15 min) que el
-    // usuario ajusta a su gusto antes de "Guardar día".
-    function addBreakRow() {
-      const current = readBreaksFromEditor();
-      current.push({ start: '09:00', dur: 15 });
-      renderBreaksEditor(current);
+    // fila nueva al final — default Break/09:00/15min (el usuario cambia el
+    // Tipo y ajusta a su gusto antes de "Guardar día").
+    function addBlockRow() {
+      const current = readBlocksFromEditor();
+      current.push({ type: 'break', start: '09:00', dur: 15 });
+      renderBlocksEditor(current);
     }
 
     // Eliminar una fila: se relee el estado actual del formulario (para no
     // perder ediciones de las OTRAS filas) y se vuelve a pintar sin la fila
-    // quitada. Wiring (addBreakBtn + delegado en breaksEditorList) vive
+    // quitada. Wiring (addBlockBtn + delegado en blocksEditorList) vive
     // junto al resto de los listeners, al final del script.
-    function removeBreakRowAt(idx) {
-      const current = readBreaksFromEditor();
+    function removeBlockRowAt(idx) {
+      const current = readBlocksFromEditor();
       current.splice(idx, 1);
-      renderBreaksEditor(current);
+      renderBlocksEditor(current);
     }
 
     function syncShiftModalFields() {
@@ -6000,17 +6064,13 @@ function renderWeekSummary() {
       const dayOffInput = document.getElementById('dayOffInput');
       const startInput = document.getElementById('dayStartInput');
       const endInput = document.getElementById('dayEndInput');
-      const ls = document.getElementById('lunchStartInput');
-      const ld = document.getElementById('lunchDurInput');
       const lateSelect = document.getElementById('lateArrivalModeInput');
-      const breaks = Array.isArray(cfg.breaks) ? cfg.breaks : [];
+      const blocks = Array.isArray(cfg.blocks) ? cfg.blocks : [];
 
       if (dayOffInput) dayOffInput.checked = !!cfg.off;
       if (startInput) startInput.value = formatHHMM(cfg.start || '07:00');
       if (endInput) endInput.value = formatHHMM(cfg.end || '16:00');
-      renderBreaksEditor(breaks);
-      if (ls) ls.value = formatHHMM(cfg.lunch?.start || '13:00');
-      if (ld) ld.value = cfg.lunch?.dur ?? 50;
+      renderBlocksEditor(blocks);
       if (lateSelect) lateSelect.value = settings.lateArrivalMode || 'anchor';
       // Aviso antes del turno: también es global (no por día), mismo criterio
       // que el Ciclo de pago — se sincroniza sin importar scheduleEditDay.
@@ -6042,15 +6102,12 @@ function renderWeekSummary() {
       const dayOffInput = document.getElementById('dayOffInput');
       const startInput = document.getElementById('dayStartInput');
       const endInput = document.getElementById('dayEndInput');
-      const ls = document.getElementById('lunchStartInput');
-      const ld = document.getElementById('lunchDurInput');
       if (!startInput || !endInput) return null;
       return {
         off: dayOffInput ? dayOffInput.checked : false,
         start: formatHHMM(startInput.value),
         end: formatHHMM(endInput.value),
-        breaks: readBreaksFromEditor(),
-        lunch: { start: formatHHMM(ls.value), dur: Math.max(0, Number(ld.value) || 0) },
+        blocks: readBlocksFromEditor(),
       };
     }
 
@@ -6068,17 +6125,17 @@ function renderWeekSummary() {
       if (!cfg) return false;
       ensureWeeklySchedule();
       const stored = settings.weeklySchedule[scheduleEditDay];
-      const storedBreaks = (stored && Array.isArray(stored.breaks) ? stored.breaks : [])
-        .map(b => ({ start: formatHHMM((b && b.start) || '00:00'), dur: Math.max(0, Number(b && b.dur) || 0) }));
+      const storedBlocks = (stored && Array.isArray(stored.blocks) ? stored.blocks : [])
+        .map(b => ({
+          type: BLOCK_TYPE_LABELS[String(b && b.type || '').toLowerCase()] ? String(b.type).toLowerCase() : 'work',
+          start: formatHHMM((b && b.start) || '00:00'),
+          dur: Math.max(0, Number(b && b.dur) || 0),
+        }));
       const storedNormalized = {
         off: !!(stored && stored.off),
         start: formatHHMM((stored && stored.start) || '07:00'),
         end: formatHHMM((stored && stored.end) || '16:00'),
-        breaks: storedBreaks,
-        lunch: {
-          start: formatHHMM((stored && stored.lunch && stored.lunch.start) || '00:00'),
-          dur: Math.max(0, Number(stored && stored.lunch && stored.lunch.dur) || 0),
-        },
+        blocks: storedBlocks,
       };
       const lateSelect = document.getElementById('lateArrivalModeInput');
       const lateDirty = !!lateSelect && lateSelect.value !== (settings.lateArrivalMode || 'anchor');
@@ -6090,11 +6147,14 @@ function renderWeekSummary() {
       return `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
     }
 
-    // Valida que los breaks y el lunch de un día (a) queden dentro de la ventana
-    // de turno (inicio–fin) y (b) no se crucen entre sí. Antes la app aceptaba
-    // cualquier combinación sin avisar, dejando el plan del día con bloques que
-    // se pisan o que caen fuera del turno, lo que rompía "Bloques del día" y
-    // "Adherencia" en silencio.
+    // Valida que TODOS los bloques del día (Trabajo/Break/Lunch, unificados
+    // en cfg.blocks) (a) queden dentro de la ventana de turno (inicio–fin) y
+    // (b) no se crucen entre sí — sin importar el tipo, dos bloques
+    // cualquiera no pueden ocupar el mismo minuto (un Trabajo no puede
+    // pisar un Break, etc.). Antes la app aceptaba cualquier combinación sin
+    // avisar, dejando el plan del día con bloques que se pisan o que caen
+    // fuera del turno, lo que rompía "Bloques del día" y "Adherencia" en
+    // silencio.
     function validateDayConfig(cfg) {
       const errors = [];
       if (!cfg || cfg.off) return { valid: true, errors };
@@ -6106,17 +6166,17 @@ function renderWeekSummary() {
         return { valid: false, errors };
       }
 
+      const typeLabel = { work: 'Trabajo', break: 'Break', lunch: 'Lunch' };
+      const counters = { work: 0, break: 0, lunch: 0 };
       const segments = [];
-      (Array.isArray(cfg.breaks) ? cfg.breaks : []).forEach((b, i) => {
-        if (b && Number(b.dur) > 0) {
-          const s = toMinutes(formatHHMM(b.start));
-          segments.push({ label: `Break ${i + 1}`, start: s, end: s + Number(b.dur) });
-        }
+      (Array.isArray(cfg.blocks) ? cfg.blocks : []).forEach((b) => {
+        if (!b || !(Number(b.dur) > 0) || !b.start) return;
+        const type = String(b.type || '').toLowerCase();
+        if (!typeLabel[type]) return;
+        counters[type] += 1;
+        const s = toMinutes(formatHHMM(b.start));
+        segments.push({ label: `${typeLabel[type]} ${counters[type]}`, start: s, end: s + Number(b.dur) });
       });
-      if (cfg.lunch && Number(cfg.lunch.dur) > 0) {
-        const s = toMinutes(formatHHMM(cfg.lunch.start));
-        segments.push({ label: 'Lunch', start: s, end: s + Number(cfg.lunch.dur) });
-      }
 
       segments.forEach(seg => {
         if (seg.start < dayStart || seg.end > dayEnd) {
@@ -6146,13 +6206,13 @@ function renderWeekSummary() {
       return dayKey === 'sat' || dayKey === 'sun';
     }
 
-    // Copia off/start/end/breaks/lunch de `cfg` a sat y sun. breaks/lunch se
-    // clonan por separado para cada uno (no comparten arrays/objetos entre
-    // sí ni con `cfg`), para que editar después solo Sábado (por ejemplo) no
-    // mueva también Domingo por referencia compartida.
+    // Copia off/start/end/blocks de `cfg` a sat y sun. blocks se clona por
+    // separado para cada uno (arreglo independiente, no comparte referencia
+    // ni con `cfg` ni entre sat/sun), para que editar después solo Sábado
+    // (por ejemplo) no mueva también Domingo por referencia compartida.
     function applyWeekendCopy(cfg) {
-      settings.weeklySchedule.sat = { off: cfg.off, start: cfg.start, end: cfg.end, breaks: cfg.breaks.map(b => ({ ...b })), lunch: { ...cfg.lunch } };
-      settings.weeklySchedule.sun = { off: cfg.off, start: cfg.start, end: cfg.end, breaks: cfg.breaks.map(b => ({ ...b })), lunch: { ...cfg.lunch } };
+      settings.weeklySchedule.sat = { off: cfg.off, start: cfg.start, end: cfg.end, blocks: cfg.blocks.map(b => ({ ...b })) };
+      settings.weeklySchedule.sun = { off: cfg.off, start: cfg.start, end: cfg.end, blocks: cfg.blocks.map(b => ({ ...b })) };
       saveSettingsOnly();
       saveAll();
       renderDayTabs();
@@ -6205,8 +6265,7 @@ function renderWeekSummary() {
             off: cfg.off,
             start: cfg.start,
             end: cfg.end,
-            breaks: cfg.breaks.map(b => ({ ...b })),
-            lunch: { ...cfg.lunch },
+            blocks: cfg.blocks.map(b => ({ ...b })),
           };
         });
         saveSettingsOnly();
@@ -7522,14 +7581,14 @@ function render() {
     document.getElementById('exchangeRateInput').addEventListener('change', updateCurrencySettings);
     document.getElementById('currencyLabelInput').addEventListener('change', updateCurrencySettings);
     document.getElementById('saveShiftWindowBtn').addEventListener('click', saveShiftWindow);
-    document.getElementById('addBreakBtn').addEventListener('click', addBreakRow);
+    document.getElementById('addBlockBtn').addEventListener('click', addBlockRow);
     // Delegado en el contenedor: las filas se reconstruyen por completo en
-    // cada renderBreaksEditor()/addBreakRow()/removeBreakRowAt(), así que un
+    // cada renderBlocksEditor()/addBlockRow()/removeBlockRowAt(), así que un
     // listener por botón individual se perdería cada vez que se repinta.
-    document.getElementById('breaksEditorList').addEventListener('click', (e) => {
-      const btn = e.target instanceof Element ? e.target.closest('[data-remove-break]') : null;
+    document.getElementById('blocksEditorList').addEventListener('click', (e) => {
+      const btn = e.target instanceof Element ? e.target.closest('[data-remove-block]') : null;
       if (!btn) return;
-      removeBreakRowAt(Number(btn.getAttribute('data-remove-break')));
+      removeBlockRowAt(Number(btn.getAttribute('data-remove-block')));
     });
     // Pedido del usuario: al marcar (o desmarcar) "Día libre (sin turno)"
     // dentro del modal de Horario, el cambio se guarda solo, sin tener que
