@@ -7074,7 +7074,15 @@ function renderSchedule() {
         // inicio de hoy (todayRange()), no contra "ahora", para no incluir
         // hoy mismo en esta rama.
         const isPastDay = dayKey !== todayCallDateKey() && (callDateToDate(dayKey) || new Date()) < todayRange();
-        const statusText = active ? 'Actual' : done ? 'Hecho' : (isPastDay && !shiftStart ? 'Sin actividad' : 'Próximo');
+        // Bug reportado por el usuario: un día pasado donde SÍ hubo turno
+        // pero saliste temprano DENTRO de este bloque específico (tu
+        // `shiftEnd` real cae antes del fin del bloque, así que `done` da
+        // false) caía en el mismo "else" que "Próximo" — como si el bloque
+        // aún no hubiera llegado, contradiciendo la actividad real, el %,
+        // y los badges de Margen/Adherencia que sí se mostraban para ese
+        // bloque. Ahora un día pasado con turno real pero sin completar
+        // dice "Incompleto" en vez de caer por default en "Próximo".
+        const statusText = active ? 'Actual' : done ? 'Hecho' : (isPastDay ? (shiftStart ? 'Incompleto' : 'Sin actividad') : 'Próximo');
         const statusClass = stats.statusTone === 'good' ? 'good' : stats.statusTone === 'warn' ? 'warn' : stats.statusTone === 'bad' ? 'bad' : '';
         const progressLabel = slot.type === 'Work'
           ? (stats.realActivityRange
