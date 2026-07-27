@@ -3069,10 +3069,20 @@ $0.72"></textarea>
     // (ahí manda su propio cronómetro, no el de ACW).
     function computeCurrentAcwStart() {
       if (!state.shiftStartedAt || state.shiftEndedAt) return null;
+      const dayKey = todayCallDateKey();
+      // Bug reportado por el usuario (captura: chip mostrando 47:06:36) —
+      // un turno iniciado hace días y nunca cerrado (shiftEndedAt sigue en
+      // null, ej. se cerró la pestaña sin darle "Finalizar shift") seguía
+      // contando como "ancla válida" para HOY sin límite, mostrando un
+      // tiempo sin sentido. El resto de la app (dayShiftBounds(), de donde
+      // sale el chip de Estado) ya valida `sameCallDay(shiftStartedAt, hoy)`
+      // antes de usarlo — este chequeo replica exactamente ese mismo
+      // criterio, así un turno abandonado de otro día se trata como "sin
+      // turno activo" en vez de anclar el cronómetro a esa fecha vieja.
+      if (!sameCallDay(state.shiftStartedAt, dayKey)) return null;
       if (state.activePause) return null;
       if (state.activeCall) return null;
 
-      const dayKey = todayCallDateKey();
       const now = new Date();
       const candidates = [new Date(state.shiftStartedAt).getTime()];
       callsForDay(dayKey).forEach(c => candidates.push(new Date(c.endISO).getTime()));
