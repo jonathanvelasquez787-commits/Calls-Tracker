@@ -4547,6 +4547,16 @@ function slotMinuteAdherence(dayKey, originalSlot, bounds) {
   // bloque cuente como "no presente" — mismo criterio de fallo que ya usa
   // dayAdherence() para el día completo (0%), no una asunción optimista.
   if (!bounds.start && isToday) return null;
+  // Bug reportado por el usuario (barra de Adherencia con datos en un día
+  // que no ha empezado): esta guarda solo cubría "hoy sin turno" — un día
+  // FUTURO (navegado a propósito con el selector) también tiene
+  // bounds.start null pero isToday false, así que ninguna de las 2 guardas
+  // aplicaba y la función seguía de largo tratándolo como "ausente" (mismo
+  // camino que un día pasado sin turno). dayAdherence() ya se protege de
+  // esto desde v99 (`base > todayRange()`) para el badge global — se
+  // replica aquí el mismo criterio para la adherencia por bloque.
+  const base = callDateToDate(normalized) || new Date();
+  if (base > todayRange()) return null;
 
   const plannedRaw = originalPlannedSlotsForDay(normalized);
   if (!plannedRaw.length) return null;
@@ -7066,6 +7076,14 @@ function renderSchedule() {
         // inicio de hoy (todayRange()), no contra "ahora", para no incluir
         // hoy mismo en esta rama.
         const isPastDay = dayKey !== todayCallDateKey() && (callDateToDate(dayKey) || new Date()) < todayRange();
+        // Bug reportado por el usuario (barras mostrando datos en un día que
+        // no ha empezado): mismo criterio que ya usa dayAdherence()/
+        // slotMinuteAdherence() para días futuros — se usa para ocultar la
+        // barra de Productividad antes de que el día llegue (Margen ya se
+        // oculta solo vía el guard `worked > 0.05`; Adherencia se corrigió
+        // en la fuente, slotMinuteAdherence(), pero se reutiliza esta misma
+        // bandera aquí para no duplicar el cálculo).
+        const isFutureDay = (callDateToDate(dayKey) || new Date()) > todayRange();
         // Bug reportado por el usuario: un día pasado donde SÍ hubo turno
         // pero saliste temprano DENTRO de este bloque específico (tu
         // `shiftEnd` real cae antes del fin del bloque, así que `done` da
@@ -7144,8 +7162,10 @@ function renderSchedule() {
         // aplica a Trabajo (stats.productivityPct es null en Break/Lunch,
         // mismo criterio que stats.margin) — se arma como HTML aparte para
         // no forzar el markup con un condicional feo dentro del template
-        // principal de abajo.
-        const productivityBarHtml = slot.type === 'Work' && stats.productivityPct !== null
+        // principal de abajo. Se oculta en días futuros (isFutureDay) —
+        // antes mostraba 0% (no es dato incorrecto, pero tampoco debería
+        // "aparecer" antes de que el día empiece).
+        const productivityBarHtml = slot.type === 'Work' && stats.productivityPct !== null && !isFutureDay
           ? `
               <div class="meta">Productividad: ${Math.round(stats.productivityPct)}%</div>
               <div class="slot-progress productivity" aria-label="${escapeHtml(slot.name)} productividad">
