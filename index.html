@@ -848,13 +848,10 @@
   background: linear-gradient(90deg, var(--good), var(--teal));
 }
 
-/* Pedido del usuario: 3 barras más dentro de cada bloque de Trabajo (ACW,
-   Margen, Adherencia), mismo patrón visual que Productividad — cada una
-   reutiliza .slot-progress (altura/borde/fondo) y solo cambia el color del
-   relleno. */
-.slot-progress.acw > div {
-  background: linear-gradient(90deg, var(--cyan), var(--blue));
-}
+/* Pedido del usuario: barras dentro de cada bloque de Trabajo (Margen,
+   Adherencia — ACW se quitó a pedido del usuario, no aportaba claridad),
+   mismo patrón visual que Productividad — cada una reutiliza .slot-progress
+   (altura/borde/fondo) y solo cambia el color del relleno. */
 
 /* Margen: verde mientras estás dentro de lo permitido, rojo si te
    excediste — mismo criterio de tono que ya usa el badge de texto
@@ -1362,21 +1359,6 @@
       align-items: center;
       gap: 10px;
       margin-bottom: 6px;
-    }
-
-    /* Pedido del usuario: "Margen" y "Adherencia bloque" (dentro de cada
-       tarjeta de bloque en Bloques del día) se veían apiladas verticalmente,
-       una píldora .slot-status debajo de la otra — repetitivo, sumado a la
-       píldora principal de status que ya tiene la tarjeta (hasta 3 apiladas).
-       Mismo patrón que .day-metrics-row (arriba, para el resumen global del
-       día): fila flex con wrap, para que ambas queden lado a lado en vez de
-       una debajo de la otra. */
-    .slot-metrics-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 8px;
-      margin-top: 4px;
     }
 
     /* Mini-accordion propio para el detalle de Adherencia: mismo mecanismo
@@ -7106,27 +7088,25 @@ function renderSchedule() {
         // Trabajo individual (55 de cada 60 min deben ser productivos). Solo
         // se muestra si el bloque ya tiene algo de tiempo trabajado — un
         // bloque de Trabajo futuro/sin actividad no tiene margen que mostrar
-        // todavía (margin.worked sería 0).
-        let marginLineHtml = '';
+        // todavía (margin.worked sería 0). Pedido del usuario (reordenado):
+        // en vez de píldora de color arriba + barra suelta más abajo (quedaban
+        // desconectadas visualmente), ahora es meta+barra pegados, mismo
+        // patrón que ya usa Productividad. El texto conserva color inline
+        // cuando se excede (en vez del fondo de píldora) para que el aviso
+        // siga destacando.
         let marginBarHtml = '';
         if (slot.type === 'Work' && stats.margin) {
           dayMarginWorked += stats.margin.worked;
           dayMarginProductive += stats.margin.productive;
           if (stats.margin.worked > 0.05) {
             const m = stats.margin;
-            const marginTone = m.ok ? 'good' : 'bad';
             const marginText = m.ok
               ? `Margen: ${formatMinutes(m.used)}m de ${formatMinutes(m.allowed)}m permitidos`
               : `Margen excedido por ${formatMinutes(m.excess)}m (permitido ${formatMinutes(m.allowed)}m)`;
-            marginLineHtml = `<div class="slot-status ${marginTone}" title="Minutos NO productivos (ACW, huecos cortos) permitidos en este bloque sin marcar exceso, calculados por cada 60 min trabajados. Editable en Horario → Margen.">${escapeHtml(marginText)}</div>`;
-            // Pedido del usuario: barra visual de Margen, mismo patrón que
-            // Productividad — % = minutos usados / minutos permitidos
-            // (capado en 100%; sin división por cero si allowed llega a 0).
-            // Color verde mientras estás dentro de lo permitido, rojo si te
-            // excediste (clase .exceeded), mismo criterio que ya usa el
-            // badge de texto de arriba (m.ok).
+            const marginColor = m.ok ? '' : `color: var(--bad); font-weight: 800;`;
             const marginBarPct = m.allowed > 0 ? Math.min(100, (m.used / m.allowed) * 100) : 0;
             marginBarHtml = `
+              <div class="meta" style="${marginColor}" title="Minutos NO productivos (ACW, huecos cortos) permitidos en este bloque sin marcar exceso, calculados por cada 60 min trabajados. Editable en Horario → Margen.">${escapeHtml(marginText)}</div>
               <div class="slot-progress margin ${m.ok ? '' : 'exceeded'}" aria-label="${escapeHtml(slot.name)} margen">
                 <div style="width:${marginBarPct}%"></div>
               </div>
@@ -7139,8 +7119,7 @@ function renderSchedule() {
         // originalPlannedSlots[slotIdx] es el slot SIN correr correspondiente
         // (mismo índice); null si el bloque todavía no empieza (ver
         // slotMinuteAdherence) — en ese caso no se muestra nada, igual que
-        // marginLineHtml no se muestra para bloques de Trabajo sin actividad.
-        let slotAdherenceLineHtml = '';
+        // marginBarHtml no se muestra para bloques de Trabajo sin actividad.
         let adherenceBarHtml = '';
         const slotAdherence = slotMinuteAdherence(dayKey, originalPlannedSlots[slotIdx] || slot, bounds);
         if (slotAdherence) {
@@ -7151,25 +7130,14 @@ function renderSchedule() {
           const dominant = dominantExceptionReason(slotAdherence.reasons);
           const reasonSuffix = dominant ? ` · ${dominant.label} (${formatMinutes(dominant.minutes)}m)` : '';
           const text = `Adherencia bloque: ${slotAdherence.pct}% (${slotAdherence.adherentMinutes}/${slotAdherence.total} min)${reasonSuffix}`;
-          slotAdherenceLineHtml = `<div class="slot-status ${tone}">${escapeHtml(text)}</div>`;
-          // Pedido del usuario: barra visual de Adherencia, mismo patrón que
-          // Productividad — % = slotAdherence.pct directo (ya viene 0-100),
-          // mismo tono/umbrales que el badge de arriba.
+          const adherenceColor = tone === 'good' ? '' : `color: var(--${tone}); font-weight: 800;`;
           adherenceBarHtml = `
+            <div class="meta" style="${adherenceColor}">${escapeHtml(text)}</div>
             <div class="slot-progress adherence ${tone === 'good' ? '' : tone}" aria-label="${escapeHtml(slot.name)} adherencia">
               <div style="width:${slotAdherence.pct}%"></div>
             </div>
           `;
         }
-
-        // Pedido del usuario: en vez de apilar Margen y Adherencia bloque uno
-        // debajo del otro (2 píldoras sueltas, repetitivo junto a la píldora
-        // principal de status), van en una sola fila (.slot-metrics-row,
-        // mismo patrón que .day-metrics-row arriba). Si ninguna de las 2
-        // aplica todavía, no se agrega fila vacía.
-        const slotMetricsRowHtml = (marginLineHtml || slotAdherenceLineHtml)
-          ? `<div class="slot-metrics-row">${marginLineHtml}${slotAdherenceLineHtml}</div>`
-          : '';
 
         // Pedido del usuario: barra de Productividad dentro de cada bloque
         // de Trabajo, aparte de la barra de "Usado" (stats.pct). Solo
@@ -7182,19 +7150,6 @@ function renderSchedule() {
               <div class="meta">Productividad: ${Math.round(stats.productivityPct)}%</div>
               <div class="slot-progress productivity" aria-label="${escapeHtml(slot.name)} productividad">
                 <div style="width:${stats.productivityPct}%"></div>
-              </div>
-            `
-          : '';
-
-        // Pedido del usuario: barra de ACW dentro de cada bloque de Trabajo
-        // — mismo patrón que Productividad, % = minutos de ACW (huecos
-        // entre llamadas) sobre la duración planeada del bloque.
-        const acwBarPct = stats.durationMin > 0 ? Math.min(100, (stats.acwMin / stats.durationMin) * 100) : 0;
-        const acwBarHtml = slot.type === 'Work'
-          ? `
-              <div class="meta">ACW: ${Math.round(acwBarPct)}%</div>
-              <div class="slot-progress acw" aria-label="${escapeHtml(slot.name)} ACW">
-                <div style="width:${acwBarPct}%"></div>
               </div>
             `
           : '';
@@ -7212,10 +7167,8 @@ function renderSchedule() {
                 <div style="width:${stats.pct}%"></div>
               </div>
               ${productivityBarHtml}
-              ${acwBarHtml}
               <div class="slot-status ${statusClass}">${escapeHtml(stats.status)}</div>
               <div class="meta">${progressLabel}</div>
-              ${slotMetricsRowHtml}
               ${marginBarHtml}
               ${adherenceBarHtml}
             </div>
