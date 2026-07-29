@@ -2062,7 +2062,7 @@
 </div>
 <div class="note">El ciclo siempre dura 14 días desde la fecha que pongas arriba. Se guarda solo, sin necesidad de "Guardar día". Ajusta esto si tus ciclos reales no coinciden con "Ganancias del ciclo".</div>
 <div class="modal-actions">
-<button class="warn" id="copyDayToAllBtn" type="button">Copiar a todos los días</button>
+<button class="warn" id="copyDayToAllBtn" type="button">Copiar a Lunes-Viernes</button>
 <button class="primary" id="saveShiftWindowBtn" type="button">Guardar día</button>
 <button data-close-modal="shiftModal" type="button">Listo</button>
 </div>
@@ -6028,6 +6028,14 @@ function renderWeekSummary() {
       const arr = Array.isArray(blocks) ? blocks : [];
       list.innerHTML = arr.map((b, i) => {
         const type = BLOCK_TYPE_LABELS[String(b?.type || '').toLowerCase()] ? String(b.type).toLowerCase() : 'work';
+        // Pedido del usuario: mostrar "Inicio" + "Fin" (hora) en vez de
+        // "Inicio" + "Min" (duración) — el dato guardado sigue siendo
+        // {start, dur} internamente (sin tocar el motor de horario), Fin
+        // solo se calcula aquí para prellenar el input y se vuelve a
+        // convertir a minutos al leer el formulario (readBlocksFromEditor).
+        const startVal = formatHHMM(b?.start || '09:00');
+        const durVal = Number(b?.dur) || 0;
+        const endVal = minutesToHHMM(toMinutes(startVal) + durVal);
         return `
         <div class="block-row" data-block-row="${i}">
           <div class="field" style="flex:0 0 130px;">
@@ -6040,11 +6048,11 @@ function renderWeekSummary() {
           </div>
           <div class="field">
             <label>Inicio</label>
-            <input type="time" class="block-start-input" inputmode="numeric" value="${formatHHMM(b?.start || '09:00')}"/>
+            <input type="time" class="block-start-input" inputmode="numeric" value="${startVal}"/>
           </div>
           <div class="field">
-            <label>Min</label>
-            <input type="number" class="block-dur-input" inputmode="numeric" min="0" value="${Number(b?.dur) || 0}"/>
+            <label>Fin</label>
+            <input type="time" class="block-end-input" inputmode="numeric" value="${endVal}"/>
           </div>
           <button type="button" class="gap-edit-btn block-remove-btn" data-remove-block="${i}" style="background: rgba(255,111,143,.12); border-color: rgba(255,111,143,.3);" aria-label="Eliminar bloque ${i + 1}">✕</button>
         </div>
@@ -6054,25 +6062,30 @@ function renderWeekSummary() {
 
     // Lee todas las filas .block-row actualmente en el DOM (en el mismo
     // orden en que se renderizaron) y arma el arreglo `blocks` — reemplaza
-    // a los editores separados de Break/Lunch que había antes.
+    // a los editores separados de Break/Lunch que había antes. Pedido del
+    // usuario: la duración (`dur`) ya no se lee de un input directo, se
+    // calcula sola a partir de Inicio y Fin. Si Fin no es posterior a
+    // Inicio (cruza medianoche o son iguales), dur queda en 0 — mismo
+    // criterio que ya usaba un "Min: 0" antes de este cambio: el bloque se
+    // ignora en silencio (buildPlannedSlots/validateDayConfig ya filtran
+    // dur<=0), sin bloquear el guardado con un error nuevo.
     function readBlocksFromEditor() {
       const rows = document.querySelectorAll('#blocksEditorList .block-row');
       return Array.from(rows).map(row => {
         const typeInput = row.querySelector('.block-type-input');
         const startInput = row.querySelector('.block-start-input');
-        const durInput = row.querySelector('.block-dur-input');
+        const endInput = row.querySelector('.block-end-input');
         const type = BLOCK_TYPE_LABELS[typeInput ? typeInput.value : ''] ? typeInput.value : 'work';
-        return {
-          type,
-          start: formatHHMM(startInput ? startInput.value : '09:00'),
-          dur: Math.max(0, Number(durInput ? durInput.value : 0) || 0),
-        };
+        const start = formatHHMM(startInput ? startInput.value : '09:00');
+        const end = formatHHMM(endInput ? endInput.value : start);
+        const dur = Math.max(0, toMinutes(end) - toMinutes(start));
+        return { type, start, dur };
       });
     }
 
     // "+ Agregar bloque": toma lo que ya está en el formulario (para no
     // perder ediciones a medio hacer en filas existentes) y le agrega una
-    // fila nueva al final — default Break/09:00/15min (el usuario cambia el
+    // fila nueva al final — default Break/09:00-09:15 (el usuario cambia el
     // Tipo y ajusta a su gusto antes de "Guardar día").
     function addBlockRow() {
       const current = readBlocksFromEditor();
@@ -6281,6 +6294,11 @@ function renderWeekSummary() {
       }
     }
 
+    // Pedido del usuario: "Copiar a todos los días" pasa a significar SOLO
+    // Lunes-Viernes — Sábado y Domingo quedan excluidos siempre de esta
+    // copia masiva (si se quiere aplicar también a fin de semana, está el
+    // aviso aparte que ya ofrece saveShiftWindow() al guardar un día entre
+    // semana, desde v102).
     function copyDayToAll() {
       ensureWeeklySchedule();
       const cfg = readScheduleFormAsConfig();
@@ -6290,9 +6308,9 @@ function renderWeekSummary() {
         toast(check.errors[0]);
         return;
       }
-      appConfirm(`¿Copiar el horario de ${WEEKDAY_LABELS[scheduleEditDay]} a los 7 días? Esto sobreescribe los otros 6 días, incluyendo días libres.`, () => {
+      appConfirm(`¿Copiar este horario (${WEEKDAY_LABELS[scheduleEditDay]}) a Lunes-Viernes? Esto sobreescribe Lunes a Viernes — Sábado y Domingo no se tocan.`, () => {
         settings.weeklySchedule[scheduleEditDay] = cfg;
-        WEEKDAYS.forEach(k => {
+        WEEKDAYS.filter(k => k !== 'sat' && k !== 'sun').forEach(k => {
           settings.weeklySchedule[k] = {
             off: cfg.off,
             start: cfg.start,
@@ -6303,7 +6321,7 @@ function renderWeekSummary() {
         saveSettingsOnly();
         saveAll();
         renderDayTabs();
-        toast('Horario copiado a los 7 días');
+        toast('Horario copiado a Lunes-Viernes');
       });
     }
 
