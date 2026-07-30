@@ -9,6 +9,7 @@
 <style>
     :root {
       --bg: #09101e;
+      --bg-2: #07101f;
       --panel: rgba(16, 24, 40, 0.88);
       --panel-2: rgba(13, 20, 36, 0.97);
       --text: #edf4ff;
@@ -24,6 +25,89 @@
       --bad: #ff6b72;
       --shadow: 0 16px 46px rgba(0, 0, 0, .32);
       --radius: 22px;
+      --glow-1: rgba(47, 213, 255, .12);
+      --glow-2: rgba(88, 232, 200, .08);
+      /* Pedido del usuario: modo claro (auto según el sistema + botón para
+         forzar). Estos ~6 colores de texto "pálidos sobre fondo oscuro" se
+         repetían hardcodeados en muchas reglas (tags, badges, labels de
+         botones de control) — se centralizan aquí en variables para poder
+         oscurecerlos en modo claro (sobre un fondo blanco, un verde/ámbar/
+         rojo pálido pierde casi todo el contraste). Cada variable agrupa
+         varios usos de la misma familia de color (ver comentarios en cada
+         regla que las usa). */
+      --pale-good: #bfffe0;
+      --pale-warn: #ffe6a4;
+      --pale-bad: #ffb7c0;
+      --pale-cyan: #d8f7ff;
+      --pale-teal: #d6fdf3;
+      --pale-indigo: #a5b4fc;
+    }
+
+    /* Modo claro automático: se activa solo si el sistema operativo pide
+       modo claro (prefers-color-scheme) Y el usuario no forzó "Oscuro" a
+       propósito (html.theme-dark). Si el usuario fuerza "Claro" (ver regla
+       html.theme-light más abajo), esa aplica siempre sin importar el
+       sistema — misma paleta, solo cambia cuándo se activa. */
+    @media (prefers-color-scheme: light) {
+      :root:not(.theme-dark) {
+        --bg: #f3f6fb;
+        --bg-2: #eaf0f8;
+        --panel: rgba(255, 255, 255, 0.86);
+        --panel-2: rgba(255, 255, 255, 0.97);
+        --text: #121a2c;
+        --muted: #5b6b85;
+        --line: rgba(18, 26, 44, 0.12);
+        --line-2: rgba(18, 26, 44, 0.18);
+        --cyan: #0891b2;
+        --teal: #0d9488;
+        --blue: #4f5fd8;
+        --pink: #db2f6f;
+        --good: #15803d;
+        --warn: #b45309;
+        --bad: #dc2626;
+        --shadow: 0 16px 40px rgba(30, 41, 59, .10);
+        --glow-1: rgba(8, 145, 178, .06);
+        --glow-2: rgba(13, 148, 136, .05);
+        --pale-good: #0f7a3d;
+        --pale-warn: #92400e;
+        --pale-bad: #b91c3c;
+        --pale-cyan: #0e6b85;
+        --pale-teal: #0a6b5e;
+        --pale-indigo: #3730a3;
+      }
+    }
+
+    /* Forzado manual (botón de tema en el header) — misma paleta clara de
+       arriba, pero aplicada siempre que el usuario elija "Claro", sin
+       depender del sistema. html.theme-dark (forzar "Oscuro") no necesita
+       una regla propia: como no redefine nada distinto del :root por
+       default, y además desactiva la regla @media de arriba (selector
+       :not(.theme-dark)), el resultado ya es el oscuro de siempre. */
+    html.theme-light {
+      --bg: #f3f6fb;
+      --bg-2: #eaf0f8;
+      --panel: rgba(255, 255, 255, 0.86);
+      --panel-2: rgba(255, 255, 255, 0.97);
+      --text: #121a2c;
+      --muted: #5b6b85;
+      --line: rgba(18, 26, 44, 0.12);
+      --line-2: rgba(18, 26, 44, 0.18);
+      --cyan: #0891b2;
+      --teal: #0d9488;
+      --blue: #4f5fd8;
+      --pink: #db2f6f;
+      --good: #15803d;
+      --warn: #b45309;
+      --bad: #dc2626;
+      --shadow: 0 16px 40px rgba(30, 41, 59, .10);
+      --glow-1: rgba(8, 145, 178, .06);
+      --glow-2: rgba(13, 148, 136, .05);
+      --pale-good: #0f7a3d;
+      --pale-warn: #92400e;
+      --pale-bad: #b91c3c;
+      --pale-cyan: #0e6b85;
+      --pale-teal: #0a6b5e;
+      --pale-indigo: #3730a3;
     }
 
     * { box-sizing: border-box; }
@@ -33,9 +117,9 @@
       margin: 0;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       background:
-        radial-gradient(circle at top left, rgba(47, 213, 255, .12), transparent 28%),
-        radial-gradient(circle at top right, rgba(88, 232, 200, .08), transparent 20%),
-        linear-gradient(180deg, #07101f 0%, #09101e 100%);
+        radial-gradient(circle at top left, var(--glow-1), transparent 28%),
+        radial-gradient(circle at top right, var(--glow-2), transparent 20%),
+        linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 100%);
       color: var(--text);
       -webkit-tap-highlight-color: transparent;
     }
@@ -84,7 +168,7 @@
       border-radius: 999px;
       background: rgba(47, 213, 255, .10);
       border: 1px solid rgba(47, 213, 255, .22);
-      color: #d8f7ff;
+      color: var(--pale-cyan);
       text-transform: uppercase;
       letter-spacing: .08em;
       font-size: 12px;
@@ -136,7 +220,7 @@
     }
 
     .hero-action-btn.danger {
-      color: #fda4af;
+      color: var(--pale-bad);
       border-color: rgba(251, 113, 133, .35);
       background: rgba(251, 113, 133, .08);
     }
@@ -356,7 +440,7 @@
     }
 
     .tick-label.active {
-      color: #eafcff;
+      color: var(--pale-cyan);
       font-weight: 800;
     }
 
@@ -433,7 +517,7 @@
       border-radius: 999px;
       border: 1px solid var(--line);
       background: rgba(255,255,255,.03);
-      color: #d8f7ff;
+      color: var(--pale-cyan);
       font-size: 13px;
       font-weight: 700;
     }
@@ -468,7 +552,7 @@
 
     .goal-badge.goal-soft {
       font-size: 12px;
-      color: #d6fdf3;
+      color: var(--pale-teal);
       border-color: rgba(88, 232, 200, .28);
       background: rgba(88, 232, 200, .09);
     }
@@ -720,7 +804,7 @@
       width: min(720px, 100%);
       max-height: min(86vh, 920px);
       overflow: auto;
-      background: rgba(12, 18, 32, .98);
+      background: var(--panel-2);
       border: 1px solid var(--line);
       border-radius: 24px;
       box-shadow: var(--shadow);
@@ -912,31 +996,31 @@
       background: linear-gradient(135deg, rgba(56, 189, 248, .18), rgba(34, 211, 238, .08));
       border: 1px solid rgba(56, 189, 248, .4);
     }
-    #shiftControlBtn .control-label { color: #7dd3fc; }
+    #shiftControlBtn .control-label { color: var(--pale-cyan); }
 
     #breakControlBtn {
       background: linear-gradient(135deg, rgba(251, 191, 36, .16), rgba(217, 119, 6, .07));
       border: 1px solid rgba(251, 191, 36, .38);
     }
-    #breakControlBtn .control-label { color: #fcd34d; }
+    #breakControlBtn .control-label { color: var(--pale-warn); }
 
     #lunchControlBtn {
       background: linear-gradient(135deg, rgba(129, 140, 248, .18), rgba(99, 102, 241, .08));
       border: 1px solid rgba(129, 140, 248, .4);
     }
-    #lunchControlBtn .control-label { color: #a5b4fc; }
+    #lunchControlBtn .control-label { color: var(--pale-indigo); }
 
     #pasteCallsBtn {
       background: linear-gradient(135deg, rgba(96, 165, 250, .16), rgba(59, 130, 246, .07));
       border: 1px solid rgba(96, 165, 250, .38);
     }
-    #pasteCallsBtn .control-label { color: #93c5fd; }
+    #pasteCallsBtn .control-label { color: var(--pale-cyan); }
 
     #callControlBtn {
       background: linear-gradient(135deg, rgba(255, 111, 143, .16), rgba(225, 29, 72, .07));
       border: 1px solid rgba(255, 111, 143, .38);
     }
-    #callControlBtn .control-label { color: #ffb0c1; }
+    #callControlBtn .control-label { color: var(--pale-bad); }
 
     /* Antes sin regla propia — caía al gris genérico .control-btn.secondary,
        se veía plano al lado de #pasteCallsBtn/#callControlBtn (que sí tienen
@@ -946,7 +1030,7 @@
       background: linear-gradient(135deg, rgba(102, 226, 165, .16), rgba(52, 178, 122, .07));
       border: 1px solid rgba(102, 226, 165, .38);
     }
-    #addCallManualBtn .control-label { color: #8fedbd; }
+    #addCallManualBtn .control-label { color: var(--pale-good); }
 
     .control-btn:hover,
     .control-btn:focus-visible {
@@ -1009,7 +1093,7 @@
       resize: vertical;
       border-radius: 18px;
       border: 1px solid var(--line);
-      background: rgba(13, 18, 32, 0.98);
+      background: var(--panel-2);
       color: var(--text);
       padding: 14px;
       outline: none;
@@ -1117,7 +1201,7 @@
       border-radius: 999px;
       background: rgba(255, 111, 143, .12);
       border: 1px solid rgba(255, 111, 143, .24);
-      color: #ffb7c0;
+      color: var(--pale-bad);
       font-size: 11px;
       font-weight: 800;
     }
@@ -1321,17 +1405,17 @@
     }
 
     .slot-status.good {
-      color: #bfffe0;
+      color: var(--pale-good);
       background: rgba(102, 226, 165, .10);
     }
 
     .slot-status.warn {
-      color: #ffe6a4;
+      color: var(--pale-warn);
       background: rgba(255, 209, 92, .10);
     }
 
     .slot-status.bad {
-      color: #ffb7c0;
+      color: var(--pale-bad);
       background: rgba(255, 111, 143, .10);
     }
 
@@ -1548,9 +1632,9 @@
       white-space: nowrap;
     }
 
-    .tag.good { color: #bfffe0; background: rgba(102, 226, 165, .10); }
-    .tag.warn { color: #ffe6a4; background: rgba(255, 209, 92, .10); }
-    .tag.bad { color: #ffb7c0; background: rgba(255, 111, 143, .10); }
+    .tag.good { color: var(--pale-good); background: rgba(102, 226, 165, .10); }
+    .tag.warn { color: var(--pale-warn); background: rgba(255, 209, 92, .10); }
+    .tag.bad { color: var(--pale-bad); background: rgba(255, 111, 143, .10); }
 
     .table-tags {
       display: flex;
@@ -1618,7 +1702,7 @@
       transform: translateX(-50%) translateY(18px);
       opacity: 0;
       pointer-events: none;
-      background: rgba(9, 14, 28, .94);
+      background: var(--panel-2);
       border: 1px solid var(--line);
       padding: 12px 14px;
       border-radius: 14px;
@@ -1710,6 +1794,7 @@
 <div class="hero-top-row">
 <div class="brand"><span class="dot-state"></span>Propio Shift Tracker</div>
 <div class="hero-actions">
+<button class="hero-action-btn" id="themeToggleBtn" type="button" title="Auto = sigue el modo de tu sistema. Toca para forzar Claro/Oscuro.">🌓 Auto</button>
 <button class="hero-action-btn" id="scheduleMiniBtn" type="button">🗓️ Horario</button>
 <button class="hero-action-btn" id="goalsMiniBtn" type="button">🎯 Metas</button>
 <button class="hero-action-btn danger" id="resetDayMiniBtn" type="button">♻️ Reiniciar</button>
@@ -2544,6 +2629,7 @@ $0.72"></textarea>
     let calls = loadCalls();
     let settings = loadSettings();
     ensureCurrencySettings();
+    applyTheme();
     let syncingGoals = false;
     // Pedido del usuario: la hora es clickeable — al tocarla se oculta
     // (muestra un placeholder enmascarado en vez del valor real) y al volver
@@ -2707,6 +2793,10 @@ $0.72"></textarea>
         // — mismo valor que ya tenía la app, así que nadie ve un cambio de
         // comportamiento hasta que lo edite a propósito.
         marginAllowedMinPerHour: 5,
+        // Pedido del usuario: modo claro/oscuro — 'auto' (default) sigue el
+        // sistema operativo (prefers-color-scheme); 'light'/'dark' fuerzan
+        // el tema sin importar el sistema. Ver applyTheme()/themeToggleBtn.
+        theme: 'auto',
       };
     }
 
@@ -2726,6 +2816,49 @@ $0.72"></textarea>
       if (!Number.isFinite(Number(settings.adherenceGraceMin)) || Number(settings.adherenceGraceMin) < 0) settings.adherenceGraceMin = fallback.adherenceGraceMin;
       if (!Number.isFinite(Number(settings.adherenceGoalPct)) || Number(settings.adherenceGoalPct) <= 0 || Number(settings.adherenceGoalPct) > 100) settings.adherenceGoalPct = fallback.adherenceGoalPct;
       if (!Number.isFinite(Number(settings.marginAllowedMinPerHour)) || Number(settings.marginAllowedMinPerHour) < 0) settings.marginAllowedMinPerHour = fallback.marginAllowedMinPerHour;
+      if (!['auto', 'light', 'dark'].includes(settings.theme)) settings.theme = fallback.theme;
+    }
+
+    // Pedido del usuario: modo claro/oscuro — 'auto' (default) sigue el
+    // sistema vía @media (prefers-color-scheme: light) ya definido en el
+    // CSS; forzar 'light'/'dark' agrega/quita las clases html.theme-light /
+    // html.theme-dark, que ganan por especificidad sobre la regla @media
+    // (ver comentarios en el CSS, junto a :root). No hace falta relistar
+    // aquí qué variables cambian — todo vive en el CSS, esta función solo
+    // decide qué clase(s) poner.
+    function applyTheme() {
+      const root = document.documentElement;
+      root.classList.toggle('theme-light', settings.theme === 'light');
+      root.classList.toggle('theme-dark', settings.theme === 'dark');
+      updateThemeButtonUI();
+    }
+
+    // Ciclo simple de 3 estados para el botón del header: auto -> light ->
+    // dark -> auto -> ... Un solo botón en vez de un selector, para no
+    // ocupar más espacio en el header (mismo patrón compacto que
+    // Horario/Metas/Reiniciar).
+    function cycleTheme(current) {
+      if (current === 'auto') return 'light';
+      if (current === 'light') return 'dark';
+      return 'auto';
+    }
+
+    function themeButtonLabel(theme) {
+      if (theme === 'light') return '☀️ Claro';
+      if (theme === 'dark') return '🌙 Oscuro';
+      return '🌓 Auto';
+    }
+
+    function updateThemeButtonUI() {
+      const btn = document.getElementById('themeToggleBtn');
+      if (btn) btn.textContent = themeButtonLabel(settings.theme);
+    }
+
+    function toggleTheme() {
+      settings.theme = cycleTheme(settings.theme);
+      saveSettingsOnly();
+      applyTheme();
+      toast(`Tema: ${themeButtonLabel(settings.theme)}`);
     }
 
     // Texto "≈ L 123.45" para mostrar el equivalente en la moneda secundaria
@@ -7606,6 +7739,7 @@ function render() {
     document.getElementById('lunchControlBtn').addEventListener('click', () => togglePause('lunch'));
     document.getElementById('callControlBtn').addEventListener('click', toggleCall);
     document.getElementById('resetDayMiniBtn').addEventListener('click', resetDay);
+    document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
     document.getElementById('eraseAllDataBtn').addEventListener('click', eraseAllData);
     document.getElementById('goalsMiniBtn').addEventListener('click', () => openModal('goalsModal'));
     document.getElementById('pasteCallsBtn').addEventListener('click', () => openModal('callsModal'));
