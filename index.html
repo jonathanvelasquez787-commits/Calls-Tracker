@@ -124,7 +124,14 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    button, input, textarea { font: inherit; }
+    /* Bug reportado por el usuario: los <select> de toda la app (Horario,
+       Editar hueco, Editar llamada, Agregar llamada manual, Editar día...)
+       no mostraban el texto de la opción elegida en reposo — solo al pasar
+       el cursor encima o abrirlos. Causa: este reset nunca incluía
+       `select`, así que quedaba con la tipografía/heurística nativa del
+       navegador en vez de heredar la de la app — mismo problema de fondo
+       que el fix de abajo en `.alert-select` (ver ese comentario). */
+    button, input, textarea, select { font: inherit; }
     button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 
     .app {
@@ -646,6 +653,20 @@
       width: 100%;
     }
 
+    /* Bug reportado por el usuario: el texto de la opción seleccionada de
+       CUALQUIER <select> sin esta clase (#gapLabelInput, #dayNoteCategoryInput,
+       #callEditBillableInput/DroppedInput, #manualCallBillableInput/DroppedInput)
+       no se veía en reposo — solo con el cursor encima o al abrir el select.
+       Causa: esos selects no tenían NINGÚN color/background propio (a
+       diferencia de este, que sí los declara), así que quedaban a merced del
+       "auto dark mode" del navegador (heurística de Chrome/Android que
+       invierte colores de elementos sin color+background declarados por el
+       autor, de forma inconsistente hasta que el propio navegador le cede el
+       control al render nativo de hover/focus/apertura). Se amplía el
+       selector de `.alert-select` a `select, .alert-select` — así TODOS los
+       <select> de la app heredan este mismo color/background explícito, sin
+       tener que agregar la clase uno por uno ni tocar el HTML. */
+    select,
     .alert-select {
       width: 100%;
       border: 1px solid var(--line);
