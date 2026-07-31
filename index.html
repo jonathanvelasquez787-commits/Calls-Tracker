@@ -748,6 +748,37 @@
       max-width: 150px;
     }
 
+    /* Pedido del usuario: flechitas ‹/› junto a "Día activo" para moverse un
+       día atrás/adelante sin tener que abrir el date-picker nativo de
+       #daySelector (que en desktop pide varios clicks: abrir el calendario,
+       ubicar el mes, elegir el día). Mismo patrón visual compacto que ya
+       usan otros botones pequeños de la app (ej. .week-nav button), pero
+       más chico para caber dentro de .summary-pill sin romper su layout de
+       una sola línea. */
+    .day-nav-btn {
+      flex: 0 0 auto;
+      width: 26px;
+      height: 26px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      border-radius: 8px;
+      font-weight: 900;
+      font-size: 14px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .day-nav-btn:hover,
+    .day-nav-btn:focus-visible {
+      background: rgba(255,255,255,.1);
+      outline: none;
+    }
+
 
 
     .controls-grid {
@@ -1815,7 +1846,9 @@
 <div class="chip" id="acwLiveChip" style="display:none;" title="Tiempo que llevas disponible/en ACW ahora mismo — sin llamada activa ni Break/Lunch activo.">⏱️ ACW/Available <strong id="acwLiveTimer">00:00:00</strong></div>
 <div class="summary-pill">
   <span>Día activo</span>
+  <button class="day-nav-btn" id="dayPrevBtn" type="button" aria-label="Día anterior" title="Día anterior">‹</button>
   <input id="daySelector" aria-label="Día activo" type="date"/>
+  <button class="day-nav-btn" id="dayNextBtn" type="button" aria-label="Día siguiente" title="Día siguiente">›</button>
 </div>
 </div>
 </div>
@@ -3911,6 +3944,23 @@ function setActiveDayKey(key, shouldRender = true) {
   state.activeDayKey = normalized;
   saveStateOnly();
   if (shouldRender) render();
+}
+
+// Pedido del usuario: flechitas ‹/› junto a "Día activo" (header) para
+// moverse un día atrás/adelante sin abrir el date-picker nativo de
+// #daySelector. Reutiliza getActiveDayKey()/setActiveDayKey() — el mismo
+// mecanismo que ya usa el date-picker y las filas de "Resumen semanal" —
+// así que dispara el mismo render() y respeta el mismo aviso de "día
+// futuro" que ya existe al clickear una fila de Resumen semanal (ver el
+// listener de data-week-day), en vez de tener 2 criterios distintos de
+// "vas a un día que aún no llega" en la misma app.
+function shiftActiveDayBy(deltaDays) {
+  const current = callDateToDate(getActiveDayKey()) || new Date();
+  const next = new Date(current.getFullYear(), current.getMonth(), current.getDate() + deltaDays);
+  if (deltaDays > 0 && next > todayRange()) {
+    toast('📅 Ese día todavía no llega — vas a ver un día futuro sin datos.');
+  }
+  setActiveDayKey(todayCallDateKey(next));
 }
 
 // Los controles "en vivo" (Iniciar/Finalizar shift, Break, Lunch) escriben
@@ -7820,6 +7870,8 @@ function render() {
       const key = dayKeyFromIsoDate(e.target.value);
       if (key) setActiveDayKey(key);
     });
+    document.getElementById('dayPrevBtn').addEventListener('click', () => shiftActiveDayBy(-1));
+    document.getElementById('dayNextBtn').addEventListener('click', () => shiftActiveDayBy(1));
     document.getElementById('weekPrevBtn').addEventListener('click', () => { weekViewOffset -= 1; renderWeekSummary(); });
     document.getElementById('weekNextBtn').addEventListener('click', () => { weekViewOffset += 1; renderWeekSummary(); });
     document.getElementById('weekTodayBtn').addEventListener('click', () => { weekViewOffset = 0; renderWeekSummary(); });
