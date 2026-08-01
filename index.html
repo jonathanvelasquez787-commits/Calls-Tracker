@@ -8,6 +8,22 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2309101e'/%3E%3Ccircle cx='32' cy='34' r='20' fill='none' stroke='%2366e2a5' stroke-width='4'/%3E%3Cpath d='M32 22v12l9 6' fill='none' stroke='%2366e2a5' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M24 10l-6 6M40 10l6 6' fill='none' stroke='%237d8cff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E"/>
 <style>
     :root {
+      /* Bug reportado por el usuario: el POPUP nativo de opciones de
+         cualquier <select> (no la caja cerrada, ya arreglada en un fix
+         anterior) mostraba el texto de las opciones NO resaltadas casi
+         invisible — solo la opción bajo el cursor/foco se veía, pintada por
+         el propio navegador con su azul de acento nativo. Causa: en TODO el
+         documento, ningún elemento (ni siquiera :root) declaraba
+         `color-scheme` — sin ese dato, el navegador no sabe que la app usa
+         tema oscuro por defecto y renderiza el fondo del popup de opciones
+         con el blanco por defecto del sistema, mientras el texto seguía
+         siendo el `color: var(--text)` claro que las opciones heredan del
+         <select> — texto claro sobre fondo claro. Se declara aquí (rama
+         oscura por defecto) y se sincroniza también en las otras 2 ramas de
+         tema más abajo (`@media (prefers-color-scheme: light)` y
+         `html.theme-light`), mismo patrón de 3 lugares que ya usa el resto
+         del theming. */
+      color-scheme: dark;
       --bg: #09101e;
       --bg-2: #07101f;
       --panel: rgba(16, 24, 40, 0.88);
@@ -50,6 +66,7 @@
        sistema — misma paleta, solo cambia cuándo se activa. */
     @media (prefers-color-scheme: light) {
       :root:not(.theme-dark) {
+        color-scheme: light;
         --bg: #f3f6fb;
         --bg-2: #eaf0f8;
         --panel: rgba(255, 255, 255, 0.86);
@@ -84,6 +101,7 @@
        default, y además desactiva la regla @media de arriba (selector
        :not(.theme-dark)), el resultado ya es el oscuro de siempre. */
     html.theme-light {
+      color-scheme: light;
       --bg: #f3f6fb;
       --bg-2: #eaf0f8;
       --panel: rgba(255, 255, 255, 0.86);
@@ -679,6 +697,25 @@
       outline: none;
     }
 
+    /* Bug reportado por el usuario (con captura): el POPUP nativo de
+       opciones seguía sin contraste — "Trabajo"/"Lunch" casi invisibles,
+       solo la opción bajo el cursor/foco se veía (pintada por el propio
+       navegador, no por este CSS). El `color-scheme` agregado arriba en
+       :root/@media/.theme-light ya corrige la mayoría de los navegadores,
+       pero se refuerza aquí con `color`/`background-color` explícitos en
+       `<option>` para los que sí respetan estilos de autor puesto directo
+       ahí (no todos los que respetan `color-scheme`). A diferencia del
+       `background` casi transparente de `select` de arriba (pensado para
+       mezclarse con el panel de fondo de la app), aquí se necesita un
+       fondo SÓLIDO — el popup de opciones no tiene "panel" detrás, así que
+       una rgba casi transparente se vería blanca lisa. `--panel-2` ya es la
+       variable de la app para fondos sólidos (paneles/modales), reutilizada
+       aquí en vez de inventar un color nuevo. */
+    option {
+      color: var(--text);
+      background-color: var(--panel-2);
+    }
+
     .alert-hint {
       margin: 0;
       color: var(--muted);
@@ -984,19 +1021,22 @@
   background: linear-gradient(90deg, var(--good), var(--teal));
 }
 
-/* Pedido del usuario: barras dentro de cada bloque de Trabajo (Margen,
-   Adherencia — ACW se quitó a pedido del usuario, no aportaba claridad),
+/* Pedido del usuario: barras dentro de cada bloque de Trabajo (Meta
+   productiva, Adherencia — ACW se quitó a pedido del usuario, no aportaba
+   claridad; Margen se reemplazó por la Meta de Productividad por bloque),
    mismo patrón visual que Productividad — cada una reutiliza .slot-progress
    (altura/borde/fondo) y solo cambia el color del relleno. */
 
-/* Margen: verde mientras estás dentro de lo permitido, rojo si te
-   excediste — mismo criterio de tono que ya usa el badge de texto
-   (m.ok ? good : bad), aplicado también al color de la barra. */
-.slot-progress.margin > div {
-  background: linear-gradient(90deg, var(--good), var(--teal));
+/* Meta de Productividad: mismo degradado teal→azul mientras está en
+   progreso (ni "bien" ni "mal", solo avanzando hacia la meta); cambia a
+   verde sólido (mismo criterio que .productivity, "productivo" = --good)
+   una vez alcanzada — mismo tono que ya usa el badge de texto (g.met ?
+   good : sin color especial). */
+.slot-progress.goal > div {
+  background: linear-gradient(90deg, var(--teal), var(--blue));
 }
-.slot-progress.margin.exceeded > div {
-  background: linear-gradient(90deg, var(--bad), #ff8a95);
+.slot-progress.goal.met > div {
+  background: linear-gradient(90deg, var(--good), var(--teal));
 }
 
 /* Adherencia: mismos 3 umbrales de tono que ya usa el badge de texto
@@ -1994,7 +2034,7 @@
     </details>
     <span class="slot-status" id="adherenceGoalBadge" style="display:none;"></span>
     <span class="slot-status bad live-exception" id="adherenceLiveBadge" style="display:none;">⚠️ Fuera de adherencia ahora</span>
-    <span class="slot-status" id="marginBadge" title="Minutos NO productivos (ACW, huecos cortos) permitidos dentro de tu turno sin marcar exceso, calculados por cada 60 min trabajados. Editable en Horario → Margen.">Margen: —</span>
+    <span class="slot-status" id="productivityGoalBadge" title="Minutos productivos logrados hoy vs. la suma de las metas configuradas en cada bloque de Trabajo (Horario → Bloques). Un bloque sin meta configurada no cuenta para este total.">Meta productiva: —</span>
   </div>
   <div class="schedule" id="scheduleList"></div>
 </div>
@@ -2171,19 +2211,6 @@
 </div>
 </div>
 <p class="alert-hint">"Bloques del día" calcula tu Adherencia minuto a minuto. La ventana de gracia perdona desvíos chicos cerca de cada transición del horario (ej. empezar un break unos minutos tarde) — 0 = cualquier desvío penaliza de inmediato. La Meta es tu objetivo personal de %, se compara contra tu Adherencia del día.</p>
-</div>
-<div class="alert-group">
-<div class="alert-group-head">
-<span class="alert-group-icon">📐</span>
-<span class="alert-group-title">Margen</span>
-</div>
-<div class="alert-fields-row">
-<div class="alert-mini-field">
-<label for="marginAllowedMinPerHourInput" title="Minutos NO productivos (ACW, huecos cortos entre llamadas, etc.) que se permiten dentro de tu turno sin que se marque como excedido — se calculan por cada 60 min trabajados. Ej. con 5, en un bloque de 2 horas trabajadas se permiten 10 min no-productivos antes de marcar exceso.">Margen permitido (min/hora) ⓘ</label>
-<input id="marginAllowedMinPerHourInput" inputmode="numeric" min="0" step="1" type="number"/>
-</div>
-</div>
-<p class="alert-hint">Minutos no-productivos (ACW, huecos cortos) permitidos por cada 60 min trabajados, antes de que "Margen" (en Bloques del día) marque exceso. Aplica tanto al margen por bloque como al del día completo.</p>
 </div>
 <div class="divider"></div>
 <div class="field" style="margin-bottom:4px;">
@@ -2490,13 +2517,13 @@ $0.72"></textarea>
         start: '07:00',
         end: '16:00',
         blocks: [
-          { type: 'work', start: '07:00', dur: 130 },
+          { type: 'work', start: '07:00', dur: 130, goalMin: 130 },
           { type: 'break', start: '09:10', dur: 20 },
-          { type: 'work', start: '09:30', dur: 130 },
+          { type: 'work', start: '09:30', dur: 130, goalMin: 130 },
           { type: 'break', start: '11:40', dur: 20 },
-          { type: 'work', start: '12:00', dur: 60 },
+          { type: 'work', start: '12:00', dur: 60, goalMin: 60 },
           { type: 'lunch', start: '13:00', dur: 50 },
-          { type: 'work', start: '13:50', dur: 130 },
+          { type: 'work', start: '13:50', dur: 130, goalMin: 130 },
         ],
       };
     }
@@ -2546,6 +2573,36 @@ $0.72"></textarea>
       return { off: !!dayCfg.off, start: dayCfg.start, end: dayCfg.end, blocks };
     }
 
+    // Pedido del usuario: reemplazar el ratio global de "Margen" por una
+    // Meta de Productividad en minutos CONFIGURABLE POR BLOQUE de Trabajo.
+    // Migración: un bloque de Trabajo guardado ANTES de este cambio no tiene
+    // `goalMin` — se le asigna como default su propia duración completa
+    // (`dur`), editable después a la baja desde Horario. Break/Lunch nunca
+    // llevan esta propiedad — si algún dato viejo la trajera por error, se
+    // descarta aquí (defensivo, no debería pasar en la práctica). Mismo
+    // patrón que migrateDayConfigToBlocks(): corre una vez por día al primer
+    // ensureWeeklySchedule() de cada sesión, sin pérdida de datos para nadie
+    // que ya haya configurado su goalMin a propósito.
+    function ensureBlockProductivityGoals(dayCfg) {
+      if (!dayCfg || !Array.isArray(dayCfg.blocks)) return dayCfg;
+      dayCfg.blocks = dayCfg.blocks.map(b => {
+        if (!b) return b;
+        const type = String(b.type || '').toLowerCase();
+        if (type !== 'work') {
+          if (Object.prototype.hasOwnProperty.call(b, 'goalMin')) {
+            const { goalMin, ...rest } = b;
+            return rest;
+          }
+          return b;
+        }
+        const dur = Number(b.dur) || 0;
+        const goalMin = Number(b.goalMin);
+        if (Number.isFinite(goalMin) && goalMin > 0) return b;
+        return { ...b, goalMin: dur };
+      });
+      return dayCfg;
+    }
+
     function ensureWeeklySchedule() {
       if (!settings.weeklySchedule || typeof settings.weeklySchedule !== 'object') {
         // Migración: si ya tenías un shiftStart/shiftEnd guardado, úsalo como base
@@ -2562,6 +2619,7 @@ $0.72"></textarea>
       }
       WEEKDAYS.forEach(k => { if (!settings.weeklySchedule[k]) settings.weeklySchedule[k] = defaultDaySchedule(k !== 'sat' && k !== 'sun'); });
       WEEKDAYS.forEach(k => { settings.weeklySchedule[k] = migrateDayConfigToBlocks(settings.weeklySchedule[k]); });
+      WEEKDAYS.forEach(k => { settings.weeklySchedule[k] = ensureBlockProductivityGoals(settings.weeklySchedule[k]); });
       if (!settings.lateArrivalMode) settings.lateArrivalMode = 'anchor';
     }
 
@@ -2612,7 +2670,7 @@ $0.72"></textarea>
         if (!b || !b.start || !(Number(b.dur) > 0)) return;
         const type = String(b.type || '').toLowerCase();
         if (type !== 'break' && type !== 'lunch' && type !== 'work') return;
-        points.push({ rawType: type, start: formatHHMM(b.start), dur: Number(b.dur) });
+        points.push({ rawType: type, start: formatHHMM(b.start), dur: Number(b.dur), goalMin: b.goalMin });
       });
       // Mismo criterio que ya se usaba para Break (desde el fix de v109):
       // el nombre ("Break 1", "Lunch 2", "Bloque de Trabajo 3"...) se asigna
@@ -2632,7 +2690,13 @@ $0.72"></textarea>
         if (p.rawType === 'break') { type = 'Break'; name = `Break ${breakIdx++}`; }
         else if (p.rawType === 'lunch') { type = 'Lunch'; name = `Lunch ${lunchIdx++}`; }
         else { type = 'Work'; name = `Bloque de Trabajo ${workIdx++}`; }
-        return { type, name, start: toHHMM(pStart), end: toHHMM(pStart + p.dur) };
+        const slot = { type, name, start: toHHMM(pStart), end: toHHMM(pStart + p.dur) };
+        // Pedido del usuario: Meta de Productividad configurable POR BLOQUE
+        // (minutos productivos que ese bloque de Trabajo debe alcanzar,
+        // reemplaza al viejo ratio global de "Margen"). Solo los bloques de
+        // Work la llevan — Break/Lunch no tienen este concepto.
+        if (type === 'Work') slot.goalMin = Number(p.goalMin) || 0;
+        return slot;
       });
     }
 
@@ -2839,14 +2903,6 @@ $0.72"></textarea>
         // existen Meta en minutos/dólares/moneda), editable en Horario junto
         // a la ventana de gracia. Default 95 — umbral típico de un WFM real.
         adherenceGoalPct: 95,
-        // Pedido del usuario: el ratio de "Margen del día"/"Margen bloque"
-        // (minutos NO productivos permitidos por cada 60 min trabajados,
-        // ej. ACW o huecos cortos) estaba fijo en el código (5/60) en dos
-        // lugares (slotStats() y renderSchedule()). Ahora es un solo valor
-        // configurable, editable en Horario junto a Adherencia. Default 5
-        // — mismo valor que ya tenía la app, así que nadie ve un cambio de
-        // comportamiento hasta que lo edite a propósito.
-        marginAllowedMinPerHour: 5,
         // Pedido del usuario: modo claro/oscuro — 'auto' (default) sigue el
         // sistema operativo (prefers-color-scheme); 'light'/'dark' fuerzan
         // el tema sin importar el sistema. Ver applyTheme()/themeToggleBtn.
@@ -2869,7 +2925,6 @@ $0.72"></textarea>
       if (!Number.isFinite(Number(settings.alertBeforeBreakEndMin)) || Number(settings.alertBeforeBreakEndMin) < 0) settings.alertBeforeBreakEndMin = fallback.alertBeforeBreakEndMin;
       if (!Number.isFinite(Number(settings.adherenceGraceMin)) || Number(settings.adherenceGraceMin) < 0) settings.adherenceGraceMin = fallback.adherenceGraceMin;
       if (!Number.isFinite(Number(settings.adherenceGoalPct)) || Number(settings.adherenceGoalPct) <= 0 || Number(settings.adherenceGoalPct) > 100) settings.adherenceGoalPct = fallback.adherenceGoalPct;
-      if (!Number.isFinite(Number(settings.marginAllowedMinPerHour)) || Number(settings.marginAllowedMinPerHour) < 0) settings.marginAllowedMinPerHour = fallback.marginAllowedMinPerHour;
       if (!['auto', 'light', 'dark'].includes(settings.theme)) settings.theme = fallback.theme;
     }
 
@@ -4415,31 +4470,38 @@ function slotStats(slot, dayCalls = calls, dayPauses = dayPauseIntervals(getActi
   const filledMin = slot.type === 'Work' ? workUsed : pauseUsed;
   const pct = durationMin > 0 ? Math.min(100, (filledMin / durationMin) * 100) : 0;
 
-  // Pedido del usuario: "Margen del día" — de cada 60 min de trabajo, 55 deben
-  // ser productivos (5 min de margen no-productivo permitidos por hora; para
-  // 120 min de trabajo son 10 min de margen, tal como lo describió). Solo
-  // aplica a slots de Trabajo. `workedForMargin` usa workUsed (ya neto de
-  // pausas reales, ver fix de v41) como el tiempo de trabajo real del bloque;
-  // `productiveForMargin` se acota a no exceder ese mismo total (defensivo,
-  // por si algo se traslapara de forma inesperada). marginExceso > 0 significa
-  // que el bloque se pasó del margen permitido.
-  const MARGIN_RATIO = (Number.isFinite(Number(settings.marginAllowedMinPerHour)) && Number(settings.marginAllowedMinPerHour) >= 0 ? Number(settings.marginAllowedMinPerHour) : 5) / 60;
-  let margin = null;
+  // Pedido del usuario: reemplaza el viejo ratio global de "Margen" por una
+  // Meta de Productividad EN MINUTOS, configurable POR BLOQUE de Trabajo
+  // (`slot.goalMin`, ver buildPlannedSlots()/el editor de bloques en
+  // Horario). Solo aplica a slots de Trabajo, y solo si el bloque tiene una
+  // meta configurada (goalMin > 0) — un bloque sin meta (dato viejo antes de
+  // la migración, o el usuario la dejó en 0 a propósito) no muestra nada,
+  // en vez de inventar un 0/0 sin sentido. `achievedMin` usa
+  // `productiveCallMin` SIN capar al valor de la meta — así, si el usuario
+  // supera su meta, el texto puede mostrar "75/60 min" en vez de esconder
+  // el excedente; `pct` sí se capa a 100% para la barra de progreso.
+  let productivityGoal = null;
   if (slot.type === 'Work') {
-    const workedForMargin = workUsed;
-    const productiveForMargin = Math.max(0, Math.min(workedForMargin, productiveCallMin));
-    const allowed = workedForMargin * MARGIN_RATIO;
-    const used = Math.max(0, workedForMargin - productiveForMargin);
-    const excess = Math.max(0, used - allowed);
-    margin = { worked: workedForMargin, productive: productiveForMargin, allowed, used, excess, ok: excess <= 0.05 };
+    const goalMinConfigured = Number(slot.goalMin) || 0;
+    if (goalMinConfigured > 0) {
+      const pct = Math.min(100, (productiveCallMin / goalMinConfigured) * 100);
+      productivityGoal = {
+        goalMin: goalMinConfigured,
+        achievedMin: productiveCallMin,
+        pct,
+        met: productiveCallMin >= goalMinConfigured - 0.05,
+      };
+    }
   }
 
   // Pedido del usuario: barra de Productividad dentro de cada bloque de
   // Trabajo — % de la duración planeada del bloque que fue tiempo de
-  // llamada productiva (productiveCallMin, ya calculado arriba para
-  // "Margen"), no solo "tiempo usado" (que incluye ACW). Mismo capado a
-  // 100% que ya usa `pct`, y misma defensa contra durationMin=0. Solo
-  // aplica a slots de Trabajo — null para Break/Lunch, igual que `margin`.
+  // llamada productiva (productiveCallMin, ya calculado arriba). Mismo
+  // capado a 100% que ya usa `pct`, y misma defensa contra durationMin=0.
+  // Solo aplica a slots de Trabajo — null para Break/Lunch, igual que
+  // `productivityGoal`. Es una métrica DISTINTA de la Meta de Productividad
+  // de arriba (esta compara contra la DURACIÓN del bloque, la de arriba
+  // contra los MINUTOS meta configurados) — ambas coexisten a propósito.
   const productivityPct = slot.type === 'Work'
     ? (durationMin > 0 ? Math.min(100, (productiveCallMin / durationMin) * 100) : 0)
     : null;
@@ -4575,7 +4637,7 @@ function slotStats(slot, dayCalls = calls, dayPauses = dayPauseIntervals(getActi
     statusTone = 'warn';
   }
 
-  return { slotStart, slotEnd, durationMin, callMin, acwMin, pauseMin, filledMin, pct, productivityPct, detail, status, statusTone, actualPauseRange, realActivityRange, margin };
+  return { slotStart, slotEnd, durationMin, callMin, acwMin, pauseMin, filledMin, pct, productivityPct, detail, status, statusTone, actualPauseRange, realActivityRange, productivityGoal };
 }
 
 // ---- Adherencia: plan (horario semanal) vs real (lo que de verdad pasó) ----
@@ -6280,6 +6342,25 @@ function renderWeekSummary() {
     // a `dayConfig.blocks` — esta es la capa de formulario correspondiente.
     const BLOCK_TYPE_LABELS = { work: 'Trabajo', break: 'Break', lunch: 'Lunch' };
 
+    // Pedido del usuario: Meta de Productividad configurable POR BLOQUE de
+    // Trabajo (reemplaza al viejo ratio global de "Margen"). Esta función
+    // arma la forma CANÓNICA de un bloque para comparar/guardar — usada
+    // tanto por readBlocksFromEditor() (lo que se lee del formulario) como
+    // por scheduleFormIsDirty() (lo que ya está guardado en settings) — así
+    // ambos lados producen EXACTAMENTE la misma forma de objeto para el
+    // mismo contenido, sin importar de dónde vino. `goalMin` solo existe
+    // como clave en bloques de Trabajo (Break/Lunch no llevan meta) — si no
+    // se incluyera este mismo criterio en los dos lugares, scheduleFormIsDirty()
+    // compararía dos objetos con distintas claves (uno con goalMin, otro
+    // sin) y avisaría "cambios sin guardar" de forma falsa aunque nada
+    // hubiera cambiado.
+    function normalizeBlockForCompare(b) {
+      const type = BLOCK_TYPE_LABELS[String(b && b.type || '').toLowerCase()] ? String(b.type).toLowerCase() : 'work';
+      const base = { type, start: formatHHMM((b && b.start) || '00:00'), dur: Math.max(0, Number(b && b.dur) || 0) };
+      if (type === 'work') base.goalMin = Math.max(0, Number(b && b.goalMin) || 0);
+      return base;
+    }
+
     function renderBlocksEditor(blocks) {
       const list = document.getElementById('blocksEditorList');
       if (!list) return;
@@ -6294,6 +6375,14 @@ function renderWeekSummary() {
         const startVal = formatHHMM(b?.start || '09:00');
         const durVal = Number(b?.dur) || 0;
         const endVal = minutesToHHMM(toMinutes(startVal) + durVal);
+        // Pedido del usuario: Meta de Productividad EN MINUTOS por cada
+        // bloque de Trabajo — campo nuevo, visible solo cuando Tipo =
+        // Trabajo (oculto para Break/Lunch, que no tienen este concepto).
+        // Default = la duración completa del bloque (mismo criterio que
+        // ensureBlockProductivityGoals() usa para configs migradas), así
+        // "pide" un valor de entrada razonable en vez de arrancar en 0 —
+        // el usuario lo ajusta a la baja si quiere una meta más realista.
+        const goalVal = Number(b?.goalMin) || durVal;
         return `
         <div class="block-row" data-block-row="${i}">
           <div class="field" style="flex:0 0 130px;">
@@ -6312,6 +6401,10 @@ function renderWeekSummary() {
             <label>Fin</label>
             <input type="time" class="block-end-input" inputmode="numeric" value="${endVal}"/>
           </div>
+          <div class="field block-goal-field" style="${type === 'work' ? '' : 'display:none;'}">
+            <label>Meta productiva (min)</label>
+            <input type="number" class="block-goal-input" inputmode="numeric" min="0" step="1" value="${goalVal}"/>
+          </div>
           <button type="button" class="gap-edit-btn block-remove-btn" data-remove-block="${i}" style="background: rgba(255,111,143,.12); border-color: rgba(255,111,143,.3);" aria-label="Eliminar bloque ${i + 1}">✕</button>
         </div>
       `;
@@ -6326,18 +6419,22 @@ function renderWeekSummary() {
     // Inicio (cruza medianoche o son iguales), dur queda en 0 — mismo
     // criterio que ya usaba un "Min: 0" antes de este cambio: el bloque se
     // ignora en silencio (buildPlannedSlots/validateDayConfig ya filtran
-    // dur<=0), sin bloquear el guardado con un error nuevo.
+    // dur<=0), sin bloquear el guardado con un error nuevo. El resultado
+    // pasa por normalizeBlockForCompare() para que la forma final (con o
+    // sin `goalMin` según el tipo) sea IDÉNTICA a la que usa
+    // scheduleFormIsDirty() al comparar contra lo guardado.
     function readBlocksFromEditor() {
       const rows = document.querySelectorAll('#blocksEditorList .block-row');
       return Array.from(rows).map(row => {
         const typeInput = row.querySelector('.block-type-input');
         const startInput = row.querySelector('.block-start-input');
         const endInput = row.querySelector('.block-end-input');
+        const goalInput = row.querySelector('.block-goal-input');
         const type = BLOCK_TYPE_LABELS[typeInput ? typeInput.value : ''] ? typeInput.value : 'work';
         const start = formatHHMM(startInput ? startInput.value : '09:00');
         const end = formatHHMM(endInput ? endInput.value : start);
         const dur = Math.max(0, toMinutes(end) - toMinutes(start));
-        return { type, start, dur };
+        return normalizeBlockForCompare({ type, start, dur, goalMin: goalInput ? goalInput.value : 0 });
       });
     }
 
@@ -6389,8 +6486,6 @@ function renderWeekSummary() {
       if (adherenceGraceMinInput && document.activeElement !== adherenceGraceMinInput) adherenceGraceMinInput.value = settings.adherenceGraceMin;
       const adherenceGoalPctInput = document.getElementById('adherenceGoalPctInput');
       if (adherenceGoalPctInput && document.activeElement !== adherenceGoalPctInput) adherenceGoalPctInput.value = settings.adherenceGoalPct;
-      const marginAllowedMinPerHourInput = document.getElementById('marginAllowedMinPerHourInput');
-      if (marginAllowedMinPerHourInput && document.activeElement !== marginAllowedMinPerHourInput) marginAllowedMinPerHourInput.value = settings.marginAllowedMinPerHour;
       // Ciclo de pago: son settings globales (no por día de la semana), así
       // que se sincronizan siempre igual sin importar scheduleEditDay.
       ensureCurrencySettings();
@@ -6428,12 +6523,14 @@ function renderWeekSummary() {
       if (!cfg) return false;
       ensureWeeklySchedule();
       const stored = settings.weeklySchedule[scheduleEditDay];
+      // Mismo normalizeBlockForCompare() que ya usa readBlocksFromEditor()
+      // (ver ahí) — necesario desde que los bloques de Trabajo llevan
+      // `goalMin` (Meta de Productividad): sin esta simetría, `cfg.blocks`
+      // (con goalMin en cada bloque de Trabajo) y `storedBlocks` (sin esa
+      // clave) nunca coincidirían en JSON.stringify aunque nada hubiera
+      // cambiado — avisaría "cambios sin guardar" en falso todo el tiempo.
       const storedBlocks = (stored && Array.isArray(stored.blocks) ? stored.blocks : [])
-        .map(b => ({
-          type: BLOCK_TYPE_LABELS[String(b && b.type || '').toLowerCase()] ? String(b.type).toLowerCase() : 'work',
-          start: formatHHMM((b && b.start) || '00:00'),
-          dur: Math.max(0, Number(b && b.dur) || 0),
-        }));
+        .map(normalizeBlockForCompare);
       const storedNormalized = {
         off: !!(stored && stored.off),
         start: formatHHMM((stored && stored.start) || '07:00'),
@@ -6478,7 +6575,17 @@ function renderWeekSummary() {
         if (!typeLabel[type]) return;
         counters[type] += 1;
         const s = toMinutes(formatHHMM(b.start));
-        segments.push({ label: `${typeLabel[type]} ${counters[type]}`, start: s, end: s + Number(b.dur) });
+        const label = `${typeLabel[type]} ${counters[type]}`;
+        segments.push({ label, start: s, end: s + Number(b.dur) });
+        // Pedido del usuario: Meta de Productividad por bloque no puede ser
+        // mayor que la propia duración del bloque — no tendría sentido
+        // pedir más minutos productivos de los que el bloque dura.
+        if (type === 'work') {
+          const goalMin = Number(b.goalMin) || 0;
+          if (goalMin > Number(b.dur)) {
+            errors.push(`${label}: la meta productiva (${formatMinutes(goalMin)} min) no puede ser mayor que la duración del bloque (${formatMinutes(Number(b.dur))} min).`);
+          }
+        }
       });
 
       segments.forEach(seg => {
@@ -6649,20 +6756,6 @@ function renderWeekSummary() {
       saveSettingsOnly();
       render();
       toast(`Meta de Adherencia: ${settings.adherenceGoalPct}%`);
-    }
-
-    // Pedido del usuario: ratio de "Margen" configurable (minutos no
-    // productivos permitidos por cada 60 min trabajados) — mismo patrón de
-    // auto-guardado que el resto de settings de Horario. slotStats() y
-    // renderSchedule() leen settings.marginAllowedMinPerHour directamente,
-    // así que no hace falta recalcular nada aquí más que re-renderizar.
-    function updateMarginSettings() {
-      const input = document.getElementById('marginAllowedMinPerHourInput');
-      const mins = Number(input?.value);
-      if (Number.isFinite(mins) && mins >= 0) settings.marginAllowedMinPerHour = mins;
-      saveSettingsOnly();
-      render();
-      toast(`Margen permitido: ${formatMinutes(settings.marginAllowedMinPerHour)} min por hora`);
     }
 
 
@@ -7318,19 +7411,22 @@ function renderSchedule() {
         wrap.innerHTML = '<div class="note">No hay horario configurado para este día. Edítalo en “Horario”.</div>';
         const adherenceBadgeEmpty = document.getElementById('adherenceBadge');
         if (adherenceBadgeEmpty) adherenceBadgeEmpty.textContent = 'Adherencia: —';
-        const marginBadgeEmpty = document.getElementById('marginBadge');
-        if (marginBadgeEmpty) marginBadgeEmpty.textContent = 'Margen: —';
+        const productivityGoalBadgeEmpty = document.getElementById('productivityGoalBadge');
+        if (productivityGoalBadgeEmpty) productivityGoalBadgeEmpty.textContent = 'Meta productiva: —';
         const checkpointListEmpty = document.getElementById('adherenceCheckpointList');
         if (checkpointListEmpty) checkpointListEmpty.innerHTML = '<div class="note" style="margin:0;">Sin horario configurado este día.</div>';
         return;
       }
 
-      // Acumuladores para "Margen del día": se suman los mismos valores
-      // (worked/productive) que ya calcula slotStats() por cada bloque de
-      // Trabajo, para que el total del día sea consistente con la suma de
-      // los desgloses por bloque (mismo número, no un cálculo aparte).
-      let dayMarginWorked = 0;
-      let dayMarginProductive = 0;
+      // Acumuladores para "Meta productiva" del día: se suman los mismos
+      // valores (goalMin/achievedMin) que ya calcula slotStats() por cada
+      // bloque de Trabajo CON meta configurada, para que el total del día
+      // sea consistente con la suma de los desgloses por bloque (mismo
+      // número, no un cálculo aparte). Un bloque sin meta configurada
+      // (productivityGoal === null) simplemente no aporta a ninguno de los
+      // dos — no cuenta como "meta 0" ni distorsiona el total.
+      let dayGoalTargetMin = 0;
+      let dayGoalAchievedMin = 0;
 
       // Índices del primer y último bloque de Trabajo del día — se usan
       // para extender la ventana de conteo de llamadas SOLO en esos dos
@@ -7385,34 +7481,33 @@ function renderSchedule() {
             ? `Pausa real: ${formatDuration(stats.actualPauseRange.durationMin * 60000)} (${timeLabelFromDate(stats.actualPauseRange.start)} – ${stats.actualPauseRange.live ? 'en curso' : timeLabelFromDate(stats.actualPauseRange.end)})`
             : `${formatDuration(stats.filledMin * 60000)} de ${formatDuration(stats.durationMin * 60000)} · ${Math.round(stats.pct)}%`;
 
-        // Pedido del usuario: desglose de "Margen del día" por cada bloque de
-        // Trabajo individual (55 de cada 60 min deben ser productivos). Solo
-        // se muestra si el bloque ya tiene algo de tiempo trabajado — un
-        // bloque de Trabajo futuro/sin actividad no tiene margen que mostrar
-        // todavía (margin.worked sería 0). Pedido del usuario (reordenado):
-        // en vez de píldora de color arriba + barra suelta más abajo (quedaban
-        // desconectadas visualmente), ahora es meta+barra pegados, mismo
-        // patrón que ya usa Productividad. El texto conserva color inline
-        // cuando se excede (en vez del fondo de píldora) para que el aviso
-        // siga destacando.
-        let marginBarHtml = '';
-        if (slot.type === 'Work' && stats.margin) {
-          dayMarginWorked += stats.margin.worked;
-          dayMarginProductive += stats.margin.productive;
-          if (stats.margin.worked > 0.05) {
-            const m = stats.margin;
-            const marginText = m.ok
-              ? `Margen: ${formatMinutes(m.used)}m de ${formatMinutes(m.allowed)}m permitidos`
-              : `Margen excedido por ${formatMinutes(m.excess)}m (permitido ${formatMinutes(m.allowed)}m)`;
-            const marginColor = m.ok ? '' : `color: var(--bad); font-weight: 800;`;
-            const marginBarPct = m.allowed > 0 ? Math.min(100, (m.used / m.allowed) * 100) : 0;
-            marginBarHtml = `
-              <div class="meta" style="${marginColor}" title="Minutos NO productivos (ACW, huecos cortos) permitidos en este bloque sin marcar exceso, calculados por cada 60 min trabajados. Editable en Horario → Margen.">${escapeHtml(marginText)}</div>
-              <div class="slot-progress margin ${m.ok ? '' : 'exceeded'}" aria-label="${escapeHtml(slot.name)} margen">
-                <div style="width:${marginBarPct}%"></div>
-              </div>
-            `;
-          }
+        // Pedido del usuario: reemplaza el desglose de "Margen del día" por
+        // cada bloque de Trabajo — ahora es una Meta de Productividad EN
+        // MINUTOS, configurable POR BLOQUE (Horario → Bloques → "Meta
+        // productiva (min)"). Solo se muestra si el bloque tiene una meta
+        // configurada (`stats.productivityGoal` no es null — ver
+        // slotStats()); un bloque sin meta simplemente no muestra nada, en
+        // vez de un 0/0 sin sentido. Meta+barra pegados (mismo patrón que ya
+        // usa Productividad, justo arriba). El texto cambia a verde con ✅
+        // una vez cumplida la meta — el resto del tiempo usa el mismo
+        // degradado teal→azul que Productividad, sin urgencia visual extra
+        // (a diferencia del viejo "Margen excedido", cumplir o no la meta no
+        // es un error, solo un objetivo en progreso).
+        let goalBarHtml = '';
+        if (slot.type === 'Work' && stats.productivityGoal) {
+          dayGoalTargetMin += stats.productivityGoal.goalMin;
+          dayGoalAchievedMin += stats.productivityGoal.achievedMin;
+          const g = stats.productivityGoal;
+          const goalText = g.met
+            ? `✅ Meta productiva alcanzada: ${formatMinutes(g.achievedMin)}/${formatMinutes(g.goalMin)} min`
+            : `Meta productiva: ${formatMinutes(g.achievedMin)}/${formatMinutes(g.goalMin)} min`;
+          const goalColor = g.met ? `color: var(--good); font-weight: 800;` : '';
+          goalBarHtml = `
+            <div class="meta" style="${goalColor}" title="Minutos productivos meta de este bloque, configurable en Horario → Bloques.">${escapeHtml(goalText)}</div>
+            <div class="slot-progress goal ${g.met ? 'met' : ''}" aria-label="${escapeHtml(slot.name)} meta productiva">
+              <div style="width:${g.pct}%"></div>
+            </div>
+          `;
         }
 
         // Pedido del usuario: cada bloque lleva su PROPIA adherencia minuto a
@@ -7420,7 +7515,8 @@ function renderSchedule() {
         // originalPlannedSlots[slotIdx] es el slot SIN correr correspondiente
         // (mismo índice); null si el bloque todavía no empieza (ver
         // slotMinuteAdherence) — en ese caso no se muestra nada, igual que
-        // marginBarHtml no se muestra para bloques de Trabajo sin actividad.
+        // goalBarHtml no se muestra para bloques de Trabajo sin meta
+        // configurada.
         let adherenceBarHtml = '';
         const slotAdherence = slotMinuteAdherence(dayKey, originalPlannedSlots[slotIdx] || slot, bounds);
         if (slotAdherence) {
@@ -7443,11 +7539,11 @@ function renderSchedule() {
         // Pedido del usuario: barra de Productividad dentro de cada bloque
         // de Trabajo, aparte de la barra de "Usado" (stats.pct). Solo
         // aplica a Trabajo (stats.productivityPct es null en Break/Lunch,
-        // mismo criterio que stats.margin) — se arma como HTML aparte para
-        // no forzar el markup con un condicional feo dentro del template
-        // principal de abajo. Se oculta en días futuros (isFutureDay) —
-        // antes mostraba 0% (no es dato incorrecto, pero tampoco debería
-        // "aparecer" antes de que el día empiece).
+        // mismo criterio que stats.productivityGoal) — se arma como HTML
+        // aparte para no forzar el markup con un condicional feo dentro del
+        // template principal de abajo. Se oculta en días futuros
+        // (isFutureDay) — antes mostraba 0% (no es dato incorrecto, pero
+        // tampoco debería "aparecer" antes de que el día empiece).
         const productivityBarHtml = slot.type === 'Work' && stats.productivityPct !== null && !isFutureDay
           ? `
               <div class="meta">Productividad: ${Math.round(stats.productivityPct)}%</div>
@@ -7472,7 +7568,7 @@ function renderSchedule() {
               ${productivityBarHtml}
               <div class="slot-status ${statusClass}">${escapeHtml(stats.status)}</div>
               <div class="meta">${progressLabel}</div>
-              ${marginBarHtml}
+              ${goalBarHtml}
               ${adherenceBarHtml}
             </div>
             <div class="type">${slot.type}</div>
@@ -7482,23 +7578,20 @@ function renderSchedule() {
 
       wrap.innerHTML = slotRows.join('');
 
-      // ---- Resumen del día: Adherencia + Margen (arriba de la lista) ----
-      const MARGIN_RATIO_DAY = (Number.isFinite(Number(settings.marginAllowedMinPerHour)) && Number(settings.marginAllowedMinPerHour) >= 0 ? Number(settings.marginAllowedMinPerHour) : 5) / 60;
-      const dayMarginAllowed = dayMarginWorked * MARGIN_RATIO_DAY;
-      const dayMarginUsed = Math.max(0, dayMarginWorked - dayMarginProductive);
-      const dayMarginExcess = Math.max(0, dayMarginUsed - dayMarginAllowed);
-      const dayMarginOk = dayMarginExcess <= 0.05;
-
-      const marginBadge = document.getElementById('marginBadge');
-      if (marginBadge) {
-        if (dayMarginWorked <= 0.05) {
-          marginBadge.textContent = 'Margen: sin trabajo aún';
-          marginBadge.className = 'slot-status';
+      // ---- Resumen del día: Adherencia + Meta productiva (arriba de la lista) ----
+      const productivityGoalBadge = document.getElementById('productivityGoalBadge');
+      if (productivityGoalBadge) {
+        if (dayGoalTargetMin <= 0.05) {
+          // Ningún bloque de Trabajo de hoy tiene una meta configurada (o
+          // aún no hay ninguno con actividad) — nada que comparar todavía.
+          productivityGoalBadge.textContent = 'Meta productiva: sin meta configurada';
+          productivityGoalBadge.className = 'slot-status';
         } else {
-          marginBadge.textContent = dayMarginOk
-            ? `Margen: ${formatMinutes(dayMarginUsed)}m de ${formatMinutes(dayMarginAllowed)}m permitidos`
-            : `Margen: excedido por ${formatMinutes(dayMarginExcess)}m`;
-          marginBadge.className = `slot-status ${dayMarginOk ? 'good' : 'bad'}`;
+          const dayGoalMet = dayGoalAchievedMin >= dayGoalTargetMin - 0.05;
+          productivityGoalBadge.textContent = dayGoalMet
+            ? `✅ Meta productiva: ${formatMinutes(dayGoalAchievedMin)}/${formatMinutes(dayGoalTargetMin)} min`
+            : `Meta productiva: ${formatMinutes(dayGoalAchievedMin)}/${formatMinutes(dayGoalTargetMin)} min`;
+          productivityGoalBadge.className = `slot-status ${dayGoalMet ? 'good' : 'warn'}`;
         }
       }
 
@@ -7952,6 +8045,29 @@ function render() {
       if (!btn) return;
       removeBlockRowAt(Number(btn.getAttribute('data-remove-block')));
     });
+    // Pedido del usuario: el campo "Meta productiva (min)" solo aplica a
+    // bloques de Trabajo — se muestra/oculta en VIVO al cambiar el Tipo de
+    // una fila, sin necesidad de re-renderizar toda la lista (que perdería
+    // ediciones a medio hacer en otras filas). Si se cambia A Trabajo y el
+    // campo de meta está vacío/en 0, se prellena con la duración actual del
+    // bloque (Fin − Inicio) como default razonable, igual que hace
+    // renderBlocksEditor() al construir una fila desde datos guardados.
+    document.getElementById('blocksEditorList').addEventListener('change', (e) => {
+      const typeInput = e.target instanceof Element ? e.target.closest('.block-type-input') : null;
+      if (!typeInput) return;
+      const row = typeInput.closest('.block-row');
+      if (!row) return;
+      const goalField = row.querySelector('.block-goal-field');
+      const goalInput = row.querySelector('.block-goal-input');
+      const isWork = typeInput.value === 'work';
+      if (goalField) goalField.style.display = isWork ? '' : 'none';
+      if (isWork && goalInput && !(Number(goalInput.value) > 0)) {
+        const startInput = row.querySelector('.block-start-input');
+        const endInput = row.querySelector('.block-end-input');
+        const dur = Math.max(0, toMinutes(formatHHMM(endInput?.value || '00:00')) - toMinutes(formatHHMM(startInput?.value || '00:00')));
+        goalInput.value = dur;
+      }
+    });
     // Pedido del usuario: al marcar (o desmarcar) "Día libre (sin turno)"
     // dentro del modal de Horario, el cambio se guarda solo, sin tener que
     // además clickear "Guardar día". validateDayConfig() ya regresa
@@ -7966,7 +8082,6 @@ function render() {
     document.getElementById('breakEndAlertMinInput').addEventListener('change', updateBreakAlertSettings);
     document.getElementById('adherenceGraceMinInput').addEventListener('change', updateAdherenceGraceSettings);
     document.getElementById('adherenceGoalPctInput').addEventListener('change', updateAdherenceGoalSettings);
-    document.getElementById('marginAllowedMinPerHourInput').addEventListener('change', updateMarginSettings);
     document.getElementById('daySelector').addEventListener('change', (e) => {
       const key = dayKeyFromIsoDate(e.target.value);
       if (key) setActiveDayKey(key);
