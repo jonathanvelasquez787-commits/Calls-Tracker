@@ -4124,7 +4124,37 @@ function dayShiftBounds(dayKey = getActiveDayKey()) {
 
   if (isToday && state.shiftStartedAt && sameCallDay(state.shiftStartedAt, normalized)) {
     start = new Date(state.shiftStartedAt);
-    end = state.shiftEndedAt ? new Date(state.shiftEndedAt) : end;
+    // Bug documentado en investigación (v101, "2 turnos el mismo día"):
+    // antes, mientras el turno ACTUAL seguía activo (state.shiftEndedAt aún
+    // null), `end` caía al `endEvent` ya calculado arriba — pero ese
+    // `endEvent` es el "Shift terminado" MÁS RECIENTE del día, que puede
+    // pertenecer a un turno ANTERIOR ya cerrado (ej. te clockeaste,
+    // terminaste, y volviste a iniciar turno hoy mismo). Resultado: con el
+    // turno #2 en curso, `end` se llenaba con la hora de cierre del turno
+    // #1 — currentStateLabel() marcaba "Finalizado" aunque siguieras
+    // trabajando activamente. Ahora, mientras el turno actual esté vivo,
+    // `end` es explícitamente null/abierto — nunca hereda el cierre de un
+    // turno previo distinto.
+    end = state.shiftEndedAt ? new Date(state.shiftEndedAt) : null;
+  }
+
+  // Bug documentado en investigación (v101, "2 turnos el mismo día"):
+  // reconciliar el INICIO contra la primera llamada del DÍA COMPLETO (sin
+  // más contexto, ver el bloque de abajo) podía "cruzar" hacia atrás un
+  // turno anterior ya cerrado ese mismo día — mezclando ambos turnos en un
+  // solo rango que incluía de más el hueco entre ellos (ej. clockeado
+  // 7-10, sin turno activo 10-11, turno 2 desde las 11: el rango terminaba
+  // siendo [7, ahora] en vez de [11, ahora], inflando "Conectado" con la
+  // hora completa en que no había turno activo). Se busca aquí el cierre
+  // MÁS RECIENTE de un turno anterior que haya terminado ANTES de `start`
+  // — si existe, ninguna llamada anterior a ese cierre puede "jalar" el
+  // inicio hacia atrás; esas llamadas pertenecen al turno viejo, no a
+  // este. Sin turno previo (caso normal, un solo turno al día), esto da
+  // `null` y el comportamiento de reconciliación no cambia en nada.
+  let priorShiftEndBoundary = null;
+  if (start) {
+    const priorEndEvent = events.find(e => e.type === 'shift' && /terminado/i.test(e.title || '') && new Date(e.ts).getTime() < start.getTime());
+    if (priorEndEvent) priorShiftEndBoundary = new Date(priorEndEvent.ts);
   }
 
   // Reconciliación con llamadas reales: si diste click en "Iniciar shift" (o
@@ -4142,9 +4172,16 @@ function dayShiftBounds(dayKey = getActiveDayKey()) {
     const dayCalls = callsForDay(normalized);
     if (dayCalls.length) {
       const ordered = [...dayCalls].sort((a, b) => new Date(a.startISO) - new Date(b.startISO));
-      const firstCallStart = new Date(ordered[0].startISO);
+      // Solo se consideran, para reconciliar el INICIO, llamadas que caen
+      // DESPUÉS del cierre del turno anterior (si existe) — ver
+      // priorShiftEndBoundary arriba. Sin turno previo, se usan todas
+      // (idéntico al comportamiento de antes).
+      const relevantForStart = priorShiftEndBoundary
+        ? ordered.filter(c => new Date(c.startISO).getTime() >= priorShiftEndBoundary.getTime())
+        : ordered;
+      const firstCallStart = relevantForStart.length ? new Date(relevantForStart[0].startISO) : null;
       const lastCallEnd = new Date(ordered[ordered.length - 1].endISO);
-      if (start && firstCallStart.getTime() < start.getTime()) start = firstCallStart;
+      if (start && firstCallStart && firstCallStart.getTime() < start.getTime()) start = firstCallStart;
       if (end && lastCallEnd.getTime() > end.getTime()) end = lastCallEnd;
     }
   }
