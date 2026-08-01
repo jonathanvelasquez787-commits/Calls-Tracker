@@ -3901,6 +3901,40 @@ function dayGapRows(dayKey = getActiveDayKey(), sourceCalls = callsForDay(dayKey
   const normalized = callDateKeyFromValue(dayKey);
   const sorted = [...sourceCalls].sort((a, b) => new Date(a.startISO) - new Date(b.startISO));
   const rows = [];
+
+  // Bug reportado por el usuario: el lapso entre el click de "Iniciar shift"
+  // (o el turno estimado, ver dayShiftBounds()) y el inicio de tu PRIMERA
+  // llamada del día nunca se contaba como ACW en ningún lado — este loop
+  // solo comparaba llamadas consecutivas ENTRE SÍ (empezaba en i=1), nunca
+  // contra el inicio real del turno. Se antepone aquí un "hueco virtual"
+  // [inicio de turno → primera llamada] que pasa por el MISMO
+  // gapClassification() que ya usan los huecos entre llamadas — se
+  // clasifica igual (ACW por defecto, Break/Lunch si una pausa real lo
+  // cubre, Other si es muy largo) y es editable a mano con "Editar hueco"
+  // igual que cualquier otro. `virtualPrev` no es una llamada real, solo
+  // aporta customerId/startISO para que gapKeyFor() arme una key estable.
+  // Si la primera llamada del día ya "jaló" el inicio del turno hacia atrás
+  // (reconciliación existente en dayShiftBounds(), cuando se toman llamadas
+  // antes de dar click en "Iniciar shift"), shiftStart <= firstCallStart y
+  // no hay nada que anteponer.
+  if (sorted.length) {
+    const shiftStart = dayShiftBounds(normalized).start;
+    const firstCallStart = new Date(sorted[0].startISO);
+    if (shiftStart && shiftStart.getTime() < firstCallStart.getTime()) {
+      // endISO = su propio startISO a propósito: es un evento puntual (el
+      // click/estimado de "Iniciar shift"), sin duración propia — así
+      // manualGapPauseIntervals() (que lee row.prev.endISO) arma el inicio
+      // de la pausa correctamente si este hueco se reclasifica a mano como
+      // Break/Lunch.
+      const virtualPrev = { customerId: 'shift-start', startISO: shiftStart.toISOString(), endISO: shiftStart.toISOString() };
+      const gapKey = gapKeyFor(virtualPrev, sorted[0]);
+      const info = gapClassification(shiftStart, firstCallStart, normalized, gapKey);
+      if (info.raw > 0) {
+        rows.push({ gapKey, prev: virtualPrev, cur: sorted[0], isShiftStartGap: true, ...info });
+      }
+    }
+  }
+
   for (let i = 1; i < sorted.length; i++) {
     const prev = sorted[i - 1];
     const cur = sorted[i];
@@ -4324,6 +4358,26 @@ function slotStats(slot, dayCalls = calls, dayPauses = dayPauseIntervals(getActi
     const prevEnd = new Date(sortedCalls[i - 1].endISO);
     const curStart = new Date(sortedCalls[i].startISO);
     if (curStart > prevEnd) acwMin += overlapMinutes(callWindowStart, callWindowEnd, prevEnd, curStart);
+  }
+
+  // Bug reportado por el usuario: el lapso entre "Iniciar shift" y la
+  // primera llamada del día no se contaba como ACW en NINGÚN lado — el loop
+  // de arriba solo compara llamadas consecutivas entre sí (empieza en i=1),
+  // nunca contra el inicio real del turno (`shiftStart`, ya recibido como
+  // parámetro). Mismo criterio que dayGapRows() (ver ese comentario, mismo
+  // fix en paralelo para los totales agregados): si el turno empezó ANTES
+  // de la primera llamada, ese hueco cuenta como ACW, recortado (clip) a la
+  // ventana de este bloque igual que el resto de la función — así solo
+  // aporta al bloque de Trabajo que de verdad lo contiene (normalmente el
+  // primero, extendido vía `extendStart` si el turno empezó antes de la
+  // hora planeada del bloque), y 0 para cualquier otro bloque más tarde en
+  // el día. No aplica si la primera llamada ya "jaló" el inicio del turno
+  // hacia atrás (reconciliación en dayShiftBounds()).
+  if (shiftStart && sortedCalls.length) {
+    const firstCallStart = new Date(sortedCalls[0].startISO);
+    if (shiftStart.getTime() < firstCallStart.getTime()) {
+      acwMin += overlapMinutes(callWindowStart, callWindowEnd, shiftStart, firstCallStart);
+    }
   }
 
   // Intervalos de llamadas reales, sin recortar a la ventana del slot, para
@@ -6854,8 +6908,15 @@ function openGapEditor(dayKey, gapKey) {
   const labelInput = document.getElementById('gapLabelInput');
   const noteInput = document.getElementById('gapNoteInput');
 
-  if (title) title.textContent = `Editar hueco · #${row.prev.customerId} → #${row.cur.customerId}`;
-  if (subtitle) subtitle.textContent = `${row.prev.callStart} → ${row.cur.callStart} · ${formatMinutes(row.residual)} min útiles`;
+  // Bug reportado por el usuario: el hueco entre "Iniciar shift" y la
+  // primera llamada del día (ver dayGapRows()) ahora también es editable
+  // desde aquí, pero su `prev` es un marcador virtual (isShiftStartGap),
+  // sin `callStart` como una llamada real — se arma un título/subtítulo
+  // propios para ese caso en vez de mostrar "undefined".
+  const prevLabel = row.isShiftStartGap ? 'Inicio de turno' : `#${row.prev.customerId}`;
+  const prevTimeLabel = row.isShiftStartGap ? timeLabelFromDate(new Date(row.prev.startISO)) : row.prev.callStart;
+  if (title) title.textContent = `Editar hueco · ${prevLabel} → #${row.cur.customerId}`;
+  if (subtitle) subtitle.textContent = `${prevTimeLabel} → ${row.cur.callStart} · ${formatMinutes(row.residual)} min útiles`;
   if (preview) {
     preview.textContent = annotation
       ? `Clasificación guardada: ${gapLabelText(label)}${note ? ` · Nota: ${note}` : ''}`
@@ -7542,19 +7603,38 @@ function renderTable() {
       for (let i = 0; i < sorted.length; i++) {
         const c = sorted[i];
         const prev = i > 0 ? sorted[i - 1] : null;
-        const prevEnd = prev ? new Date(prev.endISO) : null;
+        let prevEnd = prev ? new Date(prev.endISO) : null;
+        // Bug reportado por el usuario: la primera fila del día siempre
+        // mostraba "—" en Hueco, sin importar si el turno había empezado
+        // varios minutos antes de esta llamada — ese lapso (ACW real, ver
+        // dayGapRows()) no se veía ni se podía editar desde Tabla completa.
+        // Se arma un `virtualPrev` — MISMO criterio y MISMO gapKeyFor() que
+        // ya usa dayGapRows() para este mismo hueco — para que la anotación
+        // manual ("Editar hueco") sea una sola fuente de verdad entre el
+        // agregado (badges ACW del header) y esta fila; si el gapKey no
+        // coincidiera, reclasificar aquí no afectaría los totales.
+        let virtualPrev = null;
+        if (!prev) {
+          const shiftStart = dayShiftBounds(dayKey).start;
+          const firstCallStart = new Date(c.startISO);
+          if (shiftStart && shiftStart.getTime() < firstCallStart.getTime()) {
+            virtualPrev = { customerId: 'shift-start', startISO: shiftStart.toISOString(), endISO: shiftStart.toISOString() };
+            prevEnd = shiftStart;
+          }
+        }
+        const effectivePrev = prev || virtualPrev;
         const start = new Date(c.startISO);
-        const gapKey = prev ? gapKeyFor(prev, c) : null;
-        const gapInfo = prev ? gapClassification(prevEnd, start, dayKey, gapKey) : { raw: 0, residual: 0, displayAmount: 0, acw: 0, possiblePause: 0, label: 'acw', note: '', suggested: 'acw', manual: false };
+        const gapKey = effectivePrev ? gapKeyFor(effectivePrev, c) : null;
+        const gapInfo = effectivePrev ? gapClassification(prevEnd, start, dayKey, gapKey) : { raw: 0, residual: 0, displayAmount: 0, acw: 0, possiblePause: 0, label: 'acw', note: '', suggested: 'acw', manual: false };
         const annotation = gapKey ? getGapAnnotation(dayKey, gapKey) : null;
-        const gapLabel = prev ? gapLabelText((annotation && annotation.label) || gapInfo.label || 'acw') : '—';
-        const gapText = prev ? `${gapLabel} ${gapInfo.displayAmount.toFixed(1)}m` : '—';
+        const gapLabel = effectivePrev ? gapLabelText((annotation && annotation.label) || gapInfo.label || 'acw') : '—';
+        const gapText = effectivePrev ? `${virtualPrev ? 'Inicio turno → ' : ''}${gapLabel} ${gapInfo.displayAmount.toFixed(1)}m` : '—';
         const gapNote = annotation?.note
           ? `<div class="gap-note">Nota: ${escapeHtml(annotation.note)}</div>`
           : gapInfo.possiblePause > 0
             ? `<div class="gap-note">Posible pausa ${gapInfo.possiblePause.toFixed(1)}m</div>`
             : '';
-        const gapButton = prev && gapKey
+        const gapButton = effectivePrev && gapKey
           ? `<button class="gap-edit-btn" type="button" data-gap-edit="${escapeHtml(gapKey)}" data-gap-day="${escapeHtml(dayKey)}">Editar</button>`
           : '';
 
@@ -7589,10 +7669,10 @@ function renderTable() {
               <div class="mobile-call-title">#${escapeHtml(c.customerId)}</div>
               <div class="mobile-call-pay">${money(parseMoney(c.pay))}</div>
             </div>
-            <div class="mobile-call-meta">${escapeHtml(c.callDate)} · ${escapeHtml(c.callStart)} · ${c.durationMin} min${prev ? ` · ${escapeHtml(gapText)}` : ''}${annotation?.note ? ` · Nota: ${escapeHtml(annotation.note)}` : ''}</div>
+            <div class="mobile-call-meta">${escapeHtml(c.callDate)} · ${escapeHtml(c.callStart)} · ${c.durationMin} min${effectivePrev ? ` · ${escapeHtml(gapText)}` : ''}${annotation?.note ? ` · Nota: ${escapeHtml(annotation.note)}` : ''}</div>
             <div class="mobile-call-meta">Billable: ${escapeHtml(c.billable)} · Dropped: ${escapeHtml(c.dropped)}</div>
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
-              ${prev && gapKey ? `<button class="gap-edit-btn" type="button" data-gap-edit="${escapeHtml(gapKey)}" data-gap-day="${escapeHtml(dayKey)}">Editar gap</button>` : ''}
+              ${effectivePrev && gapKey ? `<button class="gap-edit-btn" type="button" data-gap-edit="${escapeHtml(gapKey)}" data-gap-day="${escapeHtml(dayKey)}">Editar gap</button>` : ''}
               <button class="gap-edit-btn" type="button" data-call-edit="${escapeHtml(c.id || '')}">Editar llamada</button>
               <button class="gap-edit-btn" type="button" data-call-delete="${escapeHtml(c.id || '')}" style="background: rgba(255,111,143,.12); border-color: rgba(255,111,143,.3);">Eliminar</button>
             </div>
