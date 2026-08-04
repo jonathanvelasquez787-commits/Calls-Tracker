@@ -2212,6 +2212,41 @@
 </div>
 <p class="alert-hint">"Bloques del día" calcula tu Adherencia minuto a minuto. La ventana de gracia perdona desvíos chicos cerca de cada transición del horario (ej. empezar un break unos minutos tarde) — 0 = cualquier desvío penaliza de inmediato. La Meta es tu objetivo personal de %, se compara contra tu Adherencia del día.</p>
 </div>
+<div class="alert-group">
+<div class="alert-group-head">
+<span class="alert-group-icon">☕</span>
+<span class="alert-group-title">Descanso por productividad</span>
+</div>
+<div class="alert-fields-row">
+<div class="alert-mini-field">
+<label for="productiveBreakEarnMinInput">Minutos productivos para ganar descanso</label>
+<input id="productiveBreakEarnMinInput" inputmode="numeric" min="1" step="1" type="number"/>
+</div>
+<div class="alert-mini-field">
+<label for="productiveBreakAwardMinInput">Minutos de descanso otorgados</label>
+<input id="productiveBreakAwardMinInput" inputmode="numeric" min="0" step="1" type="number"/>
+</div>
+</div>
+<div class="field" style="margin:0;">
+<label for="productiveBreakSoundInput">Sonido del aviso</label>
+<div style="display:flex; gap:8px; align-items:center; margin-top:2px;">
+<select class="alert-select" id="productiveBreakSoundInput" style="margin:0;">
+<option value="classic">Beep clásico</option>
+<option value="chime">Campanita</option>
+<option value="custom">Sonido personalizado</option>
+</select>
+<button class="gap-edit-btn" id="testProductiveBreakSoundBtn" type="button" style="white-space:nowrap;">🔊 Probar</button>
+</div>
+</div>
+<div id="productiveBreakCustomSoundSection" style="display:none;">
+<div class="field" style="margin-top:10px;">
+<label for="productiveBreakSoundFile">Subir sonido (MP3/WAV/OGG, máx. 300KB)</label>
+<input accept="audio/*" id="productiveBreakSoundFile" style="margin-top:4px;" type="file"/>
+</div>
+<p class="alert-hint" id="productiveBreakSoundFileStatus">Ningún archivo propio guardado — usando el beep clásico mientras tanto.</p>
+</div>
+<p class="alert-hint">Al acumular los minutos productivos configurados desde tu última pausa (o desde el inicio del turno si no has tomado ninguna hoy), suena el aviso — se reinicia cada vez que tomas un Break/Lunch real. Solo informativo, no reserva ni descuenta nada.</p>
+</div>
 <div class="divider"></div>
 <div class="field" style="margin-bottom:4px;">
 <label style="font-weight:900;">Ciclo de pago</label>
@@ -2903,6 +2938,25 @@ $0.72"></textarea>
         // existen Meta en minutos/dólares/moneda), editable en Horario junto
         // a la ventana de gracia. Default 95 — umbral típico de un WFM real.
         adherenceGoalPct: 95,
+        // Pedido del usuario: aviso (toast + sonido) al completar N minutos
+        // productivos acumulados desde tu última pausa (o desde el inicio
+        // del turno si no has tomado ninguna hoy) — avisa que ya tienes
+        // derecho a M minutos de descanso. Ambos números son configurables
+        // en Horario; defaults 30/5 tal como los pidió el usuario. Se
+        // reinicia cada vez que tomas una pausa real (Break/Lunch) — el
+        // conteo empieza de nuevo desde ese momento.
+        productiveBreakEarnMin: 30,
+        productiveBreakAwardMin: 5,
+        // Sonido del aviso — 'classic'/'chime' son tonos sintetizados (Web
+        // Audio, sin archivo externo); 'custom' usa un audio subido por el
+        // usuario (ver productiveBreakCustomSoundDataUrl). Guardado como
+        // Data URL directo en localStorage — sin backend no hay otro lugar
+        // donde guardarlo; por eso se valida el tamaño al subir (ver
+        // handleProductiveBreakSoundFile) para no arriesgar la cuota de
+        // localStorage compartida con el resto de los datos de la app.
+        productiveBreakSound: 'classic',
+        productiveBreakCustomSoundDataUrl: '',
+        productiveBreakCustomSoundName: '',
         // Pedido del usuario: modo claro/oscuro — 'auto' (default) sigue el
         // sistema operativo (prefers-color-scheme); 'light'/'dark' fuerzan
         // el tema sin importar el sistema. Ver applyTheme()/themeToggleBtn.
@@ -2926,6 +2980,15 @@ $0.72"></textarea>
       if (!Number.isFinite(Number(settings.adherenceGraceMin)) || Number(settings.adherenceGraceMin) < 0) settings.adherenceGraceMin = fallback.adherenceGraceMin;
       if (!Number.isFinite(Number(settings.adherenceGoalPct)) || Number(settings.adherenceGoalPct) <= 0 || Number(settings.adherenceGoalPct) > 100) settings.adherenceGoalPct = fallback.adherenceGoalPct;
       if (!['auto', 'light', 'dark'].includes(settings.theme)) settings.theme = fallback.theme;
+      if (!Number.isFinite(Number(settings.productiveBreakEarnMin)) || Number(settings.productiveBreakEarnMin) <= 0) settings.productiveBreakEarnMin = fallback.productiveBreakEarnMin;
+      if (!Number.isFinite(Number(settings.productiveBreakAwardMin)) || Number(settings.productiveBreakAwardMin) < 0) settings.productiveBreakAwardMin = fallback.productiveBreakAwardMin;
+      if (!['classic', 'chime', 'custom'].includes(settings.productiveBreakSound)) settings.productiveBreakSound = fallback.productiveBreakSound;
+      if (typeof settings.productiveBreakCustomSoundDataUrl !== 'string') settings.productiveBreakCustomSoundDataUrl = fallback.productiveBreakCustomSoundDataUrl;
+      if (typeof settings.productiveBreakCustomSoundName !== 'string') settings.productiveBreakCustomSoundName = fallback.productiveBreakCustomSoundName;
+      // Si quedó en 'custom' pero sin ningún sonido guardado (ej. se borró a
+      // mano el localStorage parcialmente), cae de vuelta a 'classic' — sin
+      // esto, el checker intentaría reproducir un Data URL vacío en silencio.
+      if (settings.productiveBreakSound === 'custom' && !settings.productiveBreakCustomSoundDataUrl) settings.productiveBreakSound = 'classic';
     }
 
     // Pedido del usuario: modo claro/oscuro — 'auto' (default) sigue el
@@ -3280,6 +3343,22 @@ $0.72"></textarea>
       return 'Working';
     }
 
+    // Pedido del usuario (auditoría de la limitación documentada en v101/
+    // v116, "turno sin cerrar"): centraliza el chequeo "¿el turno que sigue
+    // vivo en state.shiftStartedAt es el de HOY?" — antes computeCurrentAcwStart()
+    // ya lo hacía inline (ver comentario ahí), pero checkShiftAlarm() y
+    // checkBreakStartAlarm() lo tenían SIN este chequeo (solo miraban
+    // `!!state.shiftStartedAt && !state.shiftEndedAt`, sin importar el día).
+    // Un turno de AYER nunca cerrado hacía que ambas funciones creyeran que
+    // el turno de HOY ya estaba en curso — silenciando el aviso "Conéctate
+    // ya" (nunca sonaba, se creía que ya estabas conectado) y disparando
+    // avisos de Break/Lunch de HOY sobre un turno que en realidad nunca
+    // empezó hoy. Se extrae aquí para que los 3 sitios usen el mismo
+    // criterio.
+    function isShiftStartedToday() {
+      return !!state.shiftStartedAt && sameCallDay(state.shiftStartedAt, todayCallDateKey());
+    }
+
     // Pedido del usuario: indicador en vivo de cuánto tiempo llevas AHORA
     // MISMO en "ACW/Available" (disponible, sin llamada activa ni Break/
     // Lunch activo) — antes ACW solo se calculaba retroactivamente
@@ -3301,9 +3380,11 @@ $0.72"></textarea>
       // tiempo sin sentido. El resto de la app (dayShiftBounds(), de donde
       // sale el chip de Estado) ya valida `sameCallDay(shiftStartedAt, hoy)`
       // antes de usarlo — este chequeo replica exactamente ese mismo
-      // criterio, así un turno abandonado de otro día se trata como "sin
-      // turno activo" en vez de anclar el cronómetro a esa fecha vieja.
-      if (!sameCallDay(state.shiftStartedAt, dayKey)) return null;
+      // criterio (ahora vía isShiftStartedToday(), compartido con
+      // checkShiftAlarm()/checkBreakStartAlarm()), así un turno abandonado
+      // de otro día se trata como "sin turno activo" en vez de anclar el
+      // cronómetro a esa fecha vieja.
+      if (!isShiftStartedToday()) return null;
       if (state.activePause) return null;
       if (state.activeCall) return null;
 
@@ -3561,7 +3642,14 @@ function stopShiftAlarm() {
 function checkShiftAlarm() {
   const cfg = dayConfigFor(todayCallDateKey());
   const alertMin = Number(settings.alertBeforeShiftMin);
-  const shiftIsLive = !!state.shiftStartedAt && !state.shiftEndedAt;
+  // Bug encontrado al auditar la limitación documentada en v101/v116
+  // ("turno sin cerrar"): antes esto solo miraba
+  // `!!state.shiftStartedAt && !state.shiftEndedAt`, sin verificar que ese
+  // turno fuera el de HOY — un turno de AYER nunca cerrado hacía que
+  // shiftIsLive diera true hoy también, silenciando este aviso ("Conéctate
+  // ya" nunca sonaba porque la app creía que ya estabas conectado). Ver
+  // isShiftStartedToday().
+  const shiftIsLive = isShiftStartedToday() && !state.shiftEndedAt;
 
   if (!cfg || cfg.off || !cfg.start || !Number.isFinite(alertMin) || alertMin <= 0 || shiftIsLive) {
     stopShiftAlarm();
@@ -3627,7 +3715,13 @@ function stopBreakStartAlarm() {
 // el de hoy) para no repetir el toast más de una vez por slot.
 function checkBreakStartAlarm() {
   const alertMin = Number(settings.alertBeforeBreakMin);
-  const shiftIsLive = !!state.shiftStartedAt && !state.shiftEndedAt;
+  // Bug encontrado al auditar la limitación documentada en v101/v116
+  // ("turno sin cerrar"): mismo problema que checkShiftAlarm() — sin
+  // verificar que state.shiftStartedAt fuera de HOY, un turno de AYER
+  // nunca cerrado hacía que esta función creyera que el turno de HOY
+  // estaba en curso, disparando avisos de Break/Lunch planeados para HOY
+  // sobre un turno que en realidad nunca empezó hoy.
+  const shiftIsLive = isShiftStartedToday() && !state.shiftEndedAt;
 
   if (!Number.isFinite(alertMin) || alertMin <= 0 || !shiftIsLive || state.activePause) {
     stopBreakStartAlarm();
@@ -3764,6 +3858,143 @@ function checkBreakEndAlarm() {
     }
     startBreakEndAlarm(key);
   }
+}
+
+// ---- Descanso ganado por productividad (pedido del usuario) ----
+// Aviso (toast + sonido) al acumular `productiveBreakEarnMin` minutos
+// PRODUCTIVOS (tiempo real de llamadas billable/no-dropped) desde tu
+// última pausa real (Break/Lunch) — o desde el inicio del turno si no has
+// tomado ninguna hoy — indicando que ya tienes derecho a
+// `productiveBreakAwardMin` minutos de descanso. Es solo informativo: no
+// crea ningún "banco de descansos" que la app luego reste o controle, ni
+// bloquea/permite nada — el usuario decide qué hacer con ese aviso.
+
+// Reutiliza el mismo AudioContext que ya usa playShiftAlarmBeep() (una sola
+// instancia compartida, para no crear una nueva por cada beep) — variable
+// separada porque este sonido puede sonar en un momento totalmente
+// independiente de los avisos de turno/Break, y conviene poder reproducir
+// ambos sin que uno interrumpa el contexto del otro.
+let productiveBreakAudioCtx = null;
+function getProductiveBreakAudioCtx() {
+  if (!productiveBreakAudioCtx) productiveBreakAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (productiveBreakAudioCtx.state === 'suspended') productiveBreakAudioCtx.resume().catch(() => {});
+  return productiveBreakAudioCtx;
+}
+
+// Sonido "Beep clásico": mismo patrón de 2 tonos ascendentes que ya usa
+// playShiftAlarmBeep() para los avisos de turno/Break — pero con su propio
+// AudioContext (ver arriba) para no acoplar ambas features entre sí.
+function playProductiveBreakClassicTone() {
+  try {
+    const ctx = getProductiveBreakAudioCtx();
+    const now = ctx.currentTime;
+    [0, 0.18].forEach((offset, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = i === 0 ? 880 : 1046.5;
+      gain.gain.setValueAtTime(0.0001, now + offset);
+      gain.gain.exponentialRampToValueAtTime(0.25, now + offset + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.16);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + offset);
+      osc.stop(now + offset + 0.2);
+    });
+  } catch {}
+}
+
+// Sonido "Campanita": 3 notas ascendentes tipo campana (distinto patrón e
+// instrumentación — onda triangular en vez de seno, notas más espaciadas y
+// con más "cola" al soltarse) para que se distinga a simple oído del "Beep
+// clásico" — pedido del usuario: el sonido debe ser CONFIGURABLE (elegible
+// entre opciones), no uno solo fijo.
+function playProductiveBreakChimeTone() {
+  try {
+    const ctx = getProductiveBreakAudioCtx();
+    const now = ctx.currentTime;
+    [523.25, 659.25, 784.0].forEach((freq, i) => {
+      const offset = i * 0.13;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, now + offset);
+      gain.gain.exponentialRampToValueAtTime(0.22, now + offset + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.35);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + offset);
+      osc.stop(now + offset + 0.4);
+    });
+  } catch {}
+}
+
+// Reproduce el sonido configurado en settings.productiveBreakSound —
+// 'custom' reproduce el audio subido por el usuario (Data URL guardado en
+// settings, ver handleProductiveBreakSoundFile); si por algún motivo falla
+// la reproducción (audio corrupto, formato no soportado por el navegador),
+// se cae en silencio al beep clásico en vez de no sonar nada.
+function playProductiveBreakSound() {
+  const sound = settings.productiveBreakSound || 'classic';
+  if (sound === 'custom' && settings.productiveBreakCustomSoundDataUrl) {
+    try {
+      const audio = new Audio(settings.productiveBreakCustomSoundDataUrl);
+      audio.play().catch(() => playProductiveBreakClassicTone());
+      return;
+    } catch {
+      playProductiveBreakClassicTone();
+      return;
+    }
+  }
+  if (sound === 'chime') playProductiveBreakChimeTone();
+  else playProductiveBreakClassicTone();
+}
+
+// Ancla + minutos productivos acumulados desde esa ancla — extraído aparte
+// para poder probarse igual que el resto de funciones "puras" de la app.
+// Ancla = lo más tardío entre el inicio del turno de HOY y el fin de la
+// pausa (Break/Lunch) CERRADA más reciente de hoy — cada pausa real que
+// tomes reinicia el conteo desde su fin. null si el turno no es el de hoy,
+// ya terminó, o hay una pausa activa ahora mismo (no tiene sentido avisar
+// "ganaste un descanso" mientras ya estás en uno).
+function minutesSinceLastProductiveBreakAnchor() {
+  if (!isShiftStartedToday() || state.shiftEndedAt || state.activePause) return null;
+  const dayKey = todayCallDateKey();
+  let anchor = new Date(state.shiftStartedAt);
+  state.pauseHistory
+    .filter(p => sameCallDay(p.startedAt, dayKey))
+    .forEach(p => {
+      const end = new Date(p.endedAt);
+      if (end > anchor) anchor = end;
+    });
+  const productiveMin = callsForDay(dayKey)
+    .filter(c => c.countsAsProductive !== false && new Date(c.startISO).getTime() >= anchor.getTime())
+    .reduce((sum, c) => sum + (Number(c.durationMin) || 0), 0);
+  return { anchor, productiveMin };
+}
+
+// Un solo aviso por "ciclo" (mismo ancla) — evita repetir el toast/sonido
+// cada segundo mientras sigues sobre el umbral sin haber tomado la pausa
+// todavía. Cambiar de ancla (al tomar una pausa real) habilita un aviso
+// nuevo para el siguiente ciclo. Set en memoria, no persistido — se
+// reinicia solo, a propósito, en cada carga de página (mismo criterio que
+// breakStartAlarmFiredKeys/breakEndAlarmFiredKeys).
+const productiveBreakEarnedFiredKeys = new Set();
+
+function checkProductiveBreakEarnedAlarm() {
+  const earnMin = Number(settings.productiveBreakEarnMin);
+  const awardMin = Number(settings.productiveBreakAwardMin);
+  if (!Number.isFinite(earnMin) || earnMin <= 0) return;
+
+  const result = minutesSinceLastProductiveBreakAnchor();
+  if (!result || result.productiveMin < earnMin) return;
+
+  const key = result.anchor.toISOString();
+  if (productiveBreakEarnedFiredKeys.has(key)) return;
+  productiveBreakEarnedFiredKeys.add(key);
+  toast(`☕ ¡Ganaste un descanso! ${formatMinutes(result.productiveMin)} min productivos — tienes derecho a ${formatMinutes(awardMin)} min.`);
+  playProductiveBreakSound();
 }
 
 function mergeIntervals(intervals = []) {
@@ -4218,6 +4449,36 @@ function dayShiftBounds(dayKey = getActiveDayKey()) {
         if (inactivityMin > CONNECTED_LIVE_GRACE_MIN) end = lastCallEnd;
       }
       estimated = true;
+    }
+  }
+
+  // Bug encontrado al auditar la limitación documentada en v101/v116
+  // ("turno sin cerrar"): un turno que arrancó ESE día (con su propio
+  // evento "Shift iniciado", `start` ya resuelto arriba) pero se cerró
+  // recién en un día POSTERIOR (ej. la pestaña se quedó abierta toda la
+  // noche y el "Finalizar shift" se dio hasta el día siguiente) deja a
+  // ESTE día sin ningún evento "Shift terminado" propio — el que sí existe
+  // queda fechado (y por lo tanto visible vía dayEvents/sameCallDay) en el
+  // día en que se dio el click, no en el día al que pertenece el turno.
+  // Sin evento de cierre propio, `end` seguía en null para este día — un
+  // día PASADO con evidencia real de trabajo (llamadas) terminaba
+  // mostrando "Conectado: 0" en vez de un estimado razonable. Mismo
+  // criterio que el fallback de arriba ya usa para días pasados sin
+  // NINGÚN evento de shift ("el fin se estima desde tu última llamada"),
+  // aplicado aquí también cuando SÍ hay un inicio real y solo falta el
+  // cierre. Nunca aplica a HOY (un turno de hoy sin `end` es legítimamente
+  // "en vivo", no un dato faltante) ni si no hay llamadas ese día
+  // (dayAdherence() ya marca "No se registró la salida" en ese caso, sin
+  // cambio).
+  if (!isToday && start && !end) {
+    const dayCalls = callsForDay(normalized);
+    if (dayCalls.length) {
+      const ordered = [...dayCalls].sort((a, b) => new Date(a.startISO) - new Date(b.startISO));
+      const lastCallEnd = new Date(ordered[ordered.length - 1].endISO);
+      if (lastCallEnd.getTime() > start.getTime()) {
+        end = lastCallEnd;
+        estimated = true;
+      }
     }
   }
 
@@ -6523,6 +6784,13 @@ function renderWeekSummary() {
       if (adherenceGraceMinInput && document.activeElement !== adherenceGraceMinInput) adherenceGraceMinInput.value = settings.adherenceGraceMin;
       const adherenceGoalPctInput = document.getElementById('adherenceGoalPctInput');
       if (adherenceGoalPctInput && document.activeElement !== adherenceGoalPctInput) adherenceGoalPctInput.value = settings.adherenceGoalPct;
+      const productiveBreakEarnMinInput = document.getElementById('productiveBreakEarnMinInput');
+      if (productiveBreakEarnMinInput && document.activeElement !== productiveBreakEarnMinInput) productiveBreakEarnMinInput.value = settings.productiveBreakEarnMin;
+      const productiveBreakAwardMinInput = document.getElementById('productiveBreakAwardMinInput');
+      if (productiveBreakAwardMinInput && document.activeElement !== productiveBreakAwardMinInput) productiveBreakAwardMinInput.value = settings.productiveBreakAwardMin;
+      const productiveBreakSoundInput = document.getElementById('productiveBreakSoundInput');
+      if (productiveBreakSoundInput && document.activeElement !== productiveBreakSoundInput) productiveBreakSoundInput.value = settings.productiveBreakSound || 'classic';
+      syncProductiveBreakCustomSoundUI();
       // Ciclo de pago: son settings globales (no por día de la semana), así
       // que se sincronizan siempre igual sin importar scheduleEditDay.
       ensureCurrencySettings();
@@ -6793,6 +7061,104 @@ function renderWeekSummary() {
       saveSettingsOnly();
       render();
       toast(`Meta de Adherencia: ${settings.adherenceGoalPct}%`);
+    }
+
+    // Pedido del usuario: minutos productivos para ganar descanso + minutos
+    // de descanso otorgados — mismo patrón de auto-guardado que el resto de
+    // settings globales de Horario.
+    function updateProductiveBreakSettings() {
+      const earnInput = document.getElementById('productiveBreakEarnMinInput');
+      const awardInput = document.getElementById('productiveBreakAwardMinInput');
+      const earnMin = Number(earnInput?.value);
+      const awardMin = Number(awardInput?.value);
+      if (Number.isFinite(earnMin) && earnMin > 0) settings.productiveBreakEarnMin = earnMin;
+      if (Number.isFinite(awardMin) && awardMin >= 0) settings.productiveBreakAwardMin = awardMin;
+      saveSettingsOnly();
+      toast(`Descanso por productividad: cada ${formatMinutes(settings.productiveBreakEarnMin)} min productivos = ${formatMinutes(settings.productiveBreakAwardMin)} min de descanso`);
+    }
+
+    // Muestra/oculta la sección de subida de archivo según el sonido
+    // elegido, y actualiza el texto de estado (nombre del archivo guardado,
+    // o aviso de que todavía no hay ninguno). Se llama tanto al sincronizar
+    // el modal como al cambiar el selector en vivo.
+    function syncProductiveBreakCustomSoundUI() {
+      const section = document.getElementById('productiveBreakCustomSoundSection');
+      const status = document.getElementById('productiveBreakSoundFileStatus');
+      const soundInput = document.getElementById('productiveBreakSoundInput');
+      const isCustom = (soundInput ? soundInput.value : settings.productiveBreakSound) === 'custom';
+      if (section) section.style.display = isCustom ? '' : 'none';
+      if (status) {
+        status.textContent = settings.productiveBreakCustomSoundDataUrl
+          ? `Archivo guardado: ${settings.productiveBreakCustomSoundName || 'sonido personalizado'}`
+          : 'Ningún archivo propio guardado — usando el beep clásico mientras tanto.';
+      }
+    }
+
+    // Cambiar el selector de sonido se guarda solo, sin esperar a "Guardar
+    // día" (mismo patrón que el resto de settings sueltos de Horario) — y
+    // muestra/oculta la sección de subida en vivo.
+    function updateProductiveBreakSound() {
+      const input = document.getElementById('productiveBreakSoundInput');
+      const value = input ? input.value : 'classic';
+      if (['classic', 'chime', 'custom'].includes(value)) settings.productiveBreakSound = value;
+      saveSettingsOnly();
+      syncProductiveBreakCustomSoundUI();
+    }
+
+    // Tope defensivo de tamaño para el sonido subido — el Data URL se
+    // guarda directo en localStorage junto con el resto de settings, sin
+    // backend ni almacenamiento aparte; un archivo grande podría acercarse
+    // a la cuota del navegador (~5-10MB compartidos con TODA la data de la
+    // app: llamadas, turnos, horario...) y hacer fallar guardados futuros
+    // en silencio. 300KB alcanza de sobra para un beep/campanita corto.
+    const MAX_CUSTOM_SOUND_BYTES = 300 * 1024;
+
+    function handleProductiveBreakSoundFile(e) {
+      const input = e.target;
+      const file = input.files && input.files[0];
+      input.value = ''; // permite volver a elegir el mismo archivo después
+      if (!file) return;
+      if (!file.type || !file.type.startsWith('audio/')) {
+        toast('El archivo debe ser de audio (MP3, WAV, OGG...).');
+        return;
+      }
+      if (file.size > MAX_CUSTOM_SOUND_BYTES) {
+        toast(`El archivo pesa demasiado (máximo ${Math.round(MAX_CUSTOM_SOUND_BYTES / 1024)}KB) — usa un sonido corto.`);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        settings.productiveBreakCustomSoundDataUrl = String(reader.result || '');
+        settings.productiveBreakCustomSoundName = file.name;
+        settings.productiveBreakSound = 'custom';
+        try {
+          saveSettingsOnly();
+        } catch {
+          // Cuota de localStorage llena (raro, pero posible si ya hay mucha
+          // data guardada) — se revierte para no dejar settings a medias
+          // con un Data URL que nunca se pudo persistir.
+          settings.productiveBreakCustomSoundDataUrl = '';
+          settings.productiveBreakCustomSoundName = '';
+          settings.productiveBreakSound = 'classic';
+          toast('No se pudo guardar el sonido — el almacenamiento del navegador está lleno.');
+          syncProductiveBreakCustomSoundUI();
+          return;
+        }
+        const soundSelect = document.getElementById('productiveBreakSoundInput');
+        if (soundSelect) soundSelect.value = 'custom';
+        syncProductiveBreakCustomSoundUI();
+        toast(`Sonido "${file.name}" guardado`);
+      };
+      reader.onerror = () => toast('No se pudo leer el archivo de audio.');
+      reader.readAsDataURL(file);
+    }
+
+    // Botón "🔊 Probar" — reproduce el sonido configurado ahora mismo, sin
+    // esperar a que se cumpla el umbral de minutos productivos. Útil para
+    // elegir entre Beep clásico/Campanita/personalizado antes de guardarlo
+    // como definitivo.
+    function testProductiveBreakSound() {
+      playProductiveBreakSound();
     }
 
 
@@ -8119,6 +8485,11 @@ function render() {
     document.getElementById('breakEndAlertMinInput').addEventListener('change', updateBreakAlertSettings);
     document.getElementById('adherenceGraceMinInput').addEventListener('change', updateAdherenceGraceSettings);
     document.getElementById('adherenceGoalPctInput').addEventListener('change', updateAdherenceGoalSettings);
+    document.getElementById('productiveBreakEarnMinInput').addEventListener('change', updateProductiveBreakSettings);
+    document.getElementById('productiveBreakAwardMinInput').addEventListener('change', updateProductiveBreakSettings);
+    document.getElementById('productiveBreakSoundInput').addEventListener('change', updateProductiveBreakSound);
+    document.getElementById('productiveBreakSoundFile').addEventListener('change', handleProductiveBreakSoundFile);
+    document.getElementById('testProductiveBreakSoundBtn').addEventListener('click', testProductiveBreakSound);
     document.getElementById('daySelector').addEventListener('change', (e) => {
       const key = dayKeyFromIsoDate(e.target.value);
       if (key) setActiveDayKey(key);
@@ -8197,6 +8568,7 @@ function render() {
       checkShiftAlarm();
       checkBreakStartAlarm();
       checkBreakEndAlarm();
+      checkProductiveBreakEarnedAlarm();
     }, 1000);
     render();
   </script>
