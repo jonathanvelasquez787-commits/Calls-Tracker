@@ -2249,6 +2249,15 @@
 </div>
 <div class="divider"></div>
 <div class="field" style="margin-bottom:4px;">
+<label style="font-weight:900;">🔥 Higher Rate Opportunity</label>
+</div>
+<div class="gap-editor-list" id="higherRateWindowsList"></div>
+<div class="modal-actions" style="margin-top:0;">
+<button class="warn" id="addHigherRateWindowBtn" type="button">+ Agregar ventana</button>
+</div>
+<p class="alert-hint">Fecha específica + hora de inicio/fin donde aplica un bono sobre la tasa por minuto — Propio lo avisa por correo, no lo expone en los datos que la app importa, así que se configura a mano. Una llamada cuenta COMPLETA (no solo la parte dentro de la ventana) si empieza hasta 5 minutos antes de que la ventana comience, o en cualquier momento antes de que termine, aunque se extienda después.</p>
+<div class="divider"></div>
+<div class="field" style="margin-bottom:4px;">
 <label style="font-weight:900;">Ciclo de pago</label>
 </div>
 <div class="goal-fields">
@@ -2530,6 +2539,32 @@ $0.72"></textarea>
     const EMOJI_CHOICES = ['', '🙂', '😄', '😎', '🤩', '🥳', '😴', '☕', '🔥', '💪', '🚀', '⭐', '🎯', '⚡', '🌟', '🙌', '👋', '🐱', '🌮', '🎧'];
     const DEFAULT_GOAL_MINUTES = 420;
     const DEFAULT_GOAL_DOLLARS = Number((DEFAULT_GOAL_MINUTES * RATE).toFixed(2));
+
+    // ---- Higher Rate Opportunity (pedido del usuario) ----
+    // Propio manda avisos por correo con una fecha y una o más ventanas
+    // horarias donde aplica un bono sobre la tasa por minuto — Propio NO lo
+    // expone en los datos que la app ya importa, así que se configura a
+    // mano cuando llega ese aviso (ver settings.higherRateWindows, un
+    // arreglo global de {id, date, start, end, tier}, editable en Horario).
+    // Los 3 niveles y su bono son fijos (definidos por el programa de
+    // Propio, no editables por el usuario) — lo que el usuario elige al
+    // configurar cada ventana es CUÁL de los 3 aplica ese día/hora.
+    const HIGHER_RATE_TIERS = {
+      bronze: { label: 'Bronce', bonusPerMin: 0.01 },
+      silver: { label: 'Silver', bonusPerMin: 0.02 },
+      gold: { label: 'Gold', bonusPerMin: 0.03 },
+    };
+    // Pedido del usuario (confirmado explícitamente): "si tomo una llamada 5
+    // minutos antes de que el higher rate empiece me cuenta" — una llamada
+    // que arranca hasta 5 min ANTES del inicio de la ventana cuenta
+    // COMPLETA para el bono (no se recorta a la parte que cae dentro de la
+    // ventana). "si tomo una llamada antes de que termine y se extiende...
+    // también cuenta" — cualquier llamada que arranque en cualquier momento
+    // ANTES de que la ventana termine cuenta completa, sin importar cuánto
+    // se extienda después del fin. En otras palabras: lo único que importa
+    // es la hora de INICIO de la llamada (con esta gracia de 5 min antes),
+    // nunca dónde termina.
+    const HIGHER_RATE_EARLY_GRACE_MIN = 5;
 
     // ---- Horario semanal (plantilla planeada, editable por día) ----
     const WEEKDAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
@@ -2957,6 +2992,10 @@ $0.72"></textarea>
         productiveBreakSound: 'classic',
         productiveBreakCustomSoundDataUrl: '',
         productiveBreakCustomSoundName: '',
+        // Pedido del usuario: Higher Rate Opportunity — ventanas configuradas
+        // a mano (fecha + hora + nivel), ver HIGHER_RATE_TIERS arriba. Global,
+        // no por día de la semana (cada ventana ya trae su propia fecha).
+        higherRateWindows: [],
         // Pedido del usuario: modo claro/oscuro — 'auto' (default) sigue el
         // sistema operativo (prefers-color-scheme); 'light'/'dark' fuerzan
         // el tema sin importar el sistema. Ver applyTheme()/themeToggleBtn.
@@ -2989,6 +3028,20 @@ $0.72"></textarea>
       // mano el localStorage parcialmente), cae de vuelta a 'classic' — sin
       // esto, el checker intentaría reproducir un Data URL vacío en silencio.
       if (settings.productiveBreakSound === 'custom' && !settings.productiveBreakCustomSoundDataUrl) settings.productiveBreakSound = 'classic';
+      // Higher Rate Opportunity: se descarta cualquier ventana mal formada
+      // (sin fecha/horario válido, o nivel desconocido) — mismo criterio
+      // defensivo que el resto de settings, para que un dato corrupto en
+      // localStorage no rompa el cálculo de bonos en silencio.
+      if (!Array.isArray(settings.higherRateWindows)) settings.higherRateWindows = [];
+      settings.higherRateWindows = settings.higherRateWindows
+        .filter(w => w && typeof w === 'object' && /^\d{2}\/\d{2}\/\d{4}$/.test(String(w.date || '')) && HIGHER_RATE_TIERS[w.tier])
+        .map(w => ({
+          id: w.id || makeLocalId(),
+          date: String(w.date),
+          start: formatHHMM(w.start),
+          end: formatHHMM(w.end),
+          tier: w.tier,
+        }));
     }
 
     // Pedido del usuario: modo claro/oscuro — 'auto' (default) sigue el
@@ -3083,7 +3136,12 @@ $0.72"></textarea>
         const d = callDateToDate(c.callDate);
         return d && d >= start && d <= end;
       });
-      const earnings = inCycleCalls.reduce((a, c) => a + parseMoney(c.pay), 0);
+      // Pedido del usuario: mismo criterio que importedCallStats() — el
+      // bono de Higher Rate Opportunity se suma a las ganancias reales
+      // reportadas por Propio, ya que Propio no lo expone en los datos que
+      // la app importa.
+      const higherRateBonus = higherRateBonusForCalls(inCycleCalls);
+      const earnings = inCycleCalls.reduce((a, c) => a + parseMoney(c.pay), 0) + higherRateBonus;
 
       // Pedido del usuario: horas productivas de cada semana del ciclo (el
       // ciclo siempre dura CYCLE_LENGTH_DAYS=14 días, sin importar en qué
@@ -3103,7 +3161,7 @@ $0.72"></textarea>
       }
 
       return {
-        start, end, payDate, earnings, callCount: inCycleCalls.length,
+        start, end, payDate, earnings, higherRateBonus, callCount: inCycleCalls.length,
         week1ProductiveMin, week2ProductiveMin,
         totalProductiveMin: week1ProductiveMin + week2ProductiveMin,
       };
@@ -3230,6 +3288,52 @@ $0.72"></textarea>
       const cleaned = String(value ?? '').replace(/[^0-9.-]/g, '');
       const n = Number(cleaned);
       return Number.isFinite(n) ? n : 0;
+    }
+
+    // ---- Higher Rate Opportunity: elegibilidad y cálculo del bono ----
+    // Ver HIGHER_RATE_TIERS/HIGHER_RATE_EARLY_GRACE_MIN arriba para el
+    // criterio exacto (confirmado por el usuario): solo importa la hora de
+    // INICIO de la llamada — hasta 5 min antes del inicio de la ventana, o
+    // en cualquier momento antes de que termine — nunca dónde termina la
+    // llamada. Ventanas con fin <= inicio se tratan como inválidas (0
+    // elegibilidad) en vez de romper el cálculo.
+    function callQualifiesForHigherRateWindow(callStartISO, window) {
+      const callStart = new Date(callStartISO);
+      const winStart = toDateFromInputs(window.date, timeLabel(window.start));
+      const winEnd = toDateFromInputs(window.date, timeLabel(window.end));
+      if (!winStart || !winEnd || winEnd.getTime() <= winStart.getTime()) return false;
+      const graceStart = new Date(winStart.getTime() - HIGHER_RATE_EARLY_GRACE_MIN * 60000);
+      return callStart.getTime() >= graceStart.getTime() && callStart.getTime() < winEnd.getTime();
+    }
+
+    // Bono de UNA llamada — null si no califica para ninguna ventana. Solo
+    // se comparan ventanas de la MISMA fecha que la llamada (`call.callDate`,
+    // ya en formato MM/DD/YYYY, igual que `window.date`). Si más de una
+    // ventana califica (ej. configuradas con solape por error), se toma la
+    // de MAYOR nivel — más generoso, no penaliza al usuario por una
+    // configuración que se solapa. El bono es sobre la duración COMPLETA de
+    // la llamada (`durationMin`), nunca recortada a la ventana.
+    function higherRateBonusForCall(call) {
+      const windows = (settings.higherRateWindows || []).filter(w => w.date === call.callDate);
+      if (!windows.length) return null;
+      const qualifying = windows.filter(w => callQualifiesForHigherRateWindow(call.startISO, w));
+      if (!qualifying.length) return null;
+      const best = qualifying.reduce((a, b) =>
+        (HIGHER_RATE_TIERS[b.tier]?.bonusPerMin || 0) > (HIGHER_RATE_TIERS[a.tier]?.bonusPerMin || 0) ? b : a
+      );
+      const tierMeta = HIGHER_RATE_TIERS[best.tier];
+      if (!tierMeta) return null;
+      return { amount: tierMeta.bonusPerMin * (Number(call.durationMin) || 0), tier: best.tier, windowId: best.id };
+    }
+
+    // Suma de bonos de un conjunto de llamadas (día, ciclo, etc.) — se
+    // reutiliza tanto en importedCallStats() (día activo) como en
+    // cycleEarningsForBounds() (ciclo de pago completo).
+    function higherRateBonusForCalls(sourceCalls) {
+      return sourceCalls.reduce((sum, c) => {
+        const bonus = higherRateBonusForCall(c);
+        return sum + (bonus ? bonus.amount : 0);
+      }, 0);
     }
 
     function fmtDate(date) {
@@ -3412,7 +3516,13 @@ $0.72"></textarea>
       const droppedCalls = sorted.filter(c => String(c.dropped).toLowerCase() === 'yes');
       const productive = productiveCalls.reduce((a, c) => a + (c.durationMin || 0), 0);
       const total = sorted.reduce((a, c) => a + (c.durationMin || 0), 0);
-      const earnings = sorted.reduce((a, c) => a + parseMoney(c.pay), 0);
+      // Pedido del usuario: Higher Rate Opportunity — el bono configurado a
+      // mano (ver higherRateBonusForCalls()) se SUMA a las ganancias reales
+      // reportadas por Propio (`pay`), ya que Propio no lo expone en los
+      // datos que la app importa. `higherRateBonus` se expone aparte además
+      // (para el tag "🔥 Higher Rate" en el header/Tabla completa).
+      const higherRateBonus = higherRateBonusForCalls(sorted);
+      const earnings = sorted.reduce((a, c) => a + parseMoney(c.pay), 0) + higherRateBonus;
       const longest = sorted.length ? Math.max(...sorted.map(c => c.durationMin || 0)) : 0;
       const shortest = sorted.length ? Math.min(...sorted.map(c => c.durationMin || 0)) : 0;
       const avg = sorted.length ? total / sorted.length : 0;
@@ -3421,6 +3531,7 @@ $0.72"></textarea>
         productive,
         total,
         earnings,
+        higherRateBonus,
         billable: billableCalls.length,
         dropped: droppedCalls.length,
         longest,
@@ -6791,6 +6902,10 @@ function renderWeekSummary() {
       const productiveBreakSoundInput = document.getElementById('productiveBreakSoundInput');
       if (productiveBreakSoundInput && document.activeElement !== productiveBreakSoundInput) productiveBreakSoundInput.value = settings.productiveBreakSound || 'classic';
       syncProductiveBreakCustomSoundUI();
+      // Higher Rate Opportunity: global (no por día de la semana), se
+      // sincroniza siempre igual sin importar scheduleEditDay — mismo
+      // criterio que Ciclo de pago, justo abajo.
+      renderHigherRateWindowsEditor(settings.higherRateWindows || []);
       // Ciclo de pago: son settings globales (no por día de la semana), así
       // que se sincronizan siempre igual sin importar scheduleEditDay.
       ensureCurrencySettings();
@@ -7161,6 +7276,102 @@ function renderWeekSummary() {
       playProductiveBreakSound();
     }
 
+    // ---- Editor de ventanas de Higher Rate Opportunity (pedido del
+    // usuario) ---- Mismo patrón que el editor de bloques (Trabajo/Break/
+    // Lunch, ver renderBlocksEditor()): filas dinámicas con Fecha + Inicio +
+    // Fin + Nivel, agregar/eliminar libremente. A diferencia de los bloques,
+    // esto es GLOBAL (no por día de la semana — cada ventana ya trae su
+    // propia fecha) y se auto-guarda en cada cambio, sin esperar a "Guardar
+    // día".
+    function renderHigherRateWindowsEditor(windows) {
+      const list = document.getElementById('higherRateWindowsList');
+      if (!list) return;
+      const arr = Array.isArray(windows) ? windows : [];
+      // Orden cronológico (fecha + inicio) solo para que se vea prolijo —
+      // no afecta cómo se guardan ni se calculan los bonos.
+      const sorted = [...arr].sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`));
+      list.innerHTML = sorted.map((w) => {
+        const tier = HIGHER_RATE_TIERS[w.tier] ? w.tier : 'bronze';
+        return `
+        <div class="block-row" data-hr-window-id="${escapeHtml(w.id || '')}">
+          <div class="field" style="flex:1 1 150px;">
+            <label>Fecha</label>
+            <input type="date" class="hr-window-date-input" value="${escapeHtml(isoDateFromDayKey(w.date))}"/>
+          </div>
+          <div class="field">
+            <label>Inicio</label>
+            <input type="time" class="hr-window-start-input" value="${formatHHMM(w.start)}"/>
+          </div>
+          <div class="field">
+            <label>Fin</label>
+            <input type="time" class="hr-window-end-input" value="${formatHHMM(w.end)}"/>
+          </div>
+          <div class="field" style="flex:0 0 160px;">
+            <label>Nivel</label>
+            <select class="alert-select hr-window-tier-input" style="margin-top:2px;">
+              <option value="bronze" ${tier === 'bronze' ? 'selected' : ''}>Bronce (+$0.01)</option>
+              <option value="silver" ${tier === 'silver' ? 'selected' : ''}>Silver (+$0.02)</option>
+              <option value="gold" ${tier === 'gold' ? 'selected' : ''}>Gold (+$0.03)</option>
+            </select>
+          </div>
+          <button type="button" class="gap-edit-btn block-remove-btn" data-remove-hr-window style="background: rgba(255,111,143,.12); border-color: rgba(255,111,143,.3);" aria-label="Eliminar ventana">✕</button>
+        </div>
+      `;
+      }).join('') || '<div class="note" style="margin:0;">Sin ventanas de Higher Rate configuradas — usa "+ Agregar ventana" cuando te llegue el aviso de Propio.</div>';
+    }
+
+    // Lee todas las filas del editor tal como están en el DOM. `id` se
+    // conserva vía el atributo data-hr-window-id del contenedor de la fila
+    // (asignado al renderizar) — así una fila mantiene su identidad estable
+    // entre re-renders en vez de regenerar un id nuevo cada vez que se edita
+    // cualquier campo.
+    function readHigherRateWindowsFromEditor() {
+      const rows = document.querySelectorAll('#higherRateWindowsList .block-row');
+      return Array.from(rows).map(row => {
+        const dateInput = row.querySelector('.hr-window-date-input');
+        const startInput = row.querySelector('.hr-window-start-input');
+        const endInput = row.querySelector('.hr-window-end-input');
+        const tierInput = row.querySelector('.hr-window-tier-input');
+        const tier = HIGHER_RATE_TIERS[tierInput ? tierInput.value : ''] ? tierInput.value : 'bronze';
+        return {
+          id: row.getAttribute('data-hr-window-id') || makeLocalId(),
+          date: dayKeyFromIsoDate(dateInput ? dateInput.value : '') || todayCallDateKey(),
+          start: formatHHMM(startInput ? startInput.value : '07:00'),
+          end: formatHHMM(endInput ? endInput.value : '08:00'),
+          tier,
+        };
+      });
+    }
+
+    // Persiste lo que hay ahora mismo en el editor — llamada en cada cambio
+    // de campo (auto-guardado, mismo patrón que el resto de settings sueltos
+    // de Horario) y al eliminar una fila.
+    function saveHigherRateWindowsFromEditor() {
+      settings.higherRateWindows = readHigherRateWindowsFromEditor();
+      saveSettingsOnly();
+      render();
+    }
+
+    // "+ Agregar ventana": conserva lo que ya está en el formulario (para no
+    // perder ediciones a medio hacer) y agrega una fila nueva al final —
+    // default hoy, 07:00-08:00, Bronce (el usuario ajusta según el correo
+    // de Propio). No se auto-guarda hasta que el usuario toque algo (mismo
+    // criterio que addBlockRow()) — evita guardar una ventana "placeholder"
+    // que nadie terminó de configurar.
+    function addHigherRateWindowRow() {
+      const current = readHigherRateWindowsFromEditor();
+      current.push({ id: makeLocalId(), date: todayCallDateKey(), start: '07:00', end: '08:00', tier: 'bronze' });
+      renderHigherRateWindowsEditor(current);
+    }
+
+    function removeHigherRateWindowRowAt(id) {
+      const current = readHigherRateWindowsFromEditor().filter(w => w.id !== id);
+      renderHigherRateWindowsEditor(current);
+      settings.higherRateWindows = current;
+      saveSettingsOnly();
+      render();
+    }
+
 
     
 
@@ -7350,6 +7561,7 @@ function renderHeader() {
     stats.breakGapTotal > 0 ? `<span class="tag warn">Break: ${formatDuration(stats.breakGapTotal * 60000)}</span>` : '',
     stats.lunchGapTotal > 0 ? `<span class="tag cyan">Lunch: ${formatDuration(stats.lunchGapTotal * 60000)}</span>` : '',
     stats.otherGapTotal > 0 ? `<span class="tag">Otro: ${formatDuration(stats.otherGapTotal * 60000)}</span>` : '',
+    stats.higherRateBonus > 0 ? `<span class="tag good">🔥 Higher Rate: +${money(stats.higherRateBonus)}</span>` : '',
   ].join('');
   document.getElementById('earningsTagsRow').innerHTML = earningsTagsHtml;
   const earnBar = document.getElementById('earningsBar');
@@ -8134,6 +8346,16 @@ function renderTable() {
           ? `<button class="gap-edit-btn" type="button" data-gap-edit="${escapeHtml(gapKey)}" data-gap-day="${escapeHtml(dayKey)}">Editar</button>`
           : '';
 
+        // Pedido del usuario: indicador por llamada de si calificó para un
+        // bono de Higher Rate Opportunity — mismo criterio que el tag
+        // agregado del header/Tabla completa (ver higherRateBonusForCall()),
+        // aquí desglosado fila por fila para que quede claro CUÁL llamada
+        // lo generó.
+        const higherRateBonus = higherRateBonusForCall(c);
+        const higherRateBadge = higherRateBonus
+          ? `<span class="imported-late" style="background: rgba(255,209,92,.14); border-color: rgba(255,209,92,.3); color: var(--pale-warn);" title="Higher Rate Opportunity · ${HIGHER_RATE_TIERS[higherRateBonus.tier]?.label || ''}">🔥 +${money(higherRateBonus.amount)}</span>`
+          : '';
+
         rows.push(`
           <tr>
             <td>${escapeHtml(c.customerId)}</td>
@@ -8149,7 +8371,7 @@ function renderTable() {
             </td>
             <td><span class="tag ${String(c.billable).toLowerCase() === 'yes' ? 'good' : 'warn'}">${escapeHtml(c.billable)}</span></td>
             <td><span class="tag ${String(c.dropped).toLowerCase() === 'yes' ? 'bad' : 'good'}">${escapeHtml(c.dropped)}</span></td>
-            <td>${money(parseMoney(c.pay))}</td>
+            <td>${money(parseMoney(c.pay))}${higherRateBadge}</td>
             <td>
               <div style="display:flex; gap:6px; flex-wrap:wrap;">
                 <button class="gap-edit-btn" type="button" data-call-edit="${escapeHtml(c.id || '')}">Editar</button>
@@ -8163,7 +8385,7 @@ function renderTable() {
           <div class="mobile-call-card">
             <div class="mobile-call-top">
               <div class="mobile-call-title">#${escapeHtml(c.customerId)}</div>
-              <div class="mobile-call-pay">${money(parseMoney(c.pay))}</div>
+              <div class="mobile-call-pay">${money(parseMoney(c.pay))}${higherRateBonus ? ` <span style="color: var(--pale-warn); font-size:11px;">🔥+${money(higherRateBonus.amount)}</span>` : ''}</div>
             </div>
             <div class="mobile-call-meta">${escapeHtml(c.callDate)} · ${escapeHtml(c.callStart)} · ${c.durationMin} min${effectivePrev ? ` · ${escapeHtml(gapText)}` : ''}${annotation?.note ? ` · Nota: ${escapeHtml(annotation.note)}` : ''}</div>
             <div class="mobile-call-meta">Billable: ${escapeHtml(c.billable)} · Dropped: ${escapeHtml(c.dropped)}</div>
@@ -8192,6 +8414,7 @@ function renderTable() {
         ${stats.breakGapTotal > 0 ? `<span class="tag warn">Break: ${formatDuration(stats.breakGapTotal * 60000)}</span>` : ''}
         ${stats.lunchGapTotal > 0 ? `<span class="tag cyan">Lunch: ${formatDuration(stats.lunchGapTotal * 60000)}</span>` : ''}
         ${stats.otherGapTotal > 0 ? `<span class="tag">Otro: ${formatDuration(stats.otherGapTotal * 60000)}</span>` : ''}
+        ${stats.higherRateBonus > 0 ? `<span class="tag good">🔥 Higher Rate: +${money(stats.higherRateBonus)}</span>` : ''}
       `;
 
       wrap.innerHTML = `
@@ -8490,6 +8713,22 @@ function render() {
     document.getElementById('productiveBreakSoundInput').addEventListener('change', updateProductiveBreakSound);
     document.getElementById('productiveBreakSoundFile').addEventListener('change', handleProductiveBreakSoundFile);
     document.getElementById('testProductiveBreakSoundBtn').addEventListener('click', testProductiveBreakSound);
+    document.getElementById('addHigherRateWindowBtn').addEventListener('click', addHigherRateWindowRow);
+    // Delegado en el contenedor: las filas se reconstruyen por completo en
+    // cada renderHigherRateWindowsEditor()/addHigherRateWindowRow(), mismo
+    // patrón que ya usa #blocksEditorList.
+    document.getElementById('higherRateWindowsList').addEventListener('click', (e) => {
+      const btn = e.target instanceof Element ? e.target.closest('[data-remove-hr-window]') : null;
+      if (!btn) return;
+      const row = btn.closest('.block-row');
+      const id = row ? row.getAttribute('data-hr-window-id') : null;
+      if (id) removeHigherRateWindowRowAt(id);
+    });
+    document.getElementById('higherRateWindowsList').addEventListener('change', (e) => {
+      if (!(e.target instanceof Element)) return;
+      if (!e.target.closest('.block-row')) return;
+      saveHigherRateWindowsFromEditor();
+    });
     document.getElementById('daySelector').addEventListener('change', (e) => {
       const key = dayKeyFromIsoDate(e.target.value);
       if (key) setActiveDayKey(key);
