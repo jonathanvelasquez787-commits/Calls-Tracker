@@ -767,6 +767,70 @@
       font-weight: 800;
     }
 
+    /* Pedido del usuario ("así como en Mochi", con captura de referencia):
+       selector de tarifa tipo tarjetas (Normal/Bronce/Silver/Gold) en Editar
+       llamada y Agregar llamada manual — cada tile muestra el $/min real
+       (tasa base + bono del nivel) y al tocarlo recalcula el campo Pago
+       automáticamente (ver renderRateTiles()/rateTilePerMin()). Grid de 2
+       columnas x 2 filas, mismo patrón visual que .emoji-picker/.day-tabs
+       (fondo sutil, borde que se resalta en cyan cuando está seleccionado). */
+    .rate-tile-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .rate-tile {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 3px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      cursor: pointer;
+      text-align: left;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+    }
+
+    .rate-tile:hover,
+    .rate-tile:focus-visible {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.06);
+      outline: none;
+    }
+
+    .rate-tile.selected {
+      border-color: rgba(47, 213, 255, .55);
+      background: rgba(47, 213, 255, .12);
+    }
+
+    .rate-tile-top {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .rate-tile-icon {
+      font-size: 15px;
+      line-height: 1;
+    }
+
+    .rate-tile-amount {
+      font-weight: 900;
+      font-size: 14px;
+      color: var(--text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .rate-tile-label {
+      color: var(--muted);
+      font-size: 11.5px;
+      font-weight: 700;
+    }
+
     /* Mismo problema de familia que .chips: al mover "Día activo" dentro del
        propio bloque .chips (junto al chip de Estado, pedido del usuario),
        .summary-pill necesita el mismo flex-shrink:0 que ya tienen los
@@ -2403,7 +2467,12 @@ $0.72"></textarea>
 <input id="callEditPayInput" inputmode="decimal" min="0" step="0.01" type="number"/>
 </div>
 </div>
-<div class="goal-fields">
+<div class="field" style="margin-top:8px; margin-bottom:0;">
+<label style="font-weight:900;">Rate</label>
+</div>
+<div class="rate-tile-grid" id="callEditRateTiles"></div>
+<p class="alert-hint" id="callEditHigherRateWarning" style="display:none; color: var(--warn); margin-top:6px;"></p>
+<div class="goal-fields" style="margin-top:10px;">
 <div class="field">
 <label for="callEditBillableInput">Billable</label>
 <select id="callEditBillableInput">
@@ -2455,7 +2524,11 @@ $0.72"></textarea>
 <input id="manualCallPayInput" inputmode="decimal" min="0" step="0.01" type="number"/>
 </div>
 </div>
-<div class="goal-fields">
+<div class="field" style="margin-top:8px; margin-bottom:0;">
+<label style="font-weight:900;">Rate</label>
+</div>
+<div class="rate-tile-grid" id="manualCallRateTiles"></div>
+<div class="goal-fields" style="margin-top:10px;">
 <div class="field">
 <label for="manualCallBillableInput">Billable</label>
 <select id="manualCallBillableInput">
@@ -2565,6 +2638,45 @@ $0.72"></textarea>
     // es la hora de INICIO de la llamada (con esta gracia de 5 min antes),
     // nunca dónde termina.
     const HIGHER_RATE_EARLY_GRACE_MIN = 5;
+
+    // Pedido del usuario ("así como en Mochi", con captura de referencia):
+    // selector visual de tarifa (Normal/Bronce/Silver/Gold) en Editar
+    // llamada y Agregar llamada manual — una forma MANUAL alternativa de
+    // fijar el pago de una llamada puntual, independiente de las ventanas
+    // de Higher Rate configuradas en Horario (ver más abajo, en
+    // openCallEditor(), el aviso que evita que el usuario sume el bono dos
+    // veces si la llamada YA cae dentro de una ventana configurada).
+    const RATE_TILE_DEFS = [
+      { key: 'normal', label: 'Normal', icon: '⚪', bonus: 0 },
+      { key: 'bronze', label: 'Bronce', icon: '🥉', bonus: HIGHER_RATE_TIERS.bronze.bonusPerMin },
+      { key: 'silver', label: 'Silver', icon: '🥈', bonus: HIGHER_RATE_TIERS.silver.bonusPerMin },
+      { key: 'gold', label: 'Gold', icon: '🥇', bonus: HIGHER_RATE_TIERS.gold.bonusPerMin },
+    ];
+
+    // $/min de un tile — tasa base del usuario (settings.rate, la misma que
+    // ya usa Metas y "Agregar llamada manual") + el bono fijo del nivel.
+    function rateTilePerMin(tileKey) {
+      const baseRate = Number(settings.rate) > 0 ? Number(settings.rate) : RATE;
+      const def = RATE_TILE_DEFS.find(t => t.key === tileKey);
+      return baseRate + (def ? def.bonus : 0);
+    }
+
+    // Pinta los 4 tiles dentro de `containerId`, marcando `selectedKey` como
+    // activo. Se recalculan los montos en cada llamada (no se cachean) para
+    // reflejar siempre la tasa base actual de settings.rate.
+    function renderRateTiles(containerId, selectedKey) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      el.innerHTML = RATE_TILE_DEFS.map(t => {
+        const rate = rateTilePerMin(t.key);
+        return `
+          <button type="button" class="rate-tile ${t.key === selectedKey ? 'selected' : ''}" data-rate-tile="${t.key}">
+            <span class="rate-tile-top"><span class="rate-tile-icon">${t.icon}</span><span class="rate-tile-amount">$${rate.toFixed(2)}/min</span></span>
+            <span class="rate-tile-label">${t.label}</span>
+          </button>
+        `;
+      }).join('');
+    }
 
     // ---- Horario semanal (plantilla planeada, editable por día) ----
     const WEEKDAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
@@ -7687,6 +7799,14 @@ let editingCallId = null;
 // Abre el editor de una llamada ya importada. Antes la única forma de
 // corregir un dato mal exportado por Propio (duración, pago, billable,
 // dropped) era borrar la fila entera y volver a pegarla.
+// Pedido del usuario ("así como en Mochi"): tile de tarifa seleccionado
+// actualmente en Editar llamada — vive en memoria, no en el objeto de la
+// llamada (es una calculadora, no un dato persistido; ver comentario junto
+// a RATE_TILE_DEFS). Se resetea a null cada vez que se abre el modal — no
+// se intenta "adivinar" qué nivel se usó la última vez que se guardó el
+// pago de esa llamada.
+let callEditSelectedRateTile = null;
+
 function openCallEditor(callId) {
   const call = calls.find(c => c.id === callId);
   if (!call) {
@@ -7707,7 +7827,57 @@ function openCallEditor(callId) {
   if (payInput) payInput.value = parseMoney(call.pay).toFixed(2);
   if (billableInput) billableInput.value = String(call.billable).toLowerCase() === 'yes' ? 'Yes' : 'No';
   if (droppedInput) droppedInput.value = String(call.dropped).toLowerCase() === 'yes' ? 'Yes' : 'No';
+
+  callEditSelectedRateTile = null;
+  renderRateTiles('callEditRateTiles', null);
+
+  // Pedido del usuario: aviso dinámico si esta llamada YA recibe un bono de
+  // Higher Rate por una ventana configurada en Horario (ver
+  // higherRateBonusForCall(), v130) — para que el usuario no elija también
+  // un nivel aquí abajo y termine sumando el bono dos veces (una vez desde
+  // la ventana, otra vez metida a mano en Pago).
+  const warningEl = document.getElementById('callEditHigherRateWarning');
+  if (warningEl) {
+    const existingBonus = higherRateBonusForCall(call);
+    if (existingBonus) {
+      const tierLabel = HIGHER_RATE_TIERS[existingBonus.tier]?.label || existingBonus.tier;
+      warningEl.textContent = `⚠️ Esta llamada ya recibe el bono ${tierLabel} (+${money(existingBonus.amount)}) de una ventana de Higher Rate configurada en Horario. Si eliges un nivel abajo, el Pago ya lo incluirá — no combines los dos para la misma llamada.`;
+      warningEl.style.display = '';
+    } else {
+      warningEl.style.display = 'none';
+    }
+  }
+
   openModal('callEditModal');
+}
+
+// Aplica el tile elegido: recalcula Pago = tasa del tile × duración actual,
+// y marca ese tile como seleccionado. Escribir el valor directo en el input
+// (sin disparar su evento 'input') es intencional — así el listener que
+// des-selecciona el tile al editar Pago A MANO (ver wiring más abajo) no se
+// dispara por este cambio programático.
+function applyRateTileToCallEdit(tileKey) {
+  callEditSelectedRateTile = tileKey;
+  renderRateTiles('callEditRateTiles', tileKey);
+  const durationInput = document.getElementById('callEditDurationInput');
+  const payInput = document.getElementById('callEditPayInput');
+  const duration = Number(durationInput?.value);
+  if (payInput && Number.isFinite(duration) && duration > 0) {
+    payInput.value = (rateTilePerMin(tileKey) * duration).toFixed(2);
+  }
+}
+
+// Si cambia la Duración mientras hay un tile seleccionado, el Pago se
+// recalcula solo con la tasa de ESE tile — mantiene ambos campos en
+// sincronía sin que el usuario tenga que volver a tocar el tile.
+function recomputeCallEditPayFromSelectedTile() {
+  if (!callEditSelectedRateTile) return;
+  const durationInput = document.getElementById('callEditDurationInput');
+  const payInput = document.getElementById('callEditPayInput');
+  const duration = Number(durationInput?.value);
+  if (payInput && Number.isFinite(duration) && duration > 0) {
+    payInput.value = (rateTilePerMin(callEditSelectedRateTile) * duration).toFixed(2);
+  }
 }
 
 function saveCallEditor() {
@@ -7797,6 +7967,11 @@ function deleteCallRecord(callId) {
 // usa scheduleFormIsDirty() para no pisar una edición en curso.
 let manualCallPayDirty = false;
 
+// Pedido del usuario ("así como en Mochi"): tile de tarifa seleccionado
+// actualmente en Agregar llamada manual — 'normal' por default (mismo
+// resultado que el estimado de siempre, tasa base sin bono).
+let manualCallSelectedRateTile = 'normal';
+
 // Convierte "HH:MM" (24h, valor crudo de <input type="time">) al formato
 // "h:mm AM/PM" que usa internamente callStart (el mismo formato que
 // toDateFromInputs()/parseCalls() esperan al leer la exportación real de
@@ -7810,14 +7985,13 @@ function callStartLabelFromHHMM(hhmm) {
   return `${hour12}:${pad(m)} ${suffix}`;
 }
 
-// Estimado de pago = duración × tasa por minuto (settings.rate, la misma
-// que ya se usa en Metas para convertir Meta en minutos <-> Meta en
-// dólares). Es solo un punto de partida editable — el pago real de Propio
-// no siempre es duración×tasa exacta, por eso el campo se puede corregir a
-// mano antes de guardar.
-function manualCallEstimatedPay(durationMin) {
-  const rate = Number(settings.rate) > 0 ? Number(settings.rate) : RATE;
-  return Number((durationMin * rate).toFixed(2));
+// Estimado de pago = duración × tasa del tile elegido (Normal/Bronce/
+// Silver/Gold, ver rateTilePerMin() — 'normal' da el mismo resultado que
+// antes de agregar los tiles, tasa base sin bono). Es solo un punto de
+// partida editable — el pago real de Propio no siempre es duración×tasa
+// exacta, por eso el campo se puede corregir a mano antes de guardar.
+function manualCallEstimatedPay(durationMin, tileKey = 'normal') {
+  return Number((durationMin * rateTilePerMin(tileKey)).toFixed(2));
 }
 
 // Prellena los campos del modal — extraído de openManualCallModal() para
@@ -7840,6 +8014,8 @@ function prefillManualCallForm({ dayKey, startDate, durationMin }) {
   if (billableInput) billableInput.value = 'Yes';
   if (droppedInput) droppedInput.value = 'No';
   if (customerIdInput) customerIdInput.value = '';
+  manualCallSelectedRateTile = 'normal';
+  renderRateTiles('manualCallRateTiles', 'normal');
   updateManualCallPreview();
 }
 
@@ -7871,6 +8047,17 @@ function openManualCallModalFromLiveCall(startedAtISO, endedAtISO) {
   openModal('manualCallModal');
 }
 
+// Aplica el tile elegido en Agregar llamada manual — mismo criterio que
+// applyRateTileToCallEdit(): recalcula Pago SIEMPRE (acción deliberada del
+// usuario), y de paso limpia el dirty-flag para que un cambio posterior de
+// Duración se recalcule con la tasa de este tile en vez de congelarse.
+function applyRateTileToManualCall(tileKey) {
+  manualCallSelectedRateTile = tileKey;
+  renderRateTiles('manualCallRateTiles', tileKey);
+  manualCallPayDirty = false;
+  updateManualCallPreview();
+}
+
 function updateManualCallPreview() {
   const durationInput = document.getElementById('manualCallDurationInput');
   const payInput = document.getElementById('manualCallPayInput');
@@ -7879,7 +8066,7 @@ function updateManualCallPreview() {
   const validDuration = Number.isFinite(duration) && duration > 0;
 
   if (validDuration && !manualCallPayDirty && payInput) {
-    payInput.value = manualCallEstimatedPay(duration).toFixed(2);
+    payInput.value = manualCallEstimatedPay(duration, manualCallSelectedRateTile).toFixed(2);
   }
   if (preview) {
     preview.textContent = validDuration
@@ -8616,6 +8803,11 @@ function render() {
     document.getElementById('addCallManualBtn').addEventListener('click', openManualCallModal);
     document.getElementById('manualCallDurationInput').addEventListener('input', updateManualCallPreview);
     document.getElementById('manualCallPayInput').addEventListener('input', () => { manualCallPayDirty = true; });
+    document.getElementById('manualCallRateTiles').addEventListener('click', (e) => {
+      const btn = e.target instanceof Element ? e.target.closest('[data-rate-tile]') : null;
+      if (!btn) return;
+      applyRateTileToManualCall(btn.getAttribute('data-rate-tile'));
+    });
     document.getElementById('saveManualCallBtn').addEventListener('click', saveManualCall);
     document.getElementById('manualCallModal').addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) saveManualCall();
@@ -8745,6 +8937,21 @@ function render() {
     document.getElementById('saveDayNoteBtn').addEventListener('click', saveDayNoteFromModal);
     document.getElementById('clearDayNoteBtn').addEventListener('click', clearDayNoteFromModal);
     document.getElementById('saveCallEditBtn').addEventListener('click', saveCallEditor);
+    document.getElementById('callEditRateTiles').addEventListener('click', (e) => {
+      const btn = e.target instanceof Element ? e.target.closest('[data-rate-tile]') : null;
+      if (!btn) return;
+      applyRateTileToCallEdit(btn.getAttribute('data-rate-tile'));
+    });
+    document.getElementById('callEditDurationInput').addEventListener('input', recomputeCallEditPayFromSelectedTile);
+    document.getElementById('callEditPayInput').addEventListener('input', () => {
+      // Editar Pago a mano después de elegir un tile lo des-selecciona —
+      // evita el estado ambiguo de "Gold resaltado pero el Pago ya no
+      // coincide con la tasa de Gold".
+      if (callEditSelectedRateTile !== null) {
+        callEditSelectedRateTile = null;
+        renderRateTiles('callEditRateTiles', null);
+      }
+    });
     document.getElementById('gapLabelInput').addEventListener('change', () => {
       if (!editingGapContext) return;
       const row = findGapRow(editingGapContext.dayKey, editingGapContext.gapKey);
