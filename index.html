@@ -3559,22 +3559,6 @@ $0.72"></textarea>
       return 'Working';
     }
 
-    // Pedido del usuario (auditoría de la limitación documentada en v101/
-    // v116, "turno sin cerrar"): centraliza el chequeo "¿el turno que sigue
-    // vivo en state.shiftStartedAt es el de HOY?" — antes computeCurrentAcwStart()
-    // ya lo hacía inline (ver comentario ahí), pero checkShiftAlarm() y
-    // checkBreakStartAlarm() lo tenían SIN este chequeo (solo miraban
-    // `!!state.shiftStartedAt && !state.shiftEndedAt`, sin importar el día).
-    // Un turno de AYER nunca cerrado hacía que ambas funciones creyeran que
-    // el turno de HOY ya estaba en curso — silenciando el aviso "Conéctate
-    // ya" (nunca sonaba, se creía que ya estabas conectado) y disparando
-    // avisos de Break/Lunch de HOY sobre un turno que en realidad nunca
-    // empezó hoy. Se extrae aquí para que los 3 sitios usen el mismo
-    // criterio.
-    function isShiftStartedToday() {
-      return !!state.shiftStartedAt && sameCallDay(state.shiftStartedAt, todayCallDateKey());
-    }
-
     // Pedido del usuario: indicador en vivo de cuánto tiempo llevas AHORA
     // MISMO en "ACW/Available" (disponible, sin llamada activa ni Break/
     // Lunch activo) — antes ACW solo se calculaba retroactivamente
@@ -3868,14 +3852,16 @@ function stopShiftAlarm() {
 function checkShiftAlarm() {
   const cfg = dayConfigFor(todayCallDateKey());
   const alertMin = Number(settings.alertBeforeShiftMin);
-  // Bug encontrado al auditar la limitación documentada en v101/v116
-  // ("turno sin cerrar"): antes esto solo miraba
-  // `!!state.shiftStartedAt && !state.shiftEndedAt`, sin verificar que ese
-  // turno fuera el de HOY — un turno de AYER nunca cerrado hacía que
-  // shiftIsLive diera true hoy también, silenciando este aviso ("Conéctate
-  // ya" nunca sonaba porque la app creía que ya estabas conectado). Ver
-  // isShiftStartedToday().
-  const shiftIsLive = isShiftStartedToday() && !state.shiftEndedAt;
+  // Bug encontrado al auditar el hallazgo lateral de v133: esto usaba
+  // isShiftStartedToday() (exige `state.shiftStartedAt` real, solo se
+  // llena con el click de "Iniciar shift"/"Iniciar llamada") en vez de
+  // `dayShiftBounds().live` (que YA reconoce un turno ESTIMADO desde
+  // llamadas pegadas sin click, igual que el chip de Estado). Si el turno
+  // de hoy solo existía porque se pegaron llamadas, esta función seguía
+  // creyendo "no has empezado" y podía sonar "¡Conéctate ya!" aunque el
+  // turno ya estuviera en curso. Mismo criterio que ya usa
+  // computeCurrentAcwStart() desde v133.
+  const shiftIsLive = dayShiftBounds(todayCallDateKey()).live;
 
   if (!cfg || cfg.off || !cfg.start || !Number.isFinite(alertMin) || alertMin <= 0 || shiftIsLive) {
     stopShiftAlarm();
@@ -3941,13 +3927,12 @@ function stopBreakStartAlarm() {
 // el de hoy) para no repetir el toast más de una vez por slot.
 function checkBreakStartAlarm() {
   const alertMin = Number(settings.alertBeforeBreakMin);
-  // Bug encontrado al auditar la limitación documentada en v101/v116
-  // ("turno sin cerrar"): mismo problema que checkShiftAlarm() — sin
-  // verificar que state.shiftStartedAt fuera de HOY, un turno de AYER
-  // nunca cerrado hacía que esta función creyera que el turno de HOY
-  // estaba en curso, disparando avisos de Break/Lunch planeados para HOY
-  // sobre un turno que en realidad nunca empezó hoy.
-  const shiftIsLive = isShiftStartedToday() && !state.shiftEndedAt;
+  // Bug encontrado al auditar el hallazgo lateral de v133: mismo problema
+  // que checkShiftAlarm() — con isShiftStartedToday(), un turno ESTIMADO
+  // desde llamadas pegadas sin click (dayShiftBounds().live === true) no
+  // se reconocía aquí, así que los avisos de Break/Lunch NUNCA sonaban
+  // para ese turno, aunque el resto de la app ya lo tratara como en curso.
+  const shiftIsLive = dayShiftBounds(todayCallDateKey()).live;
 
   if (!Number.isFinite(alertMin) || alertMin <= 0 || !shiftIsLive || state.activePause) {
     stopBreakStartAlarm();
@@ -4185,8 +4170,19 @@ function playProductiveBreakSound() {
 // ya terminó, o hay una pausa activa ahora mismo (no tiene sentido avisar
 // "ganaste un descanso" mientras ya estás en uno).
 function minutesSinceLastProductiveBreakAnchor() {
-  if (!isShiftStartedToday() || state.shiftEndedAt || state.activePause) return null;
   const dayKey = todayCallDateKey();
+  // Bug encontrado al auditar el hallazgo lateral de v133: el guard de
+  // entrada seguía exigiendo isShiftStartedToday() (turno con click real)
+  // incluso DESPUÉS del fix de v132 que ya reconcilia el ancla con
+  // dayShiftBounds() más abajo — un turno ESTIMADO desde llamadas pegadas
+  // sin click (dayShiftBounds().live === true) igual salía con `null` aquí
+  // por este chequeo temprano, sin llegar nunca a la reconciliación. Se
+  // gatea ahora con `bounds.live` (calculado una sola vez, reutilizado
+  // también como `anchor` más abajo) — mismo criterio que ya usa
+  // computeCurrentAcwStart() desde v133 y checkShiftAlarm()/
+  // checkBreakStartAlarm() desde este mismo fix.
+  const bounds = dayShiftBounds(dayKey);
+  if (!bounds.live || state.activePause) return null;
   // Bug reportado por el usuario: pegar VARIAS llamadas hasta sumar 30+ min
   // productivos no disparaba el aviso, pero pegar UNA sola llamada de 30+
   // min sí. Causa: esta función anclaba directo a `state.shiftStartedAt`
@@ -4201,8 +4197,6 @@ function minutesSinceLastProductiveBreakAnchor() {
   // dayShiftBounds() como base — si además hay una pausa cerrada más
   // tarde hoy, esa sigue ganando (mismo criterio de "lo más tardío" que ya
   // tenía esta función).
-  const bounds = dayShiftBounds(dayKey);
-  if (!bounds.start) return null;
   let anchor = bounds.start;
   state.pauseHistory
     .filter(p => sameCallDay(p.startedAt, dayKey))
