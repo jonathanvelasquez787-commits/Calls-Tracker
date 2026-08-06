@@ -3587,25 +3587,28 @@ $0.72"></textarea>
     // turno no está en curso, o si hay una llamada/pausa activa ahora mismo
     // (ahí manda su propio cronómetro, no el de ACW).
     function computeCurrentAcwStart() {
-      if (!state.shiftStartedAt || state.shiftEndedAt) return null;
       const dayKey = todayCallDateKey();
-      // Bug reportado por el usuario (captura: chip mostrando 47:06:36) —
-      // un turno iniciado hace días y nunca cerrado (shiftEndedAt sigue en
-      // null, ej. se cerró la pestaña sin darle "Finalizar shift") seguía
-      // contando como "ancla válida" para HOY sin límite, mostrando un
-      // tiempo sin sentido. El resto de la app (dayShiftBounds(), de donde
-      // sale el chip de Estado) ya valida `sameCallDay(shiftStartedAt, hoy)`
-      // antes de usarlo — este chequeo replica exactamente ese mismo
-      // criterio (ahora vía isShiftStartedToday(), compartido con
-      // checkShiftAlarm()/checkBreakStartAlarm()), así un turno abandonado
-      // de otro día se trata como "sin turno activo" en vez de anclar el
-      // cronómetro a esa fecha vieja.
-      if (!isShiftStartedToday()) return null;
+      // Bug reportado por el usuario ("a veces funciona, a veces no"):
+      // este chip exigía `state.shiftStartedAt` directo — solo se llenaba
+      // si de verdad diste click en "Iniciar shift" (o usaste "Iniciar
+      // llamada", que lo auto-inicia). Si tu turno de HOY solo existe
+      // porque pegaste llamadas sin tocar esos botones, `dayShiftBounds()`
+      // YA estima ese turno como en curso (mismo estimado que usa el chip
+      // de Estado, "Bloques del día", Adherencia...) pero este chip nunca
+      // se enteraba — de ahí que a veces "funcionara" (cuando sí usaste los
+      // controles en vivo) y a veces no (cuando solo pegaste data). Se
+      // ancla ahora a `dayShiftBounds().start`, el mismo estimado/real que
+      // usa el resto de la app, y se gatea con `.live` — que además ya
+      // resuelve por su cuenta el caso de un turno de OTRO día sin cerrar
+      // (bug original de esta función, ver historial), sin necesitar una
+      // segunda validación de fecha aparte.
+      const bounds = dayShiftBounds(dayKey);
+      if (!bounds.live) return null;
       if (state.activePause) return null;
       if (state.activeCall) return null;
 
       const now = new Date();
-      const candidates = [new Date(state.shiftStartedAt).getTime()];
+      const candidates = [bounds.start.getTime()];
       callsForDay(dayKey).forEach(c => candidates.push(new Date(c.endISO).getTime()));
       dayPauseIntervals(dayKey).forEach(p => candidates.push(p.end.getTime()));
       // Bug corregido: sin este candidato, colgar una llamada (endCall())
@@ -4184,7 +4187,23 @@ function playProductiveBreakSound() {
 function minutesSinceLastProductiveBreakAnchor() {
   if (!isShiftStartedToday() || state.shiftEndedAt || state.activePause) return null;
   const dayKey = todayCallDateKey();
-  let anchor = new Date(state.shiftStartedAt);
+  // Bug reportado por el usuario: pegar VARIAS llamadas hasta sumar 30+ min
+  // productivos no disparaba el aviso, pero pegar UNA sola llamada de 30+
+  // min sí. Causa: esta función anclaba directo a `state.shiftStartedAt`
+  // (la hora exacta del click de "Iniciar shift"), sin la misma
+  // reconciliación que YA usa el resto de la app (dayShiftBounds(), ver
+  // comentario "Reconciliación con llamadas reales" ahí) — si el click pasó
+  // DESPUÉS de que ya habías tomado llamadas (típico al pegar data de un
+  // rato ya trabajado), esas llamadas quedaban con timestamp ANTERIOR al
+  // ancla cruda y se excluían por completo del conteo, aunque el resto de
+  // la app (Conectado, Bloques del día) sí las contara como parte del
+  // turno. Se usa aquí el mismo inicio YA reconciliado por
+  // dayShiftBounds() como base — si además hay una pausa cerrada más
+  // tarde hoy, esa sigue ganando (mismo criterio de "lo más tardío" que ya
+  // tenía esta función).
+  const bounds = dayShiftBounds(dayKey);
+  if (!bounds.start) return null;
+  let anchor = bounds.start;
   state.pauseHistory
     .filter(p => sameCallDay(p.startedAt, dayKey))
     .forEach(p => {
