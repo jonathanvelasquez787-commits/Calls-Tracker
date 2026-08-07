@@ -4210,13 +4210,17 @@ function minutesSinceLastProductiveBreakAnchor() {
   return { anchor, productiveMin };
 }
 
-// Un solo aviso por "ciclo" (mismo ancla) — evita repetir el toast/sonido
-// cada segundo mientras sigues sobre el umbral sin haber tomado la pausa
-// todavía. Cambiar de ancla (al tomar una pausa real) habilita un aviso
-// nuevo para el siguiente ciclo. Set en memoria, no persistido — se
-// reinicia solo, a propósito, en cada carga de página (mismo criterio que
-// breakStartAlarmFiredKeys/breakEndAlarmFiredKeys).
-const productiveBreakEarnedFiredKeys = new Set();
+// Bug reportado por el usuario: "cuando sumo 30 min productivos suena la
+// alarma, cuando sumo otros 30 no, cuando sumo otros 30 tampoco y no vuelve
+// a sonar durante todo el shift". Causa: este Set marcaba la ANCLA entera
+// (inicio de turno/última pausa) como "ya avisada" apenas sonaba una vez —
+// sin tomar una pausa real, la ancla nunca cambia, así que jamás volvía a
+// sonar aunque siguieras acumulando minutos productivos. El diseño
+// correcto es avisar en CADA tramo de `earnMin` minutos alcanzado (30, 60,
+// 90...), no solo una vez por turno. Se reemplaza el Set por un Map:
+// ancla → tramo MÁS ALTO ya avisado para esa ancla. Igual que antes, vive
+// en memoria (no persistido) y se reinicia solo en cada carga de página.
+const productiveBreakEarnedFiredTramoByAnchor = new Map();
 
 function checkProductiveBreakEarnedAlarm() {
   const earnMin = Number(settings.productiveBreakEarnMin);
@@ -4224,12 +4228,27 @@ function checkProductiveBreakEarnedAlarm() {
   if (!Number.isFinite(earnMin) || earnMin <= 0) return;
 
   const result = minutesSinceLastProductiveBreakAnchor();
-  if (!result || result.productiveMin < earnMin) return;
+  if (!result) return;
 
-  const key = result.anchor.toISOString();
-  if (productiveBreakEarnedFiredKeys.has(key)) return;
-  productiveBreakEarnedFiredKeys.add(key);
-  toast(`☕ ¡Ganaste un descanso! ${formatMinutes(result.productiveMin)} min productivos — tienes derecho a ${formatMinutes(awardMin)} min.`);
+  // Cuántos tramos completos de `earnMin` minutos ya se acumularon desde la
+  // ancla — 1 al llegar a 30, 2 al llegar a 60, etc. Si un salto grande
+  // (ej. una llamada larga recién importada) lleva de un tramo bajo
+  // directo a uno más alto, se dispara UNA sola vez para el tramo más alto
+  // alcanzado, con el descanso acumulado correcto — no se manda un aviso
+  // separado por cada tramo saltado de por medio.
+  const tramosCompleted = Math.floor(result.productiveMin / earnMin);
+  if (tramosCompleted < 1) return;
+
+  const anchorKey = result.anchor.toISOString();
+  const lastFiredTramo = productiveBreakEarnedFiredTramoByAnchor.get(anchorKey) || 0;
+  if (tramosCompleted <= lastFiredTramo) return;
+  productiveBreakEarnedFiredTramoByAnchor.set(anchorKey, tramosCompleted);
+
+  const totalAwardMin = tramosCompleted * awardMin;
+  const message = lastFiredTramo > 0
+    ? `☕ ¡Otro descanso ganado! ${formatMinutes(result.productiveMin)} min productivos — llevas ${formatMinutes(totalAwardMin)} min de descanso acumulados.`
+    : `☕ ¡Ganaste un descanso! ${formatMinutes(result.productiveMin)} min productivos — tienes derecho a ${formatMinutes(totalAwardMin)} min.`;
+  toast(message);
   playProductiveBreakSound();
 }
 
