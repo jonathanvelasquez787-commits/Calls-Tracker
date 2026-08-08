@@ -2318,8 +2318,9 @@
 <div class="gap-editor-list" id="higherRateWindowsList"></div>
 <div class="modal-actions" style="margin-top:0;">
 <button class="warn" id="addHigherRateWindowBtn" type="button">+ Agregar ventana</button>
+<button class="bad" id="purgeHigherRateWindowsBtn" type="button">🗑️ Borrar pasadas</button>
 </div>
-<p class="alert-hint">Fecha específica + hora de inicio/fin donde aplica un bono sobre la tasa por minuto — Propio lo avisa por correo, no lo expone en los datos que la app importa, así que se configura a mano. Una llamada cuenta COMPLETA (no solo la parte dentro de la ventana) si empieza hasta 5 minutos antes de que la ventana comience, o en cualquier momento antes de que termine, aunque se extienda después.</p>
+<p class="alert-hint">Fecha específica + hora de inicio/fin donde aplica un bono sobre la tasa por minuto — Propio lo avisa por correo, no lo expone en los datos que la app importa, así que se configura a mano. "🗑️ Borrar pasadas" limpia de un click las ventanas con fecha anterior a hoy — hoy y las futuras nunca se tocan, aunque compartan el mismo horario que una ya borrada. Una llamada cuenta COMPLETA (no solo la parte dentro de la ventana) si empieza hasta 5 minutos antes de que la ventana comience, o en cualquier momento antes de que termine, aunque se extienda después.</p>
 <div class="divider"></div>
 <div class="field" style="margin-bottom:4px;">
 <label style="font-weight:900;">Ciclo de pago</label>
@@ -3426,6 +3427,13 @@ $0.72"></textarea>
     // configuración que se solapa. El bono es sobre la duración COMPLETA de
     // la llamada (`durationMin`), nunca recortada a la ventana.
     function higherRateBonusForCall(call) {
+      // Bono ya CONGELADO (ver freezeHigherRateBonusesForWindowIds) — la
+      // ventana que lo generó ya no existe en settings (se borró con "✕" o
+      // "Borrar pasadas"), pero el bono ya devengado por esta llamada real
+      // no debe desaparecer de las ganancias solo porque se limpió la
+      // lista de ventanas. Se devuelve tal cual, sin volver a evaluar
+      // contra las ventanas actuales.
+      if (call.frozenHigherRateBonus) return call.frozenHigherRateBonus;
       const windows = (settings.higherRateWindows || []).filter(w => w.date === call.callDate);
       if (!windows.length) return null;
       const qualifying = windows.filter(w => callQualifiesForHigherRateWindow(call.startISO, w));
@@ -7509,11 +7517,93 @@ function renderWeekSummary() {
     }
 
     function removeHigherRateWindowRowAt(id) {
+      // Bug reportado por el usuario (encontrado en QA automatizado):
+      // borrar UNA ventana (individual, con "✕") le quitaba retroactivamente
+      // el bono ya calculado a cualquier llamada real que ya calificaba para
+      // ella — sin tocar la llamada en absoluto, sus Ganancias del día/ciclo
+      // bajaban solo por limpiar la lista de ventanas. Se congela el bono en
+      // cada llamada afectada ANTES de quitar la ventana (ver
+      // freezeHigherRateBonusesForWindowIds/higherRateBonusForCall).
+      freezeHigherRateBonusesForWindowIds([id]);
       const current = readHigherRateWindowsFromEditor().filter(w => w.id !== id);
       renderHigherRateWindowsEditor(current);
       settings.higherRateWindows = current;
-      saveSettingsOnly();
-      render();
+      // saveAll() en vez de saveSettingsOnly(): ahora también hay que
+      // persistir `calls` (algunas pueden haber quedado con
+      // frozenHigherRateBonus nuevo).
+      saveAll();
+    }
+
+    // Antes de que una ventana de Higher Rate desaparezca de
+    // settings.higherRateWindows (por CUALQUIER camino: "✕" individual o
+    // "🗑️ Borrar pasadas"), congela el bono YA calculado en cualquier
+    // llamada real que actualmente califique para ESA ventana —
+    // higherRateBonusForCall() revisa este campo primero y, si existe, lo
+    // devuelve tal cual sin volver a evaluar contra las ventanas vigentes.
+    // Sin esto, las Ganancias del día/ciclo de una llamada que ya ocurrió
+    // (y cuyo bono ya se le mostró al usuario) cambiarían retroactivamente
+    // solo por hacer limpieza de la lista — dinero que ya se consideró
+    // "ganado" desaparecería sin que la llamada en sí se haya tocado.
+    // Llamadas que califican para una ventana que NO se está borrando
+    // (`idSet` no la incluye) se dejan intactas, sin congelar — siguen
+    // calculándose en vivo como siempre, para que editar esa ventana
+    // (fecha/hora/nivel) mientras sigue vigente se siga reflejando al
+    // instante, tal como ya funcionaba.
+    function freezeHigherRateBonusesForWindowIds(windowIds) {
+      const idSet = new Set(windowIds);
+      let frozenCount = 0;
+      calls.forEach(c => {
+        if (c.frozenHigherRateBonus) return; // ya congelado antes, no recalcular
+        const bonus = higherRateBonusForCall(c);
+        if (bonus && idSet.has(bonus.windowId)) {
+          c.frozenHigherRateBonus = bonus;
+          frozenCount++;
+        }
+      });
+      return frozenCount;
+    }
+
+    // Pedido del usuario: la lista de ventanas de Higher Rate Opportunity
+    // solo crecía — cada semana hay que agregar ventanas nuevas a mano (no
+    // son recurrentes: el horario cambia semana a semana), y borrar las de
+    // una semana ya pasada obligaba a identificarlas una por una en una
+    // lista cada vez más larga, con riesgo de borrar (o dejar) la que no
+    // era si dos semanas comparten días/horarios parecidos. "Borrar
+    // pasadas" filtra SOLO por fecha (`w.date < hoy`, mismo criterio de
+    // `todayRange()` que ya usa el resto de la app) — dos ventanas con
+    // exactamente el mismo horario en semanas distintas nunca se confunden
+    // entre sí porque la fecha completa (no solo día de la semana/hora) es
+    // la que decide. Se lee del editor (no directo de settings) para no
+    // perder ediciones a medio hacer en una fila que no se va a borrar.
+    function purgePastHigherRateWindows() {
+      const current = readHigherRateWindowsFromEditor();
+      const today = todayRange();
+      const isPast = (w) => {
+        const d = callDateToDate(w.date);
+        return !!(d && d < today);
+      };
+      const pastWindows = current.filter(isPast);
+      if (!pastWindows.length) {
+        toast('No hay ventanas de Higher Rate con fecha anterior a hoy.');
+        return;
+      }
+      appConfirm(`¿Borrar ${pastWindows.length} ventana(s) de Higher Rate con fecha anterior a hoy? Las de hoy y futuras no se tocan, aunque compartan horario con las que se borran. Las llamadas que ya recibieron un bono de esas ventanas conservan su bono ganado. No se puede deshacer.`, () => {
+        // Bug reportado por el usuario (encontrado en QA automatizado):
+        // sin esto, purgar borraba las ventanas pasadas de golpe y el bono
+        // que ya habían generado desaparecía retroactivamente de las
+        // ganancias de esos días/ciclo. Se congela ANTES de quitar las
+        // ventanas de settings — ver freezeHigherRateBonusesForWindowIds().
+        const pastIds = pastWindows.map(w => w.id);
+        freezeHigherRateBonusesForWindowIds(pastIds);
+
+        const remaining = current.filter(w => !isPast(w));
+        settings.higherRateWindows = remaining;
+        // saveAll() en vez de saveSettingsOnly(): también hay que persistir
+        // `calls` (varias pueden haber quedado con frozenHigherRateBonus).
+        saveAll();
+        renderHigherRateWindowsEditor(remaining);
+        toast(`${pastWindows.length} ventana(s) pasada(s) borrada(s) — el bono ya ganado por esas llamadas se conserva.`);
+      });
     }
 
 
@@ -8938,6 +9028,7 @@ function render() {
     document.getElementById('productiveBreakSoundFile').addEventListener('change', handleProductiveBreakSoundFile);
     document.getElementById('testProductiveBreakSoundBtn').addEventListener('click', testProductiveBreakSound);
     document.getElementById('addHigherRateWindowBtn').addEventListener('click', addHigherRateWindowRow);
+    document.getElementById('purgeHigherRateWindowsBtn').addEventListener('click', purgePastHigherRateWindows);
     // Delegado en el contenedor: las filas se reconstruyen por completo en
     // cada renderHigherRateWindowsEditor()/addHigherRateWindowRow(), mismo
     // patrón que ya usa #blocksEditorList.
