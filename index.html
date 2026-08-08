@@ -2354,6 +2354,32 @@
 </div>
 </div>
 </div>
+<div aria-hidden="true" class="modal-overlay" id="resetModal">
+<div aria-labelledby="resetModalTitle" aria-modal="true" class="modal-card" role="dialog">
+<div class="modal-head">
+<div>
+<h3 id="resetModalTitle">♻️ Reiniciar</h3>
+<p>Elige qué tan a fondo querés empezar de nuevo.</p>
+</div>
+<button aria-label="Cerrar" class="modal-close" data-close-modal="resetModal" type="button">×</button>
+</div>
+<div class="field" style="margin-bottom:4px;">
+<label style="font-weight:900;">Reiniciar un día</label>
+</div>
+<p class="alert-hint">Borra llamadas, pausas, huecos, la nota y el log SOLO del día activo (<strong id="resetDayLabel">—</strong>). Tu horario, metas y el resto de tus días no se tocan.</p>
+<div class="modal-actions" style="margin-top:0;">
+<button class="warn" id="resetDayBtn" type="button">Reiniciar día activo</button>
+</div>
+<div class="divider"></div>
+<div class="field" style="margin-bottom:4px;">
+<label style="font-weight:900; color: var(--bad);">Zona de peligro</label>
+</div>
+<p class="alert-hint">Borra TODO lo guardado por la app en este navegador: llamadas, turnos, pausas, horario semanal, metas, nombre/emoji — de TODOS los días, no solo el activo. No se puede deshacer.</p>
+<div class="modal-actions" style="margin-top:0;">
+<button class="bad" id="eraseAllDataBtn" type="button">Borrar todos los datos</button>
+</div>
+</div>
+</div>
 <div aria-hidden="true" class="modal-overlay" id="callsModal">
 <div aria-labelledby="callsModalTitle" aria-modal="true" class="modal-card" role="dialog">
 <div class="modal-head">
@@ -2381,14 +2407,6 @@ $0.72"></textarea>
 <input accept="application/json,.json" id="importJsonFile" style="display:none;" type="file"/>
 </div>
 <div class="note">Después de importar, el campo se vacía y las filas se guardan localmente en el navegador. "Importar JSON" restaura un backup ya exportado (reemplaza llamadas/turnos/pausas actuales — tu horario y metas no se tocan).</div>
-<div class="divider"></div>
-<div class="field" style="margin-bottom:4px;">
-<label style="font-weight:900; color: var(--bad);">Zona de peligro</label>
-</div>
-<div class="modal-actions">
-<button class="bad" id="eraseAllDataBtn" type="button">Borrar todos los datos</button>
-</div>
-<div class="note">Borra TODO lo guardado por la app en este navegador: llamadas, turnos, pausas, horario semanal, metas, nombre/emoji — no solo el día activo (eso es "Reiniciar día", en Controles). No se puede deshacer.</div>
 
 </div>
 </div>
@@ -6431,10 +6449,11 @@ function renderWeekSummary() {
     // lo que la app guarda en este navegador: las 3 llaves de localStorage
     // completas (STORAGE_KEY/CALLS_KEY/SETTINGS_KEY), sin dejar nada — ni
     // llamadas, ni turnos/pausas, ni horario semanal, ni metas, ni nombre/
-    // emoji. Vive en su propia "Zona de peligro" dentro de "Pegar Llamadas"
-    // (junto a Exportar/Importar JSON, donde ya vive el resto de la gestión
-    // de datos), separado del grid de Controles para reducir el riesgo de un
-    // tap accidental.
+    // emoji. Vive en su propia "Zona de peligro" dentro del modal de
+    // "♻️ Reiniciar" (antes vivía dentro de "Pegar Llamadas", sin ninguna
+    // relación conceptual con importar texto — se movió junto a "Reiniciar
+    // día", el otro tipo de reinicio, donde alguien buscando "cómo empiezo
+    // de cero" sí tiene una razón para mirar).
     function eraseAllData() {
       appConfirm('¿Borrar TODOS los datos del programa? Esto borra permanentemente todas las llamadas, turnos, pausas, horario semanal, metas y tu nombre/emoji guardados en este navegador. No se puede deshacer. La app queda como recién instalada (con el popup de bienvenida de nuevo).', () => {
         try {
@@ -6461,7 +6480,7 @@ function renderWeekSummary() {
 
         saveAll();
         toast('Todos los datos fueron borrados');
-        closeModal('callsModal');
+        closeModal('resetModal');
 
         // Vuelve a mostrar el popup de bienvenida, igual que la primera vez
         // que se abre la app — settings.onboarded quedó en false (default)
@@ -8815,6 +8834,7 @@ function render() {
       closeModal('callsModal');
       closeModal('shiftModal');
       closeModal('higherRateModal');
+      closeModal('resetModal');
       closeModal('gapModal');
       closeModal('dayNoteModal');
       closeModal('callEditModal');
@@ -8936,7 +8956,12 @@ function render() {
     document.getElementById('breakControlBtn').addEventListener('click', () => togglePause('break'));
     document.getElementById('lunchControlBtn').addEventListener('click', () => togglePause('lunch'));
     document.getElementById('callControlBtn').addEventListener('click', toggleCall);
-    document.getElementById('resetDayMiniBtn').addEventListener('click', resetDay);
+    document.getElementById('resetDayMiniBtn').addEventListener('click', () => {
+      const label = document.getElementById('resetDayLabel');
+      if (label) label.textContent = formatCallDayLabel(getActiveDayKey());
+      openModal('resetModal');
+    });
+    document.getElementById('resetDayBtn').addEventListener('click', resetDay);
     document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
     document.getElementById('eraseAllDataBtn').addEventListener('click', eraseAllData);
     document.getElementById('goalsMiniBtn').addEventListener('click', () => openModal('goalsModal'));
