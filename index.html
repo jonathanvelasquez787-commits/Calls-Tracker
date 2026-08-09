@@ -1953,7 +1953,7 @@
 <button class="hero-action-btn" id="themeToggleBtn" type="button" title="Auto = sigue el modo de tu sistema. Toca para forzar Claro/Oscuro.">🌓 Auto</button>
 <button class="hero-action-btn" id="scheduleMiniBtn" type="button">🗓️ Horario</button>
 <button class="hero-action-btn" id="higherRateMiniBtn" type="button">🔥 Higher Rate</button>
-<button class="hero-action-btn" id="goalsMiniBtn" type="button">🎯 Metas</button>
+<button class="hero-action-btn" id="goalsMiniBtn" type="button">⚙️ Ajustes</button>
 <button class="hero-action-btn danger" id="resetDayMiniBtn" type="button">♻️ Reiniciar</button>
 </div>
 </div>
@@ -2142,7 +2142,7 @@
 <div aria-labelledby="goalsModalTitle" aria-modal="true" class="modal-card" role="dialog">
 <div class="modal-head">
 <div>
-<h3 id="goalsModalTitle">Metas</h3>
+<h3 id="goalsModalTitle">Ajustes</h3>
 <p>Ajusta minutos o dólares. Uno actualiza al otro usando tu tasa por minuto (editable abajo).</p>
 </div>
 <button aria-label="Cerrar" class="modal-close" data-close-modal="goalsModal" type="button">×</button>
@@ -2601,7 +2601,7 @@ $0.72"></textarea>
 <div class="modal-head">
 <div>
 <h3 id="onboardingModalTitle">¡Bienvenido! 👋</h3>
-<p>Antes de empezar, ¿cómo te llamas? Puedes elegir un emoji para tu saludo también. Esto solo se pregunta esta vez — luego lo puedes cambiar cuando quieras desde "Metas".</p>
+<p>Antes de empezar, ¿cómo te llamas? Puedes elegir un emoji para tu saludo también. Esto solo se pregunta esta vez — luego lo puedes cambiar cuando quieras desde "Ajustes".</p>
 </div>
 </div>
 <div class="goal-fields">
@@ -8358,7 +8358,7 @@ function renderSchedule() {
         subtitle.textContent = dayIsEffectivelyOff(dayKey)
           ? 'Día libre según tu horario semanal.'
           : (settings.lateArrivalMode === 'shift'
-              ? 'Tu horario planeado, corrido si llegaste tarde (ver Horario en Ajustes).'
+              ? 'Tu horario planeado, corrido si llegaste tarde (ver "Si llegas tarde a tu turno" en Horario).'
               : 'Tu horario planeado. Si llegas tarde o te pasas de un break, aquí se ve la diferencia contra el plan.');
       }
 
