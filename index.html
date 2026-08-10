@@ -3469,11 +3469,31 @@ $0.72"></textarea>
     function higherRateBonusForCall(call) {
       // Bono ya CONGELADO (ver freezeHigherRateBonusesForWindowIds) — la
       // ventana que lo generó ya no existe en settings (se borró con "✕" o
-      // "Borrar pasadas"), pero el bono ya devengado por esta llamada real
-      // no debe desaparecer de las ganancias solo porque se limpió la
-      // lista de ventanas. Se devuelve tal cual, sin volver a evaluar
-      // contra las ventanas actuales.
-      if (call.frozenHigherRateBonus) return call.frozenHigherRateBonus;
+      // "Borrar pasadas"), pero el NIVEL que había calificado (Bronce/
+      // Silver/Gold) se conserva y el monto se sigue calculando IGUAL que
+      // si la ventana siguiera viva: tarifa del nivel × duración ACTUAL de
+      // la llamada (`call.durationMin`) — nunca el monto fijo guardado al
+      // momento de congelar. Bug reportado por el usuario (encontrado en
+      // QA automatizado): antes se devolvía `call.frozenHigherRateBonus`
+      // tal cual, un snapshot en dólares — si más adelante corregías la
+      // duración de la llamada desde "Editar llamada" (ej. un typo, 20min
+      // en vez de 40min reales), el bono se quedaba pegado al monto viejo
+      // en vez de recalcularse, cosa que SÍ pasaba automáticamente antes
+      // de que la ventana se borrara. `tier`/`windowId` sí quedan fijos
+      // (de ahí "congelado": la ELEGIBILIDAD no depende de que la ventana
+      // siga existiendo), solo el monto en dólares se recalcula en vivo.
+      // Defensivo: si el nivel guardado ya no existe en HIGHER_RATE_TIERS
+      // (no debería pasar nunca, los 3 niveles son fijos), se devuelve el
+      // objeto congelado tal cual en vez de romper.
+      if (call.frozenHigherRateBonus) {
+        const frozenTierMeta = HIGHER_RATE_TIERS[call.frozenHigherRateBonus.tier];
+        if (!frozenTierMeta) return call.frozenHigherRateBonus;
+        return {
+          amount: frozenTierMeta.bonusPerMin * (Number(call.durationMin) || 0),
+          tier: call.frozenHigherRateBonus.tier,
+          windowId: call.frozenHigherRateBonus.windowId,
+        };
+      }
       const windows = (settings.higherRateWindows || []).filter(w => w.date === call.callDate);
       if (!windows.length) return null;
       const qualifying = windows.filter(w => callQualifiesForHigherRateWindow(call.startISO, w));
