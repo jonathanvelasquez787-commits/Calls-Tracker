@@ -2276,6 +2276,21 @@
 </div>
 </div>
 <div class="note">El ciclo siempre dura 14 días desde la fecha que pongas arriba. Se guarda solo. Ajusta esto si tus ciclos reales no coinciden con "Ganancias del ciclo".</div>
+<div class="divider"></div>
+<div class="field" style="margin-bottom:4px;">
+<label style="font-weight:900;">Adherencia</label>
+</div>
+<div class="goal-fields">
+<div class="field">
+<label for="adherenceGraceMinInput">Minutos de gracia</label>
+<input id="adherenceGraceMinInput" inputmode="numeric" min="0" step="1" type="number"/>
+</div>
+<div class="field">
+<label for="adherenceGoalPctInput">Meta de Adherencia (%)</label>
+<input id="adherenceGoalPctInput" inputmode="numeric" max="100" min="1" step="1" type="number"/>
+</div>
+</div>
+<div class="note">"Bloques del día" calcula tu Adherencia minuto a minuto. La ventana de gracia perdona desvíos chicos cerca de cada transición del horario (ej. empezar un break unos minutos tarde) — 0 = cualquier desvío penaliza de inmediato. La Meta es tu objetivo personal de %, se compara contra tu Adherencia del día.</div>
 <div class="modal-actions">
 <button class="primary" data-close-modal="goalsModal" type="button">Listo</button>
 </div>
@@ -2338,7 +2353,7 @@
 <div class="modal-head">
 <div>
 <h3 id="notificationsModalTitle">🔔 Sonido y Notificaciones</h3>
-<p>Volumen, avisos con sonido, Adherencia y Descanso por productividad — configuración global, no depende del día. Separado de Horario porque no es horario: es cómo y cuándo te avisa la app.</p>
+<p>Volumen, avisos con sonido y Descanso por productividad — configuración global, no depende del día. Separado de Horario porque no es horario: es cómo y cuándo te avisa la app.</p>
 </div>
 <button aria-label="Cerrar" class="modal-close" data-close-modal="notificationsModal" type="button">×</button>
 </div>
@@ -2374,23 +2389,6 @@
 </div>
 </div>
 <p class="alert-hint">Suenan mientras la pestaña esté abierta, si aún no le diste al botón correspondiente. 0 = desactivado. Se guardan solos.</p>
-</div>
-<div class="alert-group">
-<div class="alert-group-head">
-<span class="alert-group-icon">🎯</span>
-<span class="alert-group-title">Adherencia</span>
-</div>
-<div class="alert-fields-row">
-<div class="alert-mini-field">
-<label for="adherenceGraceMinInput">Minutos de gracia</label>
-<input id="adherenceGraceMinInput" inputmode="numeric" min="0" step="1" type="number"/>
-</div>
-<div class="alert-mini-field">
-<label for="adherenceGoalPctInput">Meta de Adherencia (%)</label>
-<input id="adherenceGoalPctInput" inputmode="numeric" max="100" min="1" step="1" type="number"/>
-</div>
-</div>
-<p class="alert-hint">"Bloques del día" calcula tu Adherencia minuto a minuto. La ventana de gracia perdona desvíos chicos cerca de cada transición del horario (ej. empezar un break unos minutos tarde) — 0 = cualquier desvío penaliza de inmediato. La Meta es tu objetivo personal de %, se compara contra tu Adherencia del día.</p>
 </div>
 <div class="alert-group">
 <div class="alert-group-head">
@@ -6968,6 +6966,17 @@ function renderWeekSummary() {
       const cyclePayOffsetInput = document.getElementById('cyclePayOffsetInput');
       if (cycleAnchorInput && document.activeElement !== cycleAnchorInput) cycleAnchorInput.value = settings.cycleAnchorDate;
       if (cyclePayOffsetInput && document.activeElement !== cyclePayOffsetInput) cyclePayOffsetInput.value = settings.cyclePayOffsetDays;
+
+      // Pedido del usuario (v146): Adherencia se movió de "🔔 Avisos" a
+      // Ajustes — no tiene nada de sonido/notificación, es una meta +
+      // parámetro de cálculo, igual que "Meta en minutos/dólares" de arriba.
+      // Mismo criterio de sincronización continua que ya usa Ciclo de pago
+      // en este mismo formatGoalFields() (llamado en cada render(), no solo
+      // al abrir el modal).
+      const adherenceGraceMinInput = document.getElementById('adherenceGraceMinInput');
+      if (adherenceGraceMinInput && document.activeElement !== adherenceGraceMinInput) adherenceGraceMinInput.value = settings.adherenceGraceMin;
+      const adherenceGoalPctInput = document.getElementById('adherenceGoalPctInput');
+      if (adherenceGoalPctInput && document.activeElement !== adherenceGoalPctInput) adherenceGoalPctInput.value = settings.adherenceGoalPct;
     }
 
     function formatHHMM(value) {
@@ -7241,10 +7250,6 @@ function renderWeekSummary() {
       if (breakAlertMinInput && document.activeElement !== breakAlertMinInput) breakAlertMinInput.value = settings.alertBeforeBreakMin;
       const breakEndAlertMinInput = document.getElementById('breakEndAlertMinInput');
       if (breakEndAlertMinInput && document.activeElement !== breakEndAlertMinInput) breakEndAlertMinInput.value = settings.alertBeforeBreakEndMin;
-      const adherenceGraceMinInput = document.getElementById('adherenceGraceMinInput');
-      if (adherenceGraceMinInput && document.activeElement !== adherenceGraceMinInput) adherenceGraceMinInput.value = settings.adherenceGraceMin;
-      const adherenceGoalPctInput = document.getElementById('adherenceGoalPctInput');
-      if (adherenceGoalPctInput && document.activeElement !== adherenceGoalPctInput) adherenceGoalPctInput.value = settings.adherenceGoalPct;
       const productiveBreakEarnMinInput = document.getElementById('productiveBreakEarnMinInput');
       if (productiveBreakEarnMinInput && document.activeElement !== productiveBreakEarnMinInput) productiveBreakEarnMinInput.value = settings.productiveBreakEarnMin;
       const productiveBreakAwardMinInput = document.getElementById('productiveBreakAwardMinInput');
