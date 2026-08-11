@@ -2012,6 +2012,7 @@
 <button class="hero-action-btn" id="themeToggleBtn" type="button" title="Auto = sigue el modo de tu sistema. Toca para forzar Claro/Oscuro.">🌓 Auto</button>
 <button class="hero-action-btn" id="scheduleMiniBtn" type="button">🗓️ Horario</button>
 <button class="hero-action-btn" id="higherRateMiniBtn" type="button">🔥 Higher Rate</button>
+<button class="hero-action-btn" id="notificationsMiniBtn" type="button">🔔 Avisos</button>
 <button class="hero-action-btn" id="goalsMiniBtn" type="button">⚙️ Ajustes</button>
 <button class="hero-action-btn danger" id="resetDayMiniBtn" type="button">♻️ Reiniciar</button>
 </div>
@@ -2324,6 +2325,23 @@
 </select>
 <p class="alert-hint">Aplica a todos los días. Solo afecta cómo se ve "Bloques del día" — no cambia tu Adherencia.</p>
 </div>
+<div class="modal-actions">
+<button class="warn" id="copyDayToAllBtn" type="button">Copiar a Lunes-Viernes</button>
+<button class="warn" id="copyWeekendBtn" type="button">Copiar a Sábado-Domingo</button>
+<button class="primary" id="saveShiftWindowBtn" type="button">Guardar día</button>
+<button data-close-modal="shiftModal" type="button">Listo</button>
+</div>
+</div>
+</div>
+<div aria-hidden="true" class="modal-overlay" id="notificationsModal">
+<div aria-labelledby="notificationsModalTitle" aria-modal="true" class="modal-card" role="dialog">
+<div class="modal-head">
+<div>
+<h3 id="notificationsModalTitle">🔔 Sonido y Notificaciones</h3>
+<p>Volumen, avisos con sonido, Adherencia y Descanso por productividad — configuración global, no depende del día. Separado de Horario porque no es horario: es cómo y cuándo te avisa la app.</p>
+</div>
+<button aria-label="Cerrar" class="modal-close" data-close-modal="notificationsModal" type="button">×</button>
+</div>
 <div class="alert-group">
 <div class="alert-group-head">
 <span class="alert-group-icon">🔊</span>
@@ -2410,10 +2428,7 @@
 <p class="alert-hint">Al acumular los minutos productivos configurados desde tu última pausa (o desde el inicio del turno si no has tomado ninguna hoy), suena el aviso — se reinicia cada vez que tomas un Break/Lunch real. Solo informativo, no reserva ni descuenta nada.</p>
 </div>
 <div class="modal-actions">
-<button class="warn" id="copyDayToAllBtn" type="button">Copiar a Lunes-Viernes</button>
-<button class="warn" id="copyWeekendBtn" type="button">Copiar a Sábado-Domingo</button>
-<button class="primary" id="saveShiftWindowBtn" type="button">Guardar día</button>
-<button data-close-modal="shiftModal" type="button">Listo</button>
+<button data-close-modal="notificationsModal" type="button">Listo</button>
 </div>
 </div>
 </div>
@@ -7205,17 +7220,23 @@ function renderWeekSummary() {
       if (endInput) endInput.value = formatHHMM(cfg.end || '16:00');
       renderBlocksEditor(blocks);
       if (lateSelect) lateSelect.value = settings.lateArrivalMode || 'anchor';
-      // Aviso antes del turno: también es global (no por día), mismo criterio
-      // que el Ciclo de pago — se sincroniza sin importar scheduleEditDay.
+      renderDayTabs();
+    }
+
+    // Pedido del usuario (v145): Volumen/Avisos con sonido/Adherencia/
+    // Descanso por productividad salieron de Horario — no son horario, son
+    // cómo y cuándo te avisa la app. Viven en su propio modal
+    // (notificationsModal, botón "🔔 Avisos"), sincronizados aparte de
+    // syncShiftModalFields() — mismos settings globales de siempre (no
+    // dependen de scheduleEditDay ni de ningún día en particular), solo se
+    // sincronizan al abrir SU modal en vez del de Horario.
+    function syncNotificationsModalFields() {
       const shiftAlertMinInput = document.getElementById('shiftAlertMinInput');
       if (shiftAlertMinInput && document.activeElement !== shiftAlertMinInput) shiftAlertMinInput.value = settings.alertBeforeShiftMin;
-      // Volumen maestro: global, mismo criterio (sin depender de scheduleEditDay).
       const masterVolumeInput = document.getElementById('masterVolumeInput');
       const masterVolumeValue = document.getElementById('masterVolumeValue');
       if (masterVolumeInput && document.activeElement !== masterVolumeInput) masterVolumeInput.value = settings.masterVolume;
       if (masterVolumeValue) masterVolumeValue.textContent = `${Math.round(Number(settings.masterVolume) || 0)}%`;
-      // Avisos de Break/Lunch: mismo criterio, globales, independientes del
-      // aviso de turno y entre sí.
       const breakAlertMinInput = document.getElementById('breakAlertMinInput');
       if (breakAlertMinInput && document.activeElement !== breakAlertMinInput) breakAlertMinInput.value = settings.alertBeforeBreakMin;
       const breakEndAlertMinInput = document.getElementById('breakEndAlertMinInput');
@@ -7231,7 +7252,6 @@ function renderWeekSummary() {
       const productiveBreakSoundInput = document.getElementById('productiveBreakSoundInput');
       if (productiveBreakSoundInput && document.activeElement !== productiveBreakSoundInput) productiveBreakSoundInput.value = settings.productiveBreakSound || 'classic';
       syncProductiveBreakCustomSoundUI();
-      renderDayTabs();
     }
 
     // Pedido del usuario: Higher Rate Opportunity vive ahora en su propio
@@ -8994,6 +9014,7 @@ function render() {
       closeModal('callsModal');
       closeModal('shiftModal');
       closeModal('higherRateModal');
+      closeModal('notificationsModal');
       closeModal('resetModal');
       closeModal('gapModal');
       closeModal('dayNoteModal');
@@ -9106,6 +9127,7 @@ function render() {
     });
     document.getElementById('scheduleMiniBtn').addEventListener('click', () => { scheduleEditDay = weekdayKeyForDayKey(getActiveDayKey()); syncShiftModalFields(); openModal('shiftModal'); });
     document.getElementById('higherRateMiniBtn').addEventListener('click', () => { syncHigherRateModalFields(); openModal('higherRateModal'); });
+    document.getElementById('notificationsMiniBtn').addEventListener('click', () => { syncNotificationsModalFields(); openModal('notificationsModal'); });
     document.getElementById('copyDayToAllBtn').addEventListener('click', copyDayToAll);
     document.getElementById('copyWeekendBtn').addEventListener('click', copyDayToWeekend);
     document.getElementById('confirmModalOkBtn').addEventListener('click', () => {
