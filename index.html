@@ -2411,6 +2411,7 @@
 </div>
 <div class="modal-actions">
 <button class="warn" id="copyDayToAllBtn" type="button">Copiar a Lunes-Viernes</button>
+<button class="warn" id="copyWeekendBtn" type="button">Copiar a Sábado-Domingo</button>
 <button class="primary" id="saveShiftWindowBtn" type="button">Guardar día</button>
 <button data-close-modal="shiftModal" type="button">Listo</button>
 </div>
@@ -7070,7 +7071,7 @@ function renderWeekSummary() {
     // el tipo. Antes Break ya era dinámico (v109) pero Lunch seguía siendo
     // un solo objeto fijo, y Trabajo ni siquiera era editable (se
     // auto-calculaba como "lo que sobra"). El motor (buildPlannedSlots/
-    // validateDayConfig/copyDayToAll/applyWeekendCopy) ya fue generalizado
+    // validateDayConfig/copyDayToAll/copyDayToWeekend) ya fue generalizado
     // a `dayConfig.blocks` — esta es la capa de formulario correspondiente.
     const BLOCK_TYPE_LABELS = { work: 'Trabajo', break: 'Break', lunch: 'Lunch' };
 
@@ -7351,29 +7352,13 @@ function renderWeekSummary() {
       return { valid: errors.length === 0, errors };
     }
 
-    // Pedido del usuario: al guardar el horario de un día entre semana,
-    // preguntar si también se quiere aplicar ese mismo horario a Sábado y
-    // Domingo — una opción intermedia entre "solo este día" y "Copiar a
-    // todos los días" (los 7, ya existente). isWeekendDay() evita la
-    // pregunta sin sentido de "¿aplicar Sábado a Sábado y Domingo?" cuando
-    // el día que se acaba de guardar YA es parte del fin de semana.
-    function isWeekendDay(dayKey) {
-      return dayKey === 'sat' || dayKey === 'sun';
-    }
-
-    // Copia off/start/end/blocks de `cfg` a sat y sun. blocks se clona por
-    // separado para cada uno (arreglo independiente, no comparte referencia
-    // ni con `cfg` ni entre sat/sun), para que editar después solo Sábado
-    // (por ejemplo) no mueva también Domingo por referencia compartida.
-    function applyWeekendCopy(cfg) {
-      settings.weeklySchedule.sat = { off: cfg.off, start: cfg.start, end: cfg.end, blocks: cfg.blocks.map(b => ({ ...b })) };
-      settings.weeklySchedule.sun = { off: cfg.off, start: cfg.start, end: cfg.end, blocks: cfg.blocks.map(b => ({ ...b })) };
-      saveSettingsOnly();
-      saveAll();
-      renderDayTabs();
-      toast('Horario aplicado también a Sábado y Domingo');
-    }
-
+    // Pedido del usuario (v144): "Guardar día" debe guardar SOLO el día que
+    // se está editando — antes, además, disparaba un appConfirm automático
+    // preguntando si aplicar ese mismo horario a Sábado y Domingo, un efecto
+    // secundario "colgado" del guardado que no era una acción explícita del
+    // usuario (a diferencia de "Copiar a Lunes-Viernes", que siempre fue su
+    // propio botón). Ese comportamiento se separó en su propio botón, ver
+    // copyDayToWeekend() más abajo.
     function saveShiftWindow() {
       ensureWeeklySchedule();
       const cfg = readScheduleFormAsConfig();
@@ -7393,22 +7378,12 @@ function renderWeekSummary() {
       saveAll();
       renderDayTabs();
       toast(`Horario de ${WEEKDAY_LABELS[scheduleEditDay]} guardado`);
-
-      // Mismo patrón que ya usa copyDayToAll() (appConfirm mientras el modal
-      // de Horario sigue abierto, ver z-index del toast/confirmModal —
-      // ya probado, no es la primera vez que se anida un confirm sobre este
-      // modal). Solo se pregunta si el día recién guardado NO es ya de fin
-      // de semana.
-      if (!isWeekendDay(scheduleEditDay)) {
-        appConfirm(`¿Aplicar este mismo horario (${WEEKDAY_LABELS[scheduleEditDay]}) también a Sábado y Domingo?`, () => applyWeekendCopy(cfg));
-      }
     }
 
     // Pedido del usuario: "Copiar a todos los días" pasa a significar SOLO
     // Lunes-Viernes — Sábado y Domingo quedan excluidos siempre de esta
     // copia masiva (si se quiere aplicar también a fin de semana, está el
-    // aviso aparte que ya ofrece saveShiftWindow() al guardar un día entre
-    // semana, desde v102).
+    // botón aparte "Copiar a Sábado-Domingo", ver copyDayToWeekend()).
     function copyDayToAll() {
       ensureWeeklySchedule();
       const cfg = readScheduleFormAsConfig();
@@ -7432,6 +7407,35 @@ function renderWeekSummary() {
         saveAll();
         renderDayTabs();
         toast('Horario copiado a Lunes-Viernes');
+      });
+    }
+
+    // Pedido del usuario (v144): botón propio "Copiar a Sábado-Domingo",
+    // mismo patrón/nivel que "Copiar a Lunes-Viernes" (copyDayToAll) — antes
+    // esto solo existía como un appConfirm automático disparado al final de
+    // saveShiftWindow(), nunca como una acción explícita que el usuario
+    // pudiera elegir por su cuenta sin haber tocado "Guardar día" primero.
+    // blocks se clona por separado para sat y sun (arreglo independiente,
+    // no comparte referencia ni con cfg ni entre sí), para que editar
+    // después solo Sábado (por ejemplo) no mueva también Domingo por
+    // referencia compartida.
+    function copyDayToWeekend() {
+      ensureWeeklySchedule();
+      const cfg = readScheduleFormAsConfig();
+      if (!cfg) return;
+      const check = validateDayConfig(cfg);
+      if (!check.valid) {
+        toast(check.errors[0]);
+        return;
+      }
+      appConfirm(`¿Copiar este horario (${WEEKDAY_LABELS[scheduleEditDay]}) a Sábado y Domingo? Esto sobreescribe Sábado y Domingo — el resto de los días no se tocan.`, () => {
+        settings.weeklySchedule[scheduleEditDay] = cfg;
+        settings.weeklySchedule.sat = { off: cfg.off, start: cfg.start, end: cfg.end, blocks: cfg.blocks.map(b => ({ ...b })) };
+        settings.weeklySchedule.sun = { off: cfg.off, start: cfg.start, end: cfg.end, blocks: cfg.blocks.map(b => ({ ...b })) };
+        saveSettingsOnly();
+        saveAll();
+        renderDayTabs();
+        toast('Horario copiado a Sábado y Domingo');
       });
     }
 
@@ -9103,6 +9107,7 @@ function render() {
     document.getElementById('scheduleMiniBtn').addEventListener('click', () => { scheduleEditDay = weekdayKeyForDayKey(getActiveDayKey()); syncShiftModalFields(); openModal('shiftModal'); });
     document.getElementById('higherRateMiniBtn').addEventListener('click', () => { syncHigherRateModalFields(); openModal('higherRateModal'); });
     document.getElementById('copyDayToAllBtn').addEventListener('click', copyDayToAll);
+    document.getElementById('copyWeekendBtn').addEventListener('click', copyDayToWeekend);
     document.getElementById('confirmModalOkBtn').addEventListener('click', () => {
       const action = pendingConfirmAction;
       pendingConfirmAction = null;
