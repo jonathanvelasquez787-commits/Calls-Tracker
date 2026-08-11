@@ -2276,21 +2276,6 @@
 </div>
 </div>
 <div class="note">El ciclo siempre dura 14 días desde la fecha que pongas arriba. Se guarda solo. Ajusta esto si tus ciclos reales no coinciden con "Ganancias del ciclo".</div>
-<div class="divider"></div>
-<div class="field" style="margin-bottom:4px;">
-<label style="font-weight:900;">Adherencia</label>
-</div>
-<div class="goal-fields">
-<div class="field">
-<label for="adherenceGraceMinInput">Minutos de gracia</label>
-<input id="adherenceGraceMinInput" inputmode="numeric" min="0" step="1" type="number"/>
-</div>
-<div class="field">
-<label for="adherenceGoalPctInput">Meta de Adherencia (%)</label>
-<input id="adherenceGoalPctInput" inputmode="numeric" max="100" min="1" step="1" type="number"/>
-</div>
-</div>
-<div class="note">"Bloques del día" calcula tu Adherencia minuto a minuto. La ventana de gracia perdona desvíos chicos cerca de cada transición del horario (ej. empezar un break unos minutos tarde) — 0 = cualquier desvío penaliza de inmediato. La Meta es tu objetivo personal de %, se compara contra tu Adherencia del día.</div>
 <div class="modal-actions">
 <button class="primary" data-close-modal="goalsModal" type="button">Listo</button>
 </div>
@@ -2339,6 +2324,23 @@
 <option value="shift">Se corre todo el turno esa misma cantidad de tiempo</option>
 </select>
 <p class="alert-hint">Aplica a todos los días. Solo afecta cómo se ve "Bloques del día" — no cambia tu Adherencia.</p>
+</div>
+<div class="alert-group">
+<div class="alert-group-head">
+<span class="alert-group-icon">🎯</span>
+<span class="alert-group-title">Adherencia</span>
+</div>
+<div class="alert-fields-row">
+<div class="alert-mini-field">
+<label for="adherenceGraceMinInput">Minutos de gracia</label>
+<input id="adherenceGraceMinInput" inputmode="numeric" min="0" step="1" type="number"/>
+</div>
+<div class="alert-mini-field">
+<label for="adherenceGoalPctInput">Meta de Adherencia (%)</label>
+<input id="adherenceGoalPctInput" inputmode="numeric" max="100" min="1" step="1" type="number"/>
+</div>
+</div>
+<p class="alert-hint">"Bloques del día" calcula tu Adherencia minuto a minuto. La ventana de gracia perdona desvíos chicos cerca de cada transición del horario (ej. empezar un break unos minutos tarde) — 0 = cualquier desvío penaliza de inmediato. La Meta es tu objetivo personal de %, se compara contra tu Adherencia del día.</p>
 </div>
 <div class="modal-actions">
 <button class="warn" id="copyDayToAllBtn" type="button">Copiar a Lunes-Viernes</button>
@@ -6966,17 +6968,6 @@ function renderWeekSummary() {
       const cyclePayOffsetInput = document.getElementById('cyclePayOffsetInput');
       if (cycleAnchorInput && document.activeElement !== cycleAnchorInput) cycleAnchorInput.value = settings.cycleAnchorDate;
       if (cyclePayOffsetInput && document.activeElement !== cyclePayOffsetInput) cyclePayOffsetInput.value = settings.cyclePayOffsetDays;
-
-      // Pedido del usuario (v146): Adherencia se movió de "🔔 Avisos" a
-      // Ajustes — no tiene nada de sonido/notificación, es una meta +
-      // parámetro de cálculo, igual que "Meta en minutos/dólares" de arriba.
-      // Mismo criterio de sincronización continua que ya usa Ciclo de pago
-      // en este mismo formatGoalFields() (llamado en cada render(), no solo
-      // al abrir el modal).
-      const adherenceGraceMinInput = document.getElementById('adherenceGraceMinInput');
-      if (adherenceGraceMinInput && document.activeElement !== adherenceGraceMinInput) adherenceGraceMinInput.value = settings.adherenceGraceMin;
-      const adherenceGoalPctInput = document.getElementById('adherenceGoalPctInput');
-      if (adherenceGoalPctInput && document.activeElement !== adherenceGoalPctInput) adherenceGoalPctInput.value = settings.adherenceGoalPct;
     }
 
     function formatHHMM(value) {
@@ -7229,6 +7220,13 @@ function renderWeekSummary() {
       if (endInput) endInput.value = formatHHMM(cfg.end || '16:00');
       renderBlocksEditor(blocks);
       if (lateSelect) lateSelect.value = settings.lateArrivalMode || 'anchor';
+      // Pedido del usuario (v147): Adherencia vuelve a Horario (pasó por
+      // Avisos en v145 y por Ajustes en v146) — global, no depende de
+      // scheduleEditDay, mismo criterio que ya usaba antes de v145.
+      const adherenceGraceMinInput = document.getElementById('adherenceGraceMinInput');
+      if (adherenceGraceMinInput && document.activeElement !== adherenceGraceMinInput) adherenceGraceMinInput.value = settings.adherenceGraceMin;
+      const adherenceGoalPctInput = document.getElementById('adherenceGoalPctInput');
+      if (adherenceGoalPctInput && document.activeElement !== adherenceGoalPctInput) adherenceGoalPctInput.value = settings.adherenceGoalPct;
       renderDayTabs();
     }
 
