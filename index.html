@@ -221,14 +221,32 @@
       margin-bottom: 10px;
     }
 
+    /* Pedido del usuario (v154 seguía partiendo "Ajustes" a una segunda
+       línea solo, en varios anchos de pantalla distintos — mobile Y
+       desktop): en vez de seguir ajustando padding/font-size a mano para
+       cada ancho posible (juego sin fin), se aplica el MISMO patrón que ya
+       usan los chips del header (.chips, ver ese comentario más abajo) —
+       flex-wrap:nowrap + scroll horizontal con la barra nativa oculta
+       (scrollbar-width:none + ::-webkit-scrollbar) en vez de wrap. Los 5
+       botones quedan SIEMPRE en una sola fila sin importar el ancho — si no
+       caben todos, se desliza en vez de partirse, nunca un botón solo en su
+       propia línea. flex-shrink:0 en cada botón evita que se compriman en
+       vez de desbordar. */
     .hero-actions {
       display: flex;
       align-items: center;
       justify-content: flex-start;
       gap: 8px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
       margin-bottom: 22px;
     }
+
+    .hero-actions::-webkit-scrollbar { display: none; }
+
+    .hero-actions .hero-action-btn { flex-shrink: 0; }
 
     .hero-action-btn {
       display: inline-flex;
