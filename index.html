@@ -221,6 +221,25 @@
       flex-wrap: wrap;
     }
 
+    /* Pedido del usuario: "Reiniciar" (única acción de peligro del grupo)
+       se ve mejor arriba a la derecha, por encima de "Ajustes", en vez de
+       compitiendo por espacio en la misma fila que el resto de botones.
+       Columna de 2 filas alineada a la derecha: Reiniciar solo arriba,
+       .hero-actions (los otros 5 botones) debajo — como Ajustes queda de
+       último en esa fila (el más a la derecha), termina justo debajo de
+       Reiniciar sin necesidad de position:absolute ni cálculos de píxeles,
+       se acomoda solo en cualquier ancho de pantalla. */
+    .hero-actions-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+    }
+
+    .hero-reset-btn {
+      align-self: flex-end;
+    }
+
     .hero-action-btn {
       display: inline-flex;
       align-items: center;
@@ -1459,8 +1478,32 @@
     }
 
     .block-row .field {
-      flex: 1 1 140px;
+      flex: 1 1 130px;
       margin: 0;
+      padding: 7px 9px;
+      gap: 2px;
+    }
+
+    /* Pedido del usuario: los campos dentro de .block-row (Horario > Bloques,
+       Higher Rate > ventanas) se veían demasiado grandes en mobile — cada
+       campo (Tipo/Inicio/Fin/Meta productiva o Fecha/Inicio/Fin/Nivel) tenía
+       el mismo padding/tipografía grande que el resto de la app (pensado
+       para Metas/Editar llamada, donde SÍ conviene ese tamaño), y encima el
+       <select> de Tipo/Nivel suma su propio padding aparte (ver `select,
+       .alert-select` más arriba) al del .field que lo envuelve — dos
+       paddings grandes apilados. Se compacta ambos, SOLO dentro de
+       .block-row, sin tocar `.field`/`select` en ningún otro lado de la app. */
+    .block-row .field label {
+      font-size: 10.5px;
+    }
+
+    .block-row .field input {
+      font-size: 13px;
+    }
+
+    .block-row select {
+      padding: 7px 9px;
+      font-size: 13px;
     }
 
     .block-row .block-remove-btn {
@@ -1535,6 +1578,29 @@
     @media (max-width: 760px) {
       .gap-row {
         grid-template-columns: 1fr;
+      }
+      /* Pedido del usuario: cada campo de .block-row (Horario > Bloques,
+         Higher Rate > ventanas) ocupaba su propia fila completa en mobile
+         (flex-wrap con flex-basis 130px no alcanzaba a meter 2 por fila en
+         un ancho tan angosto) — la tarjeta quedaba muy larga. Grid fijo de 2
+         columnas fuerza 2 campos por fila (Tipo+Inicio, Fin+Meta productiva
+         / Fecha+Inicio, Fin+Nivel) en vez de 1, recortando la altura total a
+         la mitad. El botón de eliminar (✕) se independiza a su propia fila
+         completa, alineado a la derecha — mezclarlo en la grilla de 2
+         columnas junto a un campo se veía descuadrado. */
+      .block-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: stretch;
+        gap: 6px;
+        padding: 8px 9px;
+      }
+      .block-row .block-remove-btn {
+        grid-column: 1 / -1;
+        justify-self: end;
+        height: 30px;
+        width: 30px;
+        padding: 0;
       }
     }
 
@@ -1956,7 +2022,8 @@
       .hero { margin-bottom: 10px; }
       .brand { padding: 6px 10px; font-size: 10.5px; }
       .hero-top-row { margin-bottom: 8px; }
-      .hero-action-btn { padding: 6px 9px; font-size: 11px; }
+      .hero-actions { gap: 5px; }
+      .hero-action-btn { padding: 5px 7px; font-size: 10.5px; gap: 4px; }
       .title-row { flex-direction: column; align-items: flex-start; gap: 2px; }
       .hero h1 { font-size: 21px; letter-spacing: -.03em; }
       .subtle { font-size: 12.5px; margin-top: 4px; }
@@ -1996,6 +2063,17 @@
         mask-image: none;
       }
       .chip { padding: 6px 10px; font-size: 11.5px; }
+      /* Pedido del usuario: "Día activo" (.summary-pill) se quedaba en su
+         propio tamaño de escritorio en mobile — mientras el chip de Estado
+         (.chip, arriba) ya se compactaba, .summary-pill nunca tuvo su propio
+         ajuste mobile, así que junto con sus botones ‹/› (26px) y el
+         date-picker (max-width 150px) terminaba siendo mucho más ancho que
+         "No iniciado" y no cabían los dos en la misma fila. Se compacta al
+         mismo tamaño (mismo padding/font-size que .chip) para que quepan
+         lado a lado. */
+      .summary-pill { padding: 6px 8px; font-size: 11.5px; gap: 5px; border-radius: 12px; }
+      .day-nav-btn { width: 20px; height: 20px; font-size: 11px; border-radius: 6px; }
+      #daySelector { max-width: 92px; }
       .goal-stack { justify-items: start; }
       .goal-pair { justify-content: flex-start; }
       .table-mobile-list { display: grid; }
@@ -2008,13 +2086,15 @@
 <div>
 <div class="hero-top-row">
 <div class="brand"><span class="dot-state"></span>Propio Shift Tracker</div>
+<div class="hero-actions-stack">
+<button class="hero-action-btn danger hero-reset-btn" id="resetDayMiniBtn" type="button">♻️ Reiniciar</button>
 <div class="hero-actions">
 <button class="hero-action-btn" id="themeToggleBtn" type="button" title="Auto = sigue el modo de tu sistema. Toca para forzar Claro/Oscuro.">🌓 Auto</button>
 <button class="hero-action-btn" id="scheduleMiniBtn" type="button">🗓️ Horario</button>
 <button class="hero-action-btn" id="higherRateMiniBtn" type="button">🔥 Higher Rate</button>
 <button class="hero-action-btn" id="notificationsMiniBtn" type="button">🔔 Avisos</button>
 <button class="hero-action-btn" id="goalsMiniBtn" type="button">⚙️ Ajustes</button>
-<button class="hero-action-btn danger" id="resetDayMiniBtn" type="button">♻️ Reiniciar</button>
+</div>
 </div>
 </div>
 <div class="title-row">
