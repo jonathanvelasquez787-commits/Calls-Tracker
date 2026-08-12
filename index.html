@@ -209,9 +209,9 @@
        que dejaba un lado más alto que el otro y el hueco no se lograba
        corregir de forma confiable con solo align-items. Los otros 5 botones
        (Auto/Horario/Higher Rate/Avisos/Ajustes) pasan a su PROPIA fila
-       completa debajo (.hero-actions), separada — así Ajustes termina
-       cerca del borde derecho de esa fila, aproximadamente debajo de
-       Reiniciar, sin necesidad de que ambas cosas compartan contenedor. */
+       completa debajo (.hero-actions), separada, alineados a la izquierda
+       (bajo la marca) — pedido del usuario: se ven mejor ahí que a la
+       derecha (bajo Reiniciar, que es como arrancó este cambio). */
     .hero-top-row {
       display: flex;
       align-items: center;
@@ -224,7 +224,7 @@
     .hero-actions {
       display: flex;
       align-items: center;
-      justify-content: flex-end;
+      justify-content: flex-start;
       gap: 8px;
       flex-wrap: wrap;
       margin-bottom: 22px;
@@ -2011,9 +2011,9 @@
       .hero, .card, .table-card, .list-card, .mini { padding: 14px; }
       .hero { margin-bottom: 10px; }
       .brand { padding: 6px 10px; font-size: 10.5px; }
-      .hero-top-row { margin-bottom: 6px; }
-      .hero-actions { gap: 5px; margin-bottom: 14px; }
-      .hero-action-btn { padding: 5px 7px; font-size: 10.5px; gap: 4px; }
+      .hero-top-row { margin-bottom: 10px; }
+      .hero-actions { gap: 6px; margin-bottom: 18px; }
+      .hero-action-btn { padding: 6px 10px; font-size: 11px; gap: 5px; }
       .title-row { flex-direction: column; align-items: flex-start; gap: 2px; }
       .hero h1 { font-size: 21px; letter-spacing: -.03em; }
       .subtle { font-size: 12.5px; margin-top: 4px; }
