@@ -248,16 +248,30 @@
 
     .hero-actions .hero-action-btn { flex-shrink: 0; }
 
+    /* Pedido del usuario: en modo escritorio (pantallas anchas) la fila de
+       botones se ve mejor alineada a la derecha — en mobile se queda a la
+       izquierda (bajo la marca, ver comentario en .hero-top-row) porque ahí
+       la fila normalmente ocupa todo el ancho disponible de cualquier
+       forma, sin espacio de sobra que "alinear". min-width en vez de
+       max-width: es la contraparte del breakpoint mobile de 760px que ya
+       usa el resto de la app, sin duplicar ese número mágico en un tercer
+       lugar. */
+    @media (min-width: 761px) {
+      .hero-actions {
+        justify-content: flex-end;
+      }
+    }
+
     .hero-action-btn {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 7px 12px;
+      gap: 5px;
+      padding: 6px 10px;
       border-radius: 12px;
       border: 1px solid var(--line);
       background: rgba(255,255,255,.04);
       color: var(--text);
-      font-size: 12.5px;
+      font-size: 11.5px;
       font-weight: 800;
       cursor: pointer;
       white-space: nowrap;
@@ -2030,8 +2044,8 @@
       .hero { margin-bottom: 10px; }
       .brand { padding: 6px 10px; font-size: 10.5px; }
       .hero-top-row { margin-bottom: 10px; }
-      .hero-actions { gap: 6px; margin-bottom: 18px; }
-      .hero-action-btn { padding: 6px 10px; font-size: 11px; gap: 5px; }
+      .hero-actions { gap: 5px; margin-bottom: 18px; }
+      .hero-action-btn { padding: 5px 8px; font-size: 10.5px; gap: 4px; }
       .title-row { flex-direction: column; align-items: flex-start; gap: 2px; }
       .hero h1 { font-size: 21px; letter-spacing: -.03em; }
       .subtle { font-size: 12.5px; margin-top: 4px; }
