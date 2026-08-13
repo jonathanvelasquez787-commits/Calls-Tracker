@@ -2300,14 +2300,27 @@
 </div>
 </div>
 </div>
-</section><section class="card span-12">
-<div class="section-title">
-<div>
+</section>
+<!-- Pedido del usuario: "Ganancias de hoy" debe ser expandible y abrir
+     expandida por defecto — antes era una tarjeta fija (`section.card`),
+     mismo patrón que ya usan "Ganancias del ciclo"/"Bloques del día" (ver
+     `<details class="accordion-card" open>` más abajo), solo que sin
+     convertir. `goalPctBadge` (el % de meta) se movió al <summary>, junto
+     al chevron, para que se siga viendo de un vistazo aunque el usuario la
+     colapse a mano — igual que el resto de la sección, ningún id cambió,
+     así que renderHeader() sigue actualizándolo exactamente igual. -->
+<details class="accordion-card" id="earningsAccordion" open>
+<summary>
+<div class="accordion-head">
 <h2 id="earningsSectionTitle">Ganancias de hoy</h2>
 <p>Gana, meta y margen del día, de un vistazo.</p>
 </div>
+<div style="display:flex; align-items:center; gap:10px;">
 <div class="goal-badge" id="goalPctBadge">0%</div>
+<div class="accordion-chevron">⌄</div>
 </div>
+</summary>
+<div class="accordion-body">
 <div class="big-earnings">
 <div class="earn-row">
 <div>
@@ -2335,7 +2348,8 @@
 <span class="tick" data-threshold="100" style="left:100%"></span><span class="tick-label" data-threshold="100" style="left:100%">100%</span>
 </div>
 </div>
-</section>
+</div>
+</details>
 <details class="accordion-card">
 <summary>
   <div class="accordion-head">
