@@ -63,69 +63,90 @@
        modo claro (prefers-color-scheme) Y el usuario no forzó "Oscuro" a
        propósito (html.theme-dark). Si el usuario fuerza "Claro" (ver regla
        html.theme-light más abajo), esa aplica siempre sin importar el
-       sistema — misma paleta, solo cambia cuándo se activa. */
+       sistema — misma paleta, solo cambia cuándo se activa.
+       Pedido del usuario: paleta "estilo GTA 6" (Vice City) para el modo
+       claro, versión "bold" (confirmada explícitamente) — el fondo ya no es
+       gris/azulado neutro, es un degradado tipo atardecer (--bg-2 rosa
+       pálido arriba → --bg crema abajo, vía el linear-gradient de `body`
+       que ya existía) reforzado con los mismos radiales --glow-1 (magenta,
+       arriba-izquierda) / --glow-2 (turquesa, arriba-derecha) que el CSS de
+       `body` ya dibuja — solo se les sube la opacidad y se cambia el matiz,
+       sin tocar la estructura del fondo. --cyan/--teal/--blue/--pink pasan
+       a turquesa/violeta/magenta vibrantes (identidad "Vice City"); --good/
+       --warn/--bad se MANTIENEN en su familia de color de siempre (verde/
+       naranja/rojo) — son semánticos (bien/aviso/mal) en toda la app, así
+       que se les sube saturación pero no se les cambia el matiz, para no
+       romper esa asociación. --pale-cyan/--pale-teal/--pale-indigo también
+       se mantienen en su familia (turquesa/turquesa-verde/violeta-índigo)
+       porque van pintados sobre fondos con tinte FIJO de ese mismo color
+       (ej. #shiftControlBtn/#lunchControlBtn, ver esas reglas más abajo) —
+       cambiarles el matiz aquí desentonaría con esos fondos fijos. --text/
+       --muted se oscurecen hacia un morado-negro/malva en vez del gris-azul
+       neutro de antes, para que hasta el texto se sienta parte de la
+       paleta. */
     @media (prefers-color-scheme: light) {
       :root:not(.theme-dark) {
         color-scheme: light;
-        --bg: #f3f6fb;
-        --bg-2: #eaf0f8;
-        --panel: rgba(255, 255, 255, 0.86);
-        --panel-2: rgba(255, 255, 255, 0.97);
-        --text: #121a2c;
-        --muted: #5b6b85;
-        --line: rgba(18, 26, 44, 0.12);
-        --line-2: rgba(18, 26, 44, 0.18);
-        --cyan: #0891b2;
-        --teal: #0d9488;
-        --blue: #4f5fd8;
-        --pink: #db2f6f;
-        --good: #15803d;
-        --warn: #b45309;
-        --bad: #dc2626;
-        --shadow: 0 16px 40px rgba(30, 41, 59, .10);
-        --glow-1: rgba(8, 145, 178, .06);
-        --glow-2: rgba(13, 148, 136, .05);
-        --pale-good: #0f7a3d;
-        --pale-warn: #92400e;
-        --pale-bad: #b91c3c;
-        --pale-cyan: #0e6b85;
-        --pale-teal: #0a6b5e;
-        --pale-indigo: #3730a3;
+        --bg: #fdf6f1;
+        --bg-2: #fdebf2;
+        --panel: rgba(255, 250, 247, 0.86);
+        --panel-2: rgba(255, 253, 251, 0.97);
+        --text: #241130;
+        --muted: #7a5570;
+        --line: rgba(120, 40, 90, 0.12);
+        --line-2: rgba(120, 40, 90, 0.20);
+        --cyan: #0599b8;
+        --teal: #0f9b7e;
+        --blue: #6d3fd1;
+        --pink: #e0257e;
+        --good: #1f9d55;
+        --warn: #b8590c;
+        --bad: #e0264f;
+        --shadow: 0 16px 40px rgba(150, 30, 90, .14);
+        --glow-1: rgba(224, 37, 126, .18);
+        --glow-2: rgba(10, 166, 163, .16);
+        --pale-good: #157a41;
+        --pale-warn: #a85e0a;
+        --pale-bad: #b81f42;
+        --pale-cyan: #036f86;
+        --pale-teal: #0a7d68;
+        --pale-indigo: #4c2f9e;
       }
     }
 
     /* Forzado manual (botón de tema en el header) — misma paleta clara de
-       arriba, pero aplicada siempre que el usuario elija "Claro", sin
-       depender del sistema. html.theme-dark (forzar "Oscuro") no necesita
-       una regla propia: como no redefine nada distinto del :root por
-       default, y además desactiva la regla @media de arriba (selector
-       :not(.theme-dark)), el resultado ya es el oscuro de siempre. */
+       arriba (Vice City, ver comentario junto a :root), pero aplicada
+       siempre que el usuario elija "Claro", sin depender del sistema.
+       html.theme-dark (forzar "Oscuro") no necesita una regla propia: como
+       no redefine nada distinto del :root por default, y además desactiva
+       la regla @media de arriba (selector :not(.theme-dark)), el resultado
+       ya es el oscuro de siempre. */
     html.theme-light {
       color-scheme: light;
-      --bg: #f3f6fb;
-      --bg-2: #eaf0f8;
-      --panel: rgba(255, 255, 255, 0.86);
-      --panel-2: rgba(255, 255, 255, 0.97);
-      --text: #121a2c;
-      --muted: #5b6b85;
-      --line: rgba(18, 26, 44, 0.12);
-      --line-2: rgba(18, 26, 44, 0.18);
-      --cyan: #0891b2;
-      --teal: #0d9488;
-      --blue: #4f5fd8;
-      --pink: #db2f6f;
-      --good: #15803d;
-      --warn: #b45309;
-      --bad: #dc2626;
-      --shadow: 0 16px 40px rgba(30, 41, 59, .10);
-      --glow-1: rgba(8, 145, 178, .06);
-      --glow-2: rgba(13, 148, 136, .05);
-      --pale-good: #0f7a3d;
-      --pale-warn: #92400e;
-      --pale-bad: #b91c3c;
-      --pale-cyan: #0e6b85;
-      --pale-teal: #0a6b5e;
-      --pale-indigo: #3730a3;
+      --bg: #fdf6f1;
+      --bg-2: #fdebf2;
+      --panel: rgba(255, 250, 247, 0.86);
+      --panel-2: rgba(255, 253, 251, 0.97);
+      --text: #241130;
+      --muted: #7a5570;
+      --line: rgba(120, 40, 90, 0.12);
+      --line-2: rgba(120, 40, 90, 0.20);
+      --cyan: #0599b8;
+      --teal: #0f9b7e;
+      --blue: #6d3fd1;
+      --pink: #e0257e;
+      --good: #1f9d55;
+      --warn: #b8590c;
+      --bad: #e0264f;
+      --shadow: 0 16px 40px rgba(150, 30, 90, .14);
+      --glow-1: rgba(224, 37, 126, .18);
+      --glow-2: rgba(10, 166, 163, .16);
+      --pale-good: #157a41;
+      --pale-warn: #a85e0a;
+      --pale-bad: #b81f42;
+      --pale-cyan: #036f86;
+      --pale-teal: #0a7d68;
+      --pale-indigo: #4c2f9e;
     }
 
     * { box-sizing: border-box; }
