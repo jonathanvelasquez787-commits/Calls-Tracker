@@ -64,89 +64,88 @@
        propósito (html.theme-dark). Si el usuario fuerza "Claro" (ver regla
        html.theme-light más abajo), esa aplica siempre sin importar el
        sistema — misma paleta, solo cambia cuándo se activa.
-       Pedido del usuario: paleta "estilo GTA 6" (Vice City) para el modo
-       claro, versión "bold" (confirmada explícitamente) — el fondo ya no es
-       gris/azulado neutro, es un degradado tipo atardecer (--bg-2 rosa
-       pálido arriba → --bg crema abajo, vía el linear-gradient de `body`
-       que ya existía) reforzado con los mismos radiales --glow-1 (magenta,
-       arriba-izquierda) / --glow-2 (turquesa, arriba-derecha) que el CSS de
-       `body` ya dibuja — solo se les sube la opacidad y se cambia el matiz,
-       sin tocar la estructura del fondo. --cyan/--teal/--blue/--pink pasan
-       a turquesa/violeta/magenta vibrantes (identidad "Vice City"); --good/
-       --warn/--bad se MANTIENEN en su familia de color de siempre (verde/
-       naranja/rojo) — son semánticos (bien/aviso/mal) en toda la app, así
-       que se les sube saturación pero no se les cambia el matiz, para no
-       romper esa asociación. --pale-cyan/--pale-teal/--pale-indigo también
-       se mantienen en su familia (turquesa/turquesa-verde/violeta-índigo)
-       porque van pintados sobre fondos con tinte FIJO de ese mismo color
-       (ej. #shiftControlBtn/#lunchControlBtn, ver esas reglas más abajo) —
-       cambiarles el matiz aquí desentonaría con esos fondos fijos. --text/
-       --muted se oscurecen hacia un morado-negro/malva en vez del gris-azul
-       neutro de antes, para que hasta el texto se sienta parte de la
-       paleta. */
+       Pedido del usuario: paleta "Vice City" (estética del tráiler de GTA 6
+       — rosa magenta/turquesa/morado/naranja atardecer) para el modo claro,
+       en versión SUTIL (confirmada explícitamente): el fondo se queda casi
+       blanco/crema (solo se calienta un poco el tono, de azulado a crema —
+       --bg/--bg-2/--panel/--panel-2), y --text/--muted/--line/--line-2 NO
+       se tocan — el texto sigue leyéndose exactamente igual que antes. Los
+       colores de la paleta viven solo en los acentos/botones/estados:
+       --cyan/--teal ahora son turquesa, --blue pasa a morado (el nombre de
+       la variable no cambió para no tocar cada sitio que la usa, pero su
+       rol pasa de "azul" a "acento morado"), --pink es el magenta de marca,
+       y --good/--warn/--bad se recorren dentro de su misma familia semántica
+       (siguen leyéndose como bien/aviso/mal) pero con el tinte de la
+       paleta: verde-turquesa / naranja atardecer / rosa-rojo. --shadow y
+       --glow-1/--glow-2 (los resplandores radiales del fondo, ver body{})
+       se tiñen sutilmente de rosa/turquesa en vez del gris-azulado neutro
+       de antes — es la pincelada más visible de la paleta, a propósito
+       discreta (5-6% de opacidad, igual que antes). --pale-* (colores de
+       texto sobre fondos con tinte, ej. los badges .tag) se ajustan en
+       conjunto con su acento correspondiente para mantener buen contraste
+       sobre fondo claro, mismo criterio que ya usaban. */
     @media (prefers-color-scheme: light) {
       :root:not(.theme-dark) {
         color-scheme: light;
-        --bg: #fdf6f1;
-        --bg-2: #fdebf2;
-        --panel: rgba(255, 250, 247, 0.86);
-        --panel-2: rgba(255, 253, 251, 0.97);
-        --text: #241130;
-        --muted: #7a5570;
-        --line: rgba(120, 40, 90, 0.12);
-        --line-2: rgba(120, 40, 90, 0.20);
-        --cyan: #0599b8;
-        --teal: #0f9b7e;
-        --blue: #6d3fd1;
-        --pink: #e0257e;
-        --good: #1f9d55;
-        --warn: #b8590c;
-        --bad: #e0264f;
-        --shadow: 0 16px 40px rgba(150, 30, 90, .14);
-        --glow-1: rgba(224, 37, 126, .18);
-        --glow-2: rgba(10, 166, 163, .16);
-        --pale-good: #157a41;
-        --pale-warn: #a85e0a;
-        --pale-bad: #b81f42;
-        --pale-cyan: #036f86;
-        --pale-teal: #0a7d68;
-        --pale-indigo: #4c2f9e;
+        --bg: #f8f3ef;
+        --bg-2: #f1e7e1;
+        --panel: rgba(255, 253, 251, 0.87);
+        --panel-2: rgba(255, 254, 253, 0.97);
+        --text: #121a2c;
+        --muted: #5b6b85;
+        --line: rgba(18, 26, 44, 0.12);
+        --line-2: rgba(18, 26, 44, 0.18);
+        --cyan: #0aa8a0;
+        --teal: #0f9e8c;
+        --blue: #7c4dd1;
+        --pink: #e0148e;
+        --good: #128a5e;
+        --warn: #e2661c;
+        --bad: #d81f56;
+        --shadow: 0 16px 40px rgba(94, 30, 74, .10);
+        --glow-1: rgba(224, 20, 142, .05);
+        --glow-2: rgba(10, 168, 160, .05);
+        --pale-good: #0d6b4a;
+        --pale-warn: #a34e12;
+        --pale-bad: #a01345;
+        --pale-cyan: #0a7770;
+        --pale-teal: #0a6b5e;
+        --pale-indigo: #5b32a8;
       }
     }
 
     /* Forzado manual (botón de tema en el header) — misma paleta clara de
-       arriba (Vice City, ver comentario junto a :root), pero aplicada
-       siempre que el usuario elija "Claro", sin depender del sistema.
-       html.theme-dark (forzar "Oscuro") no necesita una regla propia: como
-       no redefine nada distinto del :root por default, y además desactiva
-       la regla @media de arriba (selector :not(.theme-dark)), el resultado
-       ya es el oscuro de siempre. */
+       arriba, pero aplicada siempre que el usuario elija "Claro", sin
+       depender del sistema. html.theme-dark (forzar "Oscuro") no necesita
+       una regla propia: como no redefine nada distinto del :root por
+       default, y además desactiva la regla @media de arriba (selector
+       :not(.theme-dark)), el resultado ya es el oscuro de siempre. */
     html.theme-light {
       color-scheme: light;
-      --bg: #fdf6f1;
-      --bg-2: #fdebf2;
-      --panel: rgba(255, 250, 247, 0.86);
-      --panel-2: rgba(255, 253, 251, 0.97);
-      --text: #241130;
-      --muted: #7a5570;
-      --line: rgba(120, 40, 90, 0.12);
-      --line-2: rgba(120, 40, 90, 0.20);
-      --cyan: #0599b8;
-      --teal: #0f9b7e;
-      --blue: #6d3fd1;
-      --pink: #e0257e;
-      --good: #1f9d55;
-      --warn: #b8590c;
-      --bad: #e0264f;
-      --shadow: 0 16px 40px rgba(150, 30, 90, .14);
-      --glow-1: rgba(224, 37, 126, .18);
-      --glow-2: rgba(10, 166, 163, .16);
-      --pale-good: #157a41;
-      --pale-warn: #a85e0a;
-      --pale-bad: #b81f42;
-      --pale-cyan: #036f86;
-      --pale-teal: #0a7d68;
-      --pale-indigo: #4c2f9e;
+      --bg: #f8f3ef;
+      --bg-2: #f1e7e1;
+      --panel: rgba(255, 253, 251, 0.87);
+      --panel-2: rgba(255, 254, 253, 0.97);
+      --text: #121a2c;
+      --muted: #5b6b85;
+      --line: rgba(18, 26, 44, 0.12);
+      --line-2: rgba(18, 26, 44, 0.18);
+      --cyan: #0aa8a0;
+      --teal: #0f9e8c;
+      --blue: #7c4dd1;
+      --pink: #e0148e;
+      --good: #128a5e;
+      --warn: #e2661c;
+      --bad: #d81f56;
+      --shadow: 0 16px 40px rgba(94, 30, 74, .10);
+      --glow-1: rgba(224, 20, 142, .05);
+      --glow-2: rgba(10, 168, 160, .05);
+      --pale-good: #0d6b4a;
+      --pale-warn: #a34e12;
+      --pale-bad: #a01345;
+      --pale-cyan: #0a7770;
+      --pale-teal: #0a6b5e;
+      --pale-indigo: #5b32a8;
     }
 
     * { box-sizing: border-box; }
