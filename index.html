@@ -2101,9 +2101,151 @@
       .table-mobile-list { display: grid; }
       .table-desktop { display: none; }
     }
+
+    /* Pedido del usuario ("como el de Mochi", con capturas de referencia):
+       barra fija pegada arriba de la pantalla (position:fixed, no sticky —
+       así queda visible siempre, no solo al hacer scroll) que aparece SOLO
+       mientras hay una llamada, Break o Lunch en curso (ver
+       liveActivityInfo()/updateLiveActivityBar()). Reemplaza tener que subir
+       hasta "Controles" para ver el cronómetro en vivo o terminar la
+       actividad. Prioridad confirmada por el usuario: si llamada Y Break/
+       Lunch están activos a la vez (la app ya permite ambos sin bloquearse),
+       se muestra la llamada — nunca ambas filas a la vez, una sola. El color
+       de acento (--live-bar-color/--live-bar-rgb, seteados por JS en cada
+       tick) reutiliza los mismos colores que ya usa el dot de Estado en el
+       header (cian=llamada, amarillo=Break, azul=Lunch), para que la barra
+       se sienta parte del mismo sistema visual y no un elemento aparte. */
+    .live-activity-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 70;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 16px;
+      padding-top: calc(10px + env(safe-area-inset-top, 0px));
+      background: rgba(var(--live-bar-rgb, 47, 213, 255), .14);
+      border-bottom: 1px solid rgba(var(--live-bar-rgb, 47, 213, 255), .38);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 22px rgba(0, 0, 0, .18);
+    }
+
+    .live-activity-bar.show { display: flex; }
+
+    .live-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .live-bar-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+      background: var(--live-bar-color, var(--cyan));
+      box-shadow: 0 0 14px rgba(var(--live-bar-rgb, 47, 213, 255), .55);
+    }
+
+    .live-bar-label {
+      font-weight: 900;
+      font-size: 11.5px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--live-bar-color, var(--cyan));
+      white-space: nowrap;
+    }
+
+    .live-bar-timer {
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      font-size: 15px;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .live-bar-actions {
+      display: flex;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .live-bar-btn {
+      border-radius: 10px;
+      font-weight: 900;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: transform .14s ease, filter .14s ease;
+    }
+
+    .live-bar-btn:hover,
+    .live-bar-btn:focus-visible {
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    .live-bar-save {
+      background: rgba(102, 226, 165, .18);
+      border-color: rgba(102, 226, 165, .45);
+      color: var(--pale-good);
+      padding: 8px 14px;
+      font-size: 12.5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .live-bar-discard {
+      background: rgba(255, 111, 143, .10);
+      border-color: rgba(255, 111, 143, .32);
+      color: var(--pale-bad);
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      line-height: 1;
+    }
+
+    /* El padding-top se agrega a .app (no a body) para que el fondo con los
+       radial-gradients de body siga arrancando en la esquina real de la
+       pantalla — solo el contenido baja, no el fondo decorativo. Valor fijo
+       (mismo criterio que otros números "mágicos" ya usados en el archivo,
+       ej. GAP_AUTO_OTHER_THRESHOLD_MIN) en vez de medir la altura real de la
+       barra por JS — la barra tiene un contenido acotado (una fila de texto
+       + 2 botones) que no varía lo suficiente entre mobile/desktop como
+       para justificar esa complejidad extra. */
+    body.has-live-bar .app { padding-top: 62px; }
+
+    @media (max-width: 760px) {
+      .live-activity-bar { padding: 8px 12px; padding-top: calc(8px + env(safe-area-inset-top, 0px)); gap: 8px; }
+      .live-bar-label { font-size: 10.5px; }
+      .live-bar-timer { font-size: 13px; }
+      .live-bar-save { padding: 7px 11px; font-size: 11.5px; }
+      .live-bar-discard { width: 32px; height: 32px; font-size: 13px; }
+      body.has-live-bar .app { padding-top: 54px; }
+    }
   </style>
 </head>
 <body>
+<div aria-live="polite" class="live-activity-bar" id="liveActivityBar" role="status">
+  <div class="live-bar-left">
+    <span class="live-bar-dot"></span>
+    <span class="live-bar-label" id="liveBarLabel">—</span>
+    <span class="live-bar-timer" id="liveBarTimer">00:00:00</span>
+  </div>
+  <div class="live-bar-actions">
+    <button class="live-bar-btn live-bar-save" id="liveBarSaveBtn" type="button">✅ Guardar</button>
+    <button aria-label="Descartar sin guardar" class="live-bar-btn live-bar-discard" id="liveBarDiscardBtn" type="button">✕</button>
+  </div>
+</div>
 <div class="app"><section class="hero">
 <div>
 <div class="hero-top-row">
@@ -6708,6 +6850,105 @@ function renderWeekSummary() {
       openManualCallModalFromLiveCall(startedAt, endedAt);
     }
 
+    // ---- Barra fija de actividad en vivo (pedido del usuario, "como Mochi") ----
+    // A diferencia de endCall() (que SIEMPRE abre el modal de guardado), esto
+    // descarta la llamada en curso sin dejar ningún rastro — ni en `calls`
+    // ni pidiendo Customer ID/billable/dropped. Es el botón "✕" de la barra.
+    // `lastCallEndedAt` se actualiza igual que en endCall() (mismo criterio:
+    // el chip de ACW/Available debe contar desde AHORA, no desde antes de la
+    // llamada descartada).
+    function discardActiveCall() {
+      if (!state.activeCall) return;
+      appConfirm('¿Descartar esta llamada sin guardarla? El tiempo registrado se pierde y no queda ninguna fila en Tabla de llamadas.', () => {
+        state.activeCall = null;
+        state.lastCallEndedAt = new Date().toISOString();
+        saveStateOnly();
+        render();
+        toast('Llamada descartada');
+      });
+    }
+
+    // A diferencia de endPause() (que SIEMPRE empuja {startedAt, endedAt} a
+    // pauseHistory), esto descarta el Break/Lunch en curso sin dejar ningún
+    // registro — como si nunca se hubiera iniciado. Es el botón "✕" de la
+    // barra para Break/Lunch.
+    function discardActivePause() {
+      if (!state.activePause) return;
+      const pretty = state.activePause.type === 'lunch' ? 'Lunch' : 'Break';
+      appConfirm(`¿Descartar este ${pretty} sin guardarlo? No quedará registrado en tu historial ni en Adherencia.`, () => {
+        state.activePause = null;
+        stopBreakStartAlarm();
+        stopBreakEndAlarm();
+        saveStateOnly();
+        render();
+        toast(`${pretty} descartado`);
+      });
+    }
+
+    // Decide qué muestra la barra AHORA MISMO, con la prioridad confirmada
+    // por el usuario: si hay una llamada Y un Break/Lunch activos a la vez
+    // (la app ya permite ambos sin bloquearse entre sí, ver toggleCall()/
+    // togglePause()), se muestra la llamada — nunca las dos filas a la vez.
+    // No depende de isViewingToday()/getActiveDayKey(): activeCall y
+    // activePause son siempre el estado REAL de hoy, sin importar qué "Día
+    // activo" esté seleccionado en el selector — mismo criterio que ya usa
+    // computeCurrentAcwStart() para el chip de ACW en vivo del header.
+    // `colorVar`/`rgb` reutilizan los mismos colores que ya usa el dot de
+    // Estado (renderHeader) para cada estado, para que la barra se sienta
+    // parte del mismo sistema visual.
+    function liveActivityInfo() {
+      if (state.activeCall) {
+        return {
+          type: 'call',
+          label: 'En llamada',
+          startedAt: state.activeCall.startedAt,
+          colorVar: '--cyan',
+          rgb: '47, 213, 255',
+          onSave: endCall,
+          onDiscard: discardActiveCall,
+        };
+      }
+      if (state.activePause) {
+        const isLunch = state.activePause.type === 'lunch';
+        return {
+          type: state.activePause.type,
+          label: isLunch ? 'Lunch' : 'Break',
+          startedAt: state.activePause.startedAt,
+          colorVar: isLunch ? '--blue' : '--warn',
+          rgb: isLunch ? '124, 140, 255' : '255, 209, 92',
+          onSave: () => endPause(),
+          onDiscard: discardActivePause,
+        };
+      }
+      return null;
+    }
+
+    // Guarda la actividad mostrada AHORA MISMO — se relee en cada tick (ver
+    // updateLiveActivityBar()) para que los botones de la barra (wireados una
+    // sola vez, fuera del loop de render) siempre disparen la acción
+    // correcta sin tener que reasignar listeners nuevos en cada segundo.
+    let currentLiveActivity = null;
+
+    function updateLiveActivityBar() {
+      const bar = document.getElementById('liveActivityBar');
+      if (!bar) return;
+      const info = liveActivityInfo();
+      currentLiveActivity = info;
+      if (!info) {
+        bar.classList.remove('show');
+        document.body.classList.remove('has-live-bar');
+        return;
+      }
+      document.body.classList.add('has-live-bar');
+      bar.classList.add('show');
+      bar.style.setProperty('--live-bar-color', `var(${info.colorVar})`);
+      bar.style.setProperty('--live-bar-rgb', info.rgb);
+      const labelEl = document.getElementById('liveBarLabel');
+      if (labelEl) labelEl.textContent = info.label;
+      const timerEl = document.getElementById('liveBarTimer');
+      if (timerEl) timerEl.textContent = formatDuration(Date.now() - new Date(info.startedAt).getTime());
+    }
+
     // A diferencia de resetDay() (borra SOLO el día activo), esto borra TODO
     // lo que la app guarda en este navegador: las 3 llaves de localStorage
     // completas (STORAGE_KEY/CALLS_KEY/SETTINGS_KEY), sin dejar nada — ni
@@ -9123,6 +9364,7 @@ function render() {
       renderSchedule();
       renderWeekSummary();
       renderTable();
+      updateLiveActivityBar();
     }
 
     function toast(msg) {
@@ -9291,6 +9533,16 @@ function render() {
     document.getElementById('breakControlBtn').addEventListener('click', () => togglePause('break'));
     document.getElementById('lunchControlBtn').addEventListener('click', () => togglePause('lunch'));
     document.getElementById('callControlBtn').addEventListener('click', toggleCall);
+    // Barra fija de actividad en vivo: un solo listener por botón (no se
+    // reasignan en cada tick) — la acción a disparar se relee de
+    // `currentLiveActivity`, actualizada por updateLiveActivityBar() en cada
+    // render()/tick de reloj.
+    document.getElementById('liveBarSaveBtn').addEventListener('click', () => {
+      if (currentLiveActivity) currentLiveActivity.onSave();
+    });
+    document.getElementById('liveBarDiscardBtn').addEventListener('click', () => {
+      if (currentLiveActivity) currentLiveActivity.onDiscard();
+    });
     document.getElementById('resetDayMiniBtn').addEventListener('click', () => {
       const label = document.getElementById('resetDayLabel');
       if (label) label.textContent = formatCallDayLabel(getActiveDayKey());
@@ -9519,6 +9771,7 @@ function render() {
       // render() completo (un click, importar llamadas, etc.). Se agrega
       // aquí para que de verdad se sienta "en vivo".
       renderSchedule();
+      updateLiveActivityBar();
       checkShiftAlarm();
       checkBreakStartAlarm();
       checkBreakEndAlarm();
