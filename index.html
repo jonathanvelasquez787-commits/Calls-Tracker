@@ -151,12 +151,34 @@
     * { box-sizing: border-box; }
     html, body { min-height: 100%; }
     html { -webkit-tap-highlight-color: transparent; }
+    /* Bug reportado por el usuario: "Ganancias de hoy" (y en general la
+       parte de arriba de la página) se ponía cada vez más verde/turquesa
+       según más secciones expandibles se abrían (Bloques del día, Tabla de
+       llamadas, Resumen semanal...), tanto en escritorio como en el
+       teléfono. Causa: los 2 `radial-gradient(circle at top left/right, ...)`
+       de abajo NUNCA declaraban un tamaño explícito — sin tamaño, el
+       navegador usa `farthest-corner` por default, que calcula el radio del
+       círculo según el tamaño de la caja COMPLETA del `body` (ancho × alto
+       TOTAL, incluyendo todo lo que no se ve por scroll) — no del viewport
+       visible. Al expandir un acordeón, `body` se alarga mucho (de ~1250px
+       a ~5000px en un caso real medido), lo que agranda ese radio
+       "farthest-corner" en la misma proporción — y como el punto donde el
+       degradado llega a `transparent` (28%/20%) es un PORCENTAJE de ese
+       radio, un radio más grande hace que ese porcentaje cubra muchos más
+       píxeles reales cerca del borde superior. `--glow-2` (el de la
+       derecha) es un verde-turquesa (`rgba(88, 232, 200, .08)`) — de ahí el
+       tinte que se iba acumulando. Fix: se les da un tamaño EXPLÍCITO en
+       unidades de viewport (`vh`, basadas en la altura visible de la
+       pantalla, que NO cambia aunque el documento completo se alargue por
+       scroll) en vez de dejar que el navegador lo calcule desde el alto
+       total del `body` — así el resplandor decorativo se ve igual sin
+       importar cuántas secciones tengas abiertas. */
     body {
       margin: 0;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       background:
-        radial-gradient(circle at top left, var(--glow-1), transparent 28%),
-        radial-gradient(circle at top right, var(--glow-2), transparent 20%),
+        radial-gradient(circle 45vh at top left, var(--glow-1), transparent),
+        radial-gradient(circle 32vh at top right, var(--glow-2), transparent),
         linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 100%);
       color: var(--text);
       -webkit-tap-highlight-color: transparent;
@@ -2350,7 +2372,7 @@
 </div>
 </div>
 </details>
-<details class="accordion-card">
+<details class="accordion-card" id="cycleAccordion">
 <summary>
   <div class="accordion-head">
     <h2>Ganancias del ciclo</h2>
@@ -2415,7 +2437,7 @@
 </div>
 </section>
 
-<details class="accordion-card" open>
+<details class="accordion-card" id="scheduleAccordion" open>
 <summary>
   <div class="accordion-head">
     <h2>Bloques del día</h2>
@@ -2442,7 +2464,7 @@
 </details>
 
 <div class="grid">
-<details class="accordion-card">
+<details class="accordion-card" id="callTableAccordion">
 <summary>
   <div class="accordion-head">
     <h2>Tabla de llamadas</h2>
@@ -2455,7 +2477,7 @@
   <div class="table-wrap" id="callTableWrap"></div>
 </div>
 </details>
-<details class="accordion-card" open>
+<details class="accordion-card" id="weekSummaryAccordion" open>
 <summary>
   <div class="accordion-head">
     <h2>Resumen semanal</h2>
@@ -3541,6 +3563,16 @@ $0.72"></textarea>
         // usuario — 100 = el mismo volumen de siempre (sin cambio de
         // comportamiento para quien nunca toque el slider nuevo).
         masterVolume: 100,
+        // Pedido del usuario: cada sección expandible (Ganancias de hoy,
+        // Ganancias del ciclo, Bloques del día, su mini-acordeón de
+        // Adherencia, Tabla de llamadas, Resumen semanal, Ventanas pasadas
+        // de Higher Rate) debe recordar si el usuario la dejó abierta o
+        // cerrada, incluso después de cerrar el navegador por completo —
+        // ver applyAccordionState()/wireAccordionPersistence(). Mapa
+        // { [id del <details>]: boolean }; un id ausente aquí (nunca se
+        // tocó esa sección) respeta el estado default ya escrito en el
+        // HTML (`open` o sin `open`), sin forzar nada.
+        accordionState: {},
       };
     }
 
@@ -3561,6 +3593,7 @@ $0.72"></textarea>
       if (!Number.isFinite(Number(settings.adherenceGoalPct)) || Number(settings.adherenceGoalPct) <= 0 || Number(settings.adherenceGoalPct) > 100) settings.adherenceGoalPct = fallback.adherenceGoalPct;
       if (!['auto', 'light', 'dark'].includes(settings.theme)) settings.theme = fallback.theme;
       if (!Number.isFinite(Number(settings.masterVolume)) || Number(settings.masterVolume) < 0 || Number(settings.masterVolume) > 100) settings.masterVolume = fallback.masterVolume;
+      if (!settings.accordionState || typeof settings.accordionState !== 'object' || Array.isArray(settings.accordionState)) settings.accordionState = {};
       if (!Number.isFinite(Number(settings.productiveBreakEarnMin)) || Number(settings.productiveBreakEarnMin) <= 0) settings.productiveBreakEarnMin = fallback.productiveBreakEarnMin;
       if (!Number.isFinite(Number(settings.productiveBreakAwardMin)) || Number(settings.productiveBreakAwardMin) < 0) settings.productiveBreakAwardMin = fallback.productiveBreakAwardMin;
       if (!['classic', 'chime', 'custom'].includes(settings.productiveBreakSound)) settings.productiveBreakSound = fallback.productiveBreakSound;
@@ -3626,6 +3659,44 @@ $0.72"></textarea>
       saveSettingsOnly();
       applyTheme();
       toast(`Tema: ${themeButtonLabel(settings.theme)}`);
+    }
+
+    // ---- Persistencia de secciones expandibles (pedido del usuario) ----
+    // Cada <details> con id propio (los acordeones de nivel superior:
+    // Ganancias de hoy/del ciclo, Bloques del día, Tabla de llamadas,
+    // Resumen semanal; y los mini-acordeones: Detalle de Adherencia,
+    // Ventanas pasadas de Higher Rate) recuerda si el usuario la dejó
+    // abierta o cerrada la última vez que la tocó — sobrevive a cerrar el
+    // navegador porque vive en `settings` (localStorage), no en
+    // sessionStorage ni en memoria. Si un id nunca se tocó (nunca aparece
+    // en `settings.accordionState`), se respeta el estado default ya
+    // escrito en el HTML (`open` o sin `open`) — no se fuerza nada al
+    // primer uso.
+    function applyAccordionState() {
+      const saved = settings.accordionState || {};
+      document.querySelectorAll('details[id]').forEach(el => {
+        if (Object.prototype.hasOwnProperty.call(saved, el.id)) {
+          el.open = !!saved[el.id];
+        }
+      });
+    }
+
+    // Un solo listener por <details> (asignado una sola vez al cargar la
+    // página) — ninguno de estos elementos se destruye/reconstruye en
+    // renders posteriores (solo su CONTENIDO interno se actualiza vía
+    // innerHTML/textContent, ver renderSchedule()/renderTable()/etc.), así
+    // que el listener se queda vivo durante toda la sesión sin tener que
+    // reasignarlo. El evento nativo 'toggle' del navegador dispara tanto al
+    // abrir como al cerrar (clic en el <summary>, o cambiar `.open` por
+    // código), así que un solo handler cubre ambos sentidos.
+    function wireAccordionPersistence() {
+      document.querySelectorAll('details[id]').forEach(el => {
+        el.addEventListener('toggle', () => {
+          if (!settings.accordionState || typeof settings.accordionState !== 'object') settings.accordionState = {};
+          settings.accordionState[el.id] = el.open;
+          saveSettingsOnly();
+        });
+      });
     }
 
     // Texto "≈ L 123.45" para mostrar el equivalente en la moneda secundaria
@@ -9772,6 +9843,8 @@ function render() {
     }
     resetActiveDayIfStale();
     syncShiftModalFields();
+    applyAccordionState();
+    wireAccordionPersistence();
 
     // Popup de bienvenida: solo la primerísima vez que se abre la app en
     // este navegador (settings.onboarded sigue en false porque nunca hubo
