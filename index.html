@@ -1079,6 +1079,44 @@
       #callControlBtn {
         min-height: 68px;
       }
+
+      /* Pedido del usuario: en escritorio, cada sección se estiraba al 100%
+         de `.app` (hasta 1500px) sin importar cuánto necesitara su propio
+         contenido — de ahí la sensación de "alargado" en vez de "llenito".
+         Medido el ancho real de cada sección con datos de ejemplo (no
+         tarjetas vacías): Ganancias de hoy ~750px, Ganancias del ciclo
+         ~512px, Controles ~726px, Bloques del día ~781px, y las 2 tablas
+         (Tabla de llamadas/Resumen semanal) con su `<table>` interno de
+         min-width:900px ya fijado más abajo. En vez de darle a cada una un
+         ancho distinto (bordes escalonados, se ve como tablón de anuncios
+         desordenado — comparado con el usuario y descartado a propósito),
+         se agrupan en 2 anchos: las 4 secciones de "estadísticas" comparten
+         820px (alineadas entre sí, sin apretar ninguna) y las 2 de tablas
+         comparten 980px (más ancho porque su contenido — filas de tabla —
+         genuinamente lo necesita). Ambos grupos centrados con margin:0 auto.
+         Solo aplica en este breakpoint de escritorio — mobile/tablet quedan
+         exactamente igual que antes (sin cambios fuera de este @media). */
+      #earningsAccordion,
+      #cycleAccordion,
+      #controlsSection,
+      #scheduleAccordion {
+        max-width: 820px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      #callTableAccordion,
+      #weekSummaryAccordion {
+        max-width: 980px;
+        /* Estas 2 secciones son hijas de .grid (display:grid) — ahí
+           margin:auto NO centra un ítem (los ítems de grid se estiran por
+           default con justify-self:stretch, que es distinto al width:auto
+           de flujo normal que sí dispara el centrado con margin:auto). Se
+           usa justify-self:center, la forma correcta de centrar un ítem
+           dentro de su celda de grid. */
+        justify-self: center;
+        width: 100%;
+      }
     }
 
     .modal-overlay {
@@ -2403,7 +2441,7 @@
 </div>
 </div>
 </details>
-<section class="card span-12">
+<section class="card span-12" id="controlsSection">
 <div class="section-title">
 <div>
 <h2>Controles</h2>
