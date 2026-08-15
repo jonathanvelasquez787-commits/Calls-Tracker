@@ -57,6 +57,19 @@
       --pale-cyan: #d8f7ff;
       --pale-teal: #d6fdf3;
       --pale-indigo: #a5b4fc;
+      /* Pedido del usuario: en modo claro, los .accordion-card (Ganancias
+         de hoy/del ciclo, Bloques del día, Tabla de llamadas, Resumen
+         semanal) se veían "descoloridos" comparados con .hero/.card
+         (Controles), que sí usan --panel (bastante opaco). Causa: el fondo
+         de .accordion-card estaba hardcodeado a rgba(255,255,255,.03) —
+         pensado para modo oscuro (ahí ese 3% de blanco se lee como un panel
+         sutil), pero en modo claro ese mismo 3% es casi invisible sobre un
+         fondo ya claro, dejando ver el fondo cálido de la página en vez de
+         un blanco sólido. Se centraliza en esta variable — en modo oscuro
+         (aquí, default) mantiene EXACTO el mismo valor de siempre (cero
+         cambio visual); en los 2 bloques de modo claro (ver más abajo) pasa
+         a var(--panel), el mismo blanco opaco que ya usan .hero/.card. */
+      --accordion-bg: rgba(255,255,255,.03);
     }
 
     /* Modo claro automático: se activa solo si el sistema operativo pide
@@ -111,6 +124,7 @@
         --pale-cyan: #0a7770;
         --pale-teal: #0a6b5e;
         --pale-indigo: #5b32a8;
+        --accordion-bg: var(--panel);
       }
     }
 
@@ -146,6 +160,7 @@
       --pale-cyan: #0a7770;
       --pale-teal: #0a6b5e;
       --pale-indigo: #5b32a8;
+      --accordion-bg: var(--panel);
     }
 
     * { box-sizing: border-box; }
@@ -1715,7 +1730,7 @@
       padding: 0;
       border-radius: 20px;
       border: 1px solid var(--line);
-      background: rgba(255,255,255,.03);
+      background: var(--accordion-bg);
       overflow: hidden;
     }
 
