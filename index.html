@@ -8304,6 +8304,41 @@ function renderWeekSummary() {
       settings.higherRateWindows = readHigherRateWindowsFromEditor();
       saveSettingsOnly();
       render();
+      notifyHigherRateRetroactiveMatches();
+    }
+
+    // Pedido del usuario: agregar un Higher Rate para un día que YA tiene
+    // llamadas tomadas ("se me olvidó agregarlo a tiempo") sí actualiza el
+    // bono correctamente al instante — higherRateBonusForCall() se
+    // recalcula en vivo desde settings.higherRateWindows, no hace falta
+    // "reprocesar" las llamadas. El problema real es de VISIBILIDAD: "Día
+    // activo" no salta solo al día de la ventana (a propósito — se podrían
+    // estar configurando varias ventanas de días distintos seguidas, y
+    // saltar el día en cada cambio de campo sería disruptivo/confuso). Si el
+    // usuario sigue viendo otro día (normalmente "Hoy"), la Tabla de
+    // llamadas visible no cambia y parece que "no se actualizaron las
+    // llamadas", aunque el dato ya esté bien — de ahí el reporte. Este aviso
+    // confirma cuántas llamadas ya calificaron y en qué día revisarlas, sin
+    // forzar ninguna navegación. Solo aparece cuando hay una coincidencia
+    // real (nunca al configurar una ventana para un día futuro sin llamadas
+    // todavía, el caso normal).
+    function notifyHigherRateRetroactiveMatches() {
+      const windows = settings.higherRateWindows || [];
+      if (!windows.length) return;
+      const datesWithWindows = new Set(windows.map(w => w.date));
+      let qualifyingCount = 0;
+      let sampleDate = null;
+      calls.forEach(c => {
+        if (!datesWithWindows.has(c.callDate)) return;
+        if (higherRateBonusForCall(c)) {
+          qualifyingCount++;
+          if (!sampleDate) sampleDate = c.callDate;
+        }
+      });
+      if (qualifyingCount > 0) {
+        const plural = qualifyingCount === 1 ? 'llamada ya tomada califica' : 'llamadas ya tomadas califican';
+        toast(`🔥 ${qualifyingCount} ${plural} para el bono — revisa Tabla de llamadas del ${formatCallDayLabel(sampleDate)} para verlo.`);
+      }
     }
 
     // "+ Agregar ventana": conserva lo que ya está en el formulario (para no
@@ -9056,6 +9091,55 @@ function buildManualCallCandidate({ customerId, callDate, callStart, durationMin
   };
 }
 
+// Pedido del usuario (bug con captura): a diferencia de buildManualCallCandidate()
+// (usado por el modal manual, donde el inicio SIEMPRE viene de un
+// <input type="time"> sin segundos — ahí sí conviene reconstruir desde
+// HH:MM), aquí ya se tienen los timestamps REALES con segundos de una
+// llamada en vivo que se acaba de colgar (captura directa del click de
+// "Iniciar"/"Terminar llamada"). Usarlos tal cual — start Y end reales, NO
+// start + duración_redondeada_a_minuto — es lo que evita el bug reportado:
+// si cuelgas una llamada corta (ej. termina real a las 9:02:15, dura solo
+// 20s), redondear su duración a 1 min entero e inferir el fin desde ahí
+// registraba esa llamada como "termina 9:03:00" — más tarde de lo real. Si
+// la SIGUIENTE llamada arrancaba real 1-2 segundos después de colgar (ej.
+// 9:02:17), su inicio real caía ANTES de ese fin inflado (9:03:00) →
+// traslape falso, aunque en la realidad nunca hubo traslape (no se puede
+// iniciar la llamada 2 antes de terminar la 1, el botón mismo lo impide).
+// `durationMin` sigue siendo un entero redondeado (para el campo "Min" que
+// se muestra en Tabla de llamadas, consistente con el resto de la app), pero
+// `endISO` guarda el fin REAL capturado, no el recalculado desde esa
+// duración — así el traslape se compara siempre contra hechos reales.
+function buildLiveCallCandidate({ customerId, startedAtISO, endedAtISO, billable, dropped, pay }) {
+  const start = new Date(startedAtISO);
+  const rawEnd = new Date(endedAtISO);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(rawEnd.getTime())) return null;
+  const durationMin = Math.max(1, Math.round((rawEnd.getTime() - start.getTime()) / 60000));
+  // Si el fin real no quedó estrictamente después del inicio (llamada
+  // iniciada y colgada en el mismo instante — tap muy rápido, o dos
+  // Date.now() que caen en el mismo milisegundo), se usa un fin sintético
+  // (inicio + duración mínima de 1 min) en vez de rechazar la llamada. No
+  // hay riesgo de "inflar" nada real aquí — a diferencia del bug original,
+  // no existe un fin real más temprano que este cálculo esté pisando.
+  const end = rawEnd.getTime() > start.getTime() ? rawEnd : new Date(start.getTime() + durationMin * 60000);
+  return {
+    id: makeLocalId(),
+    customerId: String(customerId || '').trim() || 'Manual',
+    callDate: todayCallDateKey(start),
+    // callStart es solo el texto que se ve en Tabla de llamadas — se deriva
+    // igual que siempre (hora/minuto), pero NO se usa para calcular
+    // startISO/endISO (ver arriba); esos vienen directo de start/end reales.
+    callStart: callStartLabelFromHHMM(`${pad(start.getHours())}:${pad(start.getMinutes())}`),
+    durationMin,
+    billable,
+    dropped,
+    pay,
+    startISO: start.toISOString(),
+    endISO: end.toISOString(),
+    countsAsProductive: billable === 'Yes' && dropped === 'No',
+    importedAt: new Date().toISOString(),
+  };
+}
+
 // Revisa traslape/duplicado exacto (mismas 2 validaciones que ya protegían
 // importCalls()/saveCallEditor()/el modal manual) y, si pasa, guarda la
 // llamada en `calls` y actualiza el día activo. NO llama a saveAll()/toast —
@@ -9134,18 +9218,13 @@ function saveManualCall() {
 // seguridad, para que el usuario ajuste y guarde a mano en vez de perder
 // el registro de la llamada en silencio.
 function autoSaveLiveCall(startedAtISO, endedAtISO) {
-  const start = new Date(startedAtISO);
-  const end = new Date(endedAtISO);
-  const durationMin = Math.max(1, Math.round((end.getTime() - start.getTime()) / 60000));
-  const callDate = todayCallDateKey(start);
-  const callStart = callStartLabelFromHHMM(`${pad(start.getHours())}:${pad(start.getMinutes())}`);
+  const durationMin = Math.max(1, Math.round((new Date(endedAtISO).getTime() - new Date(startedAtISO).getTime()) / 60000));
   const pay = manualCallEstimatedPay(durationMin, 'normal').toFixed(2);
 
-  const candidate = buildManualCallCandidate({
+  const candidate = buildLiveCallCandidate({
     customerId: '',
-    callDate,
-    callStart,
-    durationMin,
+    startedAtISO,
+    endedAtISO,
     billable: 'Yes',
     dropped: 'No',
     pay,
