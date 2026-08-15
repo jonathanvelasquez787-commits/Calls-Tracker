@@ -680,6 +680,36 @@
       background: rgba(88, 232, 200, .09);
     }
 
+    /* Pedido del usuario: las píldoras de Meta/conversión/restantes DENTRO
+       de "Ganancias de hoy" (Meta $, ≈ L, Meta min, restantes) se
+       confundían visualmente con los tags de estado de abajo (Conectado,
+       Billable, ACW...) — ambos usaban el mismo lenguaje de "pill" (fondo +
+       borde + esquinas redondas). Se probaron 3 opciones (mockup mostrado
+       al usuario) y se eligió esta: texto plano sin fondo/borde, con un
+       label corto en --muted y el valor en --text bold — mismo tratamiento
+       que ya usa .helper (el "≈ L..." bajo el monto grande) en vez de
+       inventar un estilo nuevo. Los pills de estado siguen siendo pills; ya
+       no hay ambigüedad de "esto también es un estado". Nota: NO se tocó
+       .goal-badge.goal-soft (arriba) — esa clase la siguen usando
+       cycleRangeBadge/cyclePayDateBadge en "Ganancias del ciclo", que no
+       fueron parte de este pedido y se quedan igual que antes. */
+    .goal-plain-row {
+      font-size: 13px;
+      line-height: 1.35;
+      white-space: nowrap;
+    }
+
+    .goal-plain-row .gp-label {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .goal-plain-row .gp-value {
+      color: var(--text);
+      font-weight: 800;
+      margin-left: 4px;
+    }
+
     .field {
       padding: 10px 12px;
       border-radius: 16px;
@@ -2408,12 +2438,12 @@
 </div>
 <div class="goal-stack">
 <div class="goal-pair">
-<div class="goal-badge goal-soft" id="goalAmountBadge">Meta $0.00</div>
-<div class="goal-badge goal-soft" id="goalAmountConvertedText"></div>
+<div class="goal-plain-row" id="goalAmountBadge">Meta $0.00</div>
+<div class="goal-plain-row" id="goalAmountConvertedText"></div>
 </div>
 <div class="goal-pair">
-<div class="goal-badge goal-soft" id="goalMinBadge">Meta 59.0 min</div>
-<div class="goal-badge goal-soft" id="remainingText">0 min restantes</div>
+<div class="goal-plain-row" id="goalMinBadge">Meta 59.0 min</div>
+<div class="goal-plain-row" id="remainingText">0 min restantes</div>
 </div>
 </div>
 </div>
@@ -6988,11 +7018,13 @@ function renderWeekSummary() {
       toast('Llamada iniciada');
     }
 
-    // Termina la llamada en curso y abre el modal de guardado (mismo modal
-    // que "Agregar llamada manual", ver openManualCallModalFromLiveCall)
-    // para confirmar Customer ID/billable/dropped/pago antes de guardarla —
-    // la llamada NO queda en `calls` hasta que se confirme ahí (cancelar el
-    // modal simplemente la descarta, igual que decidir no loguearla).
+    // Termina la llamada en curso y la guarda SOLA (ver autoSaveLiveCall) —
+    // desde v164 ya no abre ningún modal de confirmación en el caso normal:
+    // colgar bloqueaba "Iniciar llamada" hasta resolver ese modal, así que
+    // se quitó esa fricción de raíz. Si el guardado automático no puede
+    // proceder (traslape/duplicado real, caso raro), autoSaveLiveCall() abre
+    // el modal como red de seguridad — ese es el único caso en que sigue
+    // apareciendo.
     // Pedido del usuario: una llamada puede coexistir con Break/Lunch sin
     // bloquearse ni auto-terminar nada entre sí, así que esta función no
     // toca state.activePause para nada.
@@ -7001,21 +7033,22 @@ function renderWeekSummary() {
       const startedAt = state.activeCall.startedAt;
       const endedAt = new Date().toISOString();
       state.activeCall = null;
-      // Bug corregido: sin esto, el chip "ACW/Available" en vivo (ver
-      // computeCurrentAcwStart()) no sabía que la llamada acababa de
-      // terminar hasta que se confirmaba en el modal de guardado (recién
-      // colgada, la llamada todavía no existe en `calls`) — el cronómetro
-      // se quedaba anclado al evento anterior, inflando el tiempo mostrado.
+      // Bug corregido (previo a v164): sin esto, el chip "ACW/Available" en
+      // vivo (ver computeCurrentAcwStart()) no sabía que la llamada acababa
+      // de terminar hasta que se guardaba — el cronómetro se quedaba
+      // anclado al evento anterior, inflando el tiempo mostrado. Sigue
+      // aplicando igual ahora que el guardado es automático.
       state.lastCallEndedAt = endedAt;
       saveStateOnly();
       render();
-      openManualCallModalFromLiveCall(startedAt, endedAt);
+      autoSaveLiveCall(startedAt, endedAt);
     }
 
     // ---- Barra fija de actividad en vivo (pedido del usuario, "como Mochi") ----
-    // A diferencia de endCall() (que SIEMPRE abre el modal de guardado), esto
-    // descarta la llamada en curso sin dejar ningún rastro — ni en `calls`
-    // ni pidiendo Customer ID/billable/dropped. Es el botón "✕" de la barra.
+    // A diferencia de endCall() (que SIEMPRE guarda la llamada, sola o vía
+    // el modal de respaldo), esto descarta la llamada en curso sin dejar
+    // ningún rastro — ni en `calls` ni pidiendo Customer ID/billable/dropped.
+    // Es el botón "✕" de la barra.
     // `lastCallEndedAt` se actualiza igual que en endCall() (mismo criterio:
     // el chip de ACW/Available debe contar desde AHORA, no desde antes de la
     // llamada descartada).
@@ -8513,20 +8546,36 @@ function renderHeader() {
   const earningsConvertedEl = document.getElementById('earningsConvertedText');
   if (earningsConvertedEl) earningsConvertedEl.textContent = convertedAmountText(stats.earnings);
   document.getElementById('goalPctBadge').textContent = `${Math.round(goalPct)}%`;
-  document.getElementById('goalAmountBadge').textContent = `Meta ${money(goalUsd)}`;
+  // Pedido del usuario: estas 4 metas (Meta $, ≈ conversión, Meta min,
+  // restantes) pasaron de píldora a texto plano (ver .goal-plain-row en el
+  // CSS) — cada una se arma como label muted + valor bold vía innerHTML en
+  // vez de un solo textContent, para que el label y el valor puedan tener
+  // distinto peso/color (mismo look que .helper). goalUsd/goalMin/
+  // remainingMin no cambian de dónde vienen, solo cómo se pintan.
+  document.getElementById('goalAmountBadge').innerHTML = `<span class="gp-label">Meta</span><span class="gp-value">${escapeHtml(money(goalUsd))}</span>`;
   const goalAmountConvertedEl = document.getElementById('goalAmountConvertedText');
   if (goalAmountConvertedEl) {
-    const goalConvertedText = convertedAmountText(goalUsd);
-    goalAmountConvertedEl.textContent = goalConvertedText;
-    // Sin tasa de cambio/símbolo configurado, convertedAmountText() devuelve
-    // ''. Como texto plano eso era invisible sin más; ahora que es una
-    // píldora (.goal-badge.goal-soft, ver Fix), un texto vacío se vería
-    // como una caja verde vacía — se oculta el elemento por completo en vez
-    // de dejarla ahí sin contenido.
-    goalAmountConvertedEl.style.display = goalConvertedText ? '' : 'none';
+    // Se arma a mano en vez de reutilizar convertedAmountText() (que
+    // devuelve un solo string "≈ L 123.45") porque aquí el "≈" necesita ir
+    // en el label muted y "L 123.45" en el valor bold — convertedAmountText()
+    // se deja intacta para sus otros usos (earningsConvertedText, Resumen
+    // semanal...), que siguen mostrando el string completo como texto
+    // simple sin split. Mismo criterio de "ocultar si no hay moneda
+    // configurada" que ya tenía esta línea antes del cambio de estilo.
+    const exchangeRate = Number(settings.exchangeRate);
+    const currencyLabelTrimmed = String(settings.currencyLabel || '').trim();
+    const hasCurrency = Number.isFinite(exchangeRate) && exchangeRate > 0 && !!currencyLabelTrimmed;
+    if (hasCurrency) {
+      const convertedValue = (goalUsd * exchangeRate).toFixed(2);
+      goalAmountConvertedEl.innerHTML = `<span class="gp-label">≈</span><span class="gp-value">${escapeHtml(currencyLabelTrimmed)} ${convertedValue}</span>`;
+      goalAmountConvertedEl.style.display = '';
+    } else {
+      goalAmountConvertedEl.innerHTML = '';
+      goalAmountConvertedEl.style.display = 'none';
+    }
   }
-  document.getElementById('goalMinBadge').textContent = `Meta ${formatMinutes(goalMin)} min`;
-  document.getElementById('remainingText').textContent = `${formatMinutes(remainingMin)} min restantes`;
+  document.getElementById('goalMinBadge').innerHTML = `<span class="gp-label">Meta</span><span class="gp-value">${formatMinutes(goalMin)} min</span>`;
+  document.getElementById('remainingText').innerHTML = `<span class="gp-label">Restan</span><span class="gp-value">${formatMinutes(remainingMin)} min</span>`;
 
   // Pedido del usuario: navegación Anterior/Siguiente para "Ganancias del
   // ciclo", independiente de "Día activo" (antes solo se podía ver otro
@@ -8922,11 +8971,15 @@ function openManualCallModal() {
   openModal('manualCallModal');
 }
 
-// Variante que abre el mismo modal ya con inicio/fin/duración capturados de
-// una llamada real recién terminada con "Iniciar/Terminar llamada" (ver
-// endCall()) — el usuario solo confirma/ajusta Customer ID, billable,
-// dropped y pago antes de guardarla. Mismas validaciones de overlap/dedupe
-// que la entrada 100% manual, sin duplicar esa lógica.
+// Pedido del usuario: desde v164, esta variante YA NO es el camino normal
+// al terminar una llamada (ver autoSaveLiveCall() más abajo, que guarda sola
+// sin abrir nada) — se conserva como RED DE SEGURIDAD para el único caso en
+// que el guardado automático no puede proceder solo (traslape con otra
+// llamada real, o duplicado exacto — ambos raros viniendo de una llamada
+// que recién terminó). Ahí sí hace falta que el usuario ajuste algo a mano
+// antes de guardar, así que se abre este mismo modal, prellenado con lo que
+// ya se sabe (inicio/fin/duración reales), para que corrija y guarde con
+// "+ Agregar" de siempre.
 function openManualCallModalFromLiveCall(startedAtISO, endedAtISO) {
   manualCallPayDirty = false;
   const start = new Date(startedAtISO);
@@ -8968,6 +9021,64 @@ function updateManualCallPreview() {
   }
 }
 
+// Arma el objeto "llamada" a partir de datos ya resueltos (fecha/hora/
+// duración/billable/dropped/pago/customerId) — reutilizado tanto por
+// saveManualCall() (lee el formulario del modal, "Agregar llamada manual" o
+// el respaldo de una llamada en vivo) como por autoSaveLiveCall() (arma los
+// datos directo desde los timestamps reales de la llamada que se acaba de
+// colgar, SIN pasar por ningún formulario). Devuelve null si la fecha/hora
+// no se pudo interpretar.
+function buildManualCallCandidate({ customerId, callDate, callStart, durationMin, billable, dropped, pay }) {
+  const start = toDateFromInputs(callDate, callStart);
+  if (!start) return null;
+  const end = new Date(start.getTime() + durationMin * 60000);
+  return {
+    id: makeLocalId(),
+    // Mismo patrón que ya se ve en pantalla para llamadas manuales (Tabla
+    // completa/tarjetas mobile ya renderizan "#Manual" cuando no hay
+    // customer ID real) — aquí es donde ese valor se origina cuando se deja
+    // vacío.
+    customerId: String(customerId || '').trim() || 'Manual',
+    callDate,
+    callStart,
+    durationMin,
+    billable,
+    dropped,
+    pay,
+    startISO: start.toISOString(),
+    endISO: end.toISOString(),
+    countsAsProductive: billable === 'Yes' && dropped === 'No',
+    // Se marca "importada ahora" igual que una fila pegada (importCalls()) —
+    // así, si agregas HOY una llamada de un día pasado, se sigue viendo
+    // correctamente como "Importación histórica" en Tabla completa, mismo
+    // criterio que ya usa callImportFlag().
+    importedAt: new Date().toISOString(),
+  };
+}
+
+// Revisa traslape/duplicado exacto (mismas 2 validaciones que ya protegían
+// importCalls()/saveCallEditor()/el modal manual) y, si pasa, guarda la
+// llamada en `calls` y actualiza el día activo. NO llama a saveAll()/toast —
+// eso queda a cargo de quien llama (saveManualCall() sí lo hace de
+// inmediato; autoSaveLiveCall() lo hace solo si el guardado tuvo éxito).
+function trySaveCallCandidate(candidate) {
+  if (!candidate) return { ok: false, reason: 'Fecha u hora inválida' };
+  const overlapsWith = calls.find(c => callsOverlap(c, candidate));
+  if (overlapsWith) {
+    return { ok: false, reason: `Esa hora se traslapa con la llamada #${overlapsWith.customerId} (${overlapsWith.callStart}). Ajusta la hora o la duración.` };
+  }
+  const key = callDedupeKey(candidate);
+  if (calls.some(c => callDedupeKey(c) === key)) {
+    return { ok: false, reason: 'Ya existe una llamada idéntica guardada (mismo cliente, fecha, hora, duración, pago, billable y dropped).' };
+  }
+  calls = [...calls, candidate].sort((a, b) => new Date(a.startISO) - new Date(b.startISO));
+  // Igual que importCalls(), si agregaste la llamada para un día distinto al
+  // que estabas viendo, "Día activo" salta a ese día para que la veas de
+  // inmediato reflejada.
+  state.activeDayKey = candidate.callDate;
+  return { ok: true };
+}
+
 function saveManualCall() {
   const dateInput = document.getElementById('manualCallDateInput');
   const startInput = document.getElementById('manualCallStartInput');
@@ -8988,62 +9099,66 @@ function saveManualCall() {
     return;
   }
   const callStart = callStartLabelFromHHMM(startInput?.value);
-  const start = toDateFromInputs(callDate, callStart);
-  if (!start) {
-    toast('Fecha u hora inválida');
-    return;
-  }
-  const end = new Date(start.getTime() + duration * 60000);
-
   const billable = billableInput?.value === 'Yes' ? 'Yes' : 'No';
   const dropped = droppedInput?.value === 'Yes' ? 'Yes' : 'No';
   const pay = parseMoney(payInput?.value || manualCallEstimatedPay(duration)).toFixed(2);
-  // Mismo patrón que ya se ve en pantalla para llamadas manuales (Tabla
-  // completa/tarjetas mobile ya renderizan "#Manual" cuando no hay customer
-  // ID real) — aquí es donde ese valor se origina cuando se deja vacío.
-  const customerId = String(customerIdInput?.value || '').trim() || 'Manual';
+  const customerId = customerIdInput?.value || '';
 
-  const candidate = {
-    id: makeLocalId(),
-    customerId,
-    callDate,
-    callStart,
-    durationMin: duration,
-    billable,
-    dropped,
-    pay,
-    startISO: start.toISOString(),
-    endISO: end.toISOString(),
-    countsAsProductive: billable === 'Yes' && dropped === 'No',
-    // Se marca "importada ahora" igual que una fila pegada (importCalls()) —
-    // así, si agregas HOY una llamada de un día pasado, se sigue viendo
-    // correctamente como "Importación histórica" en Tabla completa, mismo
-    // criterio que ya usa callImportFlag().
-    importedAt: new Date().toISOString(),
-  };
-
-  // Mismas dos validaciones que ya protegen la importación y la edición de
-  // llamadas (importCalls()/saveCallEditor()): no se permite traslape de
-  // horario con otra llamada real, ni una duplicada exacta.
-  const overlapsWith = calls.find(c => callsOverlap(c, candidate));
-  if (overlapsWith) {
-    toast(`Esa hora se traslapa con la llamada #${overlapsWith.customerId} (${overlapsWith.callStart}). Ajusta la hora o la duración.`);
+  const candidate = buildManualCallCandidate({ customerId, callDate, callStart, durationMin: duration, billable, dropped, pay });
+  const result = trySaveCallCandidate(candidate);
+  if (!result.ok) {
+    toast(result.reason);
     return;
   }
-  const key = callDedupeKey(candidate);
-  if (calls.some(c => callDedupeKey(c) === key)) {
-    toast('Ya existe una llamada idéntica guardada (mismo cliente, fecha, hora, duración, pago, billable y dropped).');
-    return;
-  }
-
-  calls = [...calls, candidate].sort((a, b) => new Date(a.startISO) - new Date(b.startISO));
-  // Igual que importCalls(), si agregaste la llamada para un día distinto al
-  // que estabas viendo, "Día activo" salta a ese día para que la veas de
-  // inmediato reflejada.
-  state.activeDayKey = callDate;
   closeModal('manualCallModal');
   saveAll();
   toast('Llamada agregada');
+}
+
+// Pedido del usuario: terminar una llamada y querer empezar otra de
+// inmediato (mismo minuto o cualquier otro) "no dejaba" — el modal de
+// "Guardar llamada" cubre toda la pantalla y bloquea el click a "Iniciar
+// llamada" hasta resolverlo. En vez de agregar otro botón para "encadenar",
+// se quita la fricción de raíz: colgar una llamada la GUARDA SOLA al
+// instante, con los mismos defaults que ya prellenaba el modal (Billable
+// Yes, Dropped No, Customer ID "Manual", Pago estimado a la tasa base) —
+// sin ningún modal de por medio, así que "Iniciar llamada" para la
+// siguiente queda disponible en el acto. Si el usuario necesita corregir
+// esos defaults (el cliente real, billable/dropped, el pago exacto), ya
+// existe "Editar" en Tabla de llamadas para eso — no hace falta
+// preguntarlo en el momento de colgar.
+// Único caso en que SÍ se abre un modal: si el guardado automático falla
+// (traslape con otra llamada real, o duplicado exacto — ambos raros
+// viniendo de una llamada que recién terminó). Ahí se abre el mismo modal
+// de siempre (openManualCallModalFromLiveCall, prellenado) como red de
+// seguridad, para que el usuario ajuste y guarde a mano en vez de perder
+// el registro de la llamada en silencio.
+function autoSaveLiveCall(startedAtISO, endedAtISO) {
+  const start = new Date(startedAtISO);
+  const end = new Date(endedAtISO);
+  const durationMin = Math.max(1, Math.round((end.getTime() - start.getTime()) / 60000));
+  const callDate = todayCallDateKey(start);
+  const callStart = callStartLabelFromHHMM(`${pad(start.getHours())}:${pad(start.getMinutes())}`);
+  const pay = manualCallEstimatedPay(durationMin, 'normal').toFixed(2);
+
+  const candidate = buildManualCallCandidate({
+    customerId: '',
+    callDate,
+    callStart,
+    durationMin,
+    billable: 'Yes',
+    dropped: 'No',
+    pay,
+  });
+  const result = trySaveCallCandidate(candidate);
+
+  if (result.ok) {
+    saveAll();
+    toast(`Llamada guardada (${formatDuration(durationMin * 60000)}) — edítala en Tabla de llamadas si hace falta`);
+  } else {
+    toast(result.reason);
+    openManualCallModalFromLiveCall(startedAtISO, endedAtISO);
+  }
 }
 
 function renderSchedule() {
