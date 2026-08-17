@@ -1344,92 +1344,199 @@
   background: linear-gradient(90deg, var(--bad), #ff8a95);
 }
 
-    .control-btn {
+    /* Pedido del usuario: rediseño de los 6 botones de "Controles"
+       (Iniciar/Finalizar shift, Iniciar Break, Iniciar Lunch, Iniciar
+       llamada, Pegar Llamadas, Agregar llamada) — antes eran tarjetas con
+       degradado de fondo, todas muy parecidas entre sí salvo por el tinte
+       de color. Mockup mostrado con 4 direcciones (A/B/C/D) + una fusión de
+       C+D elegida explícitamente por el usuario: base del estilo C (fondo
+       "fantasma" en reposo — sin relleno, solo borde y texto de color; al
+       pasar el mouse/tocar, un círculo de color nace del ícono y se expande
+       hasta cubrir el botón, el texto se invierte a oscuro) + el anillo
+       pulsante de D alrededor del ícono, corriendo AL MISMO TIEMPO que el
+       relleno (no uno después del otro).
+       Cada botón se identifica con `data-accent="..."` (cyan/warn/blue/
+       pink/good/bad) en vez de reglas `#id` sueltas — un solo lugar define
+       qué variables de color usa cada acento, reutilizando las variables
+       --pale-* que YA existen en el theming claro/oscuro de la app (mismo
+       criterio que ya usan .tag/.goal-badge), así estos botones cambian de
+       tema automáticamente sin ningún CSS adicional por tema. El acento de
+       #shiftControlBtn se reasigna por JS entre "cyan" (a punto de iniciar)
+       y "bad" (en curso, click para finalizar) — ver renderHeader(), antes
+       hacía esto con estilos inline (background/borderColor) directos. */
+    .action-btn {
+      position: relative;
       display: flex;
       flex-direction: column;
-      align-items: flex-start;
+      align-items: center;
       justify-content: center;
-      gap: 3px;
+      gap: 6px;
       min-height: 58px;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,.04);
+      padding: 14px 10px 12px;
+      border-radius: 16px;
+      border: 1.5px solid rgba(var(--accent-rgb), .42);
+      background: transparent;
       color: var(--text);
-      border-radius: 14px;
-      padding: 10px 12px;
-      font-weight: 800;
       cursor: pointer;
-      transition: transform .14s ease, filter .14s ease, opacity .14s ease, border-color .14s ease;
-      text-align: left;
+      overflow: hidden;
+      isolation: isolate;
+      text-align: center;
+      transition: transform .14s ease, border-color .18s ease, opacity .14s ease;
     }
 
-    .control-btn .control-label {
-      font-size: 13px;
+    /* El "relleno tipo onda": un círculo grande (340px, bastante más ancho
+       que cualquier botón real en este grid de 3 columnas, incluso en
+       desktop) que nace desde cerca del ícono y escala de 0 a 1 al pasar el
+       mouse — se usa `scale`, no un tamaño final fijo en px, para no
+       depender de medir el ancho real del botón (que varía por breakpoint). */
+    .action-ripple {
+      position: absolute;
+      left: 50%;
+      top: 38%;
+      width: 340px;
+      height: 340px;
+      margin-left: -170px;
+      margin-top: -170px;
+      border-radius: 50%;
+      background: var(--accent);
+      transform: scale(0);
+      opacity: 0;
+      z-index: -1;
+      transition: transform .5s cubic-bezier(.22, .85, .4, 1), opacity .32s ease;
+    }
+
+    .action-icon-wrap {
+      position: relative;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+    }
+
+    .action-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 1.5px solid transparent;
+      opacity: 0;
+    }
+
+    @keyframes action-pulse {
+      0% { transform: scale(.82); opacity: .6; }
+      70% { transform: scale(1.55); opacity: 0; }
+      100% { opacity: 0; }
+    }
+
+    .action-icon {
+      position: relative;
+      z-index: 1;
+      font-size: 16px;
+      line-height: 1;
+      transition: transform .3s ease;
+    }
+
+    .action-label {
+      font-size: 12.5px;
+      font-weight: 800;
+      letter-spacing: -.01em;
       line-height: 1.15;
-      letter-spacing: -.02em;
+      color: var(--accent-pale);
+      transition: color .22s ease;
     }
 
-    .control-btn .control-sub {
+    .action-sub {
       color: var(--muted);
       font-size: 10.5px;
       font-weight: 700;
       line-height: 1.3;
+      transition: color .22s ease;
     }
 
-    .control-btn.secondary { background: rgba(255,255,255,.05); }
+    /* Variantes de acento — un solo lugar por color, reutilizado por los 6
+       botones vía data-accent en vez de reglas #id sueltas. --accent-pale
+       reutiliza las variables --pale-* ya existentes (theming automático);
+       --accent-rgb es el tono saturado en formato "r,g,b" (para el borde
+       semitransparente y el relleno de la onda, que sí necesita el color
+       saturado real, no la versión pálida). */
+    .action-btn[data-accent="cyan"] { --accent: var(--cyan); --accent-rgb: 47, 213, 255; --accent-pale: var(--pale-cyan); }
+    .action-btn[data-accent="warn"] { --accent: var(--warn); --accent-rgb: 255, 209, 92; --accent-pale: var(--pale-warn); }
+    .action-btn[data-accent="blue"] { --accent: var(--blue); --accent-rgb: 125, 140, 255; --accent-pale: var(--pale-indigo); }
+    .action-btn[data-accent="pink"] { --accent: var(--pink); --accent-rgb: 255, 111, 143; --accent-pale: var(--pale-bad); }
+    .action-btn[data-accent="good"] { --accent: var(--good); --accent-rgb: 102, 226, 165; --accent-pale: var(--pale-good); }
+    .action-btn[data-accent="bad"] { --accent: var(--bad); --accent-rgb: 255, 107, 114; --accent-pale: var(--pale-bad); }
 
-    #shiftControlBtn {
-      background: linear-gradient(135deg, rgba(56, 189, 248, .18), rgba(34, 211, 238, .08));
-      border: 1px solid rgba(56, 189, 248, .4);
-    }
-    #shiftControlBtn .control-label { color: var(--pale-cyan); }
-
-    #breakControlBtn {
-      background: linear-gradient(135deg, rgba(251, 191, 36, .16), rgba(217, 119, 6, .07));
-      border: 1px solid rgba(251, 191, 36, .38);
-    }
-    #breakControlBtn .control-label { color: var(--pale-warn); }
-
-    #lunchControlBtn {
-      background: linear-gradient(135deg, rgba(129, 140, 248, .18), rgba(99, 102, 241, .08));
-      border: 1px solid rgba(129, 140, 248, .4);
-    }
-    #lunchControlBtn .control-label { color: var(--pale-indigo); }
-
-    #pasteCallsBtn {
-      background: linear-gradient(135deg, rgba(96, 165, 250, .16), rgba(59, 130, 246, .07));
-      border: 1px solid rgba(96, 165, 250, .38);
-    }
-    #pasteCallsBtn .control-label { color: var(--pale-cyan); }
-
-    #callControlBtn {
-      background: linear-gradient(135deg, rgba(255, 111, 143, .16), rgba(225, 29, 72, .07));
-      border: 1px solid rgba(255, 111, 143, .38);
-    }
-    #callControlBtn .control-label { color: var(--pale-bad); }
-
-    /* Antes sin regla propia — caía al gris genérico .control-btn.secondary,
-       se veía plano al lado de #pasteCallsBtn/#callControlBtn (que sí tienen
-       degradado propio). Verde/teal porque "agregar" es una acción de
-       creación, coherente con --good de la paleta. */
-    #addCallManualBtn {
-      background: linear-gradient(135deg, rgba(102, 226, 165, .16), rgba(52, 178, 122, .07));
-      border: 1px solid rgba(102, 226, 165, .38);
-    }
-    #addCallManualBtn .control-label { color: var(--pale-good); }
-
-    .control-btn:hover,
-    .control-btn:focus-visible {
-      transform: translateY(-1px);
-      filter: brightness(1.12);
+    /* Pedido del usuario: "nada de esto funcionó en el celular" — :hover
+       casi no sirve en pantallas táctiles (no hay cursor que se quede
+       encima del botón; en el mejor de los casos algunos navegadores
+       simulan un :hover pegajoso al tocar, de forma inconsistente entre
+       dispositivos). Se agrega la clase `.is-pressed` a cada selector de
+       abajo — activada por JS en 'pointerdown' (ver wireActionButtonPress()
+       más adelante en el script), que SÍ dispara de forma confiable con
+       cualquier toque, sin depender de que el navegador simule hover. El
+       :hover normal se conserva intacto para quien use mouse en escritorio
+       — ambos disparan exactamente la misma animación. */
+    .action-btn:hover,
+    .action-btn.is-pressed,
+    .action-btn:focus-visible {
+      transform: translateY(-2px);
       outline: none;
     }
-
-    .control-btn:disabled {
-      cursor: not-allowed;
-      opacity: .45;
-      transform: none;
-      filter: grayscale(.4);
+    .action-btn:hover .action-ripple,
+    .action-btn.is-pressed .action-ripple { transform: scale(1); opacity: 1; }
+    .action-btn:hover .action-icon,
+    .action-btn.is-pressed .action-icon { transform: scale(1.12) translateY(-1px); }
+    .action-btn:hover .action-label,
+    .action-btn:hover .action-sub,
+    .action-btn.is-pressed .action-label,
+    .action-btn.is-pressed .action-sub { color: #07101f; }
+    /* Anillo pulsante de D — corre AL MISMO TIEMPO que el relleno de la onda
+       (arriba), no antes ni después. Esta regla se me había quedado afuera
+       en la primera pasada de implementación (solo quedó la versión
+       ".is-active", para el botón EN CURSO) — el anillo por hover simple es
+       el que el usuario pidió explícitamente al elegir la fusión C+D. */
+    .action-btn:hover .action-ring,
+    .action-btn.is-pressed .action-ring {
+      opacity: 1;
+      border-color: rgba(var(--accent-rgb), .6);
+      animation: action-pulse 1.1s ease-out infinite;
     }
+    .action-btn:active { transform: translateY(-1px) scale(.98); }
+    .action-btn:active .action-ripple { transform: scale(1.03); }
+
+    /* Estado "en curso" (Break/Lunch/llamada activos ahora mismo, o el
+       turno corriendo — ver .is-active toggled por JS en renderHeader()):
+       el anillo queda VISIBLE Y PULSANDO todo el tiempo, sin necesitar
+       hover — la misma animación de "algo está pasando ahora" que ya usa
+       el hover, pero persistente mientras la acción sigue activa. El borde
+       también se refuerza un poco para que se note incluso sin el mouse
+       encima. */
+    .action-btn.is-active {
+      border-color: rgba(var(--accent-rgb), .7);
+    }
+    .action-btn.is-active .action-ring {
+      opacity: 1;
+      border-color: rgba(var(--accent-rgb), .55);
+      animation: action-pulse 1.6s ease-out infinite;
+    }
+
+    .action-btn:disabled {
+      cursor: not-allowed;
+      opacity: .4;
+      transform: none;
+      filter: grayscale(.35);
+    }
+    .action-btn:disabled:hover .action-ripple,
+    .action-btn:disabled.is-pressed .action-ripple { transform: scale(0); opacity: 0; }
+    .action-btn:disabled:hover .action-icon,
+    .action-btn:disabled.is-pressed .action-icon { transform: none; }
+    .action-btn:disabled:hover .action-ring,
+    .action-btn:disabled.is-pressed .action-ring { opacity: 0; animation: none; }
+    .action-btn:disabled:hover .action-label,
+    .action-btn:disabled:hover .action-sub,
+    .action-btn:disabled.is-pressed .action-label,
+    .action-btn:disabled.is-pressed .action-sub { color: var(--accent-pale); }
 
     .button-row {
       display: flex;
@@ -2499,27 +2606,31 @@
 </div>
 
 <div class="controls-grid">
-<button class="control-btn primary" id="shiftControlBtn" type="button">
-<span class="control-label" id="shiftControlLabel">Iniciar shift</span>
-<span class="control-sub" id="shiftControlSub">07:00 AM – 04:00 PM</span>
+<button class="action-btn" id="shiftControlBtn" type="button" data-accent="cyan">
+<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">▶</span></span>
+<span class="action-label" id="shiftControlLabel">Iniciar shift</span>
+<span class="action-sub" id="shiftControlSub">07:00 AM – 04:00 PM</span>
 </button>
-<button class="control-btn warn" id="breakControlBtn" type="button">
-<span class="control-label" id="breakControlLabel">Iniciar Break</span>
-<span class="control-sub" id="breakControlTimer">00:00:00</span>
+<button class="action-btn" id="breakControlBtn" type="button" data-accent="warn">
+<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">☕</span></span>
+<span class="action-label" id="breakControlLabel">Iniciar Break</span>
+<span class="action-sub" id="breakControlTimer">00:00:00</span>
 </button>
-<button class="control-btn warn" id="lunchControlBtn" type="button">
-<span class="control-label" id="lunchControlLabel">Iniciar Lunch</span>
-<span class="control-sub" id="lunchControlTimer">00:00:00</span>
+<button class="action-btn" id="lunchControlBtn" type="button" data-accent="blue">
+<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">🍽️</span></span>
+<span class="action-label" id="lunchControlLabel">Iniciar Lunch</span>
+<span class="action-sub" id="lunchControlTimer">00:00:00</span>
 </button>
 </div>
 <div class="secondary-controls-static">
 <div class="controls-grid">
-<button class="control-btn call" id="callControlBtn" type="button">
-<span class="control-label" id="callControlLabel">📞 Iniciar llamada</span>
-<span class="control-sub" id="callControlTimer">00:00:00</span>
+<button class="action-btn" id="callControlBtn" type="button" data-accent="pink">
+<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📞</span></span>
+<span class="action-label" id="callControlLabel">Iniciar llamada</span>
+<span class="action-sub" id="callControlTimer">00:00:00</span>
 </button>
-<button class="control-btn secondary" id="pasteCallsBtn" type="button"><span class="control-label">📋 Pegar Llamadas</span><span class="control-sub">Importar data</span></button>
-<button class="control-btn secondary" id="addCallManualBtn" type="button"><span class="control-label">➕ Agregar llamada</span><span class="control-sub">Manual</span></button>
+<button class="action-btn" id="pasteCallsBtn" type="button" data-accent="cyan"><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📋</span></span><span class="action-label">Pegar Llamadas</span><span class="action-sub">Importar data</span></button>
+<button class="action-btn" id="addCallManualBtn" type="button" data-accent="good"><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">➕</span></span><span class="action-label">Agregar llamada</span><span class="action-sub">Manual</span></button>
 </div>
 </div>
 </section>
@@ -6795,8 +6906,12 @@ function renderWeekSummary() {
     }
 
     function callActionLabel() {
-      if (!isViewingToday()) return '📞 Iniciar llamada';
-      return state.activeCall ? '📞 Terminar llamada' : '📞 Iniciar llamada';
+      // El emoji 📞 ya no va aquí — vive en el ícono estático del botón
+      // (.action-icon en el HTML, envuelto en el anillo pulsante) desde el
+      // rediseño de Controles. Antes iba pegado al texto porque el label
+      // ERA el único lugar donde vivía el ícono.
+      if (!isViewingToday()) return 'Iniciar llamada';
+      return state.activeCall ? 'Terminar llamada' : 'Iniciar llamada';
     }
 
     // A diferencia de pauseActionDisabled() (Break/Lunch), iniciar una
@@ -8530,12 +8645,19 @@ function renderHeader() {
       ? (isDayOffBlocking ? 'Hoy es tu día libre' : (tooEarly ? earlySubtext : shiftWindowLabel))
       : 'Activo';
   shiftBtn.disabled = shiftActionDisabled();
+  // Antes esto pintaba background/borderColor/color directo con estilos
+  // inline (2 gradientes hardcodeados: cian "a punto de iniciar" vs. rosado
+  // "en curso, click para finalizar"). Con el rediseño de Controles, el
+  // color de cada botón vive en `data-accent` (ver CSS, variantes
+  // [data-accent="..."]) — reasignar el atributo ya alcanza para que TODO
+  // el botón (borde, relleno de la onda al hover, ícono, texto) cambie de
+  // tono junto, sin tocar estilos inline sueltos. Mientras el turno está EN
+  // CURSO, además se marca `.is-active` — mismo criterio visual que ya usan
+  // Break/Lunch/llamada activos: el anillo queda pulsando sin necesitar
+  // hover, para que se note "esto sigue corriendo" de un vistazo.
   const shiftIsPrimary = shiftActionTone() === 'primary';
-  shiftBtn.style.background = shiftIsPrimary
-    ? 'linear-gradient(135deg, rgba(56, 189, 248, .18), rgba(34, 211, 238, .08))'
-    : 'linear-gradient(135deg, rgba(251, 113, 133, .18), rgba(225, 29, 72, .08))';
-  shiftBtn.style.borderColor = shiftIsPrimary ? 'rgba(56, 189, 248, .4)' : 'rgba(251, 113, 133, .4)';
-  shiftLabel.style.color = shiftIsPrimary ? '#7dd3fc' : '#fda4af';
+  shiftBtn.dataset.accent = shiftIsPrimary ? 'cyan' : 'bad';
+  shiftBtn.classList.toggle('is-active', !shiftIsPrimary);
 
   const breakBtn = document.getElementById('breakControlBtn');
   const lunchBtn = document.getElementById('lunchControlBtn');
@@ -8554,10 +8676,12 @@ function renderHeader() {
 
   const breakActive = state.activePause && state.activePause.type === 'break';
   const lunchActive = state.activePause && state.activePause.type === 'lunch';
-  breakBtn.style.borderColor = breakActive ? 'rgba(251, 191, 36, .7)' : 'rgba(251, 191, 36, .38)';
-  lunchBtn.style.borderColor = lunchActive ? 'rgba(129, 140, 248, .7)' : 'rgba(129, 140, 248, .4)';
-  breakBtn.style.boxShadow = breakActive ? '0 0 0 1px rgba(251, 191, 36, .25) inset' : 'none';
-  lunchBtn.style.boxShadow = lunchActive ? '0 0 0 1px rgba(129, 140, 248, .25) inset' : 'none';
+  // Antes esto tocaba borderColor/boxShadow inline directo (mismo patrón
+  // que el shift, ver arriba) — ahora es un solo toggle de clase, y el CSS
+  // (.action-btn.is-active) ya se encarga de reforzar el borde y dejar el
+  // anillo pulsando sin hover.
+  breakBtn.classList.toggle('is-active', !!breakActive);
+  lunchBtn.classList.toggle('is-active', !!lunchActive);
 
   const callBtn = document.getElementById('callControlBtn');
   const callLabel = document.getElementById('callControlLabel');
@@ -8566,8 +8690,7 @@ function renderHeader() {
   callTimer.textContent = viewingToday ? callActionTimer() : "Solo en 'Hoy'";
   callBtn.disabled = callActionDisabled();
   const callActive = !!state.activeCall;
-  callBtn.style.borderColor = callActive ? 'rgba(255, 111, 143, .75)' : 'rgba(255, 111, 143, .38)';
-  callBtn.style.boxShadow = callActive ? '0 0 0 1px rgba(255, 111, 143, .25) inset' : 'none';
+  callBtn.classList.toggle('is-active', callActive);
 
   const connected = hasShift ? connectedMinutesForDay(dayKey) : 0;
   const productive = productiveMinutesForDay(dayKey);
@@ -10096,6 +10219,40 @@ function render() {
     syncShiftModalFields();
     applyAccordionState();
     wireAccordionPersistence();
+    wireActionButtonPress();
+
+    // Pedido del usuario ("nada de esto funcionó en el celular"): las
+    // animaciones de los 6 botones de Controles (relleno tipo onda + anillo
+    // pulsante) estaban atadas solo a `:hover`, que en pantallas táctiles no
+    // dispara de forma confiable (no hay cursor que se quede encima). Un
+    // solo listener delegado en 'pointerdown' (cubre mouse Y touch con el
+    // mismo evento, sin duplicar lógica para cada uno) agrega `.is-pressed`
+    // al botón tocado — la misma clase que el CSS ya trata IGUAL que
+    // `:hover` (ver arriba). Se quita con un `setTimeout` de duración fija
+    // (no al soltar el dedo/`pointerup`) para que la animación complete su
+    // ciclo entero aunque el toque sea muy rápido — si se quitara al
+    // soltar, un tap veloz cortaría el relleno/anillo a la mitad. 550ms =
+    // un poco más que la transición del relleno (.5s), margen suficiente
+    // para que se vea completa sin quedarse "pegada" de más.
+    // No se agrega la clase si el botón está deshabilitado (mismo criterio
+    // que ya usan las reglas CSS `:disabled` — doble seguro, defensivo).
+    function wireActionButtonPress() {
+      const PRESS_DURATION_MS = 550;
+      let clearTimer = null;
+      document.addEventListener('pointerdown', (e) => {
+        const btn = e.target instanceof Element ? e.target.closest('.action-btn') : null;
+        if (!btn || btn.disabled) return;
+        if (clearTimer) clearTimeout(clearTimer);
+        // Reinicia la animación si se toca de nuevo antes de que termine el
+        // ciclo anterior (ej. taps rápidos seguidos) — se quita y se vuelve
+        // a agregar en el siguiente frame para que el navegador registre el
+        // cambio como una transición nueva, no como "ya estaba puesta".
+        btn.classList.remove('is-pressed');
+        void btn.offsetWidth; // fuerza reflow, para que el próximo add() dispare la transición de nuevo
+        btn.classList.add('is-pressed');
+        clearTimer = setTimeout(() => btn.classList.remove('is-pressed'), PRESS_DURATION_MS);
+      });
+    }
 
     // Popup de bienvenida: solo la primerísima vez que se abre la app en
     // este navegador (settings.onboarded sigue en false porque nunca hubo
