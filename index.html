@@ -1389,6 +1389,17 @@
        desktop) que nace desde cerca del ícono y escala de 0 a 1 al pasar el
        mouse — se usa `scale`, no un tamaño final fijo en px, para no
        depender de medir el ancho real del botón (que varía por breakpoint). */
+    /* Pedido del usuario ("veo el anillo pero no el relleno"): antes el
+       relleno quedaba DETRÁS del texto con `z-index:-1` — combinado con
+       `overflow:hidden` + `isolation:isolate` en el botón, esa combinación
+       no se comporta igual en todos los navegadores móviles (z-index
+       negativo dentro de un stacking context aislado es un punto conocido
+       de inconsistencia entre motores de render). El anillo nunca usó
+       z-index negativo, por eso ese sí se veía. Se cambia de técnica: el
+       relleno se queda en z-index normal (0, el default), y en vez es el
+       ÍCONO/LABEL/SUB los que suben con z-index POSITIVO — mismo resultado
+       visual (texto siempre encima del relleno), pero sin depender de
+       z-index negativo en ningún lado. */
     .action-ripple {
       position: absolute;
       left: 50%;
@@ -1401,12 +1412,12 @@
       background: var(--accent);
       transform: scale(0);
       opacity: 0;
-      z-index: -1;
       transition: transform .5s cubic-bezier(.22, .85, .4, 1), opacity .32s ease;
     }
 
     .action-icon-wrap {
       position: relative;
+      z-index: 1;
       width: 30px;
       height: 30px;
       display: flex;
@@ -1438,6 +1449,8 @@
     }
 
     .action-label {
+      position: relative;
+      z-index: 1;
       font-size: 12.5px;
       font-weight: 800;
       letter-spacing: -.01em;
@@ -1447,6 +1460,8 @@
     }
 
     .action-sub {
+      position: relative;
+      z-index: 1;
       color: var(--muted);
       font-size: 10.5px;
       font-weight: 700;
@@ -1507,17 +1522,25 @@
 
     /* Estado "en curso" (Break/Lunch/llamada activos ahora mismo, o el
        turno corriendo — ver .is-active toggled por JS en renderHeader()):
-       el anillo queda VISIBLE Y PULSANDO todo el tiempo, sin necesitar
-       hover — la misma animación de "algo está pasando ahora" que ya usa
-       el hover, pero persistente mientras la acción sigue activa. El borde
-       también se refuerza un poco para que se note incluso sin el mouse
-       encima. */
+       el RELLENO queda puesto (no es un flash momentáneo como al tocar,
+       se queda con color hasta que se vuelva a tocar el botón) Y el anillo
+       queda pulsando todo el tiempo, sin necesitar hover ni tap. El texto
+       se invierte a oscuro de forma permanente mientras dure, igual que
+       cuando el relleno cubre el botón al tocar. */
     .action-btn.is-active {
       border-color: rgba(var(--accent-rgb), .7);
     }
+    .action-btn.is-active .action-ripple {
+      transform: scale(1);
+      opacity: 1;
+    }
+    .action-btn.is-active .action-label,
+    .action-btn.is-active .action-sub {
+      color: #07101f;
+    }
     .action-btn.is-active .action-ring {
       opacity: 1;
-      border-color: rgba(var(--accent-rgb), .55);
+      border-color: rgba(7, 16, 31, .55);
       animation: action-pulse 1.6s ease-out infinite;
     }
 
@@ -2607,16 +2630,19 @@
 
 <div class="controls-grid">
 <button class="action-btn" id="shiftControlBtn" type="button" data-accent="cyan">
+<span class="action-ripple"></span>
 <span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">▶</span></span>
 <span class="action-label" id="shiftControlLabel">Iniciar shift</span>
 <span class="action-sub" id="shiftControlSub">07:00 AM – 04:00 PM</span>
 </button>
 <button class="action-btn" id="breakControlBtn" type="button" data-accent="warn">
+<span class="action-ripple"></span>
 <span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">☕</span></span>
 <span class="action-label" id="breakControlLabel">Iniciar Break</span>
 <span class="action-sub" id="breakControlTimer">00:00:00</span>
 </button>
 <button class="action-btn" id="lunchControlBtn" type="button" data-accent="blue">
+<span class="action-ripple"></span>
 <span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">🍽️</span></span>
 <span class="action-label" id="lunchControlLabel">Iniciar Lunch</span>
 <span class="action-sub" id="lunchControlTimer">00:00:00</span>
@@ -2625,12 +2651,13 @@
 <div class="secondary-controls-static">
 <div class="controls-grid">
 <button class="action-btn" id="callControlBtn" type="button" data-accent="pink">
+<span class="action-ripple"></span>
 <span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📞</span></span>
 <span class="action-label" id="callControlLabel">Iniciar llamada</span>
 <span class="action-sub" id="callControlTimer">00:00:00</span>
 </button>
-<button class="action-btn" id="pasteCallsBtn" type="button" data-accent="cyan"><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📋</span></span><span class="action-label">Pegar Llamadas</span><span class="action-sub">Importar data</span></button>
-<button class="action-btn" id="addCallManualBtn" type="button" data-accent="good"><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">➕</span></span><span class="action-label">Agregar llamada</span><span class="action-sub">Manual</span></button>
+<button class="action-btn" id="pasteCallsBtn" type="button" data-accent="cyan"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📋</span></span><span class="action-label">Pegar Llamadas</span><span class="action-sub">Importar data</span></button>
+<button class="action-btn" id="addCallManualBtn" type="button" data-accent="good"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">➕</span></span><span class="action-label">Agregar llamada</span><span class="action-sub">Manual</span></button>
 </div>
 </div>
 </section>
@@ -10221,36 +10248,94 @@ function render() {
     wireAccordionPersistence();
     wireActionButtonPress();
 
-    // Pedido del usuario ("nada de esto funcionó en el celular"): las
-    // animaciones de los 6 botones de Controles (relleno tipo onda + anillo
-    // pulsante) estaban atadas solo a `:hover`, que en pantallas táctiles no
-    // dispara de forma confiable (no hay cursor que se quede encima). Un
-    // solo listener delegado en 'pointerdown' (cubre mouse Y touch con el
-    // mismo evento, sin duplicar lógica para cada uno) agrega `.is-pressed`
-    // al botón tocado — la misma clase que el CSS ya trata IGUAL que
-    // `:hover` (ver arriba). Se quita con un `setTimeout` de duración fija
-    // (no al soltar el dedo/`pointerup`) para que la animación complete su
-    // ciclo entero aunque el toque sea muy rápido — si se quitara al
-    // soltar, un tap veloz cortaría el relleno/anillo a la mitad. 550ms =
-    // un poco más que la transición del relleno (.5s), margen suficiente
-    // para que se vea completa sin quedarse "pegada" de más.
-    // No se agrega la clase si el botón está deshabilitado (mismo criterio
-    // que ya usan las reglas CSS `:disabled` — doble seguro, defensivo).
+    // Pedido del usuario ("sigue sin verse nada, ni un poco"): el enfoque
+    // anterior (agregar la clase `.is-pressed` y dejar que la transición
+    // CSS de siempre la anime) puede chocar con la propia pseudo-clase
+    // `:active` del navegador sobre los mismos elementos (misma
+    // especificidad CSS, `:active` gana por venir después en la hoja) o
+    // simplemente no disparar de forma confiable en algunos navegadores
+    // móviles — depender de que el navegador "decida" animar una transición
+    // por un cambio de clase es frágil. Se reemplaza por Web Animations API
+    // (`element.animate(...)`), que anima de forma EXPLÍCITA y directa, sin
+    // depender de ninguna pseudo-clase, cascada CSS, ni de nada que el
+    // navegador tenga que "decidir" — misma técnica que usa Material Design
+    // para sus "ripples" justamente por esto. `--accent-rgb` se lee del
+    // propio botón vía getComputedStyle() para que la animación respete el
+    // color/tema real de cada botón (dark/light + su acento), sin
+    // hardcodear ningún color aquí.
+    // Respaldo: si el navegador no soporta `element.animate` (ninguno
+    // realista hoy, pero por si acaso), se cae de vuelta al viejo mecanismo
+    // de clase + transición CSS — peor que la animación nueva, pero mejor
+    // que no animar nada.
+    function playActionPressAnimation(btn) {
+      const ripple = btn.querySelector('.action-ripple');
+      const ring = btn.querySelector('.action-ring');
+      const icon = btn.querySelector('.action-icon');
+      const label = btn.querySelector('.action-label');
+      const sub = btn.querySelector('.action-sub');
+      if (!ripple || !ring || !icon || !label || typeof ripple.animate !== 'function') {
+        // Respaldo sin Web Animations API — mismo mecanismo que la versión
+        // anterior (clase + transición CSS ya definida para .is-pressed).
+        btn.classList.remove('is-pressed');
+        void btn.offsetWidth;
+        btn.classList.add('is-pressed');
+        setTimeout(() => btn.classList.remove('is-pressed'), 550);
+        return;
+      }
+
+      // Tap repetido antes de que termine el ciclo anterior: se cancelan
+      // las animaciones en curso sobre estos mismos elementos para que la
+      // nueva arranque limpia, sin pelear con la que quedó a medias.
+      [ripple, ring, icon, label, sub].forEach(el => {
+        if (el && el.getAnimations) el.getAnimations().forEach(a => a.cancel());
+      });
+
+      const accentRgb = getComputedStyle(btn).getPropertyValue('--accent-rgb').trim() || '47, 213, 255';
+      const DURATION = 620;
+
+      // El relleno tipo onda: crece, se sostiene un instante, se retrae.
+      ripple.animate([
+        { transform: 'scale(0)', opacity: 0, offset: 0 },
+        { transform: 'scale(1)', opacity: 1, offset: .5 },
+        { transform: 'scale(1)', opacity: 1, offset: .78 },
+        { transform: 'scale(0)', opacity: 0, offset: 1 },
+      ], { duration: DURATION, easing: 'cubic-bezier(.22,.85,.4,1)' });
+
+      // El anillo pulsante de D — corre AL MISMO TIEMPO que el relleno, no
+      // uno después del otro, tal como se eligió en el mockup.
+      ring.animate([
+        { opacity: 0, transform: 'scale(.82)', borderColor: `rgba(${accentRgb}, 0)`, offset: 0 },
+        { opacity: 1, transform: 'scale(1)', borderColor: `rgba(${accentRgb}, .6)`, offset: .32 },
+        { opacity: 0, transform: 'scale(1.4)', borderColor: `rgba(${accentRgb}, 0)`, offset: .85 },
+        { opacity: 0, transform: 'scale(1.4)', borderColor: `rgba(${accentRgb}, 0)`, offset: 1 },
+      ], { duration: DURATION, easing: 'ease-out' });
+
+      icon.animate([
+        { transform: 'scale(1) translateY(0)', offset: 0 },
+        { transform: 'scale(1.12) translateY(-1px)', offset: .45 },
+        { transform: 'scale(1) translateY(0)', offset: 1 },
+      ], { duration: DURATION, easing: 'ease-out' });
+
+      // El texto (label + sub) se invierte a oscuro mientras el relleno
+      // está encima, y vuelve a su color de acento normal al terminar —
+      // el color de arranque/llegada se lee del propio elemento (ya
+      // resuelto por el theming claro/oscuro), no un valor fijo.
+      [label, sub].forEach(el => {
+        if (!el) return;
+        const baseColor = getComputedStyle(el).color;
+        el.animate([
+          { color: baseColor, offset: 0 },
+          { color: '#07101f', offset: .5 },
+          { color: baseColor, offset: 1 },
+        ], { duration: DURATION, easing: 'ease-out' });
+      });
+    }
+
     function wireActionButtonPress() {
-      const PRESS_DURATION_MS = 550;
-      let clearTimer = null;
       document.addEventListener('pointerdown', (e) => {
         const btn = e.target instanceof Element ? e.target.closest('.action-btn') : null;
         if (!btn || btn.disabled) return;
-        if (clearTimer) clearTimeout(clearTimer);
-        // Reinicia la animación si se toca de nuevo antes de que termine el
-        // ciclo anterior (ej. taps rápidos seguidos) — se quita y se vuelve
-        // a agregar en el siguiente frame para que el navegador registre el
-        // cambio como una transición nueva, no como "ya estaba puesta".
-        btn.classList.remove('is-pressed');
-        void btn.offsetWidth; // fuerza reflow, para que el próximo add() dispare la transición de nuevo
-        btn.classList.add('is-pressed');
-        clearTimer = setTimeout(() => btn.classList.remove('is-pressed'), PRESS_DURATION_MS);
+        playActionPressAnimation(btn);
       });
     }
 
