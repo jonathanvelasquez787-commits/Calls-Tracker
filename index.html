@@ -1134,11 +1134,12 @@
          sin distinguir grupos — los márgenes laterales grandes que deja esto
          en pantallas muy anchas se resuelven en un paso aparte, a pedido
          explícito del usuario ("luego veremos qué hacemos con los espacios
-         laterales"). Con esto, Tabla de llamadas/Resumen semanal (cuyo
-         `<table>` interno trae `min-width:900px` fijo, ver más abajo)
-         pueden mostrar su propio scroll horizontal dentro de `.table-wrap`
-         si la tabla no cabe en 820px — mismo mecanismo que ya existía para
-         pantallas angostas, ahora también en desktop cuando aplica. Todas
+         laterales"). Tabla de llamadas/Resumen semanal (cuyo `<table>`
+         interno traía `min-width:900px` fijo) inicialmente mostraban su
+         propio scroll horizontal dentro de `.table-wrap` al no caber en
+         820px — corregido después (ver nota más abajo, junto a esas 2
+         reglas) compactando padding/tipografía solo en este breakpoint,
+         para que quepan sin necesitar ese scroll. Todas
          centradas con margin:0 auto / justify-self:center según si su padre
          es flujo normal o grid (ver nota en las 2 últimas, hijas de
          `.grid`). Solo aplica en este breakpoint de escritorio —
@@ -1165,6 +1166,39 @@
            dentro de su celda de grid. */
         justify-self: center;
         width: 100%;
+      }
+
+      /* Pedido del usuario: en v163 estas 2 tablas quedaron con scroll
+         horizontal en escritorio porque su `<table>` interno trae
+         `min-width:900px` fijo (pensado para no verse demasiado apretado en
+         mobile, donde igual se usa la vista de tarjetas en vez de la tabla)
+         y la sección ahora está capada a 820px. Se quita ESE piso mínimo
+         SOLO en este breakpoint de escritorio (`min-width` de la tabla en 0,
+         deja que `width:100%` la ajuste al ancho real de la sección) y se
+         compactan padding/tipografía de celdas para que las 9 columnas de
+         cada tabla (Tabla de llamadas: Customer ID/Fecha/Inicio/Min/Hueco/
+         Billable/Dropped/Pay/Acciones — Resumen semanal: Día/Fecha/Estado/
+         Conectado/Productivo/Llamadas/Ganancias/Adherencia/Nota) quepan sin
+         necesitar la barra de scroll. Solo afecta estas 2 tablas y solo en
+         este breakpoint — mobile/tablet (que ya usan `.table-mobile-list`,
+         tarjetas en vez de `<table>`) y cualquier otra tabla del archivo
+         quedan exactamente igual que antes. */
+      #callTableAccordion table,
+      #weekSummaryAccordion table {
+        min-width: 0;
+      }
+
+      #callTableAccordion th,
+      #callTableAccordion td,
+      #weekSummaryAccordion th,
+      #weekSummaryAccordion td {
+        padding: 7px 5px;
+        font-size: 11px;
+      }
+
+      #callTableAccordion th,
+      #weekSummaryAccordion th {
+        font-size: 9.5px;
       }
     }
 
@@ -1455,14 +1489,21 @@
       font-weight: 800;
       letter-spacing: -.01em;
       line-height: 1.15;
-      color: var(--accent-pale);
+      /* Pedido del usuario: blanco (var(--text)) en todos los estados, no
+         el color de acento — antes solo se quitaban las inversiones a
+         oscuro en cada estado, pero el color BASE se había quedado en
+         --accent-pale (el tono de cian/rosa/etc.) sin tocar. */
+      color: var(--text);
       transition: color .22s ease;
     }
 
     .action-sub {
       position: relative;
       z-index: 1;
-      color: var(--muted);
+      /* Pedido del usuario: blanco, no gris — --text es el color de texto
+         principal de la app (casi blanco en oscuro, oscuro en claro),
+         sigue siendo automático por tema en vez de un blanco fijo. */
+      color: var(--text);
       font-size: 10.5px;
       font-weight: 700;
       line-height: 1.3;
@@ -1475,12 +1516,23 @@
        --accent-rgb es el tono saturado en formato "r,g,b" (para el borde
        semitransparente y el relleno de la onda, que sí necesita el color
        saturado real, no la versión pálida). */
-    .action-btn[data-accent="cyan"] { --accent: var(--cyan); --accent-rgb: 47, 213, 255; --accent-pale: var(--pale-cyan); }
-    .action-btn[data-accent="warn"] { --accent: var(--warn); --accent-rgb: 255, 209, 92; --accent-pale: var(--pale-warn); }
-    .action-btn[data-accent="blue"] { --accent: var(--blue); --accent-rgb: 125, 140, 255; --accent-pale: var(--pale-indigo); }
-    .action-btn[data-accent="pink"] { --accent: var(--pink); --accent-rgb: 255, 111, 143; --accent-pale: var(--pale-bad); }
-    .action-btn[data-accent="good"] { --accent: var(--good); --accent-rgb: 102, 226, 165; --accent-pale: var(--pale-good); }
-    .action-btn[data-accent="bad"] { --accent: var(--bad); --accent-rgb: 255, 107, 114; --accent-pale: var(--pale-bad); }
+    /* Pedido del usuario ("estos colores más bonitos", con captura de uno
+       de los mockups): el texto de estos botones usaba --pale-* (pensado
+       para texto sobre un fondo YA TINTADO de color, ej. los badges de
+       .tag/.goal-badge) — pero estos botones tienen fondo transparente en
+       reposo, así que ese texto lavado (--pale-cyan es casi blanco, por
+       ejemplo) se veía apagado comparado con el color saturado base que sí
+       se usó en el mockup. Se cambia --accent-pale para apuntar al color
+       BASE de cada acento (--cyan/--warn/--blue/--pink/--good/--bad) en vez
+       de su versión --pale-*, mismo criterio de "colores más vivos" del
+       mockup — y sigue siendo automático por tema (claro/oscuro), porque
+       esas variables base YA se redefinen solas en cada tema. */
+    .action-btn[data-accent="cyan"] { --accent: var(--cyan); --accent-rgb: 47, 213, 255; --accent-pale: var(--cyan); }
+    .action-btn[data-accent="warn"] { --accent: var(--warn); --accent-rgb: 255, 209, 92; --accent-pale: var(--warn); }
+    .action-btn[data-accent="blue"] { --accent: var(--blue); --accent-rgb: 125, 140, 255; --accent-pale: var(--blue); }
+    .action-btn[data-accent="pink"] { --accent: var(--pink); --accent-rgb: 255, 111, 143; --accent-pale: var(--pink); }
+    .action-btn[data-accent="good"] { --accent: var(--good); --accent-rgb: 102, 226, 165; --accent-pale: var(--good); }
+    .action-btn[data-accent="bad"] { --accent: var(--bad); --accent-rgb: 255, 107, 114; --accent-pale: var(--bad); }
 
     /* Pedido del usuario: "nada de esto funcionó en el celular" — :hover
        casi no sirve en pantallas táctiles (no hay cursor que se quede
@@ -1502,10 +1554,11 @@
     .action-btn.is-pressed .action-ripple { transform: scale(1); opacity: 1; }
     .action-btn:hover .action-icon,
     .action-btn.is-pressed .action-icon { transform: scale(1.12) translateY(-1px); }
-    .action-btn:hover .action-label,
-    .action-btn:hover .action-sub,
-    .action-btn.is-pressed .action-label,
-    .action-btn.is-pressed .action-sub { color: #07101f; }
+    /* Pedido del usuario: el título (label) y el subtítulo se quedan
+       SIEMPRE en blanco (var(--text), heredado de la regla base) — ni al
+       tocar/hover, ni con el botón activo, cambian de color. Antes el
+       label sí se invertía a oscuro sobre el relleno; se quitó esa
+       inversión a pedido explícito. */
     /* Anillo pulsante de D — corre AL MISMO TIEMPO que el relleno de la onda
        (arriba), no antes ni después. Esta regla se me había quedado afuera
        en la primera pasada de implementación (solo quedó la versión
@@ -1527,6 +1580,15 @@
        queda pulsando todo el tiempo, sin necesitar hover ni tap. El texto
        se invierte a oscuro de forma permanente mientras dure, igual que
        cuando el relleno cubre el botón al tocar. */
+    /* Estado "en curso" (Break/Lunch/llamada activos ahora mismo, o el
+       turno corriendo — ver .is-active toggled por JS en renderHeader()):
+       el RELLENO queda puesto (no es un flash momentáneo como al tocar,
+       se queda con color hasta que se vuelva a tocar el botón) Y el anillo
+       queda pulsando todo el tiempo, sin necesitar hover ni tap. Pedido del
+       usuario: el título (label) se queda en BLANCO mientras está activo
+       (no se invierte a oscuro como sí pasa en el flash momentáneo de
+       tocar/hover) — mismo color que ya usa el subtítulo en todos los
+       estados. */
     .action-btn.is-active {
       border-color: rgba(var(--accent-rgb), .7);
     }
@@ -1534,9 +1596,8 @@
       transform: scale(1);
       opacity: 1;
     }
-    .action-btn.is-active .action-label,
-    .action-btn.is-active .action-sub {
-      color: #07101f;
+    .action-btn.is-active .action-label {
+      color: var(--text);
     }
     .action-btn.is-active .action-ring {
       opacity: 1;
@@ -1556,10 +1617,6 @@
     .action-btn:disabled.is-pressed .action-icon { transform: none; }
     .action-btn:disabled:hover .action-ring,
     .action-btn:disabled.is-pressed .action-ring { opacity: 0; animation: none; }
-    .action-btn:disabled:hover .action-label,
-    .action-btn:disabled:hover .action-sub,
-    .action-btn:disabled.is-pressed .action-label,
-    .action-btn:disabled.is-pressed .action-sub { color: var(--accent-pale); }
 
     .button-row {
       display: flex;
