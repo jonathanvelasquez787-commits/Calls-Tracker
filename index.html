@@ -1489,11 +1489,11 @@
       font-weight: 800;
       letter-spacing: -.01em;
       line-height: 1.15;
-      /* Pedido del usuario: blanco (var(--text)) en todos los estados, no
-         el color de acento — antes solo se quitaban las inversiones a
-         oscuro en cada estado, pero el color BASE se había quedado en
-         --accent-pale (el tono de cian/rosa/etc.) sin tocar. */
-      color: var(--text);
+      /* Pedido del usuario: vuelve al color de acento (--accent-pale) en
+         TODOS los estados, sin inversión a oscuro al tocar/activo — mismo
+         criterio de "un solo color fijo" que ya usa el subtítulo, pero con
+         el tono de cada acento en vez de blanco. */
+      color: var(--accent-pale);
       transition: color .22s ease;
     }
 
