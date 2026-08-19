@@ -2781,6 +2781,10 @@
 <div class="accordion-body">
   <div class="note">Detalle de cada fila importada con su gap.</div>
   <div class="table-wrap" id="callTableWrap"></div>
+  <div class="modal-actions" style="margin-top:0;">
+    <button class="bad" id="clearDayCallsBtn" type="button">🗑️ Vaciar llamadas del día</button>
+  </div>
+  <p class="alert-hint">Borra TODAS las llamadas de <strong id="clearDayCallsDayLabel">—</strong> (el día activo). No toca tu turno, pausas ni horario de ese día — para eso usa "Reiniciar día" en el botón ♻️ Reiniciar del header.</p>
 </div>
 </details>
 <details class="accordion-card" id="weekSummaryAccordion" open>
@@ -9240,6 +9244,32 @@ function deleteCallRecord(callId) {
   return true;
 }
 
+// Pedido del usuario: botón "🗑️ Vaciar llamadas del día" dentro de "Tabla
+// de llamadas" — distinto de "Reiniciar día" (que además borra
+// pausas/turno/huecos/nota/log de ese día). Aquí SOLO se borran las
+// llamadas del día activo; turno, pausas, horario y la nota del día ("Editar
+// día") se dejan intactos a propósito. Mismo criterio que ya usa
+// deleteCallRecord() (borrado individual, ver comentario arriba): las
+// anotaciones de hueco (state.gapAnnotations) ligadas a esas llamadas no se
+// limpian — quedan huérfanas en localStorage, inofensivas (dayGapRows() solo
+// itera sobre huecos entre llamadas que SÍ existen, así que una anotación
+// huérfana nunca vuelve a aparecer en pantalla).
+function clearActiveDayCalls() {
+  const dayKey = getActiveDayKey();
+  const dayCallsList = callsForDay(dayKey);
+  if (!dayCallsList.length) {
+    toast('No hay llamadas que borrar en este día.');
+    return;
+  }
+  const count = dayCallsList.length;
+  const plural = count === 1 ? 'llamada' : 'llamadas';
+  appConfirm(`¿Vaciar TODAS las ${plural} de ${formatCallDayLabel(dayKey)} (${count})? Tu turno, pausas y horario de ese día no se tocan. No se puede deshacer.`, () => {
+    calls = calls.filter(c => callDateKeyFromValue(c.callDate) !== dayKey);
+    saveAll();
+    toast(`${count} ${plural} de ${formatCallDayLabel(dayKey)} borrada(s)`);
+  });
+}
+
 // ---- Agregar llamada manual ----
 // Para llamadas que nunca llegan en la exportación de Propio (ej. una
 // llamada tomada fuera de la plataforma, o una que se te olvidó pegar).
@@ -9870,6 +9900,8 @@ function renderSchedule() {
 function renderTable() {
       const wrap = document.getElementById('callTableWrap');
       const dayKey = getActiveDayKey();
+      const clearDayCallsDayLabel = document.getElementById('clearDayCallsDayLabel');
+      if (clearDayCallsDayLabel) clearDayCallsDayLabel.textContent = formatCallDayLabel(dayKey);
       // "sorted" se mantiene en orden cronológico ASCENDENTE (más vieja
       // primero) porque el cálculo de "hueco" de cada fila depende de
       // comparar contra la llamada REALMENTE anterior en el tiempo
@@ -10137,6 +10169,8 @@ function render() {
       if (!call) return;
       appConfirm(`¿Eliminar la llamada #${call.customerId} (${call.callDate} · ${call.callStart})? Esta acción no se puede deshacer.`, () => deleteCallRecord(callId));
     });
+
+    document.getElementById('clearDayCallsBtn').addEventListener('click', clearActiveDayCalls);
 
     document.addEventListener('click', (e) => {
       const row = e.target instanceof Element ? e.target.closest('[data-week-day]') : null;
