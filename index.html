@@ -1505,11 +1505,19 @@
       font-weight: 800;
       letter-spacing: -.01em;
       line-height: 1.15;
-      /* Pedido del usuario: vuelve al color de acento (--accent-pale) en
-         TODOS los estados, sin inversión a oscuro al tocar/activo — mismo
-         criterio de "un solo color fijo" que ya usa el subtítulo, pero con
-         el tono de cada acento en vez de blanco. */
-      color: var(--accent-pale);
+      /* Bug reportado por el usuario: el título quedaba casi invisible al
+         pasar el mouse o tocar el botón — con color: var(--accent-pale)
+         (mismo tono que .action-ripple, el relleno que cubre el botón en
+         hover/tap), texto y fondo terminaban siendo prácticamente el mismo
+         color. Se cambia a var(--text) (blanco/casi blanco, automático por
+         tema) — mismo color que ya usa .action-sub en TODOS los estados,
+         sin relación con el acento de cada botón, así que se mantiene
+         legible sin importar qué haya detrás. Esto también vuelve
+         redundante (pero inofensiva) la regla .action-btn.is-active
+         .action-label de abajo, que ya forzaba este mismo blanco solo para
+         el estado "en curso" — se deja tal cual por si el color base
+         cambia en el futuro. */
+      color: var(--text);
       transition: color .22s ease;
     }
 
