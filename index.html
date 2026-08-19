@@ -8862,7 +8862,20 @@ function renderHeader() {
   const goalMin = Number(settings.productiveGoalMin || 0);
   const goalUsd = Number(settings.earningsGoal || 0);
   const goalPct = goalUsd > 0 ? Math.min(100, (stats.earnings / goalUsd) * 100) : 0;
-  const remainingMin = Math.max(0, goalMin - productive);
+  // Pedido del usuario: si aplica un bono de Higher Rate en las llamadas de
+  // hoy, lograr la meta debería tomar MENOS minutos — el % en dólares
+  // (goalPct, arriba) ya lo reflejaba correctamente porque usa
+  // `stats.earnings` (incluye el bono), pero "restantes" seguía
+  // calculándose SOLO contra minutos productivos crudos, ignorando que ese
+  // dinero extra ya te acerca a la meta sin necesitar más tiempo trabajado.
+  // Se convierte el bono ya ganado a su equivalente en minutos (a la tasa
+  // base, la misma que ya usa Metas para sincronizar Meta en min <-> Meta en
+  // $) y se resta de los minutos restantes. Sin ningún bono ese día,
+  // `higherRateBonusMinEquivalent` es 0 y el resultado es idéntico al de
+  // siempre — cero regresión para quien no usa Higher Rate.
+  const rateForGoal = Number(settings.rate) > 0 ? Number(settings.rate) : RATE;
+  const higherRateBonusMinEquivalent = rateForGoal > 0 ? (stats.higherRateBonus || 0) / rateForGoal : 0;
+  const remainingMin = Math.max(0, goalMin - productive - higherRateBonusMinEquivalent);
 
   document.getElementById('earningsValue').textContent = money(stats.earnings);
   const earningsConvertedEl = document.getElementById('earningsConvertedText');
