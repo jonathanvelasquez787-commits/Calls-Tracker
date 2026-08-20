@@ -2981,28 +2981,115 @@
 </div>
 <div class="alert-group">
 <div class="alert-group-head">
-<span class="alert-group-icon">🔔</span>
-<span class="alert-group-title">Avisos con sonido</span>
+<span class="alert-group-icon">⏱️</span>
+<span class="alert-group-title">Antes de mi turno</span>
 </div>
-<div class="alert-fields-row">
+<div class="alert-fields-row" style="grid-template-columns: 1fr;">
 <div class="alert-mini-field">
-<label for="shiftAlertMinInput">Antes de mi turno (min)</label>
+<label for="shiftAlertMinInput">Minutos antes</label>
 <input id="shiftAlertMinInput" inputmode="numeric" min="0" step="1" type="number"/>
 </div>
-<div class="alert-mini-field">
-<label for="breakAlertMinInput">Antes de Break/Lunch (min)</label>
-<input id="breakAlertMinInput" inputmode="numeric" min="0" step="1" type="number"/>
 </div>
-<div class="alert-mini-field">
-<label for="breakEndAlertMinInput">Antes de que termine tu Break/Lunch (min)</label>
-<input id="breakEndAlertMinInput" inputmode="numeric" min="0" step="1" type="number"/>
+<div class="field" style="margin-top:8px; margin-bottom:0;">
+<label for="shiftAlarmMessageInput">Mensaje del aviso</label>
+<input id="shiftAlarmMessageInput" maxlength="200" style="margin-top:2px;" type="text"/>
+</div>
+<p class="alert-hint">Variable disponible: <code>{hora}</code> (hora de inicio de tu turno). Déjalo vacío y guarda para volver al mensaje de siempre.</p>
+<div class="field" style="margin:0;">
+<label for="shiftAlarmSoundInput">Sonido del aviso</label>
+<div style="display:flex; gap:8px; align-items:center; margin-top:2px;">
+<select class="alert-select" id="shiftAlarmSoundInput" style="margin:0;">
+<option value="classic">Beep clásico</option>
+<option value="chime">Campanita</option>
+<option value="custom">Sonido personalizado</option>
+</select>
+<button class="gap-edit-btn" id="testShiftAlarmSoundBtn" type="button" style="white-space:nowrap;">🔊 Probar</button>
 </div>
 </div>
-<p class="alert-hint">Suenan mientras la pestaña esté abierta, si aún no le diste al botón correspondiente. 0 = desactivado. Se guardan solos.</p>
+<div id="shiftAlarmCustomSoundSection" style="display:none;">
+<div class="field" style="margin-top:10px;">
+<label for="shiftAlarmSoundFile">Subir sonido (MP3/WAV/OGG, máx. 300KB)</label>
+<input accept="audio/*" id="shiftAlarmSoundFile" style="margin-top:4px;" type="file"/>
+</div>
+<p class="alert-hint" id="shiftAlarmSoundFileStatus">Ningún archivo propio guardado — usando el beep clásico mientras tanto.</p>
+</div>
+<p class="alert-hint">Suena mientras la pestaña esté abierta, si aún no le diste a "Iniciar shift". 0 min = desactivado.</p>
 </div>
 <div class="alert-group">
 <div class="alert-group-head">
 <span class="alert-group-icon">☕</span>
+<span class="alert-group-title">Antes de que empiece tu Break/Lunch</span>
+</div>
+<div class="alert-fields-row" style="grid-template-columns: 1fr;">
+<div class="alert-mini-field">
+<label for="breakAlertMinInput">Minutos antes</label>
+<input id="breakAlertMinInput" inputmode="numeric" min="0" step="1" type="number"/>
+</div>
+</div>
+<div class="field" style="margin-top:8px; margin-bottom:0;">
+<label for="breakStartAlarmMessageInput">Mensaje del aviso</label>
+<input id="breakStartAlarmMessageInput" maxlength="200" style="margin-top:2px;" type="text"/>
+</div>
+<p class="alert-hint">Variables disponibles: <code>{tipo}</code> (Break o Lunch), <code>{hora}</code>. Déjalo vacío y guarda para volver al mensaje de siempre.</p>
+<div class="field" style="margin:0;">
+<label for="breakStartAlarmSoundInput">Sonido del aviso</label>
+<div style="display:flex; gap:8px; align-items:center; margin-top:2px;">
+<select class="alert-select" id="breakStartAlarmSoundInput" style="margin:0;">
+<option value="classic">Beep clásico</option>
+<option value="chime">Campanita</option>
+<option value="custom">Sonido personalizado</option>
+</select>
+<button class="gap-edit-btn" id="testBreakStartAlarmSoundBtn" type="button" style="white-space:nowrap;">🔊 Probar</button>
+</div>
+</div>
+<div id="breakStartAlarmCustomSoundSection" style="display:none;">
+<div class="field" style="margin-top:10px;">
+<label for="breakStartAlarmSoundFile">Subir sonido (MP3/WAV/OGG, máx. 300KB)</label>
+<input accept="audio/*" id="breakStartAlarmSoundFile" style="margin-top:4px;" type="file"/>
+</div>
+<p class="alert-hint" id="breakStartAlarmSoundFileStatus">Ningún archivo propio guardado — usando el beep clásico mientras tanto.</p>
+</div>
+<p class="alert-hint">Suena mientras la pestaña esté abierta, si aún no le diste al botón de Break/Lunch. 0 min = desactivado.</p>
+</div>
+<div class="alert-group">
+<div class="alert-group-head">
+<span class="alert-group-icon">⏰</span>
+<span class="alert-group-title">Antes de que termine tu Break/Lunch</span>
+</div>
+<div class="alert-fields-row" style="grid-template-columns: 1fr;">
+<div class="alert-mini-field">
+<label for="breakEndAlertMinInput">Minutos antes</label>
+<input id="breakEndAlertMinInput" inputmode="numeric" min="0" step="1" type="number"/>
+</div>
+</div>
+<div class="field" style="margin-top:8px; margin-bottom:0;">
+<label for="breakEndAlarmMessageInput">Mensaje del aviso</label>
+<input id="breakEndAlarmMessageInput" maxlength="200" style="margin-top:2px;" type="text"/>
+</div>
+<p class="alert-hint">Variables disponibles: <code>{tipo}</code> (Break o Lunch), <code>{hora}</code>. Déjalo vacío y guarda para volver al mensaje de siempre.</p>
+<div class="field" style="margin:0;">
+<label for="breakEndAlarmSoundInput">Sonido del aviso</label>
+<div style="display:flex; gap:8px; align-items:center; margin-top:2px;">
+<select class="alert-select" id="breakEndAlarmSoundInput" style="margin:0;">
+<option value="classic">Beep clásico</option>
+<option value="chime">Campanita</option>
+<option value="custom">Sonido personalizado</option>
+</select>
+<button class="gap-edit-btn" id="testBreakEndAlarmSoundBtn" type="button" style="white-space:nowrap;">🔊 Probar</button>
+</div>
+</div>
+<div id="breakEndAlarmCustomSoundSection" style="display:none;">
+<div class="field" style="margin-top:10px;">
+<label for="breakEndAlarmSoundFile">Subir sonido (MP3/WAV/OGG, máx. 300KB)</label>
+<input accept="audio/*" id="breakEndAlarmSoundFile" style="margin-top:4px;" type="file"/>
+</div>
+<p class="alert-hint" id="breakEndAlarmSoundFileStatus">Ningún archivo propio guardado — usando el beep clásico mientras tanto.</p>
+</div>
+<p class="alert-hint">Suena mientras la pestaña esté abierta, con una pausa REAL ya en curso. 0 min = desactivado.</p>
+</div>
+<div class="alert-group">
+<div class="alert-group-head">
+<span class="alert-group-icon">🎯</span>
 <span class="alert-group-title">Descanso por productividad</span>
 </div>
 <div class="alert-fields-row">
@@ -3015,6 +3102,15 @@
 <input id="productiveBreakAwardMinInput" inputmode="numeric" min="0" step="1" type="number"/>
 </div>
 </div>
+<div class="field" style="margin-top:8px; margin-bottom:0;">
+<label for="productiveBreakMessageFirstInput">Mensaje (primera vez del turno)</label>
+<input id="productiveBreakMessageFirstInput" maxlength="200" style="margin-top:2px;" type="text"/>
+</div>
+<div class="field" style="margin-top:8px; margin-bottom:0;">
+<label for="productiveBreakMessageRepeatInput">Mensaje (siguientes veces del mismo turno)</label>
+<input id="productiveBreakMessageRepeatInput" maxlength="200" style="margin-top:2px;" type="text"/>
+</div>
+<p class="alert-hint">Variables disponibles: <code>{productivo}</code> (min productivos acumulados), <code>{descanso}</code> (min de descanso ganados). Déjalo vacío y guarda para volver al mensaje de siempre.</p>
 <div class="field" style="margin:0;">
 <label for="productiveBreakSoundInput">Sonido del aviso</label>
 <div style="display:flex; gap:8px; align-items:center; margin-top:2px;">
@@ -3832,6 +3928,32 @@ $0.72"></textarea>
         // pausa REAL ya en curso, ver checkBreakEndAlarm). 0 = desactivado.
         alertBeforeBreakMin: 2,
         alertBeforeBreakEndMin: 2,
+        // Pedido del usuario: "así como se configuran los sonidos de cada
+        // aviso, se debería poder configurar el mensaje de cada aviso y
+        // también el sonido personalizado de cada uno" — antes SOLO
+        // "Descanso por productividad" tenía sonido elegible (classic/
+        // chime/custom); estos 3 avisos siempre sonaban con el mismo beep
+        // fijo (playShiftAlarmBeep) sin poder elegir, y ningún aviso tenía
+        // mensaje editable. Mismo patrón que productiveBreakSound/
+        // productiveBreakCustomSoundDataUrl/Name (ver más abajo) replicado
+        // para cada uno — 'classic' sigue siendo EXACTAMENTE el mismo beep
+        // de siempre (ver playConfiguredAlarmSound()), cero cambio de
+        // sonido para quien no toque esta configuración nueva. El mensaje
+        // es una plantilla con variables `{hora}`/`{tipo}` (ver
+        // renderAlertTemplate()) — el texto por default es idéntico al
+        // mensaje fijo que ya mostraba cada aviso antes de esta mejora.
+        shiftAlarmSound: 'classic',
+        shiftAlarmCustomSoundDataUrl: '',
+        shiftAlarmCustomSoundName: '',
+        shiftAlarmMessage: '🔔 ¡Conéctate ya! Tu turno empieza a las {hora}',
+        breakStartAlarmSound: 'classic',
+        breakStartAlarmCustomSoundDataUrl: '',
+        breakStartAlarmCustomSoundName: '',
+        breakStartAlarmMessage: '🔔 Tu {tipo} empieza a las {hora}',
+        breakEndAlarmSound: 'classic',
+        breakEndAlarmCustomSoundDataUrl: '',
+        breakEndAlarmCustomSoundName: '',
+        breakEndAlarmMessage: '⏰ Tu {tipo} termina pronto ({hora})',
         // Pedido del usuario: adherencia estilo Calabrio (minuto a minuto,
         // ver computeMinuteAdherence()) con ventana de gracia configurable
         // alrededor de cada transición planeada (inicio/fin de Trabajo/
@@ -3852,6 +3974,13 @@ $0.72"></textarea>
         // conteo empieza de nuevo desde ese momento.
         productiveBreakEarnMin: 30,
         productiveBreakAwardMin: 5,
+        // Pedido del usuario: mensaje editable también para este aviso — dos
+        // plantillas independientes (primera vez del turno / repeticiones
+        // siguientes, ver checkProductiveBreakEarnedAlarm) con variables
+        // `{productivo}`/`{descanso}`. Texto por default idéntico al mensaje
+        // fijo que ya mostraba antes de esta mejora.
+        productiveBreakMessageFirst: '☕ ¡Ganaste un descanso! {productivo} min productivos — tienes derecho a {descanso} min.',
+        productiveBreakMessageRepeat: '☕ ¡Otro descanso ganado! {productivo} min productivos — llevas {descanso} min de descanso acumulados.',
         // Sonido del aviso — 'classic'/'chime' son tonos sintetizados (Web
         // Audio, sin archivo externo); 'custom' usa un audio subido por el
         // usuario (ver productiveBreakCustomSoundDataUrl). Guardado como
@@ -3920,6 +4049,25 @@ $0.72"></textarea>
       // mano el localStorage parcialmente), cae de vuelta a 'classic' — sin
       // esto, el checker intentaría reproducir un Data URL vacío en silencio.
       if (settings.productiveBreakSound === 'custom' && !settings.productiveBreakCustomSoundDataUrl) settings.productiveBreakSound = 'classic';
+      if (typeof settings.productiveBreakMessageFirst !== 'string' || !settings.productiveBreakMessageFirst.trim()) settings.productiveBreakMessageFirst = fallback.productiveBreakMessageFirst;
+      if (typeof settings.productiveBreakMessageRepeat !== 'string' || !settings.productiveBreakMessageRepeat.trim()) settings.productiveBreakMessageRepeat = fallback.productiveBreakMessageRepeat;
+      // Pedido del usuario: mismo tratamiento defensivo que productiveBreak*
+      // de arriba, replicado para los 3 avisos de turno/Break/Lunch — sonido
+      // válido, Data URL/nombre como string, fallback a 'classic' si quedó
+      // en 'custom' sin archivo, y mensaje no vacío (una plantilla vacía
+      // volvería el toast en blanco, así que se cae al default en vez de
+      // permitirlo).
+      ['shift', 'breakStart', 'breakEnd'].forEach((kind) => {
+        const soundKey = `${kind}AlarmSound`;
+        const urlKey = `${kind}AlarmCustomSoundDataUrl`;
+        const nameKey = `${kind}AlarmCustomSoundName`;
+        const msgKey = `${kind}AlarmMessage`;
+        if (!['classic', 'chime', 'custom'].includes(settings[soundKey])) settings[soundKey] = fallback[soundKey];
+        if (typeof settings[urlKey] !== 'string') settings[urlKey] = fallback[urlKey];
+        if (typeof settings[nameKey] !== 'string') settings[nameKey] = fallback[nameKey];
+        if (settings[soundKey] === 'custom' && !settings[urlKey]) settings[soundKey] = 'classic';
+        if (typeof settings[msgKey] !== 'string' || !settings[msgKey].trim()) settings[msgKey] = fallback[msgKey];
+      });
       // Higher Rate Opportunity: se descarta cualquier ventana mal formada
       // (sin fecha/horario válido, o nivel desconocido) — mismo criterio
       // defensivo que el resto de settings, para que un dato corrupto en
@@ -4747,8 +4895,9 @@ function playShiftAlarmBeep() {
 
 function startShiftAlarm() {
   if (shiftAlarmIntervalId) return; // ya está sonando, no duplicar el interval
-  playShiftAlarmBeep();
-  shiftAlarmIntervalId = setInterval(playShiftAlarmBeep, SHIFT_ALARM_REPEAT_MS);
+  const play = () => playConfiguredAlarmSound(settings.shiftAlarmSound, settings.shiftAlarmCustomSoundDataUrl);
+  play();
+  shiftAlarmIntervalId = setInterval(play, SHIFT_ALARM_REPEAT_MS);
 }
 
 function stopShiftAlarm() {
@@ -4756,6 +4905,47 @@ function stopShiftAlarm() {
     clearInterval(shiftAlarmIntervalId);
     shiftAlarmIntervalId = null;
   }
+}
+
+// Pedido del usuario: "así como se configuran los sonidos... se debería
+// poder configurar el mensaje de cada aviso". Sustituye `{variable}` dentro
+// de una plantilla guardada en settings (ej. `shiftAlarmMessage`) por su
+// valor real — mismo mecanismo simple de string.split/join para cada clave
+// de `vars`, sin dependencias externas. Si la plantilla no trae una
+// variable disponible, ese `{token}` sencillamente queda tal cual en el
+// texto (no rompe nada, solo se ve literal).
+function renderAlertTemplate(template, vars) {
+  let str = String(template || '');
+  Object.keys(vars || {}).forEach((key) => {
+    str = str.split(`{${key}}`).join(String(vars[key]));
+  });
+  return str;
+}
+
+// Reproduce el sonido configurado para uno de los 3 avisos de turno/Break/
+// Lunch (antes SIEMPRE sonaban con playShiftAlarmBeep(), sin poder elegir —
+// mismo patrón que ya existía solo para "Descanso por productividad", ver
+// playProductiveBreakSound()). 'classic' sigue siendo EXACTAMENTE el mismo
+// beep de siempre — cero cambio de sonido para quien no toque esta
+// configuración nueva. 'chime' reutiliza el tono de campanita ya existente
+// (playProductiveBreakChimeTone, mismo sonido, sin duplicar la síntesis).
+// 'custom' reproduce el audio subido por el usuario; si falla (formato no
+// soportado, Data URL corrupta), cae en silencio al beep clásico — mismo
+// criterio de respaldo que playProductiveBreakSound().
+function playConfiguredAlarmSound(sound, customSoundDataUrl) {
+  if (sound === 'custom' && customSoundDataUrl) {
+    try {
+      const audio = new Audio(customSoundDataUrl);
+      audio.volume = getMasterVolumeFraction();
+      audio.play().catch(() => playShiftAlarmBeep());
+      return;
+    } catch {
+      playShiftAlarmBeep();
+      return;
+    }
+  }
+  if (sound === 'chime') playProductiveBreakChimeTone();
+  else playShiftAlarmBeep();
 }
 
 // Revisa cada segundo (mismo tick que checkDayRollover/renderHeader) si hoy
@@ -4796,7 +4986,7 @@ function checkShiftAlarm() {
   if (now >= alertTime) {
     if (shiftAlarmFiredForDate !== todayKey) {
       shiftAlarmFiredForDate = todayKey;
-      toast(`🔔 ¡Conéctate ya! Tu turno empieza a las ${timeLabel(formatHHMM(cfg.start))}`);
+      toast(renderAlertTemplate(settings.shiftAlarmMessage, { hora: timeLabel(formatHHMM(cfg.start)) }));
     }
     startShiftAlarm();
   } else {
@@ -4822,8 +5012,9 @@ function startBreakStartAlarm(key) {
   if (breakStartAlarmIntervalId && breakStartAlarmActiveKey === key) return;
   stopBreakStartAlarm();
   breakStartAlarmActiveKey = key;
-  playShiftAlarmBeep();
-  breakStartAlarmIntervalId = setInterval(playShiftAlarmBeep, SHIFT_ALARM_REPEAT_MS);
+  const play = () => playConfiguredAlarmSound(settings.breakStartAlarmSound, settings.breakStartAlarmCustomSoundDataUrl);
+  play();
+  breakStartAlarmIntervalId = setInterval(play, SHIFT_ALARM_REPEAT_MS);
 }
 
 function stopBreakStartAlarm() {
@@ -4880,7 +5071,7 @@ function checkBreakStartAlarm() {
     if (!breakStartAlarmFiredKeys.has(candidate.key)) {
       breakStartAlarmFiredKeys.add(candidate.key);
       const pretty = candidate.slot.type === 'Lunch' ? 'Lunch' : 'Break';
-      toast(`🔔 Tu ${pretty} empieza a las ${timeLabel(candidate.slot.start)}`);
+      toast(renderAlertTemplate(settings.breakStartAlarmMessage, { tipo: pretty, hora: timeLabel(candidate.slot.start) }));
     }
     startBreakStartAlarm(candidate.key);
   }
@@ -4894,8 +5085,9 @@ function startBreakEndAlarm(key) {
   if (breakEndAlarmIntervalId && breakEndAlarmActiveKey === key) return;
   stopBreakEndAlarm();
   breakEndAlarmActiveKey = key;
-  playShiftAlarmBeep();
-  breakEndAlarmIntervalId = setInterval(playShiftAlarmBeep, SHIFT_ALARM_REPEAT_MS);
+  const play = () => playConfiguredAlarmSound(settings.breakEndAlarmSound, settings.breakEndAlarmCustomSoundDataUrl);
+  play();
+  breakEndAlarmIntervalId = setInterval(play, SHIFT_ALARM_REPEAT_MS);
 }
 
 function stopBreakEndAlarm() {
@@ -4980,7 +5172,7 @@ function checkBreakEndAlarm() {
     if (!breakEndAlarmFiredKeys.has(key)) {
       breakEndAlarmFiredKeys.add(key);
       const pretty = state.activePause.type === 'lunch' ? 'Lunch' : 'Break';
-      toast(`⏰ Tu ${pretty} termina pronto (${timeLabelFromDate(predictedEnd)})`);
+      toast(renderAlertTemplate(settings.breakEndAlarmMessage, { tipo: pretty, hora: timeLabelFromDate(predictedEnd) }));
     }
     startBreakEndAlarm(key);
   }
@@ -5166,9 +5358,8 @@ function checkProductiveBreakEarnedAlarm() {
   productiveBreakEarnedFiredTramoByAnchor.set(anchorKey, tramosCompleted);
 
   const totalAwardMin = tramosCompleted * awardMin;
-  const message = lastFiredTramo > 0
-    ? `☕ ¡Otro descanso ganado! ${formatMinutes(result.productiveMin)} min productivos — llevas ${formatMinutes(totalAwardMin)} min de descanso acumulados.`
-    : `☕ ¡Ganaste un descanso! ${formatMinutes(result.productiveMin)} min productivos — tienes derecho a ${formatMinutes(totalAwardMin)} min.`;
+  const template = lastFiredTramo > 0 ? settings.productiveBreakMessageRepeat : settings.productiveBreakMessageFirst;
+  const message = renderAlertTemplate(template, { productivo: formatMinutes(result.productiveMin), descanso: formatMinutes(totalAwardMin) });
   toast(message);
   playProductiveBreakSound();
 }
@@ -8097,6 +8288,22 @@ function renderWeekSummary() {
       const productiveBreakSoundInput = document.getElementById('productiveBreakSoundInput');
       if (productiveBreakSoundInput && document.activeElement !== productiveBreakSoundInput) productiveBreakSoundInput.value = settings.productiveBreakSound || 'classic';
       syncProductiveBreakCustomSoundUI();
+      // Pedido del usuario: sonido personalizado + mensaje editable también
+      // para los 3 avisos de turno/Break/Lunch (antes solo "Descanso por
+      // productividad" tenía esto). Un solo loop genérico por los 2 mapas
+      // (ALARM_SOUND_CONFIGS/ALARM_MESSAGE_CONFIGS) en vez de repetir el
+      // mismo bloque 3-5 veces.
+      Object.keys(ALARM_SOUND_CONFIGS).forEach((kind) => {
+        const cfg = ALARM_SOUND_CONFIGS[kind];
+        const select = document.getElementById(cfg.selectId);
+        if (select && document.activeElement !== select) select.value = settings[cfg.soundKey] || 'classic';
+        syncAlarmCustomSoundUI(kind);
+      });
+      Object.keys(ALARM_MESSAGE_CONFIGS).forEach((kind) => {
+        const cfg = ALARM_MESSAGE_CONFIGS[kind];
+        const input = document.getElementById(cfg.inputId);
+        if (input && document.activeElement !== input) input.value = settings[cfg.key] || '';
+      });
     }
 
     // Pedido del usuario: Higher Rate Opportunity vive ahora en su propio
@@ -8487,6 +8694,130 @@ function renderWeekSummary() {
     // como definitivo.
     function testProductiveBreakSound() {
       playProductiveBreakSound();
+    }
+
+    // ---- Sonido personalizado + mensaje para los 3 avisos de turno/Break/
+    // Lunch (pedido del usuario) ----
+    // Mismo patrón que productiveBreakSound/CustomSoundDataUrl/Name de
+    // arriba, generalizado con un mapa {kind -> ids/keys} para no triplicar
+    // el mismo código 3 veces (turno / inicio de Break-Lunch / fin de
+    // Break-Lunch). "Descanso por productividad" NO se migra a este mapa —
+    // sus funciones dedicadas (syncProductiveBreakCustomSoundUI/
+    // updateProductiveBreakSound/handleProductiveBreakSoundFile/
+    // testProductiveBreakSound, arriba) ya funcionan y están wireadas a sus
+    // propios ids; tocarlas no aporta nada y solo suma riesgo.
+    const ALARM_SOUND_CONFIGS = {
+      shift: {
+        soundKey: 'shiftAlarmSound', urlKey: 'shiftAlarmCustomSoundDataUrl', nameKey: 'shiftAlarmCustomSoundName',
+        selectId: 'shiftAlarmSoundInput', sectionId: 'shiftAlarmCustomSoundSection', statusId: 'shiftAlarmSoundFileStatus', fileInputId: 'shiftAlarmSoundFile',
+      },
+      breakStart: {
+        soundKey: 'breakStartAlarmSound', urlKey: 'breakStartAlarmCustomSoundDataUrl', nameKey: 'breakStartAlarmCustomSoundName',
+        selectId: 'breakStartAlarmSoundInput', sectionId: 'breakStartAlarmCustomSoundSection', statusId: 'breakStartAlarmSoundFileStatus', fileInputId: 'breakStartAlarmSoundFile',
+      },
+      breakEnd: {
+        soundKey: 'breakEndAlarmSound', urlKey: 'breakEndAlarmCustomSoundDataUrl', nameKey: 'breakEndAlarmCustomSoundName',
+        selectId: 'breakEndAlarmSoundInput', sectionId: 'breakEndAlarmCustomSoundSection', statusId: 'breakEndAlarmSoundFileStatus', fileInputId: 'breakEndAlarmSoundFile',
+      },
+    };
+
+    // Plantillas de mensaje editables — separado del mapa de sonido porque
+    // "Descanso por productividad" SÍ participa aquí (2 mensajes propios,
+    // primera vez / repeticiones) aunque su sonido siga con sus funciones
+    // dedicadas de siempre.
+    const ALARM_MESSAGE_CONFIGS = {
+      shift: { key: 'shiftAlarmMessage', inputId: 'shiftAlarmMessageInput' },
+      breakStart: { key: 'breakStartAlarmMessage', inputId: 'breakStartAlarmMessageInput' },
+      breakEnd: { key: 'breakEndAlarmMessage', inputId: 'breakEndAlarmMessageInput' },
+      productiveBreakFirst: { key: 'productiveBreakMessageFirst', inputId: 'productiveBreakMessageFirstInput' },
+      productiveBreakRepeat: { key: 'productiveBreakMessageRepeat', inputId: 'productiveBreakMessageRepeatInput' },
+    };
+
+    function syncAlarmCustomSoundUI(kind) {
+      const cfg = ALARM_SOUND_CONFIGS[kind];
+      if (!cfg) return;
+      const section = document.getElementById(cfg.sectionId);
+      const status = document.getElementById(cfg.statusId);
+      const soundInput = document.getElementById(cfg.selectId);
+      const isCustom = (soundInput ? soundInput.value : settings[cfg.soundKey]) === 'custom';
+      if (section) section.style.display = isCustom ? '' : 'none';
+      if (status) {
+        status.textContent = settings[cfg.urlKey]
+          ? `Archivo guardado: ${settings[cfg.nameKey] || 'sonido personalizado'}`
+          : 'Ningún archivo propio guardado — usando el beep clásico mientras tanto.';
+      }
+    }
+
+    function updateAlarmSound(kind) {
+      const cfg = ALARM_SOUND_CONFIGS[kind];
+      if (!cfg) return;
+      const input = document.getElementById(cfg.selectId);
+      const value = input ? input.value : 'classic';
+      if (['classic', 'chime', 'custom'].includes(value)) settings[cfg.soundKey] = value;
+      saveSettingsOnly();
+      syncAlarmCustomSoundUI(kind);
+    }
+
+    function handleAlarmSoundFile(kind, e) {
+      const cfg = ALARM_SOUND_CONFIGS[kind];
+      if (!cfg) return;
+      const input = e.target;
+      const file = input.files && input.files[0];
+      input.value = '';
+      if (!file) return;
+      if (!file.type || !file.type.startsWith('audio/')) {
+        toast('El archivo debe ser de audio (MP3, WAV, OGG...).');
+        return;
+      }
+      if (file.size > MAX_CUSTOM_SOUND_BYTES) {
+        toast(`El archivo pesa demasiado (máximo ${Math.round(MAX_CUSTOM_SOUND_BYTES / 1024)}KB) — usa un sonido corto.`);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        settings[cfg.urlKey] = String(reader.result || '');
+        settings[cfg.nameKey] = file.name;
+        settings[cfg.soundKey] = 'custom';
+        try {
+          saveSettingsOnly();
+        } catch {
+          settings[cfg.urlKey] = '';
+          settings[cfg.nameKey] = '';
+          settings[cfg.soundKey] = 'classic';
+          toast('No se pudo guardar el sonido — el almacenamiento del navegador está lleno.');
+          syncAlarmCustomSoundUI(kind);
+          return;
+        }
+        const soundSelect = document.getElementById(cfg.selectId);
+        if (soundSelect) soundSelect.value = 'custom';
+        syncAlarmCustomSoundUI(kind);
+        toast(`Sonido "${file.name}" guardado`);
+      };
+      reader.onerror = () => toast('No se pudo leer el archivo de audio.');
+      reader.readAsDataURL(file);
+    }
+
+    // Botón "🔊 Probar" de cada uno de los 3 avisos — reproduce el sonido
+    // configurado ahora mismo (mismo criterio que testProductiveBreakSound()).
+    function testAlarmSound(kind) {
+      const cfg = ALARM_SOUND_CONFIGS[kind];
+      if (!cfg) return;
+      playConfiguredAlarmSound(settings[cfg.soundKey], settings[cfg.urlKey]);
+    }
+
+    // Guarda el mensaje editado — si se deja vacío, cae de vuelta al default
+    // de fábrica (mismo criterio que ensureCurrencySettings() ya aplica al
+    // cargar) en vez de guardar una plantilla en blanco que dejaría el toast
+    // sin texto.
+    function updateAlarmMessage(kind) {
+      const cfg = ALARM_MESSAGE_CONFIGS[kind];
+      if (!cfg) return;
+      const input = document.getElementById(cfg.inputId);
+      const value = String(input?.value || '').trim();
+      settings[cfg.key] = value || defaultSettings()[cfg.key];
+      if (input) input.value = settings[cfg.key];
+      saveSettingsOnly();
+      toast('Mensaje del aviso actualizado');
     }
 
     // ---- Editor de ventanas de Higher Rate Opportunity (pedido del
@@ -10358,6 +10689,21 @@ function render() {
     document.getElementById('productiveBreakSoundInput').addEventListener('change', updateProductiveBreakSound);
     document.getElementById('productiveBreakSoundFile').addEventListener('change', handleProductiveBreakSoundFile);
     document.getElementById('testProductiveBreakSoundBtn').addEventListener('click', testProductiveBreakSound);
+    // Pedido del usuario: sonido personalizado + mensaje editable para los 3
+    // avisos de turno/Break/Lunch, mismo wiring que arriba pero generalizado
+    // por `kind` (ver ALARM_SOUND_CONFIGS/ALARM_MESSAGE_CONFIGS).
+    Object.keys(ALARM_SOUND_CONFIGS).forEach((kind) => {
+      const cfg = ALARM_SOUND_CONFIGS[kind];
+      document.getElementById(cfg.selectId).addEventListener('change', () => updateAlarmSound(kind));
+      document.getElementById(cfg.fileInputId).addEventListener('change', (e) => handleAlarmSoundFile(kind, e));
+    });
+    document.getElementById('testShiftAlarmSoundBtn').addEventListener('click', () => testAlarmSound('shift'));
+    document.getElementById('testBreakStartAlarmSoundBtn').addEventListener('click', () => testAlarmSound('breakStart'));
+    document.getElementById('testBreakEndAlarmSoundBtn').addEventListener('click', () => testAlarmSound('breakEnd'));
+    Object.keys(ALARM_MESSAGE_CONFIGS).forEach((kind) => {
+      const cfg = ALARM_MESSAGE_CONFIGS[kind];
+      document.getElementById(cfg.inputId).addEventListener('change', () => updateAlarmMessage(kind));
+    });
     document.getElementById('addHigherRateWindowBtn').addEventListener('click', addHigherRateWindowRow);
     document.getElementById('purgeHigherRateWindowsBtn').addEventListener('click', purgePastHigherRateWindows);
     // Delegado en el modal completo (no en un solo contenedor): desde v156
