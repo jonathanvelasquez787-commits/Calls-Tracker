@@ -8963,16 +8963,25 @@ function renderWeekSummary() {
       }
     }
 
-    // "+ Agregar ventana": conserva lo que ya está en el formulario (para no
-    // perder ediciones a medio hacer) y agrega una fila nueva al final —
-    // default hoy, 07:00-08:00, Bronce (el usuario ajusta según el correo
-    // de Propio). No se auto-guarda hasta que el usuario toque algo (mismo
-    // criterio que addBlockRow()) — evita guardar una ventana "placeholder"
-    // que nadie terminó de configurar.
+    // Bug reportado por el usuario: "agrego una ventana y luego no la
+    // encuentro". Causa: este editor es "auto-guardado en cada cambio" (no
+    // hay botón "Guardar", solo "Listo" para cerrar) — el guardado se
+    // dispara con el evento 'change' de algún campo (ver el listener
+    // delegado en #higherRateModal). Antes, "+ Agregar ventana" SOLO pintaba
+    // la fila nueva en el DOM (con valores por default: hoy, 07:00-08:00,
+    // Bronce) sin persistirla — si el usuario no llegaba a tocar ningún
+    // campo antes de cerrar el modal (los defaults ya le servían, o
+    // simplemente cerró), nunca se disparaba ningún 'change' y la ventana
+    // desaparecía sin ningún aviso: se vio aparecer, pero nunca se guardó.
+    // Fix: se guarda de inmediato, reutilizando saveHigherRateWindowsFromEditor()
+    // (ya relee del DOM recién actualizado) — mismo criterio de
+    // auto-guardado que ya usa el resto del editor, sin agregar ningún botón
+    // nuevo. Sigue siendo editable/eliminable después con total normalidad.
     function addHigherRateWindowRow() {
       const current = readHigherRateWindowsFromEditor();
       current.push({ id: makeLocalId(), date: todayCallDateKey(), start: '07:00', end: '08:00', tier: 'bronze' });
       renderHigherRateWindowsEditor(current);
+      saveHigherRateWindowsFromEditor();
     }
 
     function removeHigherRateWindowRowAt(id) {
