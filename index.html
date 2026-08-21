@@ -39,6 +39,25 @@
       --good: #66e2a5;
       --warn: #ffd15c;
       --bad: #ff6b72;
+      /* Pedido del usuario (rediseño del tema Blanco): decenas de reglas
+         decorativas (brand pill, foco de inputs, tags activos, botón
+         primario, etc.) usaban el triplete RGB del cian OSCURO
+         "var(--cyan-rgb)" escrito literal dentro de cada rgba(...), en vez de
+         derivarlo de --cyan — así que en modo claro esas mismas reglas
+         seguían pintando el cian OSCURO (no el cian/turquesa del tema
+         claro), sin importar qué tan bien afinada quedara la variable
+         --cyan de modo claro. Se centralizan aquí los tripletes "r,g,b" de
+         cada acento (mismos valores que ya usaban --cyan/--good/--warn/
+         --bad/--blue en oscuro, cero cambio de render en este tema) para
+         que TODAS esas reglas puedan escribirse como rgba(var(--cyan-rgb),
+         .XX) — automáticas por tema, igual que ya lo son --pale-*. */
+      --cyan-rgb: 47, 213, 255;
+      --teal-rgb: 88, 232, 200;
+      --blue-rgb: 125, 140, 255;
+      --pink-rgb: 255, 111, 143;
+      --good-rgb: 102, 226, 165;
+      --warn-rgb: 255, 209, 92;
+      --bad-rgb: 255, 107, 114;
       --shadow: 0 16px 46px rgba(0, 0, 0, .32);
       --radius: 22px;
       --glow-1: rgba(47, 213, 255, .12);
@@ -87,51 +106,72 @@
        propósito (html.theme-dark). Si el usuario fuerza "Claro" (ver regla
        html.theme-light más abajo), esa aplica siempre sin importar el
        sistema — misma paleta, solo cambia cuándo se activa.
-       Pedido del usuario: paleta "Vice City" (estética del tráiler de GTA 6
-       — rosa magenta/turquesa/morado/naranja atardecer) para el modo claro,
-       en versión SUTIL (confirmada explícitamente): el fondo se queda casi
-       blanco/crema (solo se calienta un poco el tono, de azulado a crema —
-       --bg/--bg-2/--panel/--panel-2), y --text/--muted/--line/--line-2 NO
-       se tocan — el texto sigue leyéndose exactamente igual que antes. Los
-       colores de la paleta viven solo en los acentos/botones/estados:
-       --cyan/--teal ahora son turquesa, --blue pasa a morado (el nombre de
-       la variable no cambió para no tocar cada sitio que la usa, pero su
-       rol pasa de "azul" a "acento morado"), --pink es el magenta de marca,
-       y --good/--warn/--bad se recorren dentro de su misma familia semántica
-       (siguen leyéndose como bien/aviso/mal) pero con el tinte de la
-       paleta: verde-turquesa / naranja atardecer / rosa-rojo. --shadow y
-       --glow-1/--glow-2 (los resplandores radiales del fondo, ver body{})
-       se tiñen sutilmente de rosa/turquesa en vez del gris-azulado neutro
-       de antes — es la pincelada más visible de la paleta, a propósito
-       discreta (5-6% de opacidad, igual que antes). --pale-* (colores de
-       texto sobre fondos con tinte, ej. los badges .tag) se ajustan en
-       conjunto con su acento correspondiente para mantener buen contraste
-       sobre fondo claro, mismo criterio que ya usaban. */
+       Rediseño del tema claro (pedido del usuario, con captura de
+       referencia): "dashboard premium blanco inspirado en GTA 6", NO
+       "dashboard pastel de colores GTA 6". El problema del rediseño
+       anterior era que casi cada tarjeta/botón tenía su PROPIO borde de
+       color (cian aquí, ámbar allá, rosa más abajo...) — se veía cargado e
+       infantil. Ahora:
+       - --bg/--bg-2: blanco cálido/crema, casi imperceptible (no un fondo
+         de color).
+       - --panel/--panel-2: blanco SÓLIDO (97-99% opaco, antes 87-97%) —
+         tarjetas limpias, no "lavadas".
+       - --text: casi negro (alto contraste); --muted: gris neutro (antes
+         tenía un tinte azulado).
+       - --line/--line-2: gris casi imperceptible — los bordes de tarjeta ya
+         NO son de color, son neutros en TODA la app (esto es lo que
+         resuelve el problema de fondo).
+       - --cyan/--teal/--blue/--pink/--good/--warn/--bad: siguen siendo la
+         paleta de acento inspirada en GTA 6 (turquesa/morado/magenta/verde/
+         naranja atardecer/carmesí), pero su USO se acotó aparte (ver más
+         abajo, sección "Rediseño tema claro v172"): quedan reservados para
+         estados, progreso y el botón principal — no para el borde de cada
+         tarjeta/botón por igual.
+       - --*-rgb (nuevas): mismo tono que --cyan/--good/--warn/--bad/--blue
+         pero como triplete "r,g,b" crudo, para que las docenas de reglas
+         `rgba(var(--cyan-rgb), .XX)` que antes tenían el cian OSCURO escrito
+         literal (sin importar el tema) ahora puedan escribir
+         `rgba(var(--cyan-rgb), .XX)` y salir correctas en cada tema. En
+         oscuro estos valores son IDÉNTICOS a los que ya estaban
+         hardcodeados — cero cambio de render en ese tema.
+       - --shadow/--glow-1/--glow-2: sombras neutras y suaves (antes
+         llevaban un tinte de color perceptible) — "sombras elegantes, no
+         fuertes".
+       --pale-*: se mantienen (o se afinan ligeramente) para seguir dando
+       buen contraste de texto sobre fondos con tinte (ej. los badges .tag),
+       mismo criterio que ya usaban. */
     @media (prefers-color-scheme: light) {
       :root:not(.theme-dark) {
         color-scheme: light;
-        --bg: #f8f3ef;
-        --bg-2: #f1e7e1;
-        --panel: rgba(255, 253, 251, 0.87);
-        --panel-2: rgba(255, 254, 253, 0.97);
-        --text: #121a2c;
-        --muted: #5b6b85;
-        --line: rgba(18, 26, 44, 0.12);
-        --line-2: rgba(18, 26, 44, 0.18);
-        --cyan: #0aa8a0;
-        --teal: #0f9e8c;
-        --blue: #7c4dd1;
-        --pink: #e0148e;
-        --good: #128a5e;
-        --warn: #e2661c;
-        --bad: #d81f56;
-        --shadow: 0 16px 40px rgba(94, 30, 74, .10);
-        --glow-1: rgba(224, 20, 142, .05);
-        --glow-2: rgba(10, 168, 160, .05);
-        --pale-good: #0d6b4a;
-        --pale-warn: #a34e12;
-        --pale-bad: #a01345;
-        --pale-cyan: #0a7770;
+        --bg: #faf7f2;
+        --bg-2: #f2ece2;
+        --panel: rgba(255, 255, 255, 0.97);
+        --panel-2: rgba(255, 255, 255, 0.99);
+        --text: #16181f;
+        --muted: #666f7d;
+        --line: rgba(17, 17, 22, 0.07);
+        --line-2: rgba(17, 17, 22, 0.13);
+        --cyan: #0aa39a;
+        --teal: #0f8f81;
+        --blue: #8253dd;
+        --pink: #e91e8c;
+        --good: #0f9d63;
+        --warn: #f2792a;
+        --bad: #e11d55;
+        --cyan-rgb: 10, 163, 154;
+        --teal-rgb: 15, 143, 129;
+        --blue-rgb: 130, 83, 221;
+        --pink-rgb: 233, 30, 140;
+        --good-rgb: 15, 157, 99;
+        --warn-rgb: 242, 121, 42;
+        --bad-rgb: 225, 29, 85;
+        --shadow: 0 14px 34px rgba(15, 15, 20, .07);
+        --glow-1: rgba(233, 30, 140, .035);
+        --glow-2: rgba(10, 163, 154, .035);
+        --pale-good: #0b6b46;
+        --pale-warn: #9a4b12;
+        --pale-bad: #9c1240;
+        --pale-cyan: #086b64;
         --pale-teal: #0a6b5e;
         --pale-indigo: #5b32a8;
         --tier-bronze: #8a5a2b;
@@ -149,34 +189,165 @@
        :not(.theme-dark)), el resultado ya es el oscuro de siempre. */
     html.theme-light {
       color-scheme: light;
-      --bg: #f8f3ef;
-      --bg-2: #f1e7e1;
-      --panel: rgba(255, 253, 251, 0.87);
-      --panel-2: rgba(255, 254, 253, 0.97);
-      --text: #121a2c;
-      --muted: #5b6b85;
-      --line: rgba(18, 26, 44, 0.12);
-      --line-2: rgba(18, 26, 44, 0.18);
-      --cyan: #0aa8a0;
-      --teal: #0f9e8c;
-      --blue: #7c4dd1;
-      --pink: #e0148e;
-      --good: #128a5e;
-      --warn: #e2661c;
-      --bad: #d81f56;
-      --shadow: 0 16px 40px rgba(94, 30, 74, .10);
-      --glow-1: rgba(224, 20, 142, .05);
-      --glow-2: rgba(10, 168, 160, .05);
-      --pale-good: #0d6b4a;
-      --pale-warn: #a34e12;
-      --pale-bad: #a01345;
-      --pale-cyan: #0a7770;
+      --bg: #faf7f2;
+      --bg-2: #f2ece2;
+      --panel: rgba(255, 255, 255, 0.97);
+      --panel-2: rgba(255, 255, 255, 0.99);
+      --text: #16181f;
+      --muted: #666f7d;
+      --line: rgba(17, 17, 22, 0.07);
+      --line-2: rgba(17, 17, 22, 0.13);
+      --cyan: #0aa39a;
+      --teal: #0f8f81;
+      --blue: #8253dd;
+      --pink: #e91e8c;
+      --good: #0f9d63;
+      --warn: #f2792a;
+      --bad: #e11d55;
+      --cyan-rgb: 10, 163, 154;
+      --teal-rgb: 15, 143, 129;
+      --blue-rgb: 130, 83, 221;
+      --pink-rgb: 233, 30, 140;
+      --good-rgb: 15, 157, 99;
+      --warn-rgb: 242, 121, 42;
+      --bad-rgb: 225, 29, 85;
+      --shadow: 0 14px 34px rgba(15, 15, 20, .07);
+      --glow-1: rgba(233, 30, 140, .035);
+      --glow-2: rgba(10, 163, 154, .035);
+      --pale-good: #0b6b46;
+      --pale-warn: #9a4b12;
+      --pale-bad: #9c1240;
+      --pale-cyan: #086b64;
       --pale-teal: #0a6b5e;
       --pale-indigo: #5b32a8;
       --tier-bronze: #8a5a2b;
       --tier-silver: #55636f;
       --tier-gold: #a8790a;
       --accordion-bg: var(--panel);
+    }
+
+    /* ---- Rediseño del tema claro (pedido del usuario) ----
+       "Dashboard premium blanco inspirado en GTA 6", no "dashboard pastel
+       de colores GTA 6". El problema reportado: casi cada tarjeta/botón
+       tenía su PROPIO borde de color (Iniciar shift=cian, Break=morado,
+       Lunch=rosa, cada botoncito "Editar"=cian...) — se sentía cargado e
+       infantil. La paleta de acento (--cyan/--good/--warn/--bad/--pink/
+       --blue) NO cambia de rol — sigue siendo la base de estados/progreso/
+       "activo" en TODA la app, en ambos temas (ej. un Break en curso, un
+       día seleccionado, una fila con Higher Rate) — lo que cambia es DÓNDE
+       se usa en REPOSO, y SOLO en modo claro: se retira de los bordes en
+       reposo de botones/utilidades y se reserva para estados reales
+       (activo/en curso/seleccionado) y para el botón principal de cada
+       modal. Dual (@media + html.theme-light), mismo patrón que el resto
+       del theming — el tema oscuro no se toca en absoluto en este bloque. */
+    @media (prefers-color-scheme: light) {
+      /* Controles (Iniciar shift/Break/Lunch/llamada, Pegar, Agregar): en
+         reposo, borde gris neutro casi imperceptible en vez del acento de
+         cada botón — el acento sigue aaraciendo en el anillo/relleno al
+         tocar (hover/tap) y en el borde cuando el botón SÍ está activo
+         (.is-active, excluido aquí a propósito: ver la regla própia de
+         .is-active, que sigue coloreando el borde con más fuerza). */
+      :root:not(.theme-dark) .action-btn:not(.is-active) {
+        border-color: var(--line-2);
+      }
+      /* Botones utilitarios chicos ("Editar", "Editar gap", "Probar
+         sonido"...) — antes SIEMPRE cian, repetido decenas de veces por
+         toda la app (cada fila de Tabla de llamadas, cada modal...). Se
+         vuelven neutros — son acciones secundarias, no el CTA principal. */
+      :root:not(.theme-dark) .gap-edit-btn {
+        background: rgba(15, 15, 20, .045);
+        border-color: var(--line-2);
+        color: var(--text);
+      }
+      :root:not(.theme-dark) .gap-edit-btn:hover {
+        background: rgba(15, 15, 20, .08);
+      }
+      /* Botones del header (Auto/Horario/Higher Rate/Avisos/Ajustes) — antes
+         casi sin fondo (4% de blanco sobre fondo ya claro = casi invisible,
+         "botones débiles y pálidos"). Fondo neutro más presente para que se
+         lean como botones de verdad. "Reiniciar" (.danger) se excluye — su
+         tinte rosado de peligro se queda igual, es un uso legítimo de
+         acento (estado/advertencia). */
+      :root:not(.theme-dark) .hero-action-btn:not(.danger) {
+        background: rgba(15, 15, 20, .045);
+      }
+      :root:not(.theme-dark) .hero-action-btn:not(.danger):hover,
+      :root:not(.theme-dark) .hero-action-btn:not(.danger):focus-visible {
+        background: rgba(15, 15, 20, .08);
+      }
+      /* Botón PRINCIPAL de cada modal (Guardar/Importar/Guardar día...) —
+         antes un cian pálido al 14% de opacidad (débil, poco contraste).
+         Ahora sólido oscuro (mismo tono que el texto principal) con texto
+         blanco — el botón "importante" que pide el usuario, apoyado en
+         "negro/gris oscuro para... elementos principales" en vez de sumar
+         un color pastel más. */
+      :root:not(.theme-dark) .modal-actions button.primary,
+      :root:not(.theme-dark) .button-row button.primary,
+      :root:not(.theme-dark) .primary-btn {
+        background: var(--text);
+        color: #fff;
+        border-color: var(--text);
+      }
+      :root:not(.theme-dark) .modal-actions button.primary:hover,
+      :root:not(.theme-dark) .button-row button.primary:hover,
+      :root:not(.theme-dark) .primary-btn:hover {
+        filter: brightness(1.3);
+      }
+      /* Botones "warn"/"bad" (Copiar horario, Borrar, Vaciar...) — mismo
+         acento de siempre, solo con más presencia/contraste (antes 12% de
+         opacidad se leía débil sobre blanco sólido). */
+      :root:not(.theme-dark) .modal-actions button.warn,
+      :root:not(.theme-dark) .button-row button.warn {
+        background: rgba(var(--warn-rgb), .16);
+        border-color: rgba(var(--warn-rgb), .34);
+      }
+      :root:not(.theme-dark) .modal-actions button.bad,
+      :root:not(.theme-dark) .button-row button.bad {
+        background: rgba(var(--bad-rgb), .13);
+        border-color: rgba(var(--bad-rgb), .32);
+        color: var(--pale-bad);
+      }
+    }
+    html.theme-light .action-btn:not(.is-active) {
+      border-color: var(--line-2);
+    }
+    html.theme-light .gap-edit-btn {
+      background: rgba(15, 15, 20, .045);
+      border-color: var(--line-2);
+      color: var(--text);
+    }
+    html.theme-light .gap-edit-btn:hover {
+      background: rgba(15, 15, 20, .08);
+    }
+    html.theme-light .hero-action-btn:not(.danger) {
+      background: rgba(15, 15, 20, .045);
+    }
+    html.theme-light .hero-action-btn:not(.danger):hover,
+    html.theme-light .hero-action-btn:not(.danger):focus-visible {
+      background: rgba(15, 15, 20, .08);
+    }
+    html.theme-light .modal-actions button.primary,
+    html.theme-light .button-row button.primary,
+    html.theme-light .primary-btn {
+      background: var(--text);
+      color: #fff;
+      border-color: var(--text);
+    }
+    html.theme-light .modal-actions button.primary:hover,
+    html.theme-light .button-row button.primary:hover,
+    html.theme-light .primary-btn:hover {
+      filter: brightness(1.3);
+    }
+    html.theme-light .modal-actions button.warn,
+    html.theme-light .button-row button.warn {
+      background: rgba(var(--warn-rgb), .16);
+      border-color: rgba(var(--warn-rgb), .34);
+    }
+    html.theme-light .modal-actions button.bad,
+    html.theme-light .button-row button.bad {
+      background: rgba(var(--bad-rgb), .13);
+      border-color: rgba(var(--bad-rgb), .32);
+      color: var(--pale-bad);
     }
 
     * { box-sizing: border-box; }
@@ -264,8 +435,8 @@
       padding: 8px 12px;
       width: fit-content;
       border-radius: 999px;
-      background: rgba(47, 213, 255, .10);
-      border: 1px solid rgba(47, 213, 255, .22);
+      background: rgba(var(--cyan-rgb), .10);
+      border: 1px solid rgba(var(--cyan-rgb), .22);
       color: var(--pale-cyan);
       text-transform: uppercase;
       letter-spacing: .08em;
@@ -371,7 +542,7 @@
     .brand .dot {
       width: 9px; height: 9px; border-radius: 50%;
       background: var(--cyan);
-      box-shadow: 0 0 16px rgba(47, 213, 255, .5);
+      box-shadow: 0 0 16px rgba(var(--cyan-rgb), .5);
     }
 
     .title-row {
@@ -455,7 +626,7 @@
       height: 10px;
       border-radius: 50%;
       background: var(--good);
-      box-shadow: 0 0 18px rgba(102, 226, 165, .45);
+      box-shadow: 0 0 18px rgba(var(--good-rgb), .45);
     }
 
     .clockbox {
@@ -570,7 +741,7 @@
     .tick.active {
       background: var(--good);
       border-color: var(--good);
-      box-shadow: 0 0 12px rgba(102, 226, 165, .45);
+      box-shadow: 0 0 12px rgba(var(--good-rgb), .45);
       transform: translateX(-50%) scale(1.05);
     }
 
@@ -896,7 +1067,7 @@
       height: 18px;
       border-radius: 50%;
       background: var(--cyan);
-      box-shadow: 0 0 10px rgba(47, 213, 255, .5);
+      box-shadow: 0 0 10px rgba(var(--cyan-rgb), .5);
       cursor: pointer;
       border: 2px solid var(--bg);
     }
@@ -906,7 +1077,7 @@
       height: 18px;
       border-radius: 50%;
       background: var(--cyan);
-      box-shadow: 0 0 10px rgba(47, 213, 255, .5);
+      box-shadow: 0 0 10px rgba(var(--cyan-rgb), .5);
       cursor: pointer;
       border: 2px solid var(--bg);
     }
@@ -960,8 +1131,8 @@
     }
 
     .emoji-option.selected {
-      border-color: rgba(47, 213, 255, .6);
-      background: rgba(47, 213, 255, .14);
+      border-color: rgba(var(--cyan-rgb), .6);
+      background: rgba(var(--cyan-rgb), .14);
     }
 
     .emoji-option.emoji-clear {
@@ -1006,8 +1177,8 @@
     }
 
     .rate-tile.selected {
-      border-color: rgba(47, 213, 255, .55);
-      background: rgba(47, 213, 255, .12);
+      border-color: rgba(var(--cyan-rgb), .55);
+      background: rgba(var(--cyan-rgb), .12);
     }
 
     .rate-tile-top {
@@ -1294,15 +1465,15 @@
     }
 
     .modal-actions button.primary {
-      background: rgba(47, 213, 255, .14);
+      background: rgba(var(--cyan-rgb), .14);
     }
 
     .modal-actions button.warn {
-      background: rgba(255, 209, 92, .12);
+      background: rgba(var(--warn-rgb), .12);
     }
 
     .modal-actions button.bad {
-      background: rgba(255, 111, 143, .12);
+      background: rgba(var(--pink-rgb), .12);
     }
 
     .day-tabs {
@@ -1324,8 +1495,8 @@
     }
 
     .day-tab.active {
-      background: rgba(47, 213, 255, .18);
-      border-color: rgba(47, 213, 255, .4);
+      background: rgba(var(--cyan-rgb), .18);
+      border-color: rgba(var(--cyan-rgb), .4);
     }
 
     .day-tab.off {
@@ -1551,12 +1722,12 @@
        de su versión --pale-*, mismo criterio de "colores más vivos" del
        mockup — y sigue siendo automático por tema (claro/oscuro), porque
        esas variables base YA se redefinen solas en cada tema. */
-    .action-btn[data-accent="cyan"] { --accent: var(--cyan); --accent-rgb: 47, 213, 255; --accent-pale: var(--cyan); }
-    .action-btn[data-accent="warn"] { --accent: var(--warn); --accent-rgb: 255, 209, 92; --accent-pale: var(--warn); }
-    .action-btn[data-accent="blue"] { --accent: var(--blue); --accent-rgb: 125, 140, 255; --accent-pale: var(--blue); }
-    .action-btn[data-accent="pink"] { --accent: var(--pink); --accent-rgb: 255, 111, 143; --accent-pale: var(--pink); }
-    .action-btn[data-accent="good"] { --accent: var(--good); --accent-rgb: 102, 226, 165; --accent-pale: var(--good); }
-    .action-btn[data-accent="bad"] { --accent: var(--bad); --accent-rgb: 255, 107, 114; --accent-pale: var(--bad); }
+    .action-btn[data-accent="cyan"] { --accent: var(--cyan); --accent-rgb: var(--cyan-rgb); --accent-pale: var(--cyan); }
+    .action-btn[data-accent="warn"] { --accent: var(--warn); --accent-rgb: var(--warn-rgb); --accent-pale: var(--warn); }
+    .action-btn[data-accent="blue"] { --accent: var(--blue); --accent-rgb: var(--blue-rgb); --accent-pale: var(--blue); }
+    .action-btn[data-accent="pink"] { --accent: var(--pink); --accent-rgb: var(--pink-rgb); --accent-pale: var(--pink); }
+    .action-btn[data-accent="good"] { --accent: var(--good); --accent-rgb: var(--good-rgb); --accent-pale: var(--good); }
+    .action-btn[data-accent="bad"] { --accent: var(--bad); --accent-rgb: var(--bad-rgb); --accent-pale: var(--bad); }
 
     /* Pedido del usuario: "nada de esto funcionó en el celular" — :hover
        casi no sirve en pantallas táctiles (no hay cursor que se quede
@@ -1667,9 +1838,9 @@
     .footer-tools button:hover,
     .primary-btn:hover { transform: translateY(-1px); filter: brightness(1.04); }
 
-    .button-row button.primary { background: rgba(47, 213, 255, .14); }
-    .button-row button.warn { background: rgba(255, 209, 92, .12); }
-    .button-row button.bad { background: rgba(255, 111, 143, .12); }
+    .button-row button.primary { background: rgba(var(--cyan-rgb), .14); }
+    .button-row button.warn { background: rgba(var(--warn-rgb), .12); }
+    .button-row button.bad { background: rgba(var(--pink-rgb), .12); }
 
     .primary-btn {
       width: 100%;
@@ -1680,7 +1851,7 @@
       font-weight: 900;
       color: white;
       cursor: pointer;
-      box-shadow: 0 16px 28px rgba(47, 213, 255, .18);
+      box-shadow: 0 16px 28px rgba(var(--cyan-rgb), .18);
     }
 
     textarea {
@@ -1699,8 +1870,8 @@
     }
 
     textarea:focus, input:focus {
-      border-color: rgba(47, 213, 255, .48);
-      box-shadow: 0 0 0 3px rgba(47, 213, 255, .12);
+      border-color: rgba(var(--cyan-rgb), .48);
+      box-shadow: 0 0 0 3px rgba(var(--cyan-rgb), .12);
     }
 
     .import-actions {
@@ -1743,7 +1914,7 @@
       height: 32px;
       border-radius: 10px;
       border: 1px solid var(--line);
-      background: rgba(255, 111, 143, .10);
+      background: rgba(var(--pink-rgb), .10);
       color: var(--text);
       cursor: pointer;
       font-size: 14px;
@@ -1751,12 +1922,12 @@
     }
 
     .event-delete:hover {
-      background: rgba(255, 111, 143, .2);
+      background: rgba(var(--pink-rgb), .2);
     }
 
     .slot.active {
-      border-color: rgba(47, 213, 255, .45);
-      background: rgba(47, 213, 255, .08);
+      border-color: rgba(var(--cyan-rgb), .45);
+      background: rgba(var(--cyan-rgb), .08);
     }
 
     .slot .name, .event .name { font-weight: 850; letter-spacing: -.02em; }
@@ -1795,8 +1966,8 @@
       padding: 4px 8px;
       margin-left: 6px;
       border-radius: 999px;
-      background: rgba(255, 111, 143, .12);
-      border: 1px solid rgba(255, 111, 143, .24);
+      background: rgba(var(--pink-rgb), .12);
+      border: 1px solid rgba(var(--pink-rgb), .24);
       color: var(--pale-bad);
       font-size: 11px;
       font-weight: 800;
@@ -1924,7 +2095,7 @@
 
     .gap-edit-btn {
       border: 1px solid var(--line);
-      background: rgba(47, 213, 255, .12);
+      background: rgba(var(--cyan-rgb), .12);
       color: var(--text);
       border-radius: 12px;
       padding: 9px 11px;
@@ -2024,7 +2195,7 @@
     .accordion-card[open] .accordion-chevron {
       transform: rotate(180deg);
       color: var(--text);
-      background: rgba(47, 213, 255, .10);
+      background: rgba(var(--cyan-rgb), .10);
     }
 
     .accordion-body {
@@ -2049,17 +2220,17 @@
 
     .slot-status.good {
       color: var(--pale-good);
-      background: rgba(102, 226, 165, .10);
+      background: rgba(var(--good-rgb), .10);
     }
 
     .slot-status.warn {
       color: var(--pale-warn);
-      background: rgba(255, 209, 92, .10);
+      background: rgba(var(--warn-rgb), .10);
     }
 
     .slot-status.bad {
       color: var(--pale-bad);
-      background: rgba(255, 111, 143, .10);
+      background: rgba(var(--pink-rgb), .10);
     }
 
     /* Pedido del usuario (mejora B): indicador en vivo cuando, AHORA MISMO,
@@ -2068,8 +2239,8 @@
        ser demasiado agresivo — mismo tono "bad" que ya usa .slot-status.bad,
        solo se le agrega la animación. */
     @keyframes adherence-live-pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 111, 143, .35); }
-      50% { box-shadow: 0 0 0 5px rgba(255, 111, 143, 0); }
+      0%, 100% { box-shadow: 0 0 0 0 rgba(var(--pink-rgb), .35); }
+      50% { box-shadow: 0 0 0 5px rgba(var(--pink-rgb), 0); }
     }
 
     .slot-status.live-exception {
@@ -2189,8 +2360,8 @@
     }
 
     .week-mobile-card.week-mobile-today {
-      border-color: rgba(47, 213, 255, .4);
-      background: rgba(47, 213, 255, .07);
+      border-color: rgba(var(--cyan-rgb), .4);
+      background: rgba(var(--cyan-rgb), .07);
     }
 
     .week-mobile-card.week-mobile-total {
@@ -2275,9 +2446,9 @@
       white-space: nowrap;
     }
 
-    .tag.good { color: var(--pale-good); background: rgba(102, 226, 165, .10); }
-    .tag.warn { color: var(--pale-warn); background: rgba(255, 209, 92, .10); }
-    .tag.bad { color: var(--pale-bad); background: rgba(255, 111, 143, .10); }
+    .tag.good { color: var(--pale-good); background: rgba(var(--good-rgb), .10); }
+    .tag.warn { color: var(--pale-warn); background: rgba(var(--warn-rgb), .10); }
+    .tag.bad { color: var(--pale-bad); background: rgba(var(--pink-rgb), .10); }
 
     .table-tags {
       display: flex;
@@ -2320,7 +2491,7 @@
     }
 
     tr.week-row-today td {
-      background: rgba(47, 213, 255, .07);
+      background: rgba(var(--cyan-rgb), .07);
     }
 
     tr.week-row-total td {
@@ -2467,8 +2638,8 @@
       gap: 12px;
       padding: 10px 16px;
       padding-top: calc(10px + env(safe-area-inset-top, 0px));
-      background: rgba(var(--live-bar-rgb, 47, 213, 255), .14);
-      border-bottom: 1px solid rgba(var(--live-bar-rgb, 47, 213, 255), .38);
+      background: rgba(var(--live-bar-rgb, var(--cyan-rgb)), .14);
+      border-bottom: 1px solid rgba(var(--live-bar-rgb, var(--cyan-rgb)), .38);
       backdrop-filter: blur(12px);
       box-shadow: 0 8px 22px rgba(0, 0, 0, .18);
     }
@@ -2488,7 +2659,7 @@
       border-radius: 50%;
       flex: 0 0 auto;
       background: var(--live-bar-color, var(--cyan));
-      box-shadow: 0 0 14px rgba(var(--live-bar-rgb, 47, 213, 255), .55);
+      box-shadow: 0 0 14px rgba(var(--live-bar-rgb, var(--cyan-rgb)), .55);
     }
 
     .live-bar-label {
@@ -2529,8 +2700,8 @@
     }
 
     .live-bar-save {
-      background: rgba(102, 226, 165, .18);
-      border-color: rgba(102, 226, 165, .45);
+      background: rgba(var(--good-rgb), .18);
+      border-color: rgba(var(--good-rgb), .45);
       color: var(--pale-good);
       padding: 8px 14px;
       font-size: 12.5px;
@@ -2541,8 +2712,8 @@
     }
 
     .live-bar-discard {
-      background: rgba(255, 111, 143, .10);
-      border-color: rgba(255, 111, 143, .32);
+      background: rgba(var(--pink-rgb), .10);
+      border-color: rgba(var(--pink-rgb), .32);
       color: var(--pale-bad);
       width: 36px;
       height: 36px;
