@@ -989,9 +989,52 @@
     .block-summary-card[data-accent="teal"] { --bsc-rgb: var(--teal-rgb); }
     .block-summary-card[data-accent="good"] { --bsc-rgb: var(--good-rgb); }
 
+    /* Pedido del usuario (v190, con captura de referencia): Shift pasa a
+       tarjeta GRANDE en su propia fila — igual que ya pasó con el botón
+       "Iniciar shift" (ver .action-btn-shift, v189), aquí también es el
+       elemento más importante del resumen (el turno completo) y merece más
+       peso visual que Break/Lunch/ACW, que se quedan como las 3 tarjetas
+       chicas de siempre en un grid debajo. renderBlockSummaryStrip() ahora
+       pinta 2 piezas dentro de #blockSummaryStrip: esta fila ancha
+       (.block-summary-shift-row, 1 sola tarjeta) y el grid de 3
+       (.block-summary-strip, reutilizado tal cual — mismo nombre de clase
+       que antes, solo que ya no envuelve las 4 tarjetas, nada más las 3
+       chicas). Reutiliza el mismo componente .block-summary-card (mismo
+       relleno líquido, mismo acento por color) — .block-summary-card-shift
+       solo agranda tipografía/padding/alto de la barra, sin duplicar CSS. */
+    .block-summary-shift-row {
+      margin-bottom: 8px;
+    }
+
+    .block-summary-card-shift {
+      padding: 16px 18px;
+      gap: 8px;
+    }
+
+    .block-summary-card-shift .bsc-icon {
+      font-size: 19px;
+    }
+
+    .block-summary-card-shift .bsc-name {
+      font-size: 16px;
+    }
+
+    .block-summary-card-shift .bsc-range {
+      font-size: 13px;
+    }
+
+    .block-summary-card-shift .bsc-progress-track {
+      height: 9px;
+    }
+
+    .block-summary-card-shift .bsc-pct {
+      font-size: 14px;
+    }
+
     @media (max-width: 760px) {
       .block-summary-strip { grid-template-columns: repeat(2, 1fr); gap: 6px; }
       .block-summary-card { padding: 8px 9px; border-radius: 12px; }
+      .block-summary-card-shift { padding: 12px 14px; border-radius: 14px; }
     }
 
     .good { color: var(--good); }
@@ -1474,17 +1517,42 @@
       gap: 8px;
     }
 
-    /* Horario/Metas/Reiniciar día se movieron a .hero-action-btn (arriba, en
-       el header). Controles quedó en dos filas de 3 (pedido del usuario):
-       Shift/Break/Lunch arriba, y Iniciar llamada/Pegar Llamadas/Agregar
-       llamada abajo — ambas usan el mismo .controls-grid de 3 columnas, sin
-       necesidad de una variante especial. Esta regla reemplaza al viejo
-       acordeón "Más acciones" (<details>/<summary>), conservando el mismo
-       espaciado (línea divisoria + margen) que ya tenía esa sección. */
-    .secondary-controls-static {
-      margin-top: 10px;
-      border-top: 1px solid var(--line);
-      padding-top: 10px;
+    /* Pedido del usuario (v189, reordenamiento de secciones — con boceto
+       visual acordado antes de tocar código): "Controles" se separa en 3
+       piezas por lo que de verdad representan. (1) Llamadas (Iniciar
+       llamada/Pegar Llamadas/Agregar llamada) sube a su PROPIA sección
+       arriba de todo (#callsSection, ver HTML) — no son "estados de turno"
+       excluyentes entre sí como Shift/Break/Lunch, sino gestión de datos de
+       llamadas, y es lo que más se usa día a día. (2) "Turno de Hoy" (info,
+       sin botones) queda antes de los botones de acción — primero ves el
+       estado, luego actúas. (3) Los botones de Shift/Break/Lunch se quedan
+       en #controlsSection, renombrado "Acciones del turno", con Shift en su
+       PROPIA fila ancha (.shift-action-row, 1 columna) porque es el
+       interruptor maestro de toda la app — y Break/Lunch como par debajo
+       (grid inline de 2 columnas, ver HTML). La vieja
+       .secondary-controls-static ya no se usa — Llamadas ya no vive dentro
+       de este mismo card, así que no hace falta una línea divisoria interna
+       para separarla. */
+    .shift-action-row {
+      grid-template-columns: 1fr;
+    }
+
+    .action-btn-shift {
+      min-height: 76px;
+      padding-top: 18px;
+      padding-bottom: 16px;
+    }
+
+    .action-btn-shift .action-icon {
+      font-size: 20px;
+    }
+
+    .action-btn-shift .action-label {
+      font-size: 15px;
+    }
+
+    .action-btn-shift .action-sub {
+      font-size: 12px;
     }
 
     .table-tags-top {
@@ -1539,6 +1607,7 @@
       #todayShiftAccordion,
       #cycleAccordion,
       #controlsSection,
+      #callsSection,
       #scheduleAccordion,
       #heroSection {
         max-width: 1200px;
@@ -2618,11 +2687,14 @@
        acordeones ANIDADOS (`#resumenDiaAccordion`/`#statsAccordion` dentro
        de `.day-stats-grid`, `#callTableAccordion`/`#weekSummaryAccordion`
        dentro de `.grid`) siguen sin necesitarlo — esos reciben su
-       espaciado del `gap`/margen de su propio contenedor padre. */
+       espaciado del `gap`/margen de su propio contenedor padre.
+       v189: `#callsSection` (Llamadas) es otra sección top-level nueva,
+       directa de `.app` — se suma aquí por el mismo motivo. */
     #earningsAccordion,
     #todayShiftAccordion,
     #cycleAccordion,
     #controlsSection,
+    #callsSection,
     #scheduleAccordion {
       margin-bottom: 14px;
     }
@@ -3283,21 +3355,56 @@
 </div>
 </section>
 
-<section class="card span-12" id="controlsSection">
+<section class="card span-12" id="callsSection">
 <div class="section-title">
 <div>
-<h2>Controles</h2>
-<p>Un botón por acción. Las pausas cambian de Start a End cuando están activas y muestran su cronómetro.</p>
+<h2>Llamadas</h2>
+<p>Inicia una llamada, pega tu exportación de Propio o agrega una manual.</p>
 </div>
 </div>
 
 <div class="controls-grid">
-<button class="action-btn" id="shiftControlBtn" type="button" data-accent="cyan">
+<button class="action-btn" id="callControlBtn" type="button" data-accent="pink">
+<span class="action-ripple"></span>
+<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📞</span></span>
+<span class="action-label" id="callControlLabel">Iniciar llamada</span>
+<span class="action-sub" id="callControlTimer">00:00:00</span>
+</button>
+<button class="action-btn" id="pasteCallsBtn" type="button" data-accent="cyan"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📋</span></span><span class="action-label">Pegar Llamadas</span><span class="action-sub">Importar data</span></button>
+<button class="action-btn" id="addCallManualBtn" type="button" data-accent="good"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">➕</span></span><span class="action-label">Agregar llamada</span><span class="action-sub">Manual</span></button>
+</div>
+</section>
+
+<details class="accordion-card" id="todayShiftAccordion" open>
+<summary>
+  <div class="accordion-head">
+    <h2>Turno de Hoy</h2>
+    <p>Shift, Break, Lunch y ACW — resumen rápido contra lo planeado.</p>
+  </div>
+  <div class="accordion-chevron">⌄</div>
+</summary>
+<div class="accordion-body">
+  <div id="blockSummaryStrip"></div>
+</div>
+</details>
+
+<section class="card span-12" id="controlsSection">
+<div class="section-title">
+<div>
+<h2>Acciones del turno</h2>
+<p>Un botón por acción. Las pausas cambian de Start a End cuando están activas y muestran su cronómetro.</p>
+</div>
+</div>
+
+<div class="controls-grid shift-action-row">
+<button class="action-btn action-btn-shift" id="shiftControlBtn" type="button" data-accent="cyan">
 <span class="action-ripple"></span>
 <span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">▶</span></span>
 <span class="action-label" id="shiftControlLabel">Iniciar shift</span>
 <span class="action-sub" id="shiftControlSub">07:00 AM – 04:00 PM</span>
 </button>
+</div>
+<div class="controls-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 8px;">
 <button class="action-btn" id="breakControlBtn" type="button" data-accent="warn">
 <span class="action-ripple"></span>
 <span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">☕</span></span>
@@ -3311,32 +3418,7 @@
 <span class="action-sub" id="lunchControlTimer">00:00:00</span>
 </button>
 </div>
-<div class="secondary-controls-static">
-<div class="controls-grid">
-<button class="action-btn" id="callControlBtn" type="button" data-accent="pink">
-<span class="action-ripple"></span>
-<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📞</span></span>
-<span class="action-label" id="callControlLabel">Iniciar llamada</span>
-<span class="action-sub" id="callControlTimer">00:00:00</span>
-</button>
-<button class="action-btn" id="pasteCallsBtn" type="button" data-accent="cyan"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📋</span></span><span class="action-label">Pegar Llamadas</span><span class="action-sub">Importar data</span></button>
-<button class="action-btn" id="addCallManualBtn" type="button" data-accent="good"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">➕</span></span><span class="action-label">Agregar llamada</span><span class="action-sub">Manual</span></button>
-</div>
-</div>
 </section>
-
-<details class="accordion-card" id="todayShiftAccordion" open>
-<summary>
-  <div class="accordion-head">
-    <h2>Turno de Hoy</h2>
-    <p>Shift, Break, Lunch y ACW — resumen rápido contra lo planeado.</p>
-  </div>
-  <div class="accordion-chevron">⌄</div>
-</summary>
-<div class="accordion-body">
-  <div class="block-summary-strip" id="blockSummaryStrip"></div>
-</div>
-</details>
 
 <!-- Pedido del usuario: "Ganancias de hoy" debe ser expandible y abrir
      expandida por defecto — antes era una tarjeta fija (`section.card`),
@@ -10843,11 +10925,12 @@ function autoSaveLiveCall(startedAtISO, endedAtISO) {
   }
 }
 
-// Pedido del usuario (v180, con imagen de referencia): fila de tarjetas
-// compacta arriba de "Bloques del día" — Shift + una tarjeta por cada
-// bloque individual del día + ACW, cada una con ícono, nombre, rango/total
-// y barra de progreso con %. `cards` ya viene armado por renderSchedule()
-// (ver summaryCards ahí) — esta función solo pinta.
+// Pedido del usuario (v180, con imagen de referencia; ampliado en v190):
+// tarjetas resumen arriba de "Bloques del día" — una por Shift (turno
+// completo, ahora en su PROPIA fila grande), y una por cada bloque
+// individual del día + ACW en un grid de 3 debajo. `cards` ya viene armado
+// por renderSchedule() (ver summaryCards ahí, Shift siempre es el primero)
+// — esta función solo separa y pinta.
 function renderBlockSummaryStrip(cards) {
   const el = document.getElementById('blockSummaryStrip');
   if (!el) return;
@@ -10855,10 +10938,10 @@ function renderBlockSummaryStrip(cards) {
     el.innerHTML = '';
     return;
   }
-  el.innerHTML = cards.map(c => {
+  const cardHtml = (c, extraClass = '') => {
     const pct = Math.max(0, Math.min(100, Number(c.pct) || 0));
     return `
-      <div class="block-summary-card" data-accent="${escapeHtml(c.accent)}">
+      <div class="block-summary-card ${extraClass}" data-accent="${escapeHtml(c.accent)}">
         <div class="bsc-fill" style="width:${pct}%"></div>
         <div class="bsc-top">
           <span class="bsc-icon">${c.icon}</span>
@@ -10871,7 +10954,14 @@ function renderBlockSummaryStrip(cards) {
         </div>
       </div>
     `;
-  }).join('');
+  };
+  const shiftIdx = cards.findIndex(c => c.name === 'Shift');
+  const shiftCard = cards[shiftIdx !== -1 ? shiftIdx : 0];
+  const restCards = cards.filter((c, i) => i !== (shiftIdx !== -1 ? shiftIdx : 0));
+  el.innerHTML = `
+    <div class="block-summary-shift-row">${cardHtml(shiftCard, 'block-summary-card-shift')}</div>
+    ${restCards.length ? `<div class="block-summary-strip">${restCards.map(c => cardHtml(c)).join('')}</div>` : ''}
+  `;
 }
 
 function renderSchedule() {
