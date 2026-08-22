@@ -847,17 +847,100 @@
       line-height: 1.45;
     }
 
-    /* Pedido del usuario (v179): línea extra con las horas del turno
-       planeado de hoy, además del subtítulo genérico de arriba (no lo
-       reemplaza) — mismo motivo de especificidad que la regla de arriba
-       (".accordion-head p" pisaría el peso/color si se dejara con el
-       selector de clase sola). */
-    .accordion-head p.schedule-shift-hours {
-      margin: 4px 0 0;
+    /* Pedido del usuario (v180, con imagen de referencia): fila de tarjetas
+       resumen arriba de "Bloques del día" — una por Shift (turno completo),
+       una por cada bloque individual del día (Trabajo/Break/Lunch, mismo
+       orden cronológico que ya usa la lista detallada de abajo, sin
+       colapsar por tipo — confirmado con el usuario) y una por ACW (total
+       del día). Cada tarjeta: ícono + nombre, rango horario/total, barra de
+       progreso + %. Coexiste con la lista detallada existente (#scheduleList,
+       sin cambios) — el usuario confirmó que es un resumen ARRIBA, no un
+       reemplazo. */
+    .block-summary-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+      gap: 8px;
+    }
+
+    .block-summary-card {
+      border-radius: 14px;
+      border: 1.5px solid rgba(var(--bsc-rgb), .35);
+      background: rgba(var(--bsc-rgb), .07);
+      padding: 9px 10px;
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .block-summary-card .bsc-top {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .block-summary-card .bsc-icon {
+      font-size: 13px;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+
+    .block-summary-card .bsc-name {
+      font-weight: 900;
+      font-size: 11.5px;
+      letter-spacing: -.01em;
       color: var(--text);
-      font-size: 12.5px;
-      font-weight: 800;
-      line-height: 1.45;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .block-summary-card .bsc-range {
+      color: var(--muted);
+      font-size: 10.5px;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .block-summary-card .bsc-progress-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .block-summary-card .bsc-progress-track {
+      flex: 1 1 auto;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      overflow: hidden;
+    }
+
+    .block-summary-card .bsc-progress-track > div {
+      height: 100%;
+      border-radius: inherit;
+      background: rgb(var(--bsc-rgb));
+    }
+
+    .block-summary-card .bsc-pct {
+      flex: 0 0 auto;
+      font-size: 10.5px;
+      font-weight: 900;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .block-summary-card[data-accent="cyan"] { --bsc-rgb: var(--cyan-rgb); }
+    .block-summary-card[data-accent="warn"] { --bsc-rgb: var(--warn-rgb); }
+    .block-summary-card[data-accent="blue"] { --bsc-rgb: var(--blue-rgb); }
+    .block-summary-card[data-accent="teal"] { --bsc-rgb: var(--teal-rgb); }
+    .block-summary-card[data-accent="good"] { --bsc-rgb: var(--good-rgb); }
+
+    @media (max-width: 760px) {
+      .block-summary-strip { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+      .block-summary-card { padding: 8px 9px; border-radius: 12px; }
     }
 
     .good { color: var(--good); }
@@ -1592,7 +1675,7 @@
       font-size: 12px;
     }
     .stat-cell .stat-value {
-      font-size: 24px;
+      font-size: 18px;
       font-weight: 900;
       letter-spacing: -.03em;
     }
@@ -1614,7 +1697,7 @@
     .stats-list-row {
       display: flex;
       justify-content: space-between;
-      font-size: 13px;
+      font-size: 12.5px;
       padding: 6px 0;
       border-bottom: 1px solid var(--line);
     }
@@ -3247,12 +3330,12 @@
   <div class="accordion-head">
     <h2>Bloques del día</h2>
     <p id="scheduleSubtitle">Horario fijo que la app ya conoce.</p>
-    <p class="schedule-shift-hours" id="scheduleShiftHours" style="display:none;">Turno: —</p>
     <p class="schedule-off-worked-note" id="scheduleOffWorkedNote" style="display:none;">Trabajaste en tu día libre — no aparece marcado como libre, se ve igual que un día laboral normal.</p>
   </div>
   <div class="accordion-chevron">⌄</div>
 </summary>
 <div class="accordion-body">
+  <div class="block-summary-strip" id="blockSummaryStrip"></div>
   <div class="day-metrics-row" id="dayMetricsRow">
     <details class="mini-accordion" id="adherenceAccordion">
       <summary class="mini-accordion-summary">
@@ -10630,6 +10713,36 @@ function autoSaveLiveCall(startedAtISO, endedAtISO) {
   }
 }
 
+// Pedido del usuario (v180, con imagen de referencia): fila de tarjetas
+// compacta arriba de "Bloques del día" — Shift + una tarjeta por cada
+// bloque individual del día + ACW, cada una con ícono, nombre, rango/total
+// y barra de progreso con %. `cards` ya viene armado por renderSchedule()
+// (ver summaryCards ahí) — esta función solo pinta.
+function renderBlockSummaryStrip(cards) {
+  const el = document.getElementById('blockSummaryStrip');
+  if (!el) return;
+  if (!Array.isArray(cards) || !cards.length) {
+    el.innerHTML = '';
+    return;
+  }
+  el.innerHTML = cards.map(c => {
+    const pct = Math.max(0, Math.min(100, Number(c.pct) || 0));
+    return `
+      <div class="block-summary-card" data-accent="${escapeHtml(c.accent)}">
+        <div class="bsc-top">
+          <span class="bsc-icon">${c.icon}</span>
+          <span class="bsc-name">${escapeHtml(c.name)}</span>
+        </div>
+        <div class="bsc-range">${escapeHtml(c.range)}</div>
+        <div class="bsc-progress-row">
+          <div class="bsc-progress-track"><div style="width:${pct}%"></div></div>
+          <span class="bsc-pct">${Math.round(pct)}%</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 function renderSchedule() {
       const dayKey = getActiveDayKey();
       const dayCalls = callsForDay(dayKey);
@@ -10670,22 +10783,6 @@ function renderSchedule() {
               : 'Tu horario planeado. Si llegas tarde o te pasas de un break, aquí se ve la diferencia contra el plan.');
       }
 
-      // Pedido del usuario (v179): línea extra con las horas del turno
-      // planeado de hoy — mismo dato que ya usa el botón "Iniciar shift"
-      // (getShiftWindow()), solo que visible también dentro de "Bloques del
-      // día". Oculta en un día sin horario configurado (ver el `return`
-      // temprano más abajo, que también la oculta) o efectivamente libre.
-      const shiftHoursEl = document.getElementById('scheduleShiftHours');
-      if (shiftHoursEl) {
-        if (dayIsEffectivelyOff(dayKey)) {
-          shiftHoursEl.style.display = 'none';
-        } else {
-          const win = getShiftWindow(dayKey);
-          shiftHoursEl.textContent = `Turno: ${timeLabel(win.start)} – ${timeLabel(win.end)}`;
-          shiftHoursEl.style.display = '';
-        }
-      }
-
       // Mejora del backlog (pendiente desde el Fix #8): un día marcado
       // off:true en el horario semanal pero con actividad real (dayCfg.off
       // true Y dayIsEffectivelyOff false) ya arma "Bloques del día" idéntico
@@ -10704,7 +10801,7 @@ function renderSchedule() {
 
       if (!plannedSlots.length) {
         wrap.innerHTML = '<div class="note">No hay horario configurado para este día. Edítalo en “Horario”.</div>';
-        if (shiftHoursEl) shiftHoursEl.style.display = 'none';
+        renderBlockSummaryStrip([]);
         const adherenceBadgeEmpty = document.getElementById('adherenceBadge');
         if (adherenceBadgeEmpty) adherenceBadgeEmpty.textContent = 'Adherencia: —';
         const productivityGoalBadgeEmpty = document.getElementById('productivityGoalBadge');
@@ -10734,6 +10831,20 @@ function renderSchedule() {
         if (plannedSlots[i].type === 'Work') { lastWorkIndex = i; break; }
       }
 
+      // Bug reportado por el usuario (con captura): una tarjeta por CADA
+      // bloque individual (como se había confirmado) se veía saturado —
+      // hasta 9 tarjetas apiladas en un día normal, muy distinto de la
+      // imagen de referencia (4 tarjetas fijas: Shift/Break/Lunch/ACW). Se
+      // cambia a AGREGAR por tipo: Break y Lunch combinan TODOS sus bloques
+      // del día en una sola tarjeta cada uno (ponderando minutos
+      // planeados/usados reales, no un promedio simple de %) — sin tarjeta
+      // de "Trabajo" (Shift ya representa el trabajo global, igual que en
+      // la imagen). Los acumuladores se llenan aquí dentro del loop
+      // (reutilizando `stats.durationMin`/`stats.filledMin`, sin recalcular
+      // nada nuevo); las tarjetas Break/Lunch se arman después del loop.
+      let breakPlannedMin = 0, breakFilledMin = 0, breakCount = 0;
+      let lunchPlannedMin = 0, lunchFilledMin = 0, lunchCount = 0;
+
       const slotRows = plannedSlots.map((slot, slotIdx) => {
         const s = toMinutes(slot.start), e = toMinutes(slot.end);
         const active = t >= s && t < e && dayKey === todayCallDateKey();
@@ -10741,6 +10852,15 @@ function renderSchedule() {
         const extendStart = slotIdx === firstWorkIndex ? shiftStart : null;
         const extendEnd = slotIdx === lastWorkIndex ? shiftEnd : null;
         const stats = slotStats(slot, dayCalls, dayPauses, shiftStart, shiftEnd, dayKey, extendStart, extendEnd);
+        if (slot.type === 'Break') {
+          breakPlannedMin += stats.durationMin;
+          breakFilledMin += stats.filledMin;
+          breakCount++;
+        } else if (slot.type === 'Lunch') {
+          lunchPlannedMin += stats.durationMin;
+          lunchFilledMin += stats.filledMin;
+          lunchCount++;
+        }
         // Bug reportado por el usuario: un día PASADO sin ningún registro (ni
         // turno ni llamadas, shiftStart null) caía en 'Próximo' — el único
         // valor que quedaba tras descartar 'Actual'/'Hecho' — contradiciendo
@@ -10873,6 +10993,69 @@ function renderSchedule() {
       });
 
       wrap.innerHTML = slotRows.join('');
+
+      // Fila de 4 tarjetas fijas (Shift/Break/Lunch/ACW), tal como la
+      // imagen de referencia del usuario — se arma aquí, DESPUÉS del loop
+      // de slots, para tener ya los acumulados de Break/Lunch.
+      const summaryCards = [];
+
+      // Shift (turno completo): % = tiempo Conectado hasta ahora vs. la
+      // duración TOTAL planeada del turno (getShiftWindow) — mismo criterio
+      // que ya usa "Conectado" en el resto de la app (connectedMinutesForDay),
+      // solo comparado contra el plan en vez de mostrarse en crudo.
+      const shiftWindowForCard = getShiftWindow(dayKey);
+      const plannedShiftMin = Math.max(0, toMinutes(shiftWindowForCard.end) - toMinutes(shiftWindowForCard.start));
+      const shiftConnectedMin = shiftStart ? connectedMinutesForDay(dayKey) : 0;
+      const shiftPct = plannedShiftMin > 0 ? Math.min(100, (shiftConnectedMin / plannedShiftMin) * 100) : 0;
+      summaryCards.push({
+        name: 'Shift',
+        icon: '▶',
+        accent: 'cyan',
+        range: `${timeLabel(shiftWindowForCard.start)} – ${timeLabel(shiftWindowForCard.end)}`,
+        pct: shiftPct,
+      });
+
+      // Break/Lunch (agregadas): combinan TODOS los bloques de ese tipo del
+      // día en una sola tarjeta — % ponderado por minutos (planeado/usado
+      // real sumados de todos los bloques), no un promedio simple de %.
+      // Se omite la tarjeta por completo si ese día no tiene ningún bloque
+      // de ese tipo (breakCount/lunchCount === 0) — sin bloques que
+      // resumir, no hay nada que mostrar.
+      if (breakCount > 0) {
+        summaryCards.push({
+          name: 'Break',
+          icon: '☕',
+          accent: 'warn',
+          range: `Total: ${formatDuration(breakPlannedMin * 60000)}`,
+          pct: breakPlannedMin > 0 ? Math.min(100, (breakFilledMin / breakPlannedMin) * 100) : 0,
+        });
+      }
+      if (lunchCount > 0) {
+        summaryCards.push({
+          name: 'Lunch',
+          icon: '🍽️',
+          accent: 'blue',
+          range: `Total: ${formatDuration(lunchPlannedMin * 60000)}`,
+          pct: lunchPlannedMin > 0 ? Math.min(100, (lunchFilledMin / lunchPlannedMin) * 100) : 0,
+        });
+      }
+
+      // ACW (última): total de ACW acumulado en el día (mismo
+      // importedCallStats().gapTotal que ya usa el tag "ACW" de Ganancias de
+      // hoy/Tabla de llamadas) — % contra la duración planeada del turno,
+      // ya que ACW no tiene una "duración planeada" propia con la cual
+      // compararse 1 a 1.
+      const dayCallStatsForCard = importedCallStats(dayCalls, dayKey);
+      const acwPct = plannedShiftMin > 0 ? Math.min(100, (dayCallStatsForCard.gapTotal / plannedShiftMin) * 100) : 0;
+      summaryCards.push({
+        name: 'ACW',
+        icon: '⏱️',
+        accent: 'good',
+        range: `Total: ${formatDuration(dayCallStatsForCard.gapTotal * 60000)}`,
+        pct: acwPct,
+      });
+
+      renderBlockSummaryStrip(summaryCards);
 
       // ---- Resumen del día: Adherencia + Meta productiva (arriba de la lista) ----
       const productivityGoalBadge = document.getElementById('productivityGoalBadge');
