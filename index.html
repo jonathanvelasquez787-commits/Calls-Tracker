@@ -206,6 +206,25 @@
         --tier-silver: var(--text-gray);
         --tier-gold: var(--break-orange);
         --accordion-bg: var(--panel);
+        /* Pedido del usuario (v209): en modo claro, --cyan quedó mapeado a
+           --primary (el mismo rosa/magenta que usan --pink y --bad) — así
+           que cualquier cosa "acento cian" en realidad se veía rosa,
+           repetido por toda la app junto al rosa real de peligro/Dropped.
+           El usuario pidió un cian de verdad (#00F0FF) SOLO en unos pocos
+           lugares decorativos/informativos (barra de Ganancias de hoy,
+           marcas de progreso, brand pill, etc.) — explícitamente NO en
+           botones ni en nada seleccionable/accionable (esos siguen
+           usando --cyan tal cual, sin tocar). Por eso se crea esta
+           variable APARTE en vez de reasignar --cyan: cambiar --cyan
+           habría afectado también los botones que usan
+           data-accent="cyan" (Pegar Llamadas, Iniciar shift), que el
+           usuario pidió dejar intactos. --accent-decorative-pale es la
+           versión oscurecida para texto/bordes sobre fondo blanco (el
+           cian puro casi no se lee ahí) — mismo criterio que ya usa
+           --pale-cyan para su propio caso. */
+        --accent-decorative: #00F0FF;
+        --accent-decorative-rgb: 0, 240, 255;
+        --accent-decorative-pale: #046C7A;
       }
     }
 
@@ -266,6 +285,11 @@
       --tier-silver: var(--text-gray);
       --tier-gold: var(--break-orange);
       --accordion-bg: var(--panel);
+      /* Ver comentario gemelo en la rama @media (prefers-color-scheme:
+         light) de arriba — misma variable, mismo criterio. */
+      --accent-decorative: #00F0FF;
+      --accent-decorative-rgb: 0, 240, 255;
+      --accent-decorative-pale: #046C7A;
     }
 
     /* ---- Rediseño del tema claro (pedido del usuario) ----
@@ -533,6 +557,41 @@
       :root:not(.theme-dark) .action-btn.is-active .action-sub {
         color: #fff;
       }
+      /* Pedido del usuario (v209): reemplaza el cian "prestado" de --cyan
+         (que en este tema es rosa, ver comentario junto a
+         --accent-decorative) por el cian real SOLO en elementos
+         decorativos/informativos — nunca en botones, tabs, tiles o
+         cualquier cosa seleccionable/accionable, que se quedan con su
+         --cyan de siempre sin tocar. */
+      :root:not(.theme-dark) .progress > div {
+        background: linear-gradient(90deg, var(--teal), var(--accent-decorative));
+      }
+      :root:not(.theme-dark) .tick-label.active {
+        color: var(--accent-decorative-pale);
+      }
+      :root:not(.theme-dark) .goal-badge {
+        color: var(--accent-decorative-pale);
+      }
+      :root:not(.theme-dark) .brand {
+        background: rgba(var(--accent-decorative-rgb), .10);
+        border-color: rgba(var(--accent-decorative-rgb), .22);
+        color: var(--accent-decorative-pale);
+      }
+      :root:not(.theme-dark) .accordion-card[open] .accordion-chevron {
+        background: rgba(var(--accent-decorative-rgb), .10);
+      }
+      :root:not(.theme-dark) tr.week-row-today td {
+        background: rgba(var(--accent-decorative-rgb), .09);
+      }
+      :root:not(.theme-dark) .slot.active {
+        border-color: rgba(var(--accent-decorative-rgb), .45);
+        background: rgba(var(--accent-decorative-rgb), .08);
+      }
+      :root:not(.theme-dark) textarea:focus,
+      :root:not(.theme-dark) input:focus {
+        border-color: rgba(var(--accent-decorative-rgb), .48);
+        box-shadow: 0 0 0 3px rgba(var(--accent-decorative-rgb), .14);
+      }
     }
     html.theme-light .action-btn:not(.is-active) {
       border-color: var(--line-2);
@@ -694,6 +753,37 @@
     html.theme-light .action-btn.is-active .action-label,
     html.theme-light .action-btn.is-active .action-sub {
       color: #fff;
+    }
+    /* Ver comentario gemelo en la rama @media (prefers-color-scheme:
+       light) de arriba — mismas reglas, mismo criterio (v209). */
+    html.theme-light .progress > div {
+      background: linear-gradient(90deg, var(--teal), var(--accent-decorative));
+    }
+    html.theme-light .tick-label.active {
+      color: var(--accent-decorative-pale);
+    }
+    html.theme-light .goal-badge {
+      color: var(--accent-decorative-pale);
+    }
+    html.theme-light .brand {
+      background: rgba(var(--accent-decorative-rgb), .10);
+      border-color: rgba(var(--accent-decorative-rgb), .22);
+      color: var(--accent-decorative-pale);
+    }
+    html.theme-light .accordion-card[open] .accordion-chevron {
+      background: rgba(var(--accent-decorative-rgb), .10);
+    }
+    html.theme-light tr.week-row-today td {
+      background: rgba(var(--accent-decorative-rgb), .09);
+    }
+    html.theme-light .slot.active {
+      border-color: rgba(var(--accent-decorative-rgb), .45);
+      background: rgba(var(--accent-decorative-rgb), .08);
+    }
+    html.theme-light textarea:focus,
+    html.theme-light input:focus {
+      border-color: rgba(var(--accent-decorative-rgb), .48);
+      box-shadow: 0 0 0 3px rgba(var(--accent-decorative-rgb), .14);
     }
 
     * { box-sizing: border-box; }
