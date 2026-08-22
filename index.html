@@ -358,6 +358,19 @@
       :root:not(.theme-dark) .chip strong {
         color: var(--text);
       }
+      /* Pedido del usuario (v186): el degradado de texto de .slot .meta/
+         .range (ver esa regla, fuera de este bloque) es un efecto SOLO de
+         modo oscuro — en modo claro se apaga por completo, volviendo al
+         color plano de siempre (var(--muted)), sin gradiente ni recorte
+         de texto. */
+      :root:not(.theme-dark) .slot .meta,
+      :root:not(.theme-dark) .slot .range {
+        background-image: none;
+        -webkit-background-clip: initial;
+        background-clip: initial;
+        color: var(--muted);
+        -webkit-text-fill-color: currentColor;
+      }
     }
     html.theme-light .action-btn:not(.is-active) {
       border-color: var(--line-2);
@@ -406,6 +419,14 @@
     }
     html.theme-light .chip strong {
       color: var(--text);
+    }
+    html.theme-light .slot .meta,
+    html.theme-light .slot .range {
+      background-image: none;
+      -webkit-background-clip: initial;
+      background-clip: initial;
+      color: var(--muted);
+      -webkit-text-fill-color: currentColor;
     }
 
     * { box-sizing: border-box; }
@@ -1656,28 +1677,24 @@
       }
     }
 
-    /* Pedido del usuario (v179): "Bloques del día" tenía 2 versiones
-       distintas — mobile con la lista vertical detallada de siempre
-       (#scheduleList: adherencia por bloque, meta productiva, actividad
-       real, etc.) y escritorio con unas tarjetas horizontales con scroll
-       (Fase 3 de v175) que mostraban MENOS detalle. Se quita esa versión
-       de escritorio por completo — un solo componente (#scheduleList)
-       para ambos anchos, mismo detalle en los dos. En escritorio, en vez
-       de una sola columna larga, se acomoda en 2 columnas (aprovecha el
-       ancho de 1200px de la sección) — el propio `.slot` se fuerza a su
-       layout de una sola columna interna (el mismo que ya usa mobile
-       <=1200px) porque a la mitad del ancho (~585px) el layout de 3
-       columnas fijas pensado para el ancho completo (128px + fr + 88px)
-       queda apretado. */
+    /* Pedido del usuario (v185): revierte v179 — "Bloques del día" vuelve a
+       apilarse en 1 sola columna en escritorio (antes: 2 columnas desde
+       v179, ver historial de esta sección). Se declara `1fr` explícito en
+       vez de borrar la regla entera (que dependería del default implícito
+       de `.schedule` sin `grid-template-columns` fuera de este bloque) para
+       que quede claro a simple vista que 1 columna es una decisión
+       intencional en este breakpoint, no un olvido. Mobile/tablet
+       (<=1200px) no se tocan — siguen con su propia regla aparte. Al volver
+       a 1 columna, cada `.slot` recupera el ancho completo de la sección,
+       así que ya no hace falta forzarlo a 1 columna interna (esa regla de
+       v179 solo existía porque a la mitad del ancho el layout de 3 columnas
+       fijas quedaba apretado) — se quita esa regla y la de `.type` para que
+       `.slot` vuelva a su grid original de 3 columnas (128px 1fr 88px, la
+       misma que ya define la regla base `.slot, .event` fuera de este media
+       query), sin cambio extra de por medio. */
     @media (min-width: 1201px) {
       .schedule {
-        grid-template-columns: 1fr 1fr;
-      }
-      .schedule .slot {
         grid-template-columns: 1fr;
-      }
-      .schedule .slot .type {
-        justify-self: start;
       }
     }
 
@@ -2052,29 +2069,28 @@
       font-weight: 800;
       letter-spacing: -.01em;
       line-height: 1.15;
-      /* Bug reportado por el usuario: el título quedaba casi invisible al
-         pasar el mouse o tocar el botón — con color: var(--accent-pale)
-         (mismo tono que .action-ripple, el relleno que cubre el botón en
-         hover/tap), texto y fondo terminaban siendo prácticamente el mismo
-         color. Se cambia a var(--text) (blanco/casi blanco, automático por
-         tema) — mismo color que ya usa .action-sub en TODOS los estados,
-         sin relación con el acento de cada botón, así que se mantiene
-         legible sin importar qué haya detrás. Esto también vuelve
-         redundante (pero inofensiva) la regla .action-btn.is-active
-         .action-label de abajo, que ya forzaba este mismo blanco solo para
-         el estado "en curso" — se deja tal cual por si el color base
-         cambia en el futuro. */
-      color: var(--text);
+      /* Pedido del usuario (v187): REVERSIÓN PARCIAL explícita de la
+         decisión anterior (ver historial: el título quedaba casi invisible
+         en hover/tap con var(--accent-pale), así que se forzó a var(--text)
+         en TODOS los estados). Ahora, en REPOSO (sin hover/tap/activo), el
+         texto vuelve a usar el color de acento del propio botón
+         (var(--accent), el mismo tono del borde) — el blanco se conserva
+         SOLO en hover/.is-pressed/.is-active, ver las reglas nuevas más
+         abajo que fuerzan ese blanco explícitamente en esos 3 estados
+         (antes no hacía falta forzarlo ahí porque el reposo YA era blanco;
+         con el reposo cambiado a --accent, sin esas reglas el texto se
+         quedaría en el color de acento incluso al pasar el mouse). */
+      color: var(--accent);
       transition: color .22s ease;
     }
 
     .action-sub {
       position: relative;
       z-index: 1;
-      /* Pedido del usuario: blanco, no gris — --text es el color de texto
-         principal de la app (casi blanco en oscuro, oscuro en claro),
-         sigue siendo automático por tema en vez de un blanco fijo. */
-      color: var(--text);
+      /* Pedido del usuario (v187): mismo criterio que .action-label de
+         arriba — en reposo usa el acento del botón (var(--accent)), no
+         blanco fijo; el blanco se fuerza aparte en hover/pressed/activo. */
+      color: var(--accent);
       font-size: 10.5px;
       font-weight: 700;
       line-height: 1.3;
@@ -2125,6 +2141,17 @@
     .action-btn.is-pressed .action-ripple { transform: scale(1); opacity: 1; }
     .action-btn:hover .action-icon,
     .action-btn.is-pressed .action-icon { transform: scale(1.12) translateY(-1px); }
+    /* Pedido del usuario (v187): con el reposo de .action-label/.action-sub
+       cambiado a var(--accent) (ver esas reglas arriba), hace falta forzar
+       el blanco aquí explícitamente para hover/tap — antes no hacía falta
+       porque el reposo ya era blanco y no había nada que "revertir" al
+       soltar. */
+    .action-btn:hover .action-label,
+    .action-btn.is-pressed .action-label,
+    .action-btn:hover .action-sub,
+    .action-btn.is-pressed .action-sub {
+      color: var(--text);
+    }
     /* Pedido del usuario: el título (label) y el subtítulo se quedan
        SIEMPRE en blanco (var(--text), heredado de la regla base) — ni al
        tocar/hover, ni con el botón activo, cambian de color. Antes el
@@ -2167,7 +2194,15 @@
       transform: scale(1);
       opacity: 1;
     }
-    .action-btn.is-active .action-label {
+    /* Pedido del usuario (v187): antes esta regla era "redundante pero
+       inofensiva" (el reposo ya era blanco). Con el reposo cambiado a
+       var(--accent) (ver .action-label/.action-sub arriba), esta regla
+       pasa a ser NECESARIA — sin ella, un botón "en curso" (Break/Lunch/
+       llamada activos, turno corriendo) se vería con el texto del color de
+       acento en vez de blanco. Se agrega también a .action-sub, que antes
+       no necesitaba su propia regla por el mismo motivo (reposo ya blanco). */
+    .action-btn.is-active .action-label,
+    .action-btn.is-active .action-sub {
       color: var(--text);
     }
     .action-btn.is-active .action-ring {
@@ -2323,6 +2358,30 @@
     .slot > div:not(.slot-fill) {
       position: relative;
       z-index: 1;
+    }
+
+    /* Pedido del usuario (v186): en modo oscuro, el texto secundario de
+       cada bloque (.meta/.range — el detalle/rango, no el nombre del
+       bloque, que ya es blanco/bold) se va poniendo blanco a medida que el
+       relleno líquido (.slot-fill) lo cubre de izquierda a derecha, en vez
+       de quedarse gris (var(--muted)) fijo todo el tiempo. Técnica: un
+       degradado de 2 colores con un corte duro (var(--text) hasta el % de
+       relleno, var(--muted) después) pintado como fondo del propio texto y
+       recortado al glifo (background-clip:text) — más simple y más robusto
+       con texto que envuelve a 2 líneas (mobile/ventanas angostas) que
+       duplicar cada texto en 2 capas superpuestas. `--slot-pct` se setea
+       inline en el propio `.slot` (mismo `stats.pct` que ya alimenta el
+       ancho de `.slot-fill`, ver renderSchedule) — un solo dato con 2 usos,
+       sin depender de medir nada por JS aparte. Solo dark: se desactiva
+       en los 2 bloques de modo claro más abajo (mismo patrón dual que el
+       resto del theming), volviendo al color plano de siempre. */
+    .slot .meta,
+    .slot .range {
+      background-image: linear-gradient(to right, var(--text) 0%, var(--text) var(--slot-pct, 0%), var(--muted) var(--slot-pct, 0%), var(--muted) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
     }
 
     .event-delete {
@@ -11081,7 +11140,7 @@ function renderSchedule() {
         const slotAccent = slot.type === 'Work' ? 'cyan' : slot.type === 'Break' ? 'warn' : 'blue';
 
         return `
-          <div class="slot ${active ? 'active' : ''} ${done ? 'done' : ''}" data-accent="${slotAccent}">
+          <div class="slot ${active ? 'active' : ''} ${done ? 'done' : ''}" data-accent="${slotAccent}" style="--slot-pct:${stats.pct}%">
             <div class="slot-fill" style="width:${stats.pct}%"></div>
             <div>
               <div class="name">${slot.name}</div>
