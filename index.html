@@ -847,6 +847,19 @@
       line-height: 1.45;
     }
 
+    /* Pedido del usuario (v179): línea extra con las horas del turno
+       planeado de hoy, además del subtítulo genérico de arriba (no lo
+       reemplaza) — mismo motivo de especificidad que la regla de arriba
+       (".accordion-head p" pisaría el peso/color si se dejara con el
+       selector de clase sola). */
+    .accordion-head p.schedule-shift-hours {
+      margin: 4px 0 0;
+      color: var(--text);
+      font-size: 12.5px;
+      font-weight: 800;
+      line-height: 1.45;
+    }
+
     .good { color: var(--good); }
     .warn { color: var(--warn); }
     .bad { color: var(--bad); }
@@ -1523,91 +1536,28 @@
       }
     }
 
-    /* Fase 3 — "Bloques del día": tarjetas horizontales con scroll,
-       una por CADA bloque real del día (Work/Break/Lunch — tantos
-       como el horario configurado tenga ese día, no una sola caja fija
-       por categoría), en vez de la lista vertical detallada. La lista
-       vertical (#scheduleList) sigue existiendo tal cual para mobile
-       (sin cambios) — aquí solo se oculta en escritorio, reemplazada
-       por las tarjetas nuevas (#scheduleCardsDesktop), que se
-       construyen a partir de los MISMOS datos ya calculados por
-       renderSchedule()/slotStats() (nada de datos nuevos ni
-       recálculo aparte). La fila de Adherencia/Meta productiva
-       (#dayMetricsRow) pasa a verse DEBAJO de las tarjetas — se logra
-       con `order` dentro del grid de `.accordion-body` (ya es
-       `display:grid`), sin reordenar el HTML ni afectar el orden en
-       mobile. */
-    .schedule-cards-desktop {
-      display: none;
-    }
+    /* Pedido del usuario (v179): "Bloques del día" tenía 2 versiones
+       distintas — mobile con la lista vertical detallada de siempre
+       (#scheduleList: adherencia por bloque, meta productiva, actividad
+       real, etc.) y escritorio con unas tarjetas horizontales con scroll
+       (Fase 3 de v175) que mostraban MENOS detalle. Se quita esa versión
+       de escritorio por completo — un solo componente (#scheduleList)
+       para ambos anchos, mismo detalle en los dos. En escritorio, en vez
+       de una sola columna larga, se acomoda en 2 columnas (aprovecha el
+       ancho de 1200px de la sección) — el propio `.slot` se fuerza a su
+       layout de una sola columna interna (el mismo que ya usa mobile
+       <=1200px) porque a la mitad del ancho (~585px) el layout de 3
+       columnas fijas pensado para el ancho completo (128px + fr + 88px)
+       queda apretado. */
     @media (min-width: 1201px) {
-      #dayMetricsRow { order: 2; }
-      .schedule-cards-desktop {
-        order: 1;
-        display: flex;
-        gap: 12px;
-        overflow-x: auto;
-        padding-bottom: 6px;
-        -webkit-overflow-scrolling: touch;
+      .schedule {
+        grid-template-columns: 1fr 1fr;
       }
-      #scheduleList { display: none; order: 3; }
-
-      .schedule-card-desktop {
-        flex: 0 0 200px;
-        display: grid;
-        gap: 8px;
-        padding: 14px;
-        border-radius: 18px;
-        border: 1px solid var(--line);
-        background: rgba(255,255,255,.03);
+      .schedule .slot {
+        grid-template-columns: 1fr;
       }
-      .schedule-card-desktop .sc-top {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .schedule-card-desktop .sc-icon {
-        width: 30px;
-        height: 30px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 15px;
-        flex: 0 0 auto;
-      }
-      .schedule-card-desktop .sc-icon.sc-work { background: rgba(var(--cyan-rgb), .16); color: var(--cyan); }
-      .schedule-card-desktop .sc-icon.sc-break { background: rgba(var(--warn-rgb), .16); color: var(--warn); }
-      .schedule-card-desktop .sc-icon.sc-lunch { background: rgba(var(--blue-rgb), .16); color: var(--blue); }
-      .schedule-card-desktop .sc-name {
-        font-weight: 850;
-        font-size: 13px;
-        letter-spacing: -.01em;
-        line-height: 1.2;
-      }
-      .schedule-card-desktop .sc-range {
-        color: var(--muted);
-        font-size: 11px;
-      }
-      .schedule-card-desktop .sc-progress {
-        height: 8px;
-        border-radius: 999px;
-        overflow: hidden;
-        border: 1px solid var(--line-2);
-        background: rgba(255,255,255,.05);
-      }
-      .schedule-card-desktop .sc-progress > div {
-        height: 100%;
-        border-radius: inherit;
-      }
-      .schedule-card-desktop .sc-progress.sc-fill-work > div { background: linear-gradient(90deg, var(--teal), var(--blue)); }
-      .schedule-card-desktop .sc-progress.sc-fill-break > div { background: linear-gradient(90deg, var(--warn), #ffcf7d); }
-      .schedule-card-desktop .sc-progress.sc-fill-lunch > div { background: linear-gradient(90deg, var(--blue), var(--pink)); }
-      .schedule-card-desktop .sc-pct {
-        text-align: right;
-        font-weight: 800;
-        font-size: 12px;
-        color: var(--muted);
+      .schedule .slot .type {
+        justify-self: start;
       }
     }
 
@@ -1633,18 +1583,19 @@
         gap: 16px;
         max-width: 1200px;
         margin: 0 auto 14px;
-        /* Pedido del usuario (v177): "Resumen del día"/"Estadísticas" pasan
-           de tarjetas fijas a expandibles (accordion-card) — cada una puede
-           colapsarse independiente de la otra, así que este grid necesita el
-           mismo fix que ya se aplicó arriba a #cycleControlsGrid (ver ese
-           comentario): sin esto, colapsar solo una de las dos la dejaría
-           igual de alta que la abierta, con un hueco vacío en vez de
-           encogerse de verdad. */
-        align-items: start;
-      }
-      .day-stats-grid > .accordion-card {
-        align-self: start;
-        height: fit-content;
+        /* Pedido del usuario (v179): "Resumen del día"/"Estadísticas del
+           día" deben verse del MISMO tamaño siempre — se quita el
+           align-items:start + align-self:start/height:fit-content que
+           traía v177 (pensado para que colapsar una de las dos no
+           estirara a la otra) porque el usuario pidió explícitamente
+           igualar su alto, sin tocar el contenido de ninguna. Con el
+           default de grid (stretch) ambas tarjetas ocupan la altura de
+           la más alta de las dos. Contrapartida aceptada: si se colapsa
+           solo una mientras la otra sigue abierta, la cerrada se estira
+           a la altura de la abierta (mismo caso que v177 corrigió) — pero
+           ambas parten siempre de un contenido de tamaño similar (una
+           fila de 4 datos vs. 3 filas de lista), así que en la práctica
+           esa diferencia es chica. */
       }
       .stat-cell {
         display: grid;
@@ -3283,6 +3234,7 @@
   <div class="accordion-head">
     <h2>Bloques del día</h2>
     <p id="scheduleSubtitle">Horario fijo que la app ya conoce.</p>
+    <p class="schedule-shift-hours" id="scheduleShiftHours" style="display:none;">Turno: —</p>
     <p class="schedule-off-worked-note" id="scheduleOffWorkedNote" style="display:none;">Trabajaste en tu día libre — no aparece marcado como libre, se ve igual que un día laboral normal.</p>
   </div>
   <div class="accordion-chevron">⌄</div>
@@ -3300,7 +3252,6 @@
     <span class="slot-status bad live-exception" id="adherenceLiveBadge" style="display:none;">⚠️ Fuera de adherencia ahora</span>
     <span class="slot-status" id="productivityGoalBadge" title="Minutos productivos logrados hoy vs. la suma de las metas configuradas en cada bloque de Trabajo (Horario → Bloques). Un bloque sin meta configurada no cuenta para este total.">Meta productiva: —</span>
   </div>
-  <div class="schedule-cards-desktop" id="scheduleCardsDesktop"></div>
   <div class="schedule" id="scheduleList"></div>
 </div>
 </details>
@@ -10706,6 +10657,22 @@ function renderSchedule() {
               : 'Tu horario planeado. Si llegas tarde o te pasas de un break, aquí se ve la diferencia contra el plan.');
       }
 
+      // Pedido del usuario (v179): línea extra con las horas del turno
+      // planeado de hoy — mismo dato que ya usa el botón "Iniciar shift"
+      // (getShiftWindow()), solo que visible también dentro de "Bloques del
+      // día". Oculta en un día sin horario configurado (ver el `return`
+      // temprano más abajo, que también la oculta) o efectivamente libre.
+      const shiftHoursEl = document.getElementById('scheduleShiftHours');
+      if (shiftHoursEl) {
+        if (dayIsEffectivelyOff(dayKey)) {
+          shiftHoursEl.style.display = 'none';
+        } else {
+          const win = getShiftWindow(dayKey);
+          shiftHoursEl.textContent = `Turno: ${timeLabel(win.start)} – ${timeLabel(win.end)}`;
+          shiftHoursEl.style.display = '';
+        }
+      }
+
       // Mejora del backlog (pendiente desde el Fix #8): un día marcado
       // off:true en el horario semanal pero con actividad real (dayCfg.off
       // true Y dayIsEffectivelyOff false) ya arma "Bloques del día" idéntico
@@ -10724,11 +10691,7 @@ function renderSchedule() {
 
       if (!plannedSlots.length) {
         wrap.innerHTML = '<div class="note">No hay horario configurado para este día. Edítalo en “Horario”.</div>';
-        // v175: contenedor de tarjetas de escritorio (Fase 3) — mismo aviso
-        // que la lista vertical, para que el estado vacío se vea igual en
-        // ambos breakpoints.
-        const cardsWrapEmpty = document.getElementById('scheduleCardsDesktop');
-        if (cardsWrapEmpty) cardsWrapEmpty.innerHTML = '<div class="note">No hay horario configurado para este día. Edítalo en “Horario”.</div>';
+        if (shiftHoursEl) shiftHoursEl.style.display = 'none';
         const adherenceBadgeEmpty = document.getElementById('adherenceBadge');
         if (adherenceBadgeEmpty) adherenceBadgeEmpty.textContent = 'Adherencia: —';
         const productivityGoalBadgeEmpty = document.getElementById('productivityGoalBadge');
@@ -10737,14 +10700,6 @@ function renderSchedule() {
         if (checkpointListEmpty) checkpointListEmpty.innerHTML = '<div class="note" style="margin:0;">Sin horario configurado este día.</div>';
         return;
       }
-
-      // v175 (Fase 3): acumulador de tarjetas horizontales de escritorio —
-      // una por CADA bloque real del día (no una caja fija por categoría).
-      // Se arma en el mismo loop que ya construye slotRows, reutilizando
-      // exactamente los mismos `stats` ya calculados por slotStats() más
-      // abajo — sin ningún cálculo nuevo ni distinto al que ya alimenta la
-      // lista vertical de mobile.
-      const scheduleCardsList = [];
 
       // Acumuladores para "Meta productiva" del día: se suman los mismos
       // valores (goalMin/achievedMin) que ya calcula slotStats() por cada
@@ -10881,30 +10836,6 @@ function renderSchedule() {
             `
           : '';
 
-        // v175 (Fase 3): tarjeta horizontal de escritorio equivalente a esta
-        // misma fila — mismo `slot`/`stats` ya calculados arriba, solo un
-        // formato más compacto (icono + rango + una sola barra + %). Una
-        // tarjeta por cada bloque real (puede haber varios Work/Break/Lunch
-        // el mismo día), no una caja fija por categoría.
-        const scAccentClass = slot.type === 'Work' ? 'sc-work' : slot.type === 'Break' ? 'sc-break' : 'sc-lunch';
-        const scFillClass = slot.type === 'Work' ? 'sc-fill-work' : slot.type === 'Break' ? 'sc-fill-break' : 'sc-fill-lunch';
-        const scIcon = slot.type === 'Work' ? '💻' : slot.type === 'Break' ? '☕' : '🍽️';
-        scheduleCardsList.push(`
-          <div class="schedule-card-desktop">
-            <div class="sc-top">
-              <span class="sc-icon ${scAccentClass}">${scIcon}</span>
-              <div>
-                <div class="sc-name">${escapeHtml(slot.name)}</div>
-                <div class="sc-range">${escapeHtml(slot.start)} - ${escapeHtml(slot.end)}</div>
-              </div>
-            </div>
-            <div class="sc-progress ${scFillClass}" aria-label="${escapeHtml(slot.name)} progreso">
-              <div style="width:${stats.pct}%"></div>
-            </div>
-            <div class="sc-pct">${Math.round(stats.pct)}%</div>
-          </div>
-        `);
-
         return `
           <div class="slot ${active ? 'active' : ''} ${done ? 'done' : ''}">
             <div>
@@ -10927,9 +10858,6 @@ function renderSchedule() {
           </div>
         `;
       });
-
-      const scheduleCardsWrap = document.getElementById('scheduleCardsDesktop');
-      if (scheduleCardsWrap) scheduleCardsWrap.innerHTML = scheduleCardsList.join('');
 
       wrap.innerHTML = slotRows.join('');
 
