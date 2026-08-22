@@ -3721,7 +3721,15 @@
 </summary>
 <div class="accordion-body">
 <div style="margin-top:4px;">
+<!-- Pedido del usuario (v202): "Más corta" mostraba el mínimo real (a veces
+     0 min, si Propio exportó una llamada rarísima con inicio=fin) sin
+     ninguna aclaración — se veía como si la app hubiera calculado mal. Se
+     agrega una nota debajo (statsShortestNote, oculta por default) que
+     aclara cuántas llamadas de 0 min hubo y cuál es la siguiente más corta
+     por encima de 0 — el número principal NO cambia, sigue siendo el
+     mínimo real. */-->
 <div class="stats-list-row"><span>Más corta:</span><strong id="statsShortest">—</strong></div>
+<div class="gap-note" id="statsShortestNote" style="display:none; text-align:right; margin: -4px 0 6px;"></div>
 <div class="stats-list-row"><span>Más larga:</span><strong id="statsLongest">—</strong></div>
 <div class="stats-list-row"><span>Promedio:</span><strong id="statsAvg">—</strong></div>
 <!-- Pedido del usuario (v199): hueco más largo/promedio del día (ya
@@ -5790,6 +5798,15 @@ $0.72"></textarea>
       const earnings = sorted.reduce((a, c) => a + parseMoney(c.pay), 0) + higherRateBonus;
       const longest = sorted.length ? Math.max(...sorted.map(c => c.durationMin || 0)) : 0;
       const shortest = sorted.length ? Math.min(...sorted.map(c => c.durationMin || 0)) : 0;
+      // Pedido del usuario (v202): "Más corta" puede caer en 0 min por una
+      // llamada real pero rarísima (Propio exporta inicio=fin) — para no
+      // dejar ese 0 sin explicación, se calcula aparte cuántas llamadas de
+      // 0 min hubo y cuál es la más corta de las que sí duraron algo (>0
+      // min), para mostrar una nota aclaratoria sin tocar `shortest` (que
+      // sigue siendo el mínimo real, sin filtrar nada).
+      const zeroCount = sorted.filter(c => (c.durationMin || 0) === 0).length;
+      const nonZero = sorted.map(c => c.durationMin || 0).filter(d => d > 0);
+      const shortestNonZero = nonZero.length ? Math.min(...nonZero) : null;
       const avg = sorted.length ? total / sorted.length : 0;
       const gapTotals = dayGapTotals(normalizedDayKey, sorted);
       return {
@@ -5802,6 +5819,8 @@ $0.72"></textarea>
         dropped: droppedCalls.length,
         longest,
         shortest,
+        zeroCount,
+        shortestNonZero,
         avg,
         gapTotal: gapTotals.acwTotal,
         rawGapTotal: gapTotals.rawGapTotal,
@@ -11862,6 +11881,22 @@ function renderDayStatsCards() {
   setText('resumenDiaAdherenciaGoal', `Objetivo ≥ ${goalPct}%`);
 
   setText('statsShortest', dayCalls.length ? formatDuration(stats.shortest * 60000) : '—');
+  // Pedido del usuario (v202): nota aclaratoria cuando "Más corta" da 0 min
+  // por una llamada real de inicio=fin — sin esto se veía como un error de
+  // la app. Solo se muestra si de verdad hay al menos una de 0 min Y
+  // existe otra por encima de 0 con la que comparar; si todo el día son
+  // llamadas de 0 min (shortestNonZero null), no hay "siguiente" que
+  // mostrar y la nota se queda oculta.
+  const shortestNoteEl = document.getElementById('statsShortestNote');
+  if (shortestNoteEl) {
+    if (dayCalls.length && stats.shortest === 0 && stats.zeroCount > 0 && stats.shortestNonZero !== null) {
+      const plural = stats.zeroCount === 1 ? 'llamada de 0 min' : `${stats.zeroCount} llamadas de 0 min`;
+      shortestNoteEl.textContent = `Hubo ${plural} — siguiente: ${formatDuration(stats.shortestNonZero * 60000)}`;
+      shortestNoteEl.style.display = '';
+    } else {
+      shortestNoteEl.style.display = 'none';
+    }
+  }
   setText('statsLongest', dayCalls.length ? formatDuration(stats.longest * 60000) : '—');
   setText('statsAvg', dayCalls.length ? formatDuration(stats.avg * 60000) : '—');
 
