@@ -1478,6 +1478,58 @@
       gap: 10px;
     }
 
+    /* Pedido del usuario (v192): Iniciar shift/Break/Lunch (antes su propia
+       sección "Acciones del turno", debajo del todo) suben a la misma fila
+       de chips del header — a la par de "No iniciado"/"Día activo", pegados
+       a la derecha — como botones CHICOS. La sección "Acciones del turno"
+       se elimina por completo (buscar "controlsSection" ya no aparece en el
+       HTML) — este es el único lugar donde viven estos 3 botones ahora,
+       tanto en escritorio como en mobile. Reutiliza el mismo componente
+       .action-btn (mismo relleno tipo onda, mismo anillo pulsante, mismo
+       manejo de acento/estado activo por JS vía data-accent/.is-active —
+       cero cambio de lógica), solo se achica su tamaño con reglas scoped a
+       este contenedor en vez de tocar .action-btn en general (los botones
+       de "Llamadas" siguen grandes, sin cambios).
+       margin-left:auto empuja el grupo al extremo derecho de .chips
+       (flexbox) sin necesitar tocar el layout de los chips que ya existen
+       a la izquierda (Estado/ACW en vivo/Día activo). flex-shrink:0 evita
+       que el grupo se comprima como bloque — cada botón individual ya trae
+       su propio min-width por contenido (padding+texto), así que en un
+       viewport angosto el conjunto simplemente pasa a envolver en su propia
+       línea dentro de .chips (ver la regla mobile de .chips, sin cambios) en
+       vez de aplastarse. */
+    .hero-shift-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+
+    .hero-shift-actions .action-btn {
+      min-height: 32px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      gap: 2px;
+    }
+
+    .hero-shift-actions .action-btn .action-icon-wrap {
+      width: 15px;
+      height: 15px;
+    }
+
+    .hero-shift-actions .action-btn .action-icon {
+      font-size: 11px;
+    }
+
+    .hero-shift-actions .action-btn .action-label {
+      font-size: 10.5px;
+    }
+
+    .hero-shift-actions .action-btn .action-sub {
+      font-size: 9px;
+    }
+
     /* Pedido del usuario: que "Día activo" se vea y se use como un
        calendario de verdad. El elemento pasó de <select> a
        <input type="date"> (ver HTML), que en navegadores mobile abre el
@@ -1536,43 +1588,18 @@
     }
 
     /* Pedido del usuario (v189, reordenamiento de secciones — con boceto
-       visual acordado antes de tocar código): "Controles" se separa en 3
-       piezas por lo que de verdad representan. (1) Llamadas (Iniciar
-       llamada/Pegar Llamadas/Agregar llamada) sube a su PROPIA sección
-       arriba de todo (#callsSection, ver HTML) — no son "estados de turno"
+       visual acordado antes de tocar código): Llamadas (Iniciar llamada/
+       Pegar Llamadas/Agregar llamada) sube a su PROPIA sección arriba de
+       todo (#callsSection, ver HTML) — no son "estados de turno"
        excluyentes entre sí como Shift/Break/Lunch, sino gestión de datos de
-       llamadas, y es lo que más se usa día a día. (2) "Turno de Hoy" (info,
-       sin botones) queda antes de los botones de acción — primero ves el
-       estado, luego actúas. (3) Los botones de Shift/Break/Lunch se quedan
-       en #controlsSection, renombrado "Acciones del turno", con Shift en su
-       PROPIA fila ancha (.shift-action-row, 1 columna) porque es el
-       interruptor maestro de toda la app — y Break/Lunch como par debajo
-       (grid inline de 2 columnas, ver HTML). La vieja
-       .secondary-controls-static ya no se usa — Llamadas ya no vive dentro
-       de este mismo card, así que no hace falta una línea divisoria interna
-       para separarla. */
-    .shift-action-row {
-      grid-template-columns: 1fr;
-    }
-
-    .action-btn-shift {
-      min-height: 76px;
-      padding-top: 18px;
-      padding-bottom: 16px;
-    }
-
-    .action-btn-shift .action-icon {
-      font-size: 20px;
-    }
-
-    .action-btn-shift .action-label {
-      font-size: 15px;
-    }
-
-    .action-btn-shift .action-sub {
-      font-size: 12px;
-    }
-
+       llamadas, y es lo que más se usa día a día. "Turno de Hoy" (info, sin
+       botones) queda antes que cualquier acción — primero ves el estado,
+       luego actúas.
+       v192: Shift/Break/Lunch (antes su propia sección "Acciones del turno"
+       aparte, con Shift en fila ancha) suben al header — ver
+       .hero-shift-actions más arriba, junto a .summary-pill — y esa sección
+       se elimina; ya no queda ningún .action-btn grande de Shift/Break/
+       Lunch en el cuerpo de la página. */
     .table-tags-top {
       margin-bottom: 12px;
     }
@@ -1582,9 +1609,6 @@
     }
 
     @media (min-width: 1201px) {
-      #shiftControlBtn,
-      #breakControlBtn,
-      #lunchControlBtn,
       #callControlBtn {
         min-height: 68px;
       }
@@ -1624,7 +1648,6 @@
       #earningsAccordion,
       #todayShiftAccordion,
       #cycleAccordion,
-      #controlsSection,
       #callsSection,
       #scheduleAccordion,
       #heroSection {
@@ -2711,7 +2734,6 @@
     #earningsAccordion,
     #todayShiftAccordion,
     #cycleAccordion,
-    #controlsSection,
     #callsSection,
     #scheduleAccordion {
       margin-bottom: 14px;
@@ -3187,6 +3209,13 @@
       .summary-pill { padding: 6px 8px; font-size: 11.5px; gap: 5px; border-radius: 12px; }
       .day-nav-btn { width: 20px; height: 20px; font-size: 11px; border-radius: 6px; }
       #daySelector { max-width: 92px; }
+      /* Pedido del usuario (v192): en mobile, .chips ya envuelve (flex-wrap)
+         — width:100% fuerza que el grupo de botones chicos rompa a su
+         propia línea en vez de intentar caber junto a Estado/Día activo en
+         la misma fila angosta. margin-left:0 anula el empuje a la derecha
+         de escritorio (sin efecto útil en una línea propia de ancho
+         completo). */
+      .hero-shift-actions { width: 100%; margin-left: 0; margin-top: 2px; }
       .goal-stack { justify-items: start; }
       .goal-pair { justify-content: flex-start; }
       .table-mobile-list { display: grid; }
@@ -3369,6 +3398,26 @@
   <input id="daySelector" aria-label="Día activo" type="date"/>
   <button class="day-nav-btn" id="dayNextBtn" type="button" aria-label="Día siguiente" title="Día siguiente">›</button>
 </div>
+<div class="hero-shift-actions">
+<button class="action-btn" id="shiftControlBtn" type="button" data-accent="cyan">
+<span class="action-ripple"></span>
+<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">▶</span></span>
+<span class="action-label" id="shiftControlLabel">Iniciar shift</span>
+<span class="action-sub" id="shiftControlSub">07:00 AM – 04:00 PM</span>
+</button>
+<button class="action-btn" id="breakControlBtn" type="button" data-accent="warn">
+<span class="action-ripple"></span>
+<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">☕</span></span>
+<span class="action-label" id="breakControlLabel">Iniciar Break</span>
+<span class="action-sub" id="breakControlTimer">00:00:00</span>
+</button>
+<button class="action-btn" id="lunchControlBtn" type="button" data-accent="blue">
+<span class="action-ripple"></span>
+<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">🍽️</span></span>
+<span class="action-label" id="lunchControlLabel">Iniciar Lunch</span>
+<span class="action-sub" id="lunchControlTimer">00:00:00</span>
+</button>
+</div>
 </div>
 </div>
 </section>
@@ -3405,38 +3454,6 @@
   <div id="blockSummaryStrip"></div>
 </div>
 </details>
-
-<section class="card span-12" id="controlsSection">
-<div class="section-title">
-<div>
-<h2>Acciones del turno</h2>
-<p>Un botón por acción. Las pausas cambian de Start a End cuando están activas y muestran su cronómetro.</p>
-</div>
-</div>
-
-<div class="controls-grid shift-action-row">
-<button class="action-btn action-btn-shift" id="shiftControlBtn" type="button" data-accent="cyan">
-<span class="action-ripple"></span>
-<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">▶</span></span>
-<span class="action-label" id="shiftControlLabel">Iniciar shift</span>
-<span class="action-sub" id="shiftControlSub">07:00 AM – 04:00 PM</span>
-</button>
-</div>
-<div class="controls-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 8px;">
-<button class="action-btn" id="breakControlBtn" type="button" data-accent="warn">
-<span class="action-ripple"></span>
-<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">☕</span></span>
-<span class="action-label" id="breakControlLabel">Iniciar Break</span>
-<span class="action-sub" id="breakControlTimer">00:00:00</span>
-</button>
-<button class="action-btn" id="lunchControlBtn" type="button" data-accent="blue">
-<span class="action-ripple"></span>
-<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">🍽️</span></span>
-<span class="action-label" id="lunchControlLabel">Iniciar Lunch</span>
-<span class="action-sub" id="lunchControlTimer">00:00:00</span>
-</button>
-</div>
-</section>
 
 <!-- Pedido del usuario: "Ganancias de hoy" debe ser expandible y abrir
      expandida por defecto — antes era una tarjeta fija (`section.card`),
