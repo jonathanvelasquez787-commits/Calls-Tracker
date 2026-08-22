@@ -3212,23 +3212,34 @@
       .stat-cell .stat-value { font-size: 15px; }
       .stat-cell .stat-label { font-size: 11px; }
       .stat-cell .stat-sub { font-size: 10px; }
-      .stats-row { gap: 10px 8px; }
-      /* Pedido del usuario (v200): en mobile, "Resumen del día" (Llamadas/
-         Productivo/ACW/Adherencia/Break/Lunch/Otro/Higher Rate) se veía con
-         el label arriba y el valor+sub abajo, apilados — mucho espacio
-         vertical para poco dato. Se cambia SOLO en este breakpoint a fila:
-         label a la izquierda, valor+sub (ya agrupados en .stat-value-wrap,
-         ver esa clase arriba) a la derecha, alineado a la derecha — mismo
-         patrón visual que .stats-list-row (Más corta/Más larga/Promedio),
-         que ya usa label izquierda/valor derecha en una sola línea.
-         align-items:baseline en vez de center para que el label (más chico)
-         y el valor grande no se vean descentrados verticalmente entre sí. */
+      .stats-row { grid-template-columns: 1fr; gap: 0; }
+      /* Pedido del usuario (v200, corregido en v201): en mobile, "Resumen
+         del día" (Llamadas/Productivo/ACW/Adherencia/Break/Lunch/Otro/
+         Higher Rate) se veía con el label arriba y el valor+sub abajo,
+         apilados — mucho espacio vertical para poco dato. v200 puso cada
+         par label/valor en fila (izquierda/derecha) pero SIN cambiar
+         `.stats-row` a 1 columna — con 2 columnas de por medio, la fila de
+         un dato quedaba a la misma altura que la fila del dato de al lado,
+         entrelazando la lectura (reportado por el usuario: "no lo
+         entiendo"). Ahora `.stats-row` pasa a 1 sola columna en este
+         breakpoint (arriba) — cada dato ocupa su propia fila completa, de
+         arriba a abajo, sin nada a la misma altura. Line-borde (mismo
+         patrón que ya usa `.stats-list-row` para Más corta/Más larga/
+         Promedio) para que se lea como una lista clara, no como un bloque
+         apretado. align-items:baseline en vez de center para que el label
+         (más chico) y el valor grande no se vean descentrados
+         verticalmente entre sí. */
       .stat-cell {
         display: flex;
         flex-direction: row;
         align-items: baseline;
         justify-content: space-between;
         gap: 10px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .stats-row .stat-cell:last-child {
+        border-bottom: none;
       }
       .stat-value-wrap {
         text-align: right;
