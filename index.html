@@ -1373,20 +1373,26 @@
       /* Pedido del usuario: en escritorio, cada sección se estiraba al 100%
          de `.app` (hasta 1500px) sin importar cuánto necesitara su propio
          contenido — de ahí la sensación de "alargado" en vez de "llenito".
-         Primer intento (descartado por el usuario tras verlo): 2 anchos
-         agrupados (820px las 4 de "estadísticas", 980px las 2 de tablas).
-         Pedido ahora: TODAS al mismo ancho que "Ganancias de hoy" (820px),
-         sin distinguir grupos — los márgenes laterales grandes que deja esto
-         en pantallas muy anchas se resuelven en un paso aparte, a pedido
-         explícito del usuario ("luego veremos qué hacemos con los espacios
-         laterales"). Tabla de llamadas/Resumen semanal (cuyo `<table>`
-         interno traía `min-width:900px` fijo) inicialmente mostraban su
-         propio scroll horizontal dentro de `.table-wrap` al no caber en
-         820px — corregido después (ver nota más abajo, junto a esas 2
-         reglas) compactando padding/tipografía solo en este breakpoint,
-         para que quepan sin necesitar ese scroll. Todas
-         centradas con margin:0 auto / justify-self:center según si su padre
-         es flujo normal o grid (ver nota en las 2 últimas, hijas de
+         Primer intento (v163, descartado por el usuario tras verlo): 2
+         anchos agrupados (820px las 4 de "estadísticas", 980px las 2 de
+         tablas). Segundo intento (v175): TODAS a 820px sin distinguir
+         grupos — con el rediseño de layout de esa misma versión (grid de 2
+         columnas para Ganancias del ciclo+Controles, y Resumen del
+         día+Estadísticas, ambos ya a 1200px) esto dejó la página con dos
+         anchos de caja distintos conviviendo (820px vs 1200px) — "cajas
+         desordenadas de diferentes tamaños", en palabras del usuario, y de
+         paso más margen lateral vacío del necesario. v176: TODAS las
+         secciones de escritorio (incluidas estas 5) pasan al mismo ancho de
+         1200px que ya usaban los 2 grids — una sola caja de tamaño
+         consistente en toda la página, y menos margen lateral de sobra
+         (1500px de `.app` menos 1200px de sección, en vez de menos 820px).
+         Tabla de llamadas/Resumen semanal (cuyo `<table>` interno traía
+         `min-width:900px` fijo) seguían sin necesitar su compactado de
+         v163 ahora que 1200px > 900px, pero se deja tal cual (ver nota más
+         abajo, junto a esas 2 reglas) — inofensivo, solo dedica un poco
+         menos de espacio del que ya sobra a cada celda, sin romper nada.
+         Todas centradas con margin:0 auto / justify-self:center según si su
+         padre es flujo normal o grid (ver nota en las 2 últimas, hijas de
          `.grid`). Solo aplica en este breakpoint de escritorio —
          mobile/tablet quedan exactamente igual que antes (sin cambios fuera
          de este @media). */
@@ -1395,14 +1401,14 @@
       #controlsSection,
       #scheduleAccordion,
       #heroSection {
-        max-width: 820px;
+        max-width: 1200px;
         margin-left: auto;
         margin-right: auto;
       }
 
       #callTableAccordion,
       #weekSummaryAccordion {
-        max-width: 820px;
+        max-width: 1200px;
         /* Estas 2 secciones son hijas de .grid (display:grid) — ahí
            margin:auto NO centra un ítem (los ítems de grid se estiran por
            default con justify-self:stretch, que es distinto al width:auto
@@ -1417,7 +1423,12 @@
          horizontal en escritorio porque su `<table>` interno trae
          `min-width:900px` fijo (pensado para no verse demasiado apretado en
          mobile, donde igual se usa la vista de tarjetas en vez de la tabla)
-         y la sección ahora está capada a 820px. Se quita ESE piso mínimo
+         y la sección estaba capada a 820px en ese momento. Desde v176 la
+         sección ya mide 1200px (más que los 900px del `<table>`), así que
+         este ajuste ya no es estrictamente necesario para evitar el scroll
+         — se deja igual de todos modos (compacta un poco el padding/
+         tipografía de las celdas, sin romper nada) para no tocar más de lo
+         que el usuario pidió en este cambio. Se quita ESE piso mínimo
          SOLO en este breakpoint de escritorio (`min-width` de la tabla en 0,
          deja que `width:100%` la ajuste al ancho real de la sección) y se
          compactan padding/tipografía de celdas para que las 9 columnas de
@@ -1603,7 +1614,11 @@
        vista adicional de escritorio para llenar el espacio lateral.
        Oculta por default (para no aparecer en mobile, donde esta
        sección es nueva y no existía antes) — visible solo en este
-       breakpoint. */
+       breakpoint. Posición en el documento (v176, pedido del usuario):
+       justo debajo de "Ganancias de hoy" — antes (v175) vivía debajo de
+       "Bloques del día"; el HTML se movió (ver el <div id="dayStatsGrid">
+       más abajo), este bloque de CSS no cambió de contenido, solo el
+       comentario para reflejar el nuevo orden. */
     .day-stats-grid {
       display: none;
     }
@@ -3102,6 +3117,27 @@
 </div>
 </div>
 </details>
+
+<div class="day-stats-grid" id="dayStatsGrid">
+<div class="card mini" id="resumenDiaCard">
+<div class="mini-title">📈 Resumen del día</div>
+<div class="stats-row">
+<div class="stat-cell"><span class="stat-label">Llamadas</span><span class="stat-value" id="resumenDiaLlamadas">0</span><span class="stat-sub">Total</span></div>
+<div class="stat-cell"><span class="stat-label">Productivo</span><span class="stat-value" id="resumenDiaProductivo">00:00:00</span><span class="stat-sub">Tiempo real</span></div>
+<div class="stat-cell"><span class="stat-label">ACW</span><span class="stat-value" id="resumenDiaACW">00:00:00</span><span class="stat-sub">Tiempo extra</span></div>
+<div class="stat-cell"><span class="stat-label">Adherencia</span><span class="stat-value" id="resumenDiaAdherencia">—</span><span class="stat-sub" id="resumenDiaAdherenciaGoal">Objetivo ≥ 95%</span></div>
+</div>
+</div>
+<div class="card mini" id="statsCard">
+<div class="mini-title">📊 Estadísticas</div>
+<div style="margin-top:4px;">
+<div class="stats-list-row"><span>Más corta:</span><strong id="statsShortest">—</strong></div>
+<div class="stats-list-row"><span>Más larga:</span><strong id="statsLongest">—</strong></div>
+<div class="stats-list-row"><span>Promedio:</span><strong id="statsAvg">—</strong></div>
+</div>
+</div>
+</div>
+
 <div class="cycle-controls-grid" id="cycleControlsGrid">
 <details class="accordion-card" id="cycleAccordion">
 <summary>
@@ -3203,26 +3239,6 @@
   <div class="schedule" id="scheduleList"></div>
 </div>
 </details>
-
-<div class="day-stats-grid" id="dayStatsGrid">
-<div class="card mini" id="resumenDiaCard">
-<div class="mini-title">📈 Resumen del día</div>
-<div class="stats-row">
-<div class="stat-cell"><span class="stat-label">Llamadas</span><span class="stat-value" id="resumenDiaLlamadas">0</span><span class="stat-sub">Total</span></div>
-<div class="stat-cell"><span class="stat-label">Productivo</span><span class="stat-value" id="resumenDiaProductivo">00:00:00</span><span class="stat-sub">Tiempo real</span></div>
-<div class="stat-cell"><span class="stat-label">ACW</span><span class="stat-value" id="resumenDiaACW">00:00:00</span><span class="stat-sub">Tiempo extra</span></div>
-<div class="stat-cell"><span class="stat-label">Adherencia</span><span class="stat-value" id="resumenDiaAdherencia">—</span><span class="stat-sub" id="resumenDiaAdherenciaGoal">Objetivo ≥ 95%</span></div>
-</div>
-</div>
-<div class="card mini" id="statsCard">
-<div class="mini-title">📊 Estadísticas</div>
-<div style="margin-top:4px;">
-<div class="stats-list-row"><span>Más corta:</span><strong id="statsShortest">—</strong></div>
-<div class="stats-list-row"><span>Más larga:</span><strong id="statsLongest">—</strong></div>
-<div class="stats-list-row"><span>Promedio:</span><strong id="statsAvg">—</strong></div>
-</div>
-</div>
-</div>
 
 <div class="grid">
 <details class="accordion-card" id="callTableAccordion">
