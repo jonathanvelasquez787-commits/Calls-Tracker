@@ -1633,49 +1633,19 @@
       }
     }
 
-    /* Fase 2 — "Ganancias del ciclo" + "Controles" lado a lado en un
-       grid de 2 columnas, en vez de 2 tarjetas apiladas de 820px cada
-       una (que es justo lo que dejaba el margen lateral de sobra en
-       pantallas anchas). El wrapper (#cycleControlsGrid) envuelve
-       ambos elementos (details/section) sin tocar su contenido interno — el
-       selector con 2 ids (#cycleControlsGrid #cycleAccordion) gana
-       por especificidad sobre la regla de arriba (#cycleAccordion con
-       1 id) sin importar el orden en la hoja, así que no hace falta
-       tocar esa regla existente. */
-    @media (min-width: 1201px) {
-      /* Bug reportado por el usuario (v178, con captura): el fix de v177
-         (align-self:start + height:fit-content en los hijos) evitaba que
-         "Ganancias del ciclo" se ESTIRARA hasta la altura de "Controles",
-         pero el hueco vacío en la página seguía ahí exactamente igual —
-         solo dejó de estar DENTRO de la tarjeta corta y pasó a ser espacio
-         en blanco AL LADO de ella. Causa raíz real: "Controles" (2 filas de
-         3 botones) es estructuralmente más alto que "Ganancias del ciclo"
-         (nav + monto + 3 tags) en prácticamente cualquier estado — ninguna
-         técnica de alineación (align-items/align-self/height:fit-content)
-         elimina un hueco que nace de emparejar 2 columnas de alturas muy
-         distintas en la misma fila; solo decide DÓNDE vive ese hueco (en la
-         tarjeta corta, estirándola, o al lado de ella, como espacio vacío
-         del contenedor). La única forma de que el hueco desaparezca de
-         verdad es dejar de emparejar ambas tarjetas en la misma fila. Fix:
-         se quita el grid de 2 columnas — "Ganancias del ciclo" y
-         "Controles" pasan a apilarse, cada una a ancho completo (mismo
-         patrón que el resto de secciones de escritorio, 1200px centrado),
-         una debajo de la otra. Sin 2 columnas que emparejar, no hay alturas
-         que igualar ni hueco que esconder. */
-      #cycleControlsGrid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 14px;
-        max-width: 1200px;
-        margin: 0 auto 14px;
-      }
-      #cycleControlsGrid #cycleAccordion,
-      #cycleControlsGrid #controlsSection {
-        max-width: none;
-        width: 100%;
-        margin: 0;
-      }
-    }
+    /* Historial (Fase 2, v177/v178): "Ganancias del ciclo" y "Controles"
+       vivieron un tiempo envueltos en un wrapper compartido (#cycleControlsGrid)
+       que los mantenía juntos y con el mismo ancho — primero lado a lado en
+       2 columnas, después apilados (v178, por el hueco de alturas
+       distintas, ver historial de versiones si hace falta el detalle). Se
+       quita el wrapper por completo en v188 (pedido del usuario: reordenar
+       las secciones — "Controles" sube justo después del Hero, ya que casi
+       toda la app gira alrededor de esos botones; "Ganancias del ciclo" baja,
+       ya sin relación de layout con "Controles"). Cada una ahora es su
+       propia sección top-level, con su propio margen (ver
+       #controlsSection/#cycleAccordion en la regla de margin-bottom más
+       abajo) — ya no dependen de ningún wrapper compartido para separarse
+       de la sección siguiente. */
 
     /* Pedido del usuario (v185): revierte v179 — "Bloques del día" vuelve a
        apilarse en 1 sola columna en escritorio (antes: 2 columnas desde
@@ -2625,35 +2595,34 @@
     /* Bug reportado por el usuario (v179, con captura): "Ganancias de hoy"
        tocaba directamente con "Resumen del día"/"Estadísticas del día", sin
        ningún espacio entre ambas tarjetas. Causa raíz: `.app` (el
-       contenedor de TODAS las secciones top-level: hero, Ganancias de hoy,
-       Resumen del día+Estadísticas, Ganancias del ciclo+Controles, Bloques
-       del día, Tabla de llamadas+Resumen semanal) es un bloque normal, sin
+       contenedor de TODAS las secciones top-level) es un bloque normal, sin
        `gap` — el espacio entre secciones depende por completo del margen
        propio de cada una. `.accordion-card` (arriba) declara `margin:0`
        explícito, así que cualquier sección top-level que sea un
        `.accordion-card` DIRECTO de `.app` (no envuelto en otro contenedor
        con su propio margen) queda sin ningún espacio hacia la sección
-       siguiente. Esto afecta a 2 secciones concretas: `#earningsAccordion`
-       (Ganancias de hoy — toca contra `.day-stats-grid`, que sí tiene su
-       propio `margin-bottom:14px` pero eso solo da espacio DESPUÉS de sí
-       misma, no ANTES) y `#scheduleAccordion` (Bloques del día — mismo
-       problema contra `.grid`, que envuelve Tabla de llamadas/Resumen
-       semanal y tampoco tiene margen propio, solo `gap` interno entre sus 2
-       hijos). El resto de secciones (`.hero`, `.day-stats-grid`,
+       siguiente. Esto afectaba originalmente a `#earningsAccordion` (Ganancias
+       de hoy) y `#scheduleAccordion` (Bloques del día) — el resto de
+       secciones de esa época (`.hero`, `.day-stats-grid`, el viejo wrapper
        `#cycleControlsGrid`) ya tenían su propio `margin-bottom:14px`
-       explícito — por eso el hueco solo se notaba en estos 2 puntos. Fix:
-       mismo valor de espaciado (14px) que ya usan las demás secciones,
-       aplicado a estas 2 — sin tocar el resto de acordeones ANIDADOS
-       (`#resumenDiaAccordion`/`#statsAccordion` dentro de `.day-stats-grid`,
-       `#cycleAccordion`/`#controlsSection` dentro de `#cycleControlsGrid`,
-       `#callTableAccordion`/`#weekSummaryAccordion` dentro de `.grid`), que
-       ya reciben su espaciado del `gap`/margen de su propio contenedor
-       padre y no deben duplicarlo. Aplica en TODOS los anchos de pantalla
-       (no solo escritorio) — `.app` nunca tuvo gap propio en ningún
-       breakpoint, así que el mismo hueco faltante existía también en mobile
-       entre estas mismas 2 secciones, aunque no se había reportado antes. */
+       explícito. Fix original: mismo valor de espaciado (14px) que ya usan
+       las demás secciones, aplicado a esas 2. Aplica en TODOS los anchos de
+       pantalla (no solo escritorio) — `.app` nunca tuvo gap propio en ningún
+       breakpoint.
+       v188 (reordenamiento de secciones, pedido del usuario): al quitarse
+       el wrapper `#cycleControlsGrid` (ver comentario más arriba, junto a
+       `.accordion-card`), `#cycleAccordion` (Ganancias del ciclo) y
+       `#controlsSection` (Controles) pasan a ser secciones top-level
+       DIRECTAS de `.app`, igual que las 2 de arriba — sin el margen que
+       antes les daba el wrapper, se agregan aquí al mismo grupo. Los
+       acordeones ANIDADOS (`#resumenDiaAccordion`/`#statsAccordion` dentro
+       de `.day-stats-grid`, `#callTableAccordion`/`#weekSummaryAccordion`
+       dentro de `.grid`) siguen sin necesitarlo — esos reciben su
+       espaciado del `gap`/margen de su propio contenedor padre. */
     #earningsAccordion,
     #todayShiftAccordion,
+    #cycleAccordion,
+    #controlsSection,
     #scheduleAccordion {
       margin-bottom: 14px;
     }
@@ -3313,6 +3282,62 @@
 </div>
 </div>
 </section>
+
+<section class="card span-12" id="controlsSection">
+<div class="section-title">
+<div>
+<h2>Controles</h2>
+<p>Un botón por acción. Las pausas cambian de Start a End cuando están activas y muestran su cronómetro.</p>
+</div>
+</div>
+
+<div class="controls-grid">
+<button class="action-btn" id="shiftControlBtn" type="button" data-accent="cyan">
+<span class="action-ripple"></span>
+<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">▶</span></span>
+<span class="action-label" id="shiftControlLabel">Iniciar shift</span>
+<span class="action-sub" id="shiftControlSub">07:00 AM – 04:00 PM</span>
+</button>
+<button class="action-btn" id="breakControlBtn" type="button" data-accent="warn">
+<span class="action-ripple"></span>
+<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">☕</span></span>
+<span class="action-label" id="breakControlLabel">Iniciar Break</span>
+<span class="action-sub" id="breakControlTimer">00:00:00</span>
+</button>
+<button class="action-btn" id="lunchControlBtn" type="button" data-accent="blue">
+<span class="action-ripple"></span>
+<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">🍽️</span></span>
+<span class="action-label" id="lunchControlLabel">Iniciar Lunch</span>
+<span class="action-sub" id="lunchControlTimer">00:00:00</span>
+</button>
+</div>
+<div class="secondary-controls-static">
+<div class="controls-grid">
+<button class="action-btn" id="callControlBtn" type="button" data-accent="pink">
+<span class="action-ripple"></span>
+<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📞</span></span>
+<span class="action-label" id="callControlLabel">Iniciar llamada</span>
+<span class="action-sub" id="callControlTimer">00:00:00</span>
+</button>
+<button class="action-btn" id="pasteCallsBtn" type="button" data-accent="cyan"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📋</span></span><span class="action-label">Pegar Llamadas</span><span class="action-sub">Importar data</span></button>
+<button class="action-btn" id="addCallManualBtn" type="button" data-accent="good"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">➕</span></span><span class="action-label">Agregar llamada</span><span class="action-sub">Manual</span></button>
+</div>
+</div>
+</section>
+
+<details class="accordion-card" id="todayShiftAccordion" open>
+<summary>
+  <div class="accordion-head">
+    <h2>Turno de Hoy</h2>
+    <p>Shift, Break, Lunch y ACW — resumen rápido contra lo planeado.</p>
+  </div>
+  <div class="accordion-chevron">⌄</div>
+</summary>
+<div class="accordion-body">
+  <div class="block-summary-strip" id="blockSummaryStrip"></div>
+</div>
+</details>
+
 <!-- Pedido del usuario: "Ganancias de hoy" debe ser expandible y abrir
      expandida por defecto — antes era una tarjeta fija (`section.card`),
      mismo patrón que ya usan "Ganancias del ciclo"/"Bloques del día" (ver
@@ -3363,19 +3388,6 @@
 </div>
 </details>
 
-<details class="accordion-card" id="todayShiftAccordion" open>
-<summary>
-  <div class="accordion-head">
-    <h2>Turno de Hoy</h2>
-    <p>Shift, Break, Lunch y ACW — resumen rápido contra lo planeado.</p>
-  </div>
-  <div class="accordion-chevron">⌄</div>
-</summary>
-<div class="accordion-body">
-  <div class="block-summary-strip" id="blockSummaryStrip"></div>
-</div>
-</details>
-
 <div class="day-stats-grid" id="dayStatsGrid">
 <details class="accordion-card" id="resumenDiaAccordion" open>
 <summary>
@@ -3410,7 +3422,6 @@
 </details>
 </div>
 
-<div class="cycle-controls-grid" id="cycleControlsGrid">
 <details class="accordion-card" id="cycleAccordion">
 <summary>
   <div class="accordion-head">
@@ -3442,48 +3453,6 @@
 </div>
 </div>
 </details>
-<section class="card span-12" id="controlsSection">
-<div class="section-title">
-<div>
-<h2>Controles</h2>
-<p>Un botón por acción. Las pausas cambian de Start a End cuando están activas y muestran su cronómetro.</p>
-</div>
-</div>
-
-<div class="controls-grid">
-<button class="action-btn" id="shiftControlBtn" type="button" data-accent="cyan">
-<span class="action-ripple"></span>
-<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">▶</span></span>
-<span class="action-label" id="shiftControlLabel">Iniciar shift</span>
-<span class="action-sub" id="shiftControlSub">07:00 AM – 04:00 PM</span>
-</button>
-<button class="action-btn" id="breakControlBtn" type="button" data-accent="warn">
-<span class="action-ripple"></span>
-<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">☕</span></span>
-<span class="action-label" id="breakControlLabel">Iniciar Break</span>
-<span class="action-sub" id="breakControlTimer">00:00:00</span>
-</button>
-<button class="action-btn" id="lunchControlBtn" type="button" data-accent="blue">
-<span class="action-ripple"></span>
-<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">🍽️</span></span>
-<span class="action-label" id="lunchControlLabel">Iniciar Lunch</span>
-<span class="action-sub" id="lunchControlTimer">00:00:00</span>
-</button>
-</div>
-<div class="secondary-controls-static">
-<div class="controls-grid">
-<button class="action-btn" id="callControlBtn" type="button" data-accent="pink">
-<span class="action-ripple"></span>
-<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📞</span></span>
-<span class="action-label" id="callControlLabel">Iniciar llamada</span>
-<span class="action-sub" id="callControlTimer">00:00:00</span>
-</button>
-<button class="action-btn" id="pasteCallsBtn" type="button" data-accent="cyan"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📋</span></span><span class="action-label">Pegar Llamadas</span><span class="action-sub">Importar data</span></button>
-<button class="action-btn" id="addCallManualBtn" type="button" data-accent="good"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">➕</span></span><span class="action-label">Agregar llamada</span><span class="action-sub">Manual</span></button>
-</div>
-</div>
-</section>
-</div>
 
 <details class="accordion-card" id="scheduleAccordion" open>
 <summary>
