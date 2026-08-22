@@ -112,7 +112,7 @@
        anterior era que casi cada tarjeta/botón tenía su PROPIO borde de
        color (cian aquí, ámbar allá, rosa más abajo...) — se veía cargado e
        infantil. Ahora:
-       - --bg/--bg-2: blanco cálido/crema, casi imperceptible (no un fondo
+       - --bg/--bg-2: gris-azulado muy pálido, casi imperceptible (no un fondo
          de color).
        - --panel/--panel-2: blanco SÓLIDO (97-99% opaco, antes 87-97%) —
          tarjetas limpias, no "lavadas".
@@ -145,7 +145,14 @@
         color-scheme: light;
         /* ---- Paleta exacta del usuario (ver bloque :root de referencia
            al final del cambio) ---- */
-        --bg-page: #FAF3EC;
+        /* Pedido del usuario (v206, con muestra de color): SOLO el fondo de
+           página del tema claro (--bg-page, y su derivado --bg-2 para el
+           degradado sutil del body, ver más abajo) cambia de #FAF3EC (crema
+           cálido) a #F0F4F8 (gris-azulado muy pálido) — nada más se toca:
+           --bg-card (tarjetas, sigue #FFFFFF), --text-dark, --primary y el
+           resto de acentos quedan exactamente igual, dual (@media +
+           html.theme-light) como siempre. */
+        --bg-page: #F0F4F8;
         --bg-card: #FFFFFF;
         --primary: #EC1E7A;
         --primary-light: #FCE4EF;
@@ -165,7 +172,7 @@
            blanco/negro — nunca con un tono nuevo. Ver nota al final sobre
            --bad (no había un rojo/peligro dedicado en la paleta dada). ---- */
         --bg: var(--bg-page);
-        --bg-2: #F2EBE5; /* --bg-page mezclado ~3% con negro, para el degradado sutil del fondo */
+        --bg-2: #E9EDF1; /* --bg-page mezclado ~3% con negro, para el degradado sutil del fondo */
         --panel: var(--bg-card);
         --panel-2: var(--bg-card);
         --text: var(--text-dark);
@@ -187,7 +194,7 @@
         --warn-rgb: 244, 135, 75;
         --bad-rgb: 236, 30, 122;
         --shadow: 0 14px 34px rgba(26, 26, 26, .08); /* --black-badge al 8% */
-        --glow-1: rgba(236, 30, 122, .015); /* --primary al 1.5% -- muy sutil, para que domine el crema plano de --bg-page */
+        --glow-1: rgba(236, 30, 122, .015); /* --primary al 1.5% -- muy sutil, para que domine el gris-azulado plano de --bg-page */
         --glow-2: rgba(244, 135, 75, .015); /* --break-orange al 1.5% */
         --pale-good: #167F3D; /* --success-green mezclado 35% con negro */
         --pale-warn: #92512D; /* --break-orange mezclado 40% con negro */
@@ -210,7 +217,7 @@
        :not(.theme-dark)), el resultado ya es el oscuro de siempre. */
     html.theme-light {
       color-scheme: light;
-      --bg-page: #FAF3EC;
+      --bg-page: #F0F4F8;
       --bg-card: #FFFFFF;
       --primary: #EC1E7A;
       --primary-light: #FCE4EF;
@@ -225,7 +232,7 @@
       --lunch-purple: #A78BFA;
 
       --bg: var(--bg-page);
-      --bg-2: #F2EBE5;
+      --bg-2: #E9EDF1;
       --panel: var(--bg-card);
       --panel-2: var(--bg-card);
       --text: var(--text-dark);
