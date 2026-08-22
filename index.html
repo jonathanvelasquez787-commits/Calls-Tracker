@@ -143,40 +143,61 @@
     @media (prefers-color-scheme: light) {
       :root:not(.theme-dark) {
         color-scheme: light;
-        --bg: #faf7f2;
-        --bg-2: #f2ece2;
-        --panel: rgba(255, 255, 255, 0.97);
-        --panel-2: rgba(255, 255, 255, 0.99);
-        --text: #16181f;
-        --muted: #666f7d;
-        --line: rgba(17, 17, 22, 0.07);
-        --line-2: rgba(17, 17, 22, 0.13);
-        --cyan: #0aa39a;
-        --teal: #0f8f81;
-        --blue: #8253dd;
-        --pink: #e91e8c;
-        --good: #0f9d63;
-        --warn: #f2792a;
-        --bad: #e11d55;
-        --cyan-rgb: 10, 163, 154;
-        --teal-rgb: 15, 143, 129;
-        --blue-rgb: 130, 83, 221;
-        --pink-rgb: 233, 30, 140;
-        --good-rgb: 15, 157, 99;
-        --warn-rgb: 242, 121, 42;
-        --bad-rgb: 225, 29, 85;
-        --shadow: 0 14px 34px rgba(15, 15, 20, .07);
-        --glow-1: rgba(233, 30, 140, .035);
-        --glow-2: rgba(10, 163, 154, .035);
-        --pale-good: #0b6b46;
-        --pale-warn: #9a4b12;
-        --pale-bad: #9c1240;
-        --pale-cyan: #086b64;
-        --pale-teal: #0a6b5e;
-        --pale-indigo: #5b32a8;
-        --tier-bronze: #8a5a2b;
-        --tier-silver: #55636f;
-        --tier-gold: #a8790a;
+        /* ---- Paleta exacta del usuario (ver bloque :root de referencia
+           al final del cambio) ---- */
+        --bg-page: #FAF3EC;
+        --bg-card: #FFFFFF;
+        --primary: #EC1E7A;
+        --primary-light: #FCE4EF;
+        --gradient-logo: linear-gradient(135deg, #F4874B 0%, #EC1E7A 100%);
+        --text-dark: #1A1A1A;
+        --text-gray: #6B6B6B;
+        --btn-secondary-bg: #F2F2F2;
+        --border-light: #EAE4DC;
+        --black-badge: #1A1A1A;
+        --success-green: #22C55E;
+        --break-orange: #F4874B;
+        --lunch-purple: #A78BFA;
+
+        /* ---- Variables internas de la app, remapeadas 1:1 a la paleta de
+           arriba. Donde la app no tenía un token exacto (--teal, --bad,
+           --pale-*, --tier-*), se derivó del mismo color con mezcla de
+           blanco/negro — nunca con un tono nuevo. Ver nota al final sobre
+           --bad (no había un rojo/peligro dedicado en la paleta dada). ---- */
+        --bg: var(--bg-page);
+        --bg-2: #F2EBE5; /* --bg-page mezclado ~3% con negro, para el degradado sutil del fondo */
+        --panel: var(--bg-card);
+        --panel-2: var(--bg-card);
+        --text: var(--text-dark);
+        --muted: var(--text-gray);
+        --line: var(--border-light);
+        --line-2: #CDC8C2; /* --border-light mezclado ~12% con negro */
+        --cyan: var(--primary);
+        --teal: #59D386; /* --success-green mezclado 25% con blanco (pareja de degradado de --good) */
+        --blue: var(--lunch-purple);
+        --pink: var(--primary);
+        --good: var(--success-green);
+        --warn: var(--break-orange);
+        --bad: var(--primary); /* sin rojo/peligro dedicado en tu paleta — usa --primary; avísame si quieres un tono aparte */
+        --cyan-rgb: 236, 30, 122;
+        --teal-rgb: 89, 211, 134;
+        --blue-rgb: 167, 139, 250;
+        --pink-rgb: 236, 30, 122;
+        --good-rgb: 34, 197, 94;
+        --warn-rgb: 244, 135, 75;
+        --bad-rgb: 236, 30, 122;
+        --shadow: 0 14px 34px rgba(26, 26, 26, .08); /* --black-badge al 8% */
+        --glow-1: rgba(236, 30, 122, .015); /* --primary al 1.5% -- muy sutil, para que domine el crema plano de --bg-page */
+        --glow-2: rgba(244, 135, 75, .015); /* --break-orange al 1.5% */
+        --pale-good: #167F3D; /* --success-green mezclado 35% con negro */
+        --pale-warn: #92512D; /* --break-orange mezclado 40% con negro */
+        --pale-bad: #991450; /* --primary mezclado 35% con negro */
+        --pale-cyan: #8D1249; /* --primary mezclado 40% con negro */
+        --pale-teal: #307549; /* --teal mezclado 45% con negro */
+        --pale-indigo: #6C5AA2; /* --lunch-purple mezclado 35% con negro */
+        --tier-bronze: #C36C3C; /* --break-orange mezclado 20% con negro */
+        --tier-silver: var(--text-gray);
+        --tier-gold: var(--break-orange);
         --accordion-bg: var(--panel);
       }
     }
@@ -189,40 +210,54 @@
        :not(.theme-dark)), el resultado ya es el oscuro de siempre. */
     html.theme-light {
       color-scheme: light;
-      --bg: #faf7f2;
-      --bg-2: #f2ece2;
-      --panel: rgba(255, 255, 255, 0.97);
-      --panel-2: rgba(255, 255, 255, 0.99);
-      --text: #16181f;
-      --muted: #666f7d;
-      --line: rgba(17, 17, 22, 0.07);
-      --line-2: rgba(17, 17, 22, 0.13);
-      --cyan: #0aa39a;
-      --teal: #0f8f81;
-      --blue: #8253dd;
-      --pink: #e91e8c;
-      --good: #0f9d63;
-      --warn: #f2792a;
-      --bad: #e11d55;
-      --cyan-rgb: 10, 163, 154;
-      --teal-rgb: 15, 143, 129;
-      --blue-rgb: 130, 83, 221;
-      --pink-rgb: 233, 30, 140;
-      --good-rgb: 15, 157, 99;
-      --warn-rgb: 242, 121, 42;
-      --bad-rgb: 225, 29, 85;
-      --shadow: 0 14px 34px rgba(15, 15, 20, .07);
-      --glow-1: rgba(233, 30, 140, .035);
-      --glow-2: rgba(10, 163, 154, .035);
-      --pale-good: #0b6b46;
-      --pale-warn: #9a4b12;
-      --pale-bad: #9c1240;
-      --pale-cyan: #086b64;
-      --pale-teal: #0a6b5e;
-      --pale-indigo: #5b32a8;
-      --tier-bronze: #8a5a2b;
-      --tier-silver: #55636f;
-      --tier-gold: #a8790a;
+      --bg-page: #FAF3EC;
+      --bg-card: #FFFFFF;
+      --primary: #EC1E7A;
+      --primary-light: #FCE4EF;
+      --gradient-logo: linear-gradient(135deg, #F4874B 0%, #EC1E7A 100%);
+      --text-dark: #1A1A1A;
+      --text-gray: #6B6B6B;
+      --btn-secondary-bg: #F2F2F2;
+      --border-light: #EAE4DC;
+      --black-badge: #1A1A1A;
+      --success-green: #22C55E;
+      --break-orange: #F4874B;
+      --lunch-purple: #A78BFA;
+
+      --bg: var(--bg-page);
+      --bg-2: #F2EBE5;
+      --panel: var(--bg-card);
+      --panel-2: var(--bg-card);
+      --text: var(--text-dark);
+      --muted: var(--text-gray);
+      --line: var(--border-light);
+      --line-2: #CDC8C2;
+      --cyan: var(--primary);
+      --teal: #59D386;
+      --blue: var(--lunch-purple);
+      --pink: var(--primary);
+      --good: var(--success-green);
+      --warn: var(--break-orange);
+      --bad: var(--primary);
+      --cyan-rgb: 236, 30, 122;
+      --teal-rgb: 89, 211, 134;
+      --blue-rgb: 167, 139, 250;
+      --pink-rgb: 236, 30, 122;
+      --good-rgb: 34, 197, 94;
+      --warn-rgb: 244, 135, 75;
+      --bad-rgb: 236, 30, 122;
+      --shadow: 0 14px 34px rgba(26, 26, 26, .08);
+      --glow-1: rgba(236, 30, 122, .015);
+      --glow-2: rgba(244, 135, 75, .015);
+      --pale-good: #167F3D;
+      --pale-warn: #92512D;
+      --pale-bad: #991450;
+      --pale-cyan: #8D1249;
+      --pale-teal: #307549;
+      --pale-indigo: #6C5AA2;
+      --tier-bronze: #C36C3C;
+      --tier-silver: var(--text-gray);
+      --tier-gold: var(--break-orange);
       --accordion-bg: var(--panel);
     }
 
@@ -255,12 +290,12 @@
          toda la app (cada fila de Tabla de llamadas, cada modal...). Se
          vuelven neutros — son acciones secundarias, no el CTA principal. */
       :root:not(.theme-dark) .gap-edit-btn {
-        background: rgba(15, 15, 20, .045);
+        background: var(--btn-secondary-bg);
         border-color: var(--line-2);
         color: var(--text);
       }
       :root:not(.theme-dark) .gap-edit-btn:hover {
-        background: rgba(15, 15, 20, .08);
+        background: #E6E6E6; /* --btn-secondary-bg mezclado ~10% con negro (hover) */
       }
       /* Botones del header (Auto/Horario/Higher Rate/Avisos/Ajustes) — antes
          casi sin fondo (4% de blanco sobre fondo ya claro = casi invisible,
@@ -269,11 +304,11 @@
          tinte rosado de peligro se queda igual, es un uso legítimo de
          acento (estado/advertencia). */
       :root:not(.theme-dark) .hero-action-btn:not(.danger) {
-        background: rgba(15, 15, 20, .045);
+        background: var(--btn-secondary-bg);
       }
       :root:not(.theme-dark) .hero-action-btn:not(.danger):hover,
       :root:not(.theme-dark) .hero-action-btn:not(.danger):focus-visible {
-        background: rgba(15, 15, 20, .08);
+        background: #E6E6E6; /* --btn-secondary-bg mezclado ~10% con negro (hover) */
       }
       /* Botón PRINCIPAL de cada modal (Guardar/Importar/Guardar día...) —
          antes un cian pálido al 14% de opacidad (débil, poco contraste).
@@ -307,24 +342,40 @@
         border-color: rgba(var(--bad-rgb), .32);
         color: var(--pale-bad);
       }
+      /* Pedido del usuario: --gradient-logo (naranja→magenta) solo va en el
+         punto de marca junto a "Propio Shift Tracker" — el único elemento
+         tipo "logo" que existe en la app hoy. En oscuro sigue siendo
+         var(--cyan) sólido, sin cambios. */
+      :root:not(.theme-dark) .brand .dot {
+        background: var(--gradient-logo);
+        box-shadow: 0 0 16px rgba(var(--pink-rgb), .5);
+      }
+      /* Bug reportado por el usuario: ".chip strong" (el texto en negritas
+         de "No iniciado"/"Working"/etc. dentro del chip de Estado) era
+         siempre blanco fijo — pensado para tema oscuro, donde se lee bien
+         sobre el chip semitransparente. En modo claro, el chip es casi
+         blanco también, así que el texto blanco quedaba invisible. */
+      :root:not(.theme-dark) .chip strong {
+        color: var(--text);
+      }
     }
     html.theme-light .action-btn:not(.is-active) {
       border-color: var(--line-2);
     }
     html.theme-light .gap-edit-btn {
-      background: rgba(15, 15, 20, .045);
+      background: var(--btn-secondary-bg);
       border-color: var(--line-2);
       color: var(--text);
     }
     html.theme-light .gap-edit-btn:hover {
-      background: rgba(15, 15, 20, .08);
+      background: #E6E6E6; /* --btn-secondary-bg mezclado ~10% con negro (hover) */
     }
     html.theme-light .hero-action-btn:not(.danger) {
-      background: rgba(15, 15, 20, .045);
+      background: var(--btn-secondary-bg);
     }
     html.theme-light .hero-action-btn:not(.danger):hover,
     html.theme-light .hero-action-btn:not(.danger):focus-visible {
-      background: rgba(15, 15, 20, .08);
+      background: #E6E6E6; /* --btn-secondary-bg mezclado ~10% con negro (hover) */
     }
     html.theme-light .modal-actions button.primary,
     html.theme-light .button-row button.primary,
@@ -348,6 +399,13 @@
       background: rgba(var(--bad-rgb), .13);
       border-color: rgba(var(--bad-rgb), .32);
       color: var(--pale-bad);
+    }
+    html.theme-light .brand .dot {
+      background: var(--gradient-logo);
+      box-shadow: 0 0 16px rgba(var(--pink-rgb), .5);
+    }
+    html.theme-light .chip strong {
+      color: var(--text);
     }
 
     * { box-sizing: border-box; }
