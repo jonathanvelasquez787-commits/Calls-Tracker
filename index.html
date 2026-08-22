@@ -1478,7 +1478,14 @@
          `.grid`). Solo aplica en este breakpoint de escritorio —
          mobile/tablet quedan exactamente igual que antes (sin cambios fuera
          de este @media). */
+      /* v181: #todayShiftAccordion es una sección top-level NUEVA (hija
+         directa de .app, mismo nivel que #earningsAccordion) — tiene que
+         sumarse aquí SIEMPRE que se agregue una sección top-level nueva, o
+         se queda estirada a los 1500px de `.app` en vez de los 1200px del
+         resto (bug real de v181, reportado por el usuario con captura). Ver
+         nota de metodología en el .md sobre esta checklist. */
       #earningsAccordion,
+      #todayShiftAccordion,
       #cycleAccordion,
       #controlsSection,
       #scheduleAccordion,
@@ -2516,6 +2523,7 @@
        breakpoint, así que el mismo hueco faltante existía también en mobile
        entre estas mismas 2 secciones, aunque no se había reportado antes. */
     #earningsAccordion,
+    #todayShiftAccordion,
     #scheduleAccordion {
       margin-bottom: 14px;
     }
@@ -2923,6 +2931,15 @@
 
     @media (max-width: 760px) {
       .app { padding: 12px; }
+      /* Pedido del usuario (v181): "Resumen del día" se seguía viendo
+         grande en mobile pese al achique de v180 (24px→18px, aplicado en
+         todos los anchos). Se recorta un poco más SOLO en mobile — 18px→15px
+         para el valor grande, y se acerca stat-label/stat-sub para que el
+         bloque de 4 celdas se sienta más compacto sin perder legibilidad. */
+      .stat-cell .stat-value { font-size: 15px; }
+      .stat-cell .stat-label { font-size: 11px; }
+      .stat-cell .stat-sub { font-size: 10px; }
+      .stats-row { gap: 10px 8px; }
       .goal-fields { grid-template-columns: 1fr; }
       .alert-fields-row { grid-template-columns: 1fr; }
       .hero, .card, .table-card, .list-card, .mini { padding: 14px; }
@@ -3216,6 +3233,19 @@
 </div>
 </details>
 
+<details class="accordion-card" id="todayShiftAccordion" open>
+<summary>
+  <div class="accordion-head">
+    <h2>Turno de Hoy</h2>
+    <p>Shift, Break, Lunch y ACW — resumen rápido contra lo planeado.</p>
+  </div>
+  <div class="accordion-chevron">⌄</div>
+</summary>
+<div class="accordion-body">
+  <div class="block-summary-strip" id="blockSummaryStrip"></div>
+</div>
+</details>
+
 <div class="day-stats-grid" id="dayStatsGrid">
 <details class="accordion-card" id="resumenDiaAccordion" open>
 <summary>
@@ -3335,7 +3365,6 @@
   <div class="accordion-chevron">⌄</div>
 </summary>
 <div class="accordion-body">
-  <div class="block-summary-strip" id="blockSummaryStrip"></div>
   <div class="day-metrics-row" id="dayMetricsRow">
     <details class="mini-accordion" id="adherenceAccordion">
       <summary class="mini-accordion-summary">
@@ -10087,15 +10116,17 @@ function renderHeader() {
   // "Ganancias de hoy". Se reutiliza la clase .table-tags (ya existente,
   // usada para envolver los tags de Tabla completa) para heredar el mismo
   // tamaño/espaciado sin escribir CSS nuevo.
+  // Pedido del usuario (v181): con "Turno de Hoy" (Shift/Break/Lunch/ACW) y
+  // "Resumen del día" (Llamadas=Total) ya mostrando estos mismos datos con
+  // más contexto, se quitan de aquí Total/ACW/Break/Lunch — quedaban
+  // repetidos 2-3 veces en pantalla. Se conserva lo que NO vive en ningún
+  // otro lado: Conectado, Tiempo llamadas, Billable, Dropped, Otro (y el
+  // bono de Higher Rate, si aplica).
   const earningsTagsHtml = [
     `<span class="tag ${hasShift ? 'good' : ''}">Conectado: ${hasShift ? formatDuration(connected * 60000) : '—'}</span>`,
     `<span class="tag good">Tiempo llamadas: ${formatCallTimeLabel(stats.total)}</span>`,
-    `<span class="tag">Total: ${dayCalls.length}</span>`,
     `<span class="tag">Billable: ${stats.billable}</span>`,
     `<span class="tag">Dropped: ${stats.dropped}</span>`,
-    `<span class="tag good">ACW: ${formatDuration(stats.gapTotal * 60000)}</span>`,
-    stats.breakGapTotal > 0 ? `<span class="tag warn">Break: ${formatDuration(stats.breakGapTotal * 60000)}</span>` : '',
-    stats.lunchGapTotal > 0 ? `<span class="tag cyan">Lunch: ${formatDuration(stats.lunchGapTotal * 60000)}</span>` : '',
     stats.otherGapTotal > 0 ? `<span class="tag">Otro: ${formatDuration(stats.otherGapTotal * 60000)}</span>` : '',
     higherRateBreakdownTagsHtml(stats.higherRateBreakdown, 'tag'),
   ].join('');
