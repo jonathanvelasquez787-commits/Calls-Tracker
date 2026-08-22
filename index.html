@@ -3209,41 +3209,50 @@
          todos los anchos). Se recorta un poco más SOLO en mobile — 18px→15px
          para el valor grande, y se acerca stat-label/stat-sub para que el
          bloque de 4 celdas se sienta más compacto sin perder legibilidad. */
-      .stat-cell .stat-value { font-size: 15px; }
-      .stat-cell .stat-label { font-size: 11px; }
-      .stat-cell .stat-sub { font-size: 10px; }
-      .stats-row { grid-template-columns: 1fr; gap: 0; }
-      /* Pedido del usuario (v200, corregido en v201): en mobile, "Resumen
-         del día" (Llamadas/Productivo/ACW/Adherencia/Break/Lunch/Otro/
-         Higher Rate) se veía con el label arriba y el valor+sub abajo,
-         apilados — mucho espacio vertical para poco dato. v200 puso cada
-         par label/valor en fila (izquierda/derecha) pero SIN cambiar
-         `.stats-row` a 1 columna — con 2 columnas de por medio, la fila de
-         un dato quedaba a la misma altura que la fila del dato de al lado,
-         entrelazando la lectura (reportado por el usuario: "no lo
-         entiendo"). Ahora `.stats-row` pasa a 1 sola columna en este
-         breakpoint (arriba) — cada dato ocupa su propia fila completa, de
-         arriba a abajo, sin nada a la misma altura. Line-borde (mismo
-         patrón que ya usa `.stats-list-row` para Más corta/Más larga/
-         Promedio) para que se lea como una lista clara, no como un bloque
-         apretado. align-items:baseline en vez de center para que el label
-         (más chico) y el valor grande no se vean descentrados
-         verticalmente entre sí. */
+      /* Historial: v200 puso label/valor en fila (izq/der) pero dejó
+         `.stats-row` en 2 columnas — la fila de un dato quedaba a la misma
+         altura que la fila del dato de al lado, entrelazando la lectura
+         ("no lo entiendo"). v201 lo arregló pasando a 1 sola columna (cada
+         dato en su propia línea completa) — pero eso subió de 4 a 8 filas
+         visibles, y la tarjeta terminó viéndose MÁS grande que
+         "Estadísticas del día" (v203 intentó arreglarlo solo compactando
+         tipografía/padding en 1 columna, insuficiente a juicio del
+         usuario). Pedido del usuario (v204): volver a 2 columnas — el
+         usuario prefiere celdas más angostas y una tarjeta más baja aunque
+         eso implique que los datos de columnas vecinas queden a la misma
+         altura. `.stat-cell` sigue en fila (label izquierda, valor+sub
+         derecha, mismo criterio visual que ya usa `.stats-list-row`) pero
+         ahora dentro de una celda de grid más angosta — texto compacto
+         (13px/10px/9px, igual que v203) para que quepa cómodo en la mitad
+         del ancho. Line-borde debajo de cada celda, salvo las 2 últimas de
+         la fila final — con 2 columnas, `:last-child` (que usaba v201/v203)
+         solo apaga el borde de la ÚLTIMA celda del grid, dejando la
+         penúltima (columna izquierda de esa misma fila) con una línea
+         colgada sin nada debajo; `:nth-last-child(-n+2)` apaga las 2 celdas
+         de la última fila del grid a la vez (8 datos → 2 columnas → última
+         fila = celdas 7 y 8). */
+      .stat-cell .stat-value { font-size: 13px; }
+      .stat-cell .stat-label { font-size: 10px; }
+      .stat-cell .stat-sub { font-size: 9px; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); gap: 0 12px; }
       .stat-cell {
         display: flex;
         flex-direction: row;
         align-items: baseline;
         justify-content: space-between;
-        gap: 10px;
-        padding: 8px 0;
+        gap: 8px;
+        padding: 7px 0;
         border-bottom: 1px solid var(--line);
+        min-width: 0;
       }
-      .stats-row .stat-cell:last-child {
+      .stats-row .stat-cell:nth-last-child(-n+2) {
         border-bottom: none;
       }
       .stat-value-wrap {
         text-align: right;
         justify-items: end;
+        gap: 1px;
+        min-width: 0;
       }
       .goal-fields { grid-template-columns: 1fr; }
       .alert-fields-row { grid-template-columns: 1fr; }
