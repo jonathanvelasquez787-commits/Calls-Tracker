@@ -1561,21 +1561,67 @@
       }
     }
 
-    /* Fase 4 — "Resumen del día" + "Estadísticas": 2 tarjetas nuevas
-       lado a lado, usando los mismos datos que ya calcula
-       importedCallStats() (Llamadas/Productivo/ACW/Adherencia,
-       Más corta/Más larga/Promedio) — ningún cálculo nuevo, solo una
-       vista adicional de escritorio para llenar el espacio lateral.
-       Oculta por default (para no aparecer en mobile, donde esta
-       sección es nueva y no existía antes) — visible solo en este
-       breakpoint. Posición en el documento (v176, pedido del usuario):
-       justo debajo de "Ganancias de hoy" — antes (v175) vivía debajo de
-       "Bloques del día"; el HTML se movió (ver el <div id="dayStatsGrid">
-       más abajo), este bloque de CSS no cambió de contenido, solo el
-       comentario para reflejar el nuevo orden. */
+    /* Pedido del usuario (v179): "Resumen del día"/"Estadísticas del día"
+       (Llamadas/Productivo/ACW/Adherencia · Más corta/Más larga/Promedio)
+       vivían SOLO en escritorio — v175/v176 las agregó ocultas por default
+       (`display:none`) y las mostraba nada más dentro de
+       `@media (min-width:1201px)`, junto con TODO su estilo interno
+       (`.stat-cell`/`.stats-row`/`.stats-list-row`), así que en mobile no
+       solo estaban ocultas: si se destapaban se verían sin ningún estilo.
+       Ahora es la misma sección para ambos anchos: base mobile = 1 sola
+       columna, apilada (mismo criterio que el resto de secciones
+       top-level de `.app`); en escritorio (ver el @media más abajo) pasa a
+       2 columnas con igual altura entre ambas tarjetas (fix ya aplicado en
+       este mismo v179, ver comentario ahí). `.stats-row` (las 4 celdas de
+       Llamadas/Productivo/ACW/Adherencia) usa 2x2 en mobile (4 valores
+       tipo "00:00:00" no caben cómodos en una sola fila muy angosta) y
+       vuelve a una sola fila de 4 a partir de 761px (mismo breakpoint que
+       ya usa el resto de la app para tablet/escritorio). */
     .day-stats-grid {
-      display: none;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin: 0 0 14px;
     }
+    .stat-cell {
+      display: grid;
+      gap: 3px;
+    }
+    .stat-cell .stat-label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .stat-cell .stat-value {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: -.03em;
+    }
+    .stat-cell .stat-sub {
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px 10px;
+      margin-top: 12px;
+    }
+    @media (min-width: 761px) {
+      .stats-row {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+    .stats-list-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .stats-list-row:last-child { border-bottom: none; }
+    .stats-list-row span { color: var(--muted); }
+    .stats-list-row strong { color: var(--text); }
+
     @media (min-width: 1201px) {
       .day-stats-grid {
         display: grid;
@@ -1597,39 +1643,6 @@
            fila de 4 datos vs. 3 filas de lista), así que en la práctica
            esa diferencia es chica. */
       }
-      .stat-cell {
-        display: grid;
-        gap: 3px;
-      }
-      .stat-cell .stat-label {
-        color: var(--muted);
-        font-size: 12px;
-      }
-      .stat-cell .stat-value {
-        font-size: 24px;
-        font-weight: 900;
-        letter-spacing: -.03em;
-      }
-      .stat-cell .stat-sub {
-        color: var(--muted);
-        font-size: 11px;
-      }
-      .stats-row {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 14px;
-        margin-top: 12px;
-      }
-      .stats-list-row {
-        display: flex;
-        justify-content: space-between;
-        font-size: 13px;
-        padding: 6px 0;
-        border-bottom: 1px solid var(--line);
-      }
-      .stats-list-row:last-child { border-bottom: none; }
-      .stats-list-row span { color: var(--muted); }
-      .stats-list-row strong { color: var(--text); }
     }
 
     .modal-overlay {
