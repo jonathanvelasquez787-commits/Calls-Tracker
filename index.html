@@ -9355,7 +9355,23 @@ function renderWeekSummary() {
       document.querySelectorAll('#scheduleModeTabs .day-tab').forEach(btn => {
         btn.classList.toggle('active', btn.getAttribute('data-mode') === scheduleViewMode);
       });
-      if (!isWeekMode) return;
+      // Bug reportado por el usuario ("ninguno de los horarios que quiero
+      // hacer me funciona", en ambos modos): en modo 'week' con una semana
+      // pasada (protegida) o sin "Personalizar esta semana" activado, esta
+      // función deshabilita TODO el formulario (Día libre, Inicio, Fin,
+      // bloques, Guardar día, Copiar...) vía setScheduleFormDisabled(true) —
+      // pero antes, al salir de modo 'week' (isWeekMode === false), la
+      // función cortaba con `return` sin volver a habilitarlos. Una vez que
+      // se entraba una sola vez a "📅 Semana específica" en esas
+      // condiciones, el formulario quedaba deshabilitado PARA SIEMPRE,
+      // incluso de vuelta en modo "🔁 Plantilla" — "Guardar día" con
+      // disabled=true no dispara ningún click, de ahí "no pasa nada
+      // visible". Se agrega el `else` explícito para volver a habilitar
+      // todo en cuanto se sale de modo 'week'.
+      if (!isWeekMode) {
+        setScheduleFormDisabled(false);
+        return;
+      }
 
       const weekStart = scheduleWeekStartDate(scheduleWeekOffset);
       const weekEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6);
