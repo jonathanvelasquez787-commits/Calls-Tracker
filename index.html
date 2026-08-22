@@ -378,6 +378,69 @@
         color: var(--muted);
         -webkit-text-fill-color: currentColor;
       }
+      /* Pedido del usuario (v207, con mockup de 2 opciones — el usuario
+         eligió "borde izquierdo"): .slot-fill pintaba el 100% del área de
+         cada bloque de "Bloques del día" a un rosa/naranja/morado saturado
+         (opacity .38 sobre --cyan/--warn/--blue) — igual que el problema ya
+         corregido en "Turno de Hoy" (v206-preview), pero más notorio acá
+         porque cada bloque muestra bastante más texto/barras internas
+         encima de ese fondo saturado. Se apaga el relleno líquido en modo
+         claro (opacity 0 — el ancho que ya calcula JS vía --slot-pct no se
+         toca, solo deja de pintarse) y se reemplaza por una tarjeta casi
+         blanca (4% del acento) + borde izquierdo grueso de 4px con el color
+         sólido del bloque. border-radius solo en las 2 esquinas derechas —
+         un borde de un solo lado con las 4 esquinas redondeadas se ve
+         cortado/raro (mismo criterio que ya usan otros bordes de un solo
+         lado en el archivo). Solo modo claro — oscuro no se toca, ahí
+         .slot-fill sigue pintando exactamente igual que siempre. */
+      :root:not(.theme-dark) .slot {
+        background: rgba(var(--slot-rgb, var(--cyan-rgb)), .04);
+        border: none;
+        border-left: 4px solid rgb(var(--slot-rgb, var(--cyan-rgb)));
+        border-radius: 0 16px 16px 0;
+      }
+      :root:not(.theme-dark) .slot .slot-fill {
+        opacity: 0;
+      }
+      /* Pedido del usuario: "Bloque de Trabajo" es el tipo de bloque más
+         repetido del día — con el mismo acento vivo que Break/Lunch
+         (--cyan, que en claro es --primary/rosa) se veía como el color
+         dominante de toda la sección. Se le da un tono neutro (slate) en
+         vez del rosa, dejando el rosa vivo para botones/CTAs reales. Solo
+         afecta el acento DENTRO de .slot — --cyan en sí no se toca, así que
+         el resto de usos de data-accent="cyan" (botones de Controles, el
+         botón de "Pegar Llamadas", etc.) siguen su color de siempre. */
+      :root:not(.theme-dark) .slot[data-accent="cyan"] {
+        --slot-rgb: 100, 116, 139;
+      }
+      /* Pedido del usuario: la insignia de tipo (Work/Break/Lunch, extremo
+         derecho de cada bloque) y los badges de estado (Completo/Tarde/
+         Hecho/etc., .slot-status) pasan de "pastilla pálida" a sólida con
+         texto blanco — con el fondo de la tarjeta ya casi blanco, una
+         pastilla pálida se perdía; sólida se lee de un vistazo sin volver a
+         saturar toda la tarjeta (son elementos chicos, no el área
+         completa). Reutiliza el mismo --slot-rgb que ya define el borde
+         izquierdo — un solo dato, dos usos, sin duplicar el acento por
+         bloque. Los estados con tono fijo (good/warn/bad, usados también
+         fuera de .slot en Adherencia — "Detalle" del día, no scoped a
+         .slot a propósito) usan directo --good/--warn/--pink. */
+      :root:not(.theme-dark) .slot .type {
+        background: rgb(var(--slot-rgb, var(--cyan-rgb)));
+        border-color: rgb(var(--slot-rgb, var(--cyan-rgb)));
+        color: #fff;
+      }
+      :root:not(.theme-dark) .slot-status.good {
+        color: #fff;
+        background: var(--good);
+      }
+      :root:not(.theme-dark) .slot-status.warn {
+        color: #fff;
+        background: var(--warn);
+      }
+      :root:not(.theme-dark) .slot-status.bad {
+        color: #fff;
+        background: var(--pink);
+      }
     }
     html.theme-light .action-btn:not(.is-active) {
       border-color: var(--line-2);
@@ -434,6 +497,35 @@
       background-clip: initial;
       color: var(--muted);
       -webkit-text-fill-color: currentColor;
+    }
+    html.theme-light .slot {
+      background: rgba(var(--slot-rgb, var(--cyan-rgb)), .04);
+      border: none;
+      border-left: 4px solid rgb(var(--slot-rgb, var(--cyan-rgb)));
+      border-radius: 0 16px 16px 0;
+    }
+    html.theme-light .slot .slot-fill {
+      opacity: 0;
+    }
+    html.theme-light .slot[data-accent="cyan"] {
+      --slot-rgb: 100, 116, 139;
+    }
+    html.theme-light .slot .type {
+      background: rgb(var(--slot-rgb, var(--cyan-rgb)));
+      border-color: rgb(var(--slot-rgb, var(--cyan-rgb)));
+      color: #fff;
+    }
+    html.theme-light .slot-status.good {
+      color: #fff;
+      background: var(--good);
+    }
+    html.theme-light .slot-status.warn {
+      color: #fff;
+      background: var(--warn);
+    }
+    html.theme-light .slot-status.bad {
+      color: #fff;
+      background: var(--pink);
     }
 
     * { box-sizing: border-box; }
