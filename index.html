@@ -2284,6 +2284,47 @@
       grid-template-columns: 108px 1fr 76px 34px;
     }
 
+    /* Pedido del usuario: mismo relleno "líquido" de las tarjetas de "Turno
+       de Hoy" (v183), aplicado ahora a cada bloque de "Bloques del día"
+       (.slot). Solo `.slot` recibe el tratamiento — `.event` (usado en otro
+       lugar del archivo, no en esta sección) queda sin tocar. */
+    .slot {
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    /* Mismo criterio que .bsc-fill: fondo sólido semi-transparente (no la
+       versión pálida de reposo) que crece de izquierda a derecha según el
+       % "Usado" de cada bloque (mismo `stats.pct` que ya alimenta la barra
+       fina .slot-progress sin modificador — no un cálculo nuevo). El acento
+       por tipo reutiliza el MISMO mapeo de color que ya usan las tarjetas
+       de "Turno de Hoy" para Shift/Break/Lunch (Work=cyan, Break=warn,
+       Lunch=blue) — mismo lenguaje visual entre ambas secciones. */
+    .slot-fill {
+      position: absolute;
+      inset: 0;
+      width: 0%;
+      background: rgb(var(--slot-rgb, var(--cyan-rgb)));
+      opacity: .38;
+      transition: width .5s cubic-bezier(.22, .85, .4, 1);
+      z-index: 0;
+    }
+
+    .slot[data-accent="cyan"] { --slot-rgb: var(--cyan-rgb); }
+    .slot[data-accent="warn"] { --slot-rgb: var(--warn-rgb); }
+    .slot[data-accent="blue"] { --slot-rgb: var(--blue-rgb); }
+
+    /* Sube los 3 hijos de contenido reales (nombre/rango/estado, cuerpo del
+       slot, badge de tipo) por encima del relleno — sin esto, un hijo
+       posicionado en absoluto (.slot-fill) se pinta DESPUÉS que los hijos
+       normales del grid, tapando el texto. Mismo patrón que ya usa
+       .bsc-top/.bsc-range/.bsc-progress-row en las tarjetas de Turno de Hoy. */
+    .slot > div:not(.slot-fill) {
+      position: relative;
+      z-index: 1;
+    }
+
     .event-delete {
       justify-self: end;
       width: 32px;
@@ -11031,8 +11072,17 @@ function renderSchedule() {
             `
           : '';
 
+        // Pedido del usuario: mismo relleno "líquido" de las tarjetas de
+        // "Turno de Hoy" — reutiliza el mismo mapeo de acento por tipo que
+        // ya usa renderBlockSummaryStrip() (Shift=cyan, Break=warn,
+        // Lunch=blue), para que ambas secciones hablen el mismo lenguaje
+        // visual. El % que llena el fondo es el mismo `stats.pct` que ya
+        // alimenta la barra fina "Usado" de abajo — ningún cálculo nuevo.
+        const slotAccent = slot.type === 'Work' ? 'cyan' : slot.type === 'Break' ? 'warn' : 'blue';
+
         return `
-          <div class="slot ${active ? 'active' : ''} ${done ? 'done' : ''}">
+          <div class="slot ${active ? 'active' : ''} ${done ? 'done' : ''}" data-accent="${slotAccent}">
+            <div class="slot-fill" style="width:${stats.pct}%"></div>
             <div>
               <div class="name">${slot.name}</div>
               <div class="range">${slot.start} — ${slot.end}</div>
