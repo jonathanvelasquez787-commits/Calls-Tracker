@@ -3066,9 +3066,25 @@
 <div class="modal-head">
 <div>
 <h3 id="shiftModalTitle">Horario semanal</h3>
-<p>Configura tu plan por día. Los bloques del día se dibujan sobre este plan — no sobre la hora en que realmente empezaste.</p>
+<p>Configura tu plan por día. Los bloques del día se dibujan sobre este plan — no sobre la hora en que realmente empezaste. Usa "📅 Semana específica" abajo si una semana en particular tuvo (o va a tener) un horario distinto de tu plantilla — queda guardada aparte, sin perder la de siempre.</p>
 </div>
 <button aria-label="Cerrar" class="modal-close" data-close-modal="shiftModal" type="button">×</button>
+</div>
+<div class="day-tabs" id="scheduleModeTabs">
+<button class="day-tab active" data-mode="template" type="button">🔁 Plantilla</button>
+<button class="day-tab" data-mode="week" type="button">📅 Semana específica</button>
+</div>
+<div id="scheduleWeekNav" style="display:none;">
+<div class="week-nav" style="margin: 4px 0 8px;">
+<button id="scheduleWeekPrevBtn" type="button">‹ Anterior</button>
+<button id="scheduleWeekTodayBtn" type="button">Semana actual</button>
+<button id="scheduleWeekNextBtn" type="button">Siguiente ›</button>
+</div>
+<p class="alert-hint" id="scheduleWeekRangeLabel" style="margin:0 0 8px;">—</p>
+<div class="field" style="margin-bottom:8px;">
+<label style="display:flex; align-items:center; gap:8px;"><input id="scheduleWeekCustomInput" type="checkbox"/> Personalizar el horario de esta semana (distinto a la plantilla)</label>
+</div>
+<p class="alert-hint" id="scheduleWeekLockedNote" style="display:none; color: var(--warn);">🔒 Esta semana ya pasó — queda protegida, solo lectura.</p>
 </div>
 <div class="day-tabs" id="scheduleDayTabs"></div>
 <div class="goal-fields">
@@ -3836,9 +3852,42 @@ $0.72"></textarea>
       return Object.keys(WEEKDAY_JS_INDEX).find(k => WEEKDAY_JS_INDEX[k] === idx) || 'mon';
     }
 
+    // ---- Horario por semana específica (pedido del usuario) ----
+    // Overrides puntuales por semana, anclados al mismo inicio de semana de
+    // 7 días que ya usa "Resumen semanal" (startOfCycleWeek, definida más
+    // abajo — function declaration, hoisted, se puede usar aquí arriba sin
+    // problema). weekStartKeyFromDate()/weekStartKeyForDayKey() dan la
+    // clave "YYYY-MM-DD" bajo la que vive cada semana en
+    // settings.scheduleOverridesByWeek.
+    function weekStartKeyFromDate(date) {
+      const d = startOfCycleWeek(date);
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    }
+
+    function weekStartKeyForDayKey(dayKey) {
+      const d = callDateToDate(dayKey) || new Date();
+      return weekStartKeyFromDate(d);
+    }
+
+    // Una semana queda protegida (solo lectura) una vez que TERMINÓ por
+    // completo — no basta con que ya haya empezado. La semana actual (la
+    // que contiene "hoy") sigue editable hasta que pase su último día.
+    function isScheduleWeekPast(weekStartDate) {
+      const weekEnd = new Date(weekStartDate.getFullYear(), weekStartDate.getMonth(), weekStartDate.getDate() + 6);
+      return weekEnd < todayRange();
+    }
+
     function dayConfigFor(dayKey) {
       ensureWeeklySchedule();
       const wd = weekdayKeyForDayKey(dayKey);
+      const weekKey = weekStartKeyForDayKey(dayKey);
+      const overrideWeek = settings.scheduleOverridesByWeek && settings.scheduleOverridesByWeek[weekKey];
+      // Una semana personalizada (ver "📅 Semana específica" en Horario)
+      // gana sobre la plantilla recurrente para los días que trae — un día
+      // de esa semana que no esté en el override (no debería pasar, el
+      // override siempre se crea completo, pero por defensividad) cae de
+      // vuelta a la plantilla.
+      if (overrideWeek && overrideWeek[wd]) return overrideWeek[wd];
       return settings.weeklySchedule[wd] || { off: true };
     }
 
@@ -4048,6 +4097,18 @@ $0.72"></textarea>
         shiftEnd: '16:00',
         lateArrivalMode: 'anchor', // 'anchor' = la hora de fin no se mueve (pierdes el tiempo) | 'shift' = se corre todo el turno
         weeklySchedule: defaultWeeklySchedule(),
+        // Pedido del usuario: horario real por SEMANA ESPECÍFICA (con su
+        // propia fecha de inicio), aparte de la plantilla recurrente de
+        // arriba (weeklySchedule). La plantilla sigue siendo el default —
+        // esto son overrides puntuales solo para las semanas donde el
+        // usuario los configura a propósito. Clave = fecha de inicio de esa
+        // semana en formato "YYYY-MM-DD" (mismo anclaje que ya usa
+        // startOfCycleWeek() para "Resumen semanal" — semanas de 7 días
+        // ancladas al inicio de ciclo de pago, no Lunes-Domingo fijo).
+        // Valor = objeto {mon..sun: dayCfg}, misma forma que weeklySchedule
+        // pero solo para esa semana puntual. Una semana sin entrada aquí
+        // simplemente usa la plantilla — ver dayConfigFor().
+        scheduleOverridesByWeek: {},
         userName: 'Jonathan',
         // Emoji opcional que se muestra junto al nombre en el saludo (ver
         // greetingText()), editable en Metas junto con "Tu nombre".
@@ -4243,6 +4304,27 @@ $0.72"></textarea>
       // (sin fecha/horario válido, o nivel desconocido) — mismo criterio
       // defensivo que el resto de settings, para que un dato corrupto en
       // localStorage no rompa el cálculo de bonos en silencio.
+      // Horario por semana específica: se descarta cualquier entrada mal
+      // formada (clave que no sea "YYYY-MM-DD", o valor que no sea un
+      // objeto) y se migran los días guardados dentro de cada semana con el
+      // mismo par de migraciones que ya usa ensureWeeklySchedule() para la
+      // plantilla (formato viejo breaks[]/lunch{} → blocks[], y Meta de
+      // Productividad por bloque) — así una semana guardada hace tiempo
+      // sigue funcionando igual que la plantilla si el modelo de datos
+      // cambia más adelante.
+      if (!settings.scheduleOverridesByWeek || typeof settings.scheduleOverridesByWeek !== 'object' || Array.isArray(settings.scheduleOverridesByWeek)) {
+        settings.scheduleOverridesByWeek = {};
+      }
+      Object.keys(settings.scheduleOverridesByWeek).forEach((weekKey) => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(weekKey)) { delete settings.scheduleOverridesByWeek[weekKey]; return; }
+        const weekObj = settings.scheduleOverridesByWeek[weekKey];
+        if (!weekObj || typeof weekObj !== 'object' || Array.isArray(weekObj)) { delete settings.scheduleOverridesByWeek[weekKey]; return; }
+        WEEKDAYS.forEach((wd) => {
+          if (!weekObj[wd]) return;
+          weekObj[wd] = migrateDayConfigToBlocks(weekObj[wd]);
+          weekObj[wd] = ensureBlockProductivityGoals(weekObj[wd]);
+        });
+      });
       if (!Array.isArray(settings.higherRateWindows)) settings.higherRateWindows = [];
       settings.higherRateWindows = settings.higherRateWindows
         .filter(w => w && typeof w === 'object' && /^\d{2}\/\d{2}\/\d{4}$/.test(String(w.date || '')) && HIGHER_RATE_TIERS[w.tier])
@@ -8246,14 +8328,87 @@ function renderWeekSummary() {
     }
 
     let scheduleEditDay = 'mon';
+    // Pedido del usuario: el editor de Horario ahora tiene 2 modos.
+    // 'template' (default, comportamiento de siempre): edita la plantilla
+    // recurrente Lunes-Domingo (settings.weeklySchedule). 'week': edita el
+    // override de UNA semana específica (settings.scheduleOverridesByWeek),
+    // navegable con scheduleWeekOffset (0 = semana que contiene "hoy",
+    // mismo criterio que weekViewOffset ya usa para "Resumen semanal").
+    let scheduleViewMode = 'template';
+    let scheduleWeekOffset = 0;
+
+    function scheduleWeekStartDate(offset = scheduleWeekOffset) {
+      const base = startOfCycleWeek(new Date());
+      return new Date(base.getFullYear(), base.getMonth(), base.getDate() + offset * 7);
+    }
+
+    function scheduleWeekKeyForOffset(offset = scheduleWeekOffset) {
+      return weekStartKeyFromDate(scheduleWeekStartDate(offset));
+    }
+
+    function scheduleWeekIsPast(offset = scheduleWeekOffset) {
+      return isScheduleWeekPast(scheduleWeekStartDate(offset));
+    }
+
+    function scheduleWeekOverride(offset = scheduleWeekOffset) {
+      const key = scheduleWeekKeyForOffset(offset);
+      return (settings.scheduleOverridesByWeek && settings.scheduleOverridesByWeek[key]) || null;
+    }
+
+    function scheduleWeekHasCustom(offset = scheduleWeekOffset) {
+      return !!scheduleWeekOverride(offset);
+    }
+
+    // Clona la plantilla actual (ya migrada/normalizada por
+    // ensureWeeklySchedule) como punto de partida de un override nuevo —
+    // así "personalizar esta semana" arranca mostrando exactamente lo mismo
+    // que ya tenías planeado, listo para ajustar solo lo que cambia.
+    function cloneWeeklyScheduleForOverride() {
+      ensureWeeklySchedule();
+      const out = {};
+      WEEKDAYS.forEach(k => { out[k] = JSON.parse(JSON.stringify(settings.weeklySchedule[k])); });
+      return out;
+    }
+
+    function ensureScheduleWeekOverride(offset = scheduleWeekOffset) {
+      const key = scheduleWeekKeyForOffset(offset);
+      if (!settings.scheduleOverridesByWeek) settings.scheduleOverridesByWeek = {};
+      if (!settings.scheduleOverridesByWeek[key]) settings.scheduleOverridesByWeek[key] = cloneWeeklyScheduleForOverride();
+      return settings.scheduleOverridesByWeek[key];
+    }
+
+    function removeScheduleWeekOverride(offset = scheduleWeekOffset) {
+      const key = scheduleWeekKeyForOffset(offset);
+      if (settings.scheduleOverridesByWeek) delete settings.scheduleOverridesByWeek[key];
+    }
+
+    // Objeto {mon..sun} sobre el que se está leyendo/escribiendo ahora mismo
+    // — la plantilla en modo 'template', o el override de la semana actual
+    // en modo 'week' (se crea si todavía no existe, salvo que la semana ya
+    // esté protegida por pasada — ahí solo se lee, nunca se crea uno nuevo).
+    function activeScheduleTarget({ createIfMissing = false } = {}) {
+      if (scheduleViewMode === 'template') {
+        ensureWeeklySchedule();
+        return settings.weeklySchedule;
+      }
+      const existing = scheduleWeekOverride(scheduleWeekOffset);
+      if (existing) return existing;
+      if (createIfMissing && !scheduleWeekIsPast(scheduleWeekOffset)) return ensureScheduleWeekOverride(scheduleWeekOffset);
+      // Semana sin personalizar (o ya pasada, protegida): se devuelve una
+      // vista de solo-lectura basada en la plantilla, sin crear ni guardar
+      // nada — así el formulario puede mostrar valores razonables aunque no
+      // haya override todavía.
+      ensureWeeklySchedule();
+      return settings.weeklySchedule;
+    }
 
     function renderDayTabs() {
       const wrap = document.getElementById('scheduleDayTabs');
       if (!wrap) return;
-      ensureWeeklySchedule();
+      const target = activeScheduleTarget();
       wrap.innerHTML = WEEKDAYS.map(k => {
         const active = k === scheduleEditDay;
-        const off = !settings.weeklySchedule[k] || settings.weeklySchedule[k].off;
+        const off = !target[k] || target[k].off;
         return `<button class="day-tab ${active ? 'active' : ''} ${off ? 'off' : ''}" data-day="${k}" type="button">${WEEKDAY_LABELS_SHORT[k]}</button>`;
       }).join('');
       wrap.querySelectorAll('.day-tab').forEach(btn => {
@@ -8410,9 +8565,57 @@ function renderWeekSummary() {
       renderBlocksEditor(current);
     }
 
+    // Habilita/deshabilita los campos del día (Día libre, Inicio, Fin,
+    // bloques + "+ Agregar bloque") y los botones de copiar/guardar — se usa
+    // en modo 'week' cuando la semana ya pasó (protegida) o todavía no se
+    // activó "Personalizar esta semana" (se ve la plantilla de referencia,
+    // pero no se edita ahí por accidente).
+    function setScheduleFormDisabled(disabled) {
+      ['dayOffInput', 'dayStartInput', 'dayEndInput', 'addBlockBtn', 'copyDayToAllBtn', 'copyWeekendBtn', 'saveShiftWindowBtn'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = disabled;
+      });
+      const list = document.getElementById('blocksEditorList');
+      if (list) list.querySelectorAll('input, select, button').forEach(el => { el.disabled = disabled; });
+    }
+
+    function syncScheduleWeekNavUI() {
+      const nav = document.getElementById('scheduleWeekNav');
+      if (!nav) return;
+      const isWeekMode = scheduleViewMode === 'week';
+      nav.style.display = isWeekMode ? '' : 'none';
+      document.querySelectorAll('#scheduleModeTabs .day-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-mode') === scheduleViewMode);
+      });
+      if (!isWeekMode) return;
+
+      const weekStart = scheduleWeekStartDate(scheduleWeekOffset);
+      const weekEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6);
+      const rangeLabel = document.getElementById('scheduleWeekRangeLabel');
+      if (rangeLabel) {
+        rangeLabel.textContent = `${scheduleWeekOffset === 0 ? 'Semana actual · ' : ''}${formatWeekRangeLabel(weekStart, weekEnd)}`;
+      }
+
+      const isPast = scheduleWeekIsPast(scheduleWeekOffset);
+      const hasCustom = scheduleWeekHasCustom(scheduleWeekOffset);
+      const customInput = document.getElementById('scheduleWeekCustomInput');
+      const lockedNote = document.getElementById('scheduleWeekLockedNote');
+      if (customInput) {
+        customInput.checked = hasCustom;
+        customInput.disabled = isPast;
+      }
+      if (lockedNote) lockedNote.style.display = isPast ? '' : 'none';
+
+      // Editable solo si: no está protegida por pasada, Y ya se activó
+      // "Personalizar esta semana" (si no, se está viendo la plantilla nada
+      // más como referencia, de solo lectura, hasta que se active).
+      setScheduleFormDisabled(isPast || !hasCustom);
+    }
+
     function syncShiftModalFields() {
       ensureWeeklySchedule();
-      const cfg = settings.weeklySchedule[scheduleEditDay] || defaultDaySchedule(true);
+      const target = activeScheduleTarget();
+      const cfg = target[scheduleEditDay] || defaultDaySchedule(true);
       const dayOffInput = document.getElementById('dayOffInput');
       const startInput = document.getElementById('dayStartInput');
       const endInput = document.getElementById('dayEndInput');
@@ -8432,6 +8635,7 @@ function renderWeekSummary() {
       const adherenceGoalPctInput = document.getElementById('adherenceGoalPctInput');
       if (adherenceGoalPctInput && document.activeElement !== adherenceGoalPctInput) adherenceGoalPctInput.value = settings.adherenceGoalPct;
       renderDayTabs();
+      syncScheduleWeekNavUI();
     }
 
     // Pedido del usuario (v145): Volumen/Avisos con sonido/Adherencia/
@@ -8510,8 +8714,7 @@ function renderWeekSummary() {
     function scheduleFormIsDirty() {
       const cfg = readScheduleFormAsConfig();
       if (!cfg) return false;
-      ensureWeeklySchedule();
-      const stored = settings.weeklySchedule[scheduleEditDay];
+      const stored = activeScheduleTarget()[scheduleEditDay];
       // Mismo normalizeBlockForCompare() que ya usa readBlocksFromEditor()
       // (ver ahí) — necesario desde que los bloques de Trabajo llevan
       // `goalMin` (Meta de Productividad): sin esta simetría, `cfg.blocks`
@@ -8603,7 +8806,7 @@ function renderWeekSummary() {
     // propio botón). Ese comportamiento se separó en su propio botón, ver
     // copyDayToWeekend() más abajo.
     function saveShiftWindow() {
-      ensureWeeklySchedule();
+      if (scheduleViewMode === 'week' && scheduleWeekIsPast(scheduleWeekOffset)) return; // protegido, no debería llegar aquí (botón deshabilitado)
       const cfg = readScheduleFormAsConfig();
       if (!cfg) return;
       const check = validateDayConfig(cfg);
@@ -8611,16 +8814,21 @@ function renderWeekSummary() {
         toast(check.errors[0]);
         return;
       }
-      settings.weeklySchedule[scheduleEditDay] = cfg;
-      const lateSelect = document.getElementById('lateArrivalModeInput');
-      if (lateSelect) settings.lateArrivalMode = lateSelect.value;
-      // mantiene shiftStart/shiftEnd viejos sincronizados por compatibilidad, sin usarlos ya para dibujar bloques
-      settings.shiftStart = cfg.start;
-      settings.shiftEnd = cfg.end;
+      const target = activeScheduleTarget({ createIfMissing: true });
+      target[scheduleEditDay] = cfg;
+      if (scheduleViewMode === 'template') {
+        const lateSelect = document.getElementById('lateArrivalModeInput');
+        if (lateSelect) settings.lateArrivalMode = lateSelect.value;
+        // mantiene shiftStart/shiftEnd viejos sincronizados por compatibilidad, sin usarlos ya para dibujar bloques
+        settings.shiftStart = cfg.start;
+        settings.shiftEnd = cfg.end;
+      }
       saveSettingsOnly();
       saveAll();
       renderDayTabs();
-      toast(`Horario de ${WEEKDAY_LABELS[scheduleEditDay]} guardado`);
+      toast(scheduleViewMode === 'week'
+        ? `Horario de ${WEEKDAY_LABELS[scheduleEditDay]} guardado para esa semana`
+        : `Horario de ${WEEKDAY_LABELS[scheduleEditDay]} guardado`);
     }
 
     // Pedido del usuario: "Copiar a todos los días" pasa a significar SOLO
@@ -8628,7 +8836,7 @@ function renderWeekSummary() {
     // copia masiva (si se quiere aplicar también a fin de semana, está el
     // botón aparte "Copiar a Sábado-Domingo", ver copyDayToWeekend()).
     function copyDayToAll() {
-      ensureWeeklySchedule();
+      if (scheduleViewMode === 'week' && scheduleWeekIsPast(scheduleWeekOffset)) return;
       const cfg = readScheduleFormAsConfig();
       if (!cfg) return;
       const check = validateDayConfig(cfg);
@@ -8636,10 +8844,12 @@ function renderWeekSummary() {
         toast(check.errors[0]);
         return;
       }
-      appConfirm(`¿Copiar este horario (${WEEKDAY_LABELS[scheduleEditDay]}) a Lunes-Viernes? Esto sobreescribe Lunes a Viernes — Sábado y Domingo no se tocan.`, () => {
-        settings.weeklySchedule[scheduleEditDay] = cfg;
+      const scope = scheduleViewMode === 'week' ? 'de esa semana' : '';
+      appConfirm(`¿Copiar este horario (${WEEKDAY_LABELS[scheduleEditDay]}) a Lunes-Viernes ${scope}? Esto sobreescribe Lunes a Viernes — Sábado y Domingo no se tocan.`, () => {
+        const target = activeScheduleTarget({ createIfMissing: true });
+        target[scheduleEditDay] = cfg;
         WEEKDAYS.filter(k => k !== 'sat' && k !== 'sun').forEach(k => {
-          settings.weeklySchedule[k] = {
+          target[k] = {
             off: cfg.off,
             start: cfg.start,
             end: cfg.end,
@@ -8649,7 +8859,7 @@ function renderWeekSummary() {
         saveSettingsOnly();
         saveAll();
         renderDayTabs();
-        toast('Horario copiado a Lunes-Viernes');
+        toast(`Horario copiado a Lunes-Viernes ${scope}`.trim());
       });
     }
 
@@ -8663,7 +8873,7 @@ function renderWeekSummary() {
     // después solo Sábado (por ejemplo) no mueva también Domingo por
     // referencia compartida.
     function copyDayToWeekend() {
-      ensureWeeklySchedule();
+      if (scheduleViewMode === 'week' && scheduleWeekIsPast(scheduleWeekOffset)) return;
       const cfg = readScheduleFormAsConfig();
       if (!cfg) return;
       const check = validateDayConfig(cfg);
@@ -8671,14 +8881,16 @@ function renderWeekSummary() {
         toast(check.errors[0]);
         return;
       }
-      appConfirm(`¿Copiar este horario (${WEEKDAY_LABELS[scheduleEditDay]}) a Sábado y Domingo? Esto sobreescribe Sábado y Domingo — el resto de los días no se tocan.`, () => {
-        settings.weeklySchedule[scheduleEditDay] = cfg;
-        settings.weeklySchedule.sat = { off: cfg.off, start: cfg.start, end: cfg.end, blocks: cfg.blocks.map(b => ({ ...b })) };
-        settings.weeklySchedule.sun = { off: cfg.off, start: cfg.start, end: cfg.end, blocks: cfg.blocks.map(b => ({ ...b })) };
+      const scope = scheduleViewMode === 'week' ? 'de esa semana' : '';
+      appConfirm(`¿Copiar este horario (${WEEKDAY_LABELS[scheduleEditDay]}) a Sábado y Domingo ${scope}? Esto sobreescribe Sábado y Domingo — el resto de los días no se tocan.`, () => {
+        const target = activeScheduleTarget({ createIfMissing: true });
+        target[scheduleEditDay] = cfg;
+        target.sat = { off: cfg.off, start: cfg.start, end: cfg.end, blocks: cfg.blocks.map(b => ({ ...b })) };
+        target.sun = { off: cfg.off, start: cfg.start, end: cfg.end, blocks: cfg.blocks.map(b => ({ ...b })) };
         saveSettingsOnly();
         saveAll();
         renderDayTabs();
-        toast('Horario copiado a Sábado y Domingo');
+        toast(`Horario copiado a Sábado y Domingo ${scope}`.trim());
       });
     }
 
@@ -10728,7 +10940,54 @@ function render() {
       clockTimeVisible = !clockTimeVisible;
       renderHeader();
     });
-    document.getElementById('scheduleMiniBtn').addEventListener('click', () => { scheduleEditDay = weekdayKeyForDayKey(getActiveDayKey()); syncShiftModalFields(); openModal('shiftModal'); });
+    document.getElementById('scheduleMiniBtn').addEventListener('click', () => { scheduleEditDay = weekdayKeyForDayKey(getActiveDayKey()); scheduleViewMode = 'template'; scheduleWeekOffset = 0; syncShiftModalFields(); openModal('shiftModal'); });
+    // Pedido del usuario: horario por semana específica — tabs de modo
+    // (Plantilla / Semana específica) + navegación entre semanas + checkbox
+    // para activar/quitar la personalización de la semana que se está
+    // viendo. Cambiar de modo o de semana respeta el mismo aviso de
+    // "cambios sin guardar" que ya usa el cambio de día (scheduleFormIsDirty).
+    document.getElementById('scheduleModeTabs').addEventListener('click', (e) => {
+      const btn = e.target instanceof Element ? e.target.closest('[data-mode]') : null;
+      if (!btn) return;
+      const nextMode = btn.getAttribute('data-mode');
+      if (nextMode === scheduleViewMode) return;
+      const apply = () => { scheduleViewMode = nextMode; syncShiftModalFields(); };
+      if (scheduleFormIsDirty()) {
+        appConfirm('Tienes cambios sin guardar. ¿Descartarlos y cambiar de vista?', apply);
+        return;
+      }
+      apply();
+    });
+    function navigateScheduleWeek(nextOffset) {
+      const apply = () => { scheduleWeekOffset = nextOffset; syncShiftModalFields(); };
+      if (scheduleFormIsDirty()) {
+        appConfirm('Tienes cambios sin guardar en esta semana. ¿Descartarlos y cambiar de semana?', apply);
+        return;
+      }
+      apply();
+    }
+    document.getElementById('scheduleWeekPrevBtn').addEventListener('click', () => navigateScheduleWeek(scheduleWeekOffset - 1));
+    document.getElementById('scheduleWeekNextBtn').addEventListener('click', () => navigateScheduleWeek(scheduleWeekOffset + 1));
+    document.getElementById('scheduleWeekTodayBtn').addEventListener('click', () => navigateScheduleWeek(0));
+    document.getElementById('scheduleWeekCustomInput').addEventListener('change', (e) => {
+      if (scheduleWeekIsPast(scheduleWeekOffset)) { e.target.checked = scheduleWeekHasCustom(scheduleWeekOffset); return; }
+      if (e.target.checked) {
+        ensureScheduleWeekOverride(scheduleWeekOffset);
+        saveSettingsOnly();
+        toast('Semana personalizada — arrancó como copia de tu plantilla, ajústala y guarda cada día que cambie.');
+      } else {
+        appConfirm('¿Quitar la personalización de esta semana y volver a usar la plantilla? El horario propio de esta semana se borra — no afecta la plantilla ni otras semanas.', () => {
+          removeScheduleWeekOverride(scheduleWeekOffset);
+          saveAll();
+          syncShiftModalFields();
+        });
+        // Mientras se espera la confirmación, se refresca ya mismo (ver
+        // abajo) — como el override todavía no se borró, esto regresa el
+        // checkbox a "marcado" visualmente hasta que el usuario confirme; si
+        // cancela, se queda así (correcto, sigue personalizada).
+      }
+      syncShiftModalFields();
+    });
     document.getElementById('higherRateMiniBtn').addEventListener('click', () => { syncHigherRateModalFields(); openModal('higherRateModal'); });
     document.getElementById('notificationsMiniBtn').addEventListener('click', () => { syncNotificationsModalFields(); openModal('notificationsModal'); });
     document.getElementById('copyDayToAllBtn').addEventListener('click', copyDayToAll);
