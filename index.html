@@ -659,8 +659,26 @@
        ajusta padding/tamaño de fuente, no el wrap). scrollbar-width:none +
        ::-webkit-scrollbar oculta la barra de scroll nativa sin quitar la
        posibilidad de deslizar con el dedo/mouse. */
+    /* Bug reportado por el usuario (con captura, solo en escritorio): el
+       chip "No iniciado" se veía inflado/estirado — mucho más alto y
+       redondeado de lo que su propio contenido (dot + texto) necesita —
+       mientras en mobile se veía bien. Causa: `.chips` nunca declaraba
+       `align-items`, así que heredaba el default de flexbox (`stretch`) —
+       TODOS los hijos directos (los 2 `.chip`, `.summary-pill`, y
+       `.hero-shift-actions`) se estiran para igualar la altura del más alto
+       de la fila. `#daySelector` es un `<input type="date">` nativo, y en
+       escritorio el "chrome" propio del navegador (padding interno,
+       separadores día/mes/año, ícono de calendario) lo hace bastante más
+       alto que un chip de solo texto — ese alto se le imponía de rebote a
+       "No iniciado" por el stretch. En mobile el date-picker nativo se
+       renderiza más compacto, así que ahí casi no se notaba. `align-items:
+       center` hace que cada hijo mida su propia altura natural (sin
+       estirarse a la del vecino más alto) y se centre verticalmente en la
+       fila — mismo criterio en ambos anchos, no hace falta un override
+       aparte en el @media de mobile. */
     .chips {
       display: flex;
+      align-items: center;
       flex-wrap: nowrap;
       gap: 8px;
       margin-top: 14px;
