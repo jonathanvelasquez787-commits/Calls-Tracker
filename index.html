@@ -11308,10 +11308,21 @@ function renderSchedule() {
       // se lista aparte (poco frecuente, y la tarjeta ya no tiene espacio
       // para más líneas sin verse apretada) — sigue contando para el % y el
       // total ponderado igual que antes.
+      // Pedido del usuario (v194): con 3 o más bloques del mismo tipo el
+      // mismo día (ej. 3-4 Breaks), el texto ya no se queda callado sobre
+      // los que sobran — se agrega un contador chico "+N más" al final de
+      // la 2da línea (N = los bloques que no entran en 1ro/Siguiente). Con
+      // exactamente 2 bloques no aparece ningún contador (nada "de más" que
+      // contar). El % del relleno YA sumaba todos los bloques desde antes
+      // de este fix (ver breakPlannedMin/breakFilledMin en el loop de
+      // arriba) — este contador es solo texto informativo, no cambia el %.
       const rangeWithNext = (blocks) => {
         if (!blocks.length) return { range: '', rangeExtra: '' };
         const range = `${timeLabel(blocks[0].start)} – ${timeLabel(blocks[0].end)}`;
-        const rangeExtra = blocks.length > 1 ? `Siguiente: ${timeLabel(blocks[1].start)} – ${timeLabel(blocks[1].end)}` : '';
+        if (blocks.length === 1) return { range, rangeExtra: '' };
+        const extraCount = blocks.length - 2;
+        const nextText = `Siguiente: ${timeLabel(blocks[1].start)} – ${timeLabel(blocks[1].end)}`;
+        const rangeExtra = extraCount > 0 ? `${nextText} · +${extraCount} más` : nextText;
         return { range, rangeExtra };
       };
       if (breakCount > 0) {
