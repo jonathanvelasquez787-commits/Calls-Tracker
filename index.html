@@ -685,16 +685,23 @@
       mask-image: linear-gradient(to right, black calc(100% - 28px), transparent 100%);
     }
 
+    /* Pedido del usuario: los chips del header (Estado/"No iniciado", ACW en
+       vivo, y "Día activo" — este último via .summary-pill más abajo, mismo
+       pedido) se veían más grandes que las pastillas chicas de "Ganancias
+       de hoy" (.tag: padding 6px 9px, font-size 11px). Se igualan a ese
+       mismo tamaño para que todo el conjunto de pastillas de la app se vea
+       consistente — antes .chip usaba su propio tamaño más grande (8px 12px
+       / 13px), sin relación con .tag. */
     .chip {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
+      gap: 6px;
+      padding: 6px 9px;
       border-radius: 999px;
       background: rgba(255,255,255,.04);
       border: 1px solid var(--line);
       color: var(--text);
-      font-size: 13px;
+      font-size: 11px;
       flex-shrink: 0;
       white-space: nowrap;
     }
@@ -1463,19 +1470,23 @@
        .chip — sin eso, en viewports angostos se podía comprimir y su
        contenido ("Día activo" + el date-picker) terminaba viéndose partido
        en vez de mantenerse como una sola unidad en una sola línea.
-       flex-wrap:nowrap explícito lo fija como bloque, igual que un .chip. */
+       flex-wrap:nowrap explícito lo fija como bloque, igual que un .chip.
+       Pedido del usuario (achicar pastillas del header): mismo tamaño que
+       .tag (padding 6px 9px, font-size 11px, border-radius 999px) — antes
+       tenía su propio tamaño más grande (10px 12px / 13px / 16px), sin
+       relación con el resto de las pastillas de la app. */
     .summary-pill {
-      padding: 10px 12px;
-      border-radius: 16px;
+      padding: 6px 9px;
+      border-radius: 999px;
       border: 1px solid var(--line);
       background: rgba(255,255,255,.03);
       color: var(--text);
-      font-size: 13px;
+      font-size: 11px;
       display: flex;
       flex-wrap: nowrap;
       flex-shrink: 0;
       justify-content: space-between;
-      gap: 10px;
+      gap: 6px;
     }
 
     /* Pedido del usuario (v192): Iniciar shift/Break/Lunch (antes su propia
@@ -1551,7 +1562,12 @@
        date-picker nativo del sistema operativo al tocarlo. color-scheme:dark
        hace que ese picker nativo (y el ícono de calendario del propio input)
        se rendericen en modo oscuro en los navegadores que lo soportan, en
-       vez del blanco por defecto que desentonaría con el resto del tablero. */
+       vez del blanco por defecto que desentonaría con el resto del tablero.
+       max-width ajustado a 128px (antes 150px) — hereda font-size vía
+       `font: inherit` desde .summary-pill, que bajó de 13px a 11px (pedido
+       de achicar las pastillas del header), así que el texto de la fecha ya
+       ocupa menos ancho real y el tope se acompaña para no dejar espacio de
+       sobra sin usar. */
     #daySelector {
       border: 0;
       outline: none;
@@ -1560,7 +1576,7 @@
       font: inherit;
       font-weight: 800;
       color-scheme: dark;
-      max-width: 150px;
+      max-width: 128px;
     }
 
     /* Pedido del usuario: flechitas ‹/› junto a "Día activo" para moverse un
@@ -1569,20 +1585,23 @@
        ubicar el mes, elegir el día). Mismo patrón visual compacto que ya
        usan otros botones pequeños de la app (ej. .week-nav button), pero
        más chico para caber dentro de .summary-pill sin romper su layout de
-       una sola línea. */
+       una sola línea. Achicado (26px→22px, 14px→12px) junto con
+       .summary-pill (pedido de achicar las pastillas del header al tamaño
+       de .tag) para mantener la misma proporción de antes entre el pill y
+       sus botones internos. */
     .day-nav-btn {
       flex: 0 0 auto;
-      width: 26px;
-      height: 26px;
+      width: 22px;
+      height: 22px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       border: 1px solid var(--line);
       background: rgba(255,255,255,.05);
       color: var(--text);
-      border-radius: 8px;
+      border-radius: 7px;
       font-weight: 900;
-      font-size: 14px;
+      font-size: 12px;
       line-height: 1;
       cursor: pointer;
       padding: 0;
@@ -3230,18 +3249,26 @@
         -webkit-mask-image: none;
         mask-image: none;
       }
-      .chip { padding: 6px 10px; font-size: 11.5px; }
+      /* Pedido del usuario (achicar pastillas del header al tamaño de
+         .tag): el desktop de .chip ya bajó a 6px 9px / 11px — este override
+         mobile, que antes era casi del mismo tamaño que ese desktop viejo
+         más grande (6px 10px / 11.5px), se compacta un poco más para seguir
+         siendo la versión más chica en pantallas angostas, no casi idéntica
+         al desktop nuevo. */
+      .chip { padding: 5px 8px; font-size: 10.5px; }
       /* Pedido del usuario: "Día activo" (.summary-pill) se quedaba en su
          propio tamaño de escritorio en mobile — mientras el chip de Estado
          (.chip, arriba) ya se compactaba, .summary-pill nunca tuvo su propio
-         ajuste mobile, así que junto con sus botones ‹/› (26px) y el
-         date-picker (max-width 150px) terminaba siendo mucho más ancho que
-         "No iniciado" y no cabían los dos en la misma fila. Se compacta al
-         mismo tamaño (mismo padding/font-size que .chip) para que quepan
-         lado a lado. */
-      .summary-pill { padding: 6px 8px; font-size: 11.5px; gap: 5px; border-radius: 12px; }
-      .day-nav-btn { width: 20px; height: 20px; font-size: 11px; border-radius: 6px; }
-      #daySelector { max-width: 92px; }
+         ajuste mobile, así que junto con sus botones ‹/› y el date-picker
+         terminaba siendo mucho más ancho que "No iniciado" y no cabían los
+         dos en la misma fila. Se compacta al mismo tamaño (mismo padding/
+         font-size que .chip) para que quepan lado a lado. Actualizado junto
+         con el desktop (que bajó a 6px 9px / 11px / 999px, tamaño de .tag):
+         este mobile se compacta un poco más para seguir siendo la versión
+         más chica en pantallas angostas. */
+      .summary-pill { padding: 5px 7px; font-size: 10.5px; gap: 4px; border-radius: 999px; }
+      .day-nav-btn { width: 18px; height: 18px; font-size: 10px; border-radius: 6px; }
+      #daySelector { max-width: 82px; }
       /* Pedido del usuario (v192): en mobile, .chips ya envuelve (flex-wrap)
          — width:100% fuerza que el grupo de botones chicos rompa a su
          propia línea en vez de intentar caber junto a Estado/Día activo en
