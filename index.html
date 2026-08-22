@@ -3551,39 +3551,12 @@
 </div>
 </section>
 
-<section class="card span-12" id="callsSection">
-<div class="section-title">
-<div>
-<h2>Llamadas</h2>
-<p>Inicia una llamada, pega tu exportación de Propio o agrega una manual.</p>
-</div>
-</div>
-
-<div class="controls-grid">
-<button class="action-btn" id="callControlBtn" type="button" data-accent="pink">
-<span class="action-ripple"></span>
-<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📞</span></span>
-<span class="action-label" id="callControlLabel">Iniciar llamada</span>
-<span class="action-sub" id="callControlTimer">00:00:00</span>
-</button>
-<button class="action-btn" id="pasteCallsBtn" type="button" data-accent="cyan"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📋</span></span><span class="action-label">Pegar Llamadas</span><span class="action-sub">Importar data</span></button>
-<button class="action-btn" id="addCallManualBtn" type="button" data-accent="good"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">➕</span></span><span class="action-label">Agregar llamada</span><span class="action-sub">Manual</span></button>
-</div>
-</section>
-
-<details class="accordion-card" id="todayShiftAccordion" open>
-<summary>
-  <div class="accordion-head">
-    <h2>Turno de Hoy</h2>
-    <p>Shift, Break, Lunch y ACW — resumen rápido contra lo planeado.</p>
-  </div>
-  <div class="accordion-chevron">⌄</div>
-</summary>
-<div class="accordion-body">
-  <div id="blockSummaryStrip"></div>
-</div>
-</details>
-
+<!-- Pedido del usuario (v199): "Ganancias de hoy" sube arriba de "Llamadas"
+     — es lo primero que el usuario quiere ver al entrar (cuánto llevo),
+     mientras que Llamadas son botones de acción que se usan varias veces
+     al día, no la primera respuesta que se busca de un vistazo. Mismo
+     bloque de siempre, solo reordenado — ningún id cambió, así que
+     renderHeader() sigue actualizándolo exactamente igual. -->
 <!-- Pedido del usuario: "Ganancias de hoy" debe ser expandible y abrir
      expandida por defecto — antes era una tarjeta fija (`section.card`),
      mismo patrón que ya usan "Ganancias del ciclo"/"Bloques del día" (ver
@@ -3634,6 +3607,39 @@
 </div>
 </details>
 
+<section class="card span-12" id="callsSection">
+<div class="section-title">
+<div>
+<h2>Llamadas</h2>
+<p>Inicia una llamada, pega tu exportación de Propio o agrega una manual.</p>
+</div>
+</div>
+
+<div class="controls-grid">
+<button class="action-btn" id="callControlBtn" type="button" data-accent="pink">
+<span class="action-ripple"></span>
+<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📞</span></span>
+<span class="action-label" id="callControlLabel">Iniciar llamada</span>
+<span class="action-sub" id="callControlTimer">00:00:00</span>
+</button>
+<button class="action-btn" id="pasteCallsBtn" type="button" data-accent="cyan"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📋</span></span><span class="action-label">Pegar Llamadas</span><span class="action-sub">Importar data</span></button>
+<button class="action-btn" id="addCallManualBtn" type="button" data-accent="good"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">➕</span></span><span class="action-label">Agregar llamada</span><span class="action-sub">Manual</span></button>
+</div>
+</section>
+
+<details class="accordion-card" id="todayShiftAccordion" open>
+<summary>
+  <div class="accordion-head">
+    <h2>Turno de Hoy</h2>
+    <p>Shift, Break, Lunch y ACW — resumen rápido contra lo planeado.</p>
+  </div>
+  <div class="accordion-chevron">⌄</div>
+</summary>
+<div class="accordion-body">
+  <div id="blockSummaryStrip"></div>
+</div>
+</details>
+
 <div class="day-stats-grid" id="dayStatsGrid">
 <details class="accordion-card" id="resumenDiaAccordion" open>
 <summary>
@@ -3649,6 +3655,19 @@
 <div class="stat-cell"><span class="stat-label">ACW</span><span class="stat-value" id="resumenDiaACW">00:00:00</span><span class="stat-sub">Tiempo extra</span></div>
 <div class="stat-cell"><span class="stat-label">Adherencia</span><span class="stat-value" id="resumenDiaAdherencia">—</span><span class="stat-sub" id="resumenDiaAdherenciaGoal">Objetivo ≥ 95%</span></div>
 </div>
+<!-- Pedido del usuario (v199): desglose de tiempo no-llamada (Break/Lunch/
+     Otro, ya calculados por importedCallStats() para los tags de "Ganancias
+     de hoy"/Tabla de llamadas, pero sin lugar propio en "Resumen del día")
+     + el bono de Higher Rate ganado hoy (antes solo visible mezclado dentro
+     del monto total de Ganancias). Segunda fila del mismo componente
+     .stats-row — mismo estilo/responsive que la fila de arriba, sin CSS
+     nuevo. -->
+<div class="stats-row" style="margin-top:10px;">
+<div class="stat-cell"><span class="stat-label">Break</span><span class="stat-value" id="resumenDiaBreak">00:00:00</span><span class="stat-sub">Tiempo tomado</span></div>
+<div class="stat-cell"><span class="stat-label">Lunch</span><span class="stat-value" id="resumenDiaLunch">00:00:00</span><span class="stat-sub">Tiempo tomado</span></div>
+<div class="stat-cell"><span class="stat-label">Otro</span><span class="stat-value" id="resumenDiaOtro">00:00:00</span><span class="stat-sub">Sin clasificar</span></div>
+<div class="stat-cell"><span class="stat-label">Higher Rate</span><span class="stat-value" id="resumenDiaHigherRate">$0.00</span><span class="stat-sub">Bono ganado hoy</span></div>
+</div>
 </div>
 </details>
 <details class="accordion-card" id="statsAccordion" open>
@@ -3663,6 +3682,14 @@
 <div class="stats-list-row"><span>Más corta:</span><strong id="statsShortest">—</strong></div>
 <div class="stats-list-row"><span>Más larga:</span><strong id="statsLongest">—</strong></div>
 <div class="stats-list-row"><span>Promedio:</span><strong id="statsAvg">—</strong></div>
+<!-- Pedido del usuario (v199): hueco más largo/promedio del día (ya
+     calculados por importedCallStats() como gapLongest/gapAvg, sin lugar
+     propio hasta ahora) + pago promedio por llamada (Ganancias ÷ Total de
+     llamadas, cálculo nuevo y chico). Mismo componente .stats-list-row que
+     ya usa esta tarjeta, sin CSS nuevo. -->
+<div class="stats-list-row"><span>Hueco más largo:</span><strong id="statsGapLongest">—</strong></div>
+<div class="stats-list-row"><span>Hueco promedio:</span><strong id="statsGapAvg">—</strong></div>
+<div class="stats-list-row"><span>Pago promedio/llamada:</span><strong id="statsAvgPay">—</strong></div>
 </div>
 </div>
 </details>
@@ -11795,6 +11822,22 @@ function renderDayStatsCards() {
   setText('statsShortest', dayCalls.length ? formatDuration(stats.shortest * 60000) : '—');
   setText('statsLongest', dayCalls.length ? formatDuration(stats.longest * 60000) : '—');
   setText('statsAvg', dayCalls.length ? formatDuration(stats.avg * 60000) : '—');
+
+  // Pedido del usuario (v199): desglose Break/Lunch/Otro + bono de Higher
+  // Rate en "Resumen del día" — mismos totales que ya calcula
+  // importedCallStats() para los tags de "Ganancias de hoy"/Tabla de
+  // llamadas, solo que sin lugar propio hasta ahora.
+  setText('resumenDiaBreak', formatDuration(stats.breakGapTotal * 60000));
+  setText('resumenDiaLunch', formatDuration(stats.lunchGapTotal * 60000));
+  setText('resumenDiaOtro', formatDuration(stats.otherGapTotal * 60000));
+  setText('resumenDiaHigherRate', money(stats.higherRateBonus || 0));
+
+  // Hueco más largo/promedio (ya calculados por importedCallStats()) + pago
+  // promedio por llamada (Ganancias ÷ Total de llamadas). '—' sin llamadas
+  // ese día, mismo criterio que Más corta/Más larga/Promedio de arriba.
+  setText('statsGapLongest', stats.gapLongest > 0 ? formatDuration(stats.gapLongest * 60000) : '—');
+  setText('statsGapAvg', stats.gapAvg > 0 ? formatDuration(stats.gapAvg * 60000) : '—');
+  setText('statsAvgPay', dayCalls.length ? money(stats.earnings / dayCalls.length) : '—');
 }
 
 function render() {
