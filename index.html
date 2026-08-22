@@ -1530,6 +1530,21 @@
       font-size: 9px;
     }
 
+    /* Pedido del usuario (v195): en estos 3 botones chicos del header
+       (Shift/Break/Lunch), el label y el sub deben verse SIEMPRE en blanco
+       — a diferencia de los botones grandes de "Llamadas" (.controls-grid),
+       que siguen usando el color de acento en reposo (var(--accent), pedido
+       explícito de v187). Selector con más especificidad que la regla base
+       `.action-label`/`.action-sub` (color: var(--accent)) por tener 2
+       clases en vez de 1, así gana sin importar el orden en la hoja de
+       estilos — sin necesitar !important. No pisa las reglas de
+       hover/pressed/active (ya fuerzan var(--text) = blanco también), solo
+       cambia el color de REPOSO de estos 3 botones en particular. */
+    .hero-shift-actions .action-btn .action-label,
+    .hero-shift-actions .action-btn .action-sub {
+      color: var(--text);
+    }
+
     /* Pedido del usuario: que "Día activo" se vea y se use como un
        calendario de verdad. El elemento pasó de <select> a
        <input type="date"> (ver HTML), que en navegadores mobile abre el
@@ -3216,6 +3231,36 @@
          de escritorio (sin efecto útil en una línea propia de ancho
          completo). */
       .hero-shift-actions { width: 100%; margin-left: 0; margin-top: 2px; }
+      /* Pedido del usuario (v195): en mobile, los 3 botones (Shift/Break/
+         Lunch) seguían siendo flex sin ancho repartido — cada uno crecía
+         según su PROPIO contenido (el label más largo, "Solo disponible
+         viendo 'Hoy'", empujaba ese botón más ancho que los otros 2), así
+         que el texto se apretaba desigual entre los tres y el sub-texto se
+         partía feo en 2-3 líneas. `flex: 1 1 0` fuerza los 3 al MISMO
+         ancho (ignora el contenido para repartir el espacio, todos parten
+         de base 0 y crecen igual) — mismo criterio que ya usa
+         `.controls-grid` (3 columnas iguales) para los botones grandes de
+         Llamadas, solo que aquí con flexbox en vez de grid porque el
+         contenedor ya es flex desde escritorio. `min-width: 0` es
+         necesario para que un botón flex pueda encogerse por debajo del
+         ancho de su contenido más largo — sin esto, flex-shrink no alcanza
+         a comprimir un texto largo y el navegador lo desborda igual.
+         Fuente un poco más chica + line-height más ajustado SOLO aquí (no
+         se toca el tamaño de escritorio) para que el sub-texto de 2 líneas
+         se vea prolijo en vez de amontonado. */
+      .hero-shift-actions .action-btn {
+        flex: 1 1 0;
+        min-width: 0;
+        padding: 6px 4px;
+      }
+      .hero-shift-actions .action-btn .action-label {
+        font-size: 9.5px;
+        line-height: 1.15;
+      }
+      .hero-shift-actions .action-btn .action-sub {
+        font-size: 8px;
+        line-height: 1.25;
+      }
       .goal-stack { justify-items: start; }
       .goal-pair { justify-content: flex-start; }
       .table-mobile-list { display: grid; }
