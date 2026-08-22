@@ -863,6 +863,9 @@
     }
 
     .block-summary-card {
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
       border-radius: 14px;
       border: 1.5px solid rgba(var(--bsc-rgb), .35);
       background: rgba(var(--bsc-rgb), .07);
@@ -870,6 +873,33 @@
       display: grid;
       gap: 5px;
       min-width: 0;
+    }
+
+    /* Pedido del usuario: relleno tipo "líquido" que crece de izquierda a
+       derecha según el % de cada tarjeta (Shift/Break/Lunch/ACW), con el
+       mismo color sólido que ya usan los botones de Controles al hacer
+       hover (rgb(var(--bsc-rgb)), el acento saturado de cada tarjeta, no la
+       versión pálida de fondo en reposo). Opacidad .38 en vez de 100% para
+       que el texto (ícono/nombre/rango/%) se siga leyendo con claridad
+       tanto donde el relleno ya pasó como donde todavía no llega. `width`
+       se pinta inline en el JS con el mismo `pct` que ya calcula cada
+       tarjeta — mismo dato que ya alimenta la barra fina de abajo
+       (bsc-progress-track), ahora también como fondo de toda la tarjeta. */
+    .block-summary-card .bsc-fill {
+      position: absolute;
+      inset: 0;
+      width: 0%;
+      background: rgb(var(--bsc-rgb));
+      opacity: .38;
+      transition: width .5s cubic-bezier(.22, .85, .4, 1);
+      z-index: 0;
+    }
+
+    .block-summary-card .bsc-top,
+    .block-summary-card .bsc-range,
+    .block-summary-card .bsc-progress-row {
+      position: relative;
+      z-index: 1;
     }
 
     .block-summary-card .bsc-top {
@@ -10760,6 +10790,7 @@ function renderBlockSummaryStrip(cards) {
     const pct = Math.max(0, Math.min(100, Number(c.pct) || 0));
     return `
       <div class="block-summary-card" data-accent="${escapeHtml(c.accent)}">
+        <div class="bsc-fill" style="width:${pct}%"></div>
         <div class="bsc-top">
           <span class="bsc-icon">${c.icon}</span>
           <span class="bsc-name">${escapeHtml(c.name)}</span>
