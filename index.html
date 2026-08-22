@@ -1032,8 +1032,26 @@
     }
 
     @media (max-width: 760px) {
-      .block-summary-strip { grid-template-columns: repeat(2, 1fr); gap: 6px; }
-      .block-summary-card { padding: 8px 9px; border-radius: 12px; }
+      /* Pedido del usuario (v191): antes de v190, este grid tenía 4
+         tarjetas (Shift+Break+Lunch+ACW) y el 2x2 en mobile tenía sentido
+         (2 filas parejas). Desde que Shift se separó a su propia fila
+         (v190), solo quedan 3 tarjetas aquí — 2+1 dejaba una sola tarjeta
+         huérfana en su propia fila, en vez de las 3 en una sola línea que
+         ya se ven bien en escritorio. Se fuerza 3 columnas también en
+         mobile (en vez de heredar el auto-fit de la regla base, que con
+         minmax(128px,1fr) no cabe 3 en una pantalla angosta) y se
+         compacta más la tipografía/padding de cada tarjeta para que quepan
+         sin desbordar. Todo acotado con el selector `.block-summary-strip
+         .block-summary-card` (no `.block-summary-card` a secas) — la
+         tarjeta de Shift vive en `.block-summary-shift-row`, un contenedor
+         DISTINTO, así que este achique no debe tocarla ni de casualidad. */
+      .block-summary-strip { grid-template-columns: repeat(3, 1fr); gap: 5px; }
+      .block-summary-strip .block-summary-card { padding: 7px 6px; border-radius: 11px; gap: 4px; }
+      .block-summary-strip .block-summary-card .bsc-icon { font-size: 11px; }
+      .block-summary-strip .block-summary-card .bsc-name { font-size: 10px; }
+      .block-summary-strip .block-summary-card .bsc-range { font-size: 9px; }
+      .block-summary-strip .block-summary-card .bsc-pct { font-size: 9px; }
+      .block-summary-strip .block-summary-card .bsc-progress-track { height: 5px; }
       .block-summary-card-shift { padding: 12px 14px; border-radius: 14px; }
     }
 
