@@ -3071,11 +3071,27 @@
       margin: 16px 0;
     }
 
+    /* Bug reportado por el usuario: a diferencia de .chips/.hero-actions
+       (que ya usan flex-wrap:nowrap + scroll horizontal con la barra nativa
+       oculta para evitar desbordar la página en pantallas angostas), esta
+       clase usaba display:flex sin ningún tope — en celulares muy angostos
+       (~320-360px) el ancho sumado de "‹ Anterior"/"Ciclo actual"/
+       "Siguiente ›" (o sus equivalentes de Resumen semanal/Semana
+       específica) no cabía y podía forzar scroll horizontal de TODA la
+       página. Se aplica aquí el mismo patrón ya usado en esas 2 clases —
+       una sola regla compartida por los 3 lugares que usan .week-nav
+       (#cycleAccordion, #weekSummaryAccordion, #scheduleWeekNav). */
     .week-nav {
       display: flex;
       align-items: center;
       gap: 6px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
     }
+
+    .week-nav::-webkit-scrollbar { display: none; }
 
     .week-nav button {
       border: 1px solid var(--line);
@@ -3086,6 +3102,8 @@
       font-weight: 800;
       font-size: 12.5px;
       cursor: pointer;
+      flex-shrink: 0;
+      white-space: nowrap;
     }
 
     .week-nav button:hover { filter: brightness(1.1); }
@@ -3259,6 +3277,45 @@
       }
       .hero-shift-actions .action-btn .action-sub {
         font-size: 8px;
+        line-height: 1.25;
+      }
+      /* Pedido del usuario: los 3 botones grandes de "Llamadas"
+         (.controls-grid — Iniciar llamada/Pegar Llamadas/Agregar llamada)
+         ya reparten el ancho parejo con grid-template-columns:
+         repeat(3, minmax(0,1fr)) (no tenían el bug de .hero-shift-actions
+         antes de compactarlo, que era flex sin reparto), pero nunca
+         recibieron el mismo ajuste de fuente/padding para mobile que sí se
+         le dio a .hero-shift-actions en v195 — en pantallas angostas el
+         texto se veía más grande/apretado que el resto de los botones ya
+         pulidos. Se compacta un poco (gap, padding, tipografía) SOLO en
+         mobile, con valores intermedios entre el tamaño grande de
+         escritorio (.action-btn base: min-height 58px, label 12.5px, sub
+         10.5px, icono 16px) y el chico del header (label 9.5px, sub 8px) —
+         siguen siendo notablemente más grandes que los del header, solo
+         menos apretados que antes. Selector scoped a
+         `.controls-grid .action-btn` (no `.action-btn` a secas) para no
+         tocar ningún otro botón que reutilice ese mismo componente. */
+      .controls-grid {
+        gap: 6px;
+      }
+      .controls-grid .action-btn {
+        min-height: 52px;
+        padding: 11px 6px 9px;
+        gap: 4px;
+      }
+      .controls-grid .action-btn .action-icon-wrap {
+        width: 24px;
+        height: 24px;
+      }
+      .controls-grid .action-btn .action-icon {
+        font-size: 14px;
+      }
+      .controls-grid .action-btn .action-label {
+        font-size: 11px;
+        line-height: 1.2;
+      }
+      .controls-grid .action-btn .action-sub {
+        font-size: 9.5px;
         line-height: 1.25;
       }
       .goal-stack { justify-items: start; }
@@ -3736,7 +3793,13 @@
 </div>
 </div>
 <div class="goal-fields">
-<div class="field" style="flex:1 1 100%;">
+<!-- Bug reportado por el usuario: este campo usaba flex:1 1 100% para
+     ocupar las 2 columnas de .goal-fields, pero .goal-fields es
+     display:grid (no flex) — flex-basis/flex-grow no hacen nada en un
+     grid item, así que el campo quedaba encogido en la 1ra columna,
+     dejando la 2da vacía. grid-column: 1 / -1 es la forma correcta de
+     ocupar el ancho completo dentro de un grid. -->
+<div class="field" style="grid-column: 1 / -1;">
 <label for="currencyLabelInput">Moneda secundaria (símbolo o código)</label>
 <input id="currencyLabelInput" maxlength="6" placeholder="Ej. L, HNL, MXN..." type="text"/>
 </div>
@@ -3790,7 +3853,10 @@
 </div>
 <div class="day-tabs" id="scheduleDayTabs"></div>
 <div class="goal-fields">
-<div class="field" style="flex:1 1 100%;">
+<!-- Mismo bug/fix que currencyLabelInput arriba: flex:1 1 100% no
+     hace nada dentro de .goal-fields (display:grid) — grid-column: 1 / -1
+     es la forma correcta de ocupar el ancho completo. -->
+<div class="field" style="grid-column: 1 / -1;">
 <label style="display:flex; align-items:center; gap:8px;"><input id="dayOffInput" type="checkbox"/> Día libre (sin turno)</label>
 </div>
 </div>
