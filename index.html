@@ -1489,32 +1489,37 @@
        1 id) sin importar el orden en la hoja, así que no hace falta
        tocar esa regla existente. */
     @media (min-width: 1201px) {
+      /* Bug reportado por el usuario (v178, con captura): el fix de v177
+         (align-self:start + height:fit-content en los hijos) evitaba que
+         "Ganancias del ciclo" se ESTIRARA hasta la altura de "Controles",
+         pero el hueco vacío en la página seguía ahí exactamente igual —
+         solo dejó de estar DENTRO de la tarjeta corta y pasó a ser espacio
+         en blanco AL LADO de ella. Causa raíz real: "Controles" (2 filas de
+         3 botones) es estructuralmente más alto que "Ganancias del ciclo"
+         (nav + monto + 3 tags) en prácticamente cualquier estado — ninguna
+         técnica de alineación (align-items/align-self/height:fit-content)
+         elimina un hueco que nace de emparejar 2 columnas de alturas muy
+         distintas en la misma fila; solo decide DÓNDE vive ese hueco (en la
+         tarjeta corta, estirándola, o al lado de ella, como espacio vacío
+         del contenedor). La única forma de que el hueco desaparezca de
+         verdad es dejar de emparejar ambas tarjetas en la misma fila. Fix:
+         se quita el grid de 2 columnas — "Ganancias del ciclo" y
+         "Controles" pasan a apilarse, cada una a ancho completo (mismo
+         patrón que el resto de secciones de escritorio, 1200px centrado),
+         una debajo de la otra. Sin 2 columnas que emparejar, no hay alturas
+         que igualar ni hueco que esconder. */
       #cycleControlsGrid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
+        grid-template-columns: 1fr;
+        gap: 14px;
         max-width: 1200px;
         margin: 0 auto 14px;
-        align-items: start;
       }
       #cycleControlsGrid #cycleAccordion,
       #cycleControlsGrid #controlsSection {
         max-width: none;
         width: 100%;
         margin: 0;
-        /* Bug reportado por el usuario (v177): "Ganancias del ciclo" se veía
-           con un hueco vacío grande abajo, estirada hasta igualar la altura
-           de "Controles" (la tarjeta más alta de las dos, por sus 2 filas de
-           botones) — pese a que el grid padre ya declara align-items:start
-           (pensado para evitar justo este estirado). height:fit-content +
-           align-self:start es el override más explícito y directo posible
-           para el tamaño de un ítem de grid — no depende de cómo el
-           navegador termine resolviendo el alto del track a partir de
-           align-items en el contenedor, fuerza a esta tarjeta a medir
-           exactamente lo que su propio contenido necesita, sin importar qué
-           tan alta sea la columna vecina. */
-        align-self: start;
-        height: fit-content;
       }
     }
 
@@ -2433,6 +2438,41 @@
       overflow: hidden;
     }
 
+    /* Bug reportado por el usuario (v179, con captura): "Ganancias de hoy"
+       tocaba directamente con "Resumen del día"/"Estadísticas del día", sin
+       ningún espacio entre ambas tarjetas. Causa raíz: `.app` (el
+       contenedor de TODAS las secciones top-level: hero, Ganancias de hoy,
+       Resumen del día+Estadísticas, Ganancias del ciclo+Controles, Bloques
+       del día, Tabla de llamadas+Resumen semanal) es un bloque normal, sin
+       `gap` — el espacio entre secciones depende por completo del margen
+       propio de cada una. `.accordion-card` (arriba) declara `margin:0`
+       explícito, así que cualquier sección top-level que sea un
+       `.accordion-card` DIRECTO de `.app` (no envuelto en otro contenedor
+       con su propio margen) queda sin ningún espacio hacia la sección
+       siguiente. Esto afecta a 2 secciones concretas: `#earningsAccordion`
+       (Ganancias de hoy — toca contra `.day-stats-grid`, que sí tiene su
+       propio `margin-bottom:14px` pero eso solo da espacio DESPUÉS de sí
+       misma, no ANTES) y `#scheduleAccordion` (Bloques del día — mismo
+       problema contra `.grid`, que envuelve Tabla de llamadas/Resumen
+       semanal y tampoco tiene margen propio, solo `gap` interno entre sus 2
+       hijos). El resto de secciones (`.hero`, `.day-stats-grid`,
+       `#cycleControlsGrid`) ya tenían su propio `margin-bottom:14px`
+       explícito — por eso el hueco solo se notaba en estos 2 puntos. Fix:
+       mismo valor de espaciado (14px) que ya usan las demás secciones,
+       aplicado a estas 2 — sin tocar el resto de acordeones ANIDADOS
+       (`#resumenDiaAccordion`/`#statsAccordion` dentro de `.day-stats-grid`,
+       `#cycleAccordion`/`#controlsSection` dentro de `#cycleControlsGrid`,
+       `#callTableAccordion`/`#weekSummaryAccordion` dentro de `.grid`), que
+       ya reciben su espaciado del `gap`/margen de su propio contenedor
+       padre y no deben duplicarlo. Aplica en TODOS los anchos de pantalla
+       (no solo escritorio) — `.app` nunca tuvo gap propio en ningún
+       breakpoint, así que el mismo hueco faltante existía también en mobile
+       entre estas mismas 2 secciones, aunque no se había reportado antes. */
+    #earningsAccordion,
+    #scheduleAccordion {
+      margin-bottom: 14px;
+    }
+
     .accordion-card > summary {
       list-style: none;
       cursor: pointer;
@@ -3149,7 +3189,7 @@
 <details class="accordion-card" id="statsAccordion" open>
 <summary>
 <div class="accordion-head">
-<h2>📊 Estadísticas</h2>
+<h2>📊 Estadísticas del día</h2>
 </div>
 <div class="accordion-chevron">⌄</div>
 </summary>
