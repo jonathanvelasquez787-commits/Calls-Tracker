@@ -10983,6 +10983,7 @@ function renderBlockSummaryStrip(cards) {
           <span class="bsc-name">${escapeHtml(c.name)}</span>
         </div>
         <div class="bsc-range">${escapeHtml(c.range)}</div>
+        ${c.rangeExtra ? `<div class="bsc-range" style="opacity:.7;">${escapeHtml(c.rangeExtra)}</div>` : ''}
         <div class="bsc-progress-row">
           <div class="bsc-progress-track"><div style="width:${pct}%"></div></div>
           <span class="bsc-pct">${Math.round(pct)}%</span>
@@ -11100,6 +11101,17 @@ function renderSchedule() {
       // nada nuevo); las tarjetas Break/Lunch se arman después del loop.
       let breakPlannedMin = 0, breakFilledMin = 0, breakCount = 0;
       let lunchPlannedMin = 0, lunchFilledMin = 0, lunchCount = 0;
+      // Pedido del usuario (v193): la tarjeta agregada de Break/Lunch en
+      // "Turno de Hoy" antes solo mostraba "Total: HH:MM:SS" (duración
+      // sumada) — sin ninguna hora. Se guarda aquí el start/end PLANEADO de
+      // cada bloque individual de ese tipo (mismo horario efectivo que ya
+      // usa el resto del día, ver getEffectiveScheduleForDay()) para armar
+      // el rango tipo "8:00 – 8:10 AM" del primero, y una segunda línea
+      // "Siguiente: 10:00 – 10:10 AM" si hay más de un bloque ese día —
+      // mismo criterio de horas PLANEADAS (no reales) que ya usa la
+      // tarjeta de Shift para su propio rango.
+      const breakBlockTimes = [];
+      const lunchBlockTimes = [];
 
       const slotRows = plannedSlots.map((slot, slotIdx) => {
         const s = toMinutes(slot.start), e = toMinutes(slot.end);
@@ -11112,10 +11124,12 @@ function renderSchedule() {
           breakPlannedMin += stats.durationMin;
           breakFilledMin += stats.filledMin;
           breakCount++;
+          breakBlockTimes.push({ start: slot.start, end: slot.end });
         } else if (slot.type === 'Lunch') {
           lunchPlannedMin += stats.durationMin;
           lunchFilledMin += stats.filledMin;
           lunchCount++;
+          lunchBlockTimes.push({ start: slot.start, end: slot.end });
         }
         // Bug reportado por el usuario: un día PASADO sin ningún registro (ni
         // turno ni llamadas, shiftStart null) caía en 'Próximo' — el único
@@ -11286,21 +11300,39 @@ function renderSchedule() {
       // Se omite la tarjeta por completo si ese día no tiene ningún bloque
       // de ese tipo (breakCount/lunchCount === 0) — sin bloques que
       // resumir, no hay nada que mostrar.
+      // Pedido del usuario (v193): el rango ya no dice "Total: HH:MM:SS" —
+      // muestra la hora de inicio/fin del PRIMER bloque de ese tipo (mismo
+      // formato que ya usa la tarjeta de Shift, horas planeadas), y si hay
+      // un segundo bloque ese día (ej. Break 1 y Break 2), una segunda
+      // línea "Siguiente: X – Y" con ese. Un tercer bloque en adelante no
+      // se lista aparte (poco frecuente, y la tarjeta ya no tiene espacio
+      // para más líneas sin verse apretada) — sigue contando para el % y el
+      // total ponderado igual que antes.
+      const rangeWithNext = (blocks) => {
+        if (!blocks.length) return { range: '', rangeExtra: '' };
+        const range = `${timeLabel(blocks[0].start)} – ${timeLabel(blocks[0].end)}`;
+        const rangeExtra = blocks.length > 1 ? `Siguiente: ${timeLabel(blocks[1].start)} – ${timeLabel(blocks[1].end)}` : '';
+        return { range, rangeExtra };
+      };
       if (breakCount > 0) {
+        const { range, rangeExtra } = rangeWithNext(breakBlockTimes);
         summaryCards.push({
           name: 'Break',
           icon: '☕',
           accent: 'warn',
-          range: `Total: ${formatDuration(breakPlannedMin * 60000)}`,
+          range,
+          rangeExtra,
           pct: breakPlannedMin > 0 ? Math.min(100, (breakFilledMin / breakPlannedMin) * 100) : 0,
         });
       }
       if (lunchCount > 0) {
+        const { range, rangeExtra } = rangeWithNext(lunchBlockTimes);
         summaryCards.push({
           name: 'Lunch',
           icon: '🍽️',
           accent: 'blue',
-          range: `Total: ${formatDuration(lunchPlannedMin * 60000)}`,
+          range,
+          rangeExtra,
           pct: lunchPlannedMin > 0 ? Math.min(100, (lunchFilledMin / lunchPlannedMin) * 100) : 0,
         });
       }
