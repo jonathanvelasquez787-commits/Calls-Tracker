@@ -1838,6 +1838,16 @@
       display: grid;
       gap: 3px;
     }
+    /* Pedido del usuario (v200): envuelve valor+sub en su propio contenedor
+       para poder reacomodarlos como bloque único al lado del label en
+       mobile (ver el media query de abajo), sin duplicar el HTML por
+       breakpoint. En escritorio/tablet se comporta idéntico a antes (grid
+       de 1 columna, mismo gap:3px entre value y sub que ya tenía
+       .stat-cell entre sus 3 hijos). */
+    .stat-value-wrap {
+      display: grid;
+      gap: 3px;
+    }
     .stat-cell .stat-label {
       color: var(--muted);
       font-size: 12px;
@@ -3203,6 +3213,27 @@
       .stat-cell .stat-label { font-size: 11px; }
       .stat-cell .stat-sub { font-size: 10px; }
       .stats-row { gap: 10px 8px; }
+      /* Pedido del usuario (v200): en mobile, "Resumen del día" (Llamadas/
+         Productivo/ACW/Adherencia/Break/Lunch/Otro/Higher Rate) se veía con
+         el label arriba y el valor+sub abajo, apilados — mucho espacio
+         vertical para poco dato. Se cambia SOLO en este breakpoint a fila:
+         label a la izquierda, valor+sub (ya agrupados en .stat-value-wrap,
+         ver esa clase arriba) a la derecha, alineado a la derecha — mismo
+         patrón visual que .stats-list-row (Más corta/Más larga/Promedio),
+         que ya usa label izquierda/valor derecha en una sola línea.
+         align-items:baseline en vez de center para que el label (más chico)
+         y el valor grande no se vean descentrados verticalmente entre sí. */
+      .stat-cell {
+        display: flex;
+        flex-direction: row;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .stat-value-wrap {
+        text-align: right;
+        justify-items: end;
+      }
       .goal-fields { grid-template-columns: 1fr; }
       .alert-fields-row { grid-template-columns: 1fr; }
       .hero, .card, .table-card, .list-card, .mini { padding: 14px; }
@@ -3650,10 +3681,10 @@
 </summary>
 <div class="accordion-body">
 <div class="stats-row">
-<div class="stat-cell"><span class="stat-label">Llamadas</span><span class="stat-value" id="resumenDiaLlamadas">0</span><span class="stat-sub">Total</span></div>
-<div class="stat-cell"><span class="stat-label">Productivo</span><span class="stat-value" id="resumenDiaProductivo">00:00:00</span><span class="stat-sub">Tiempo real</span></div>
-<div class="stat-cell"><span class="stat-label">ACW</span><span class="stat-value" id="resumenDiaACW">00:00:00</span><span class="stat-sub">Tiempo extra</span></div>
-<div class="stat-cell"><span class="stat-label">Adherencia</span><span class="stat-value" id="resumenDiaAdherencia">—</span><span class="stat-sub" id="resumenDiaAdherenciaGoal">Objetivo ≥ 95%</span></div>
+<div class="stat-cell"><span class="stat-label">Llamadas</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaLlamadas">0</span><span class="stat-sub">Total</span></div></div>
+<div class="stat-cell"><span class="stat-label">Productivo</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaProductivo">00:00:00</span><span class="stat-sub">Tiempo real</span></div></div>
+<div class="stat-cell"><span class="stat-label">ACW</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaACW">00:00:00</span><span class="stat-sub">Tiempo extra</span></div></div>
+<div class="stat-cell"><span class="stat-label">Adherencia</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaAdherencia">—</span><span class="stat-sub" id="resumenDiaAdherenciaGoal">Objetivo ≥ 95%</span></div></div>
 </div>
 <!-- Pedido del usuario (v199): desglose de tiempo no-llamada (Break/Lunch/
      Otro, ya calculados por importedCallStats() para los tags de "Ganancias
@@ -3663,10 +3694,10 @@
      .stats-row — mismo estilo/responsive que la fila de arriba, sin CSS
      nuevo. -->
 <div class="stats-row" style="margin-top:10px;">
-<div class="stat-cell"><span class="stat-label">Break</span><span class="stat-value" id="resumenDiaBreak">00:00:00</span><span class="stat-sub">Tiempo tomado</span></div>
-<div class="stat-cell"><span class="stat-label">Lunch</span><span class="stat-value" id="resumenDiaLunch">00:00:00</span><span class="stat-sub">Tiempo tomado</span></div>
-<div class="stat-cell"><span class="stat-label">Otro</span><span class="stat-value" id="resumenDiaOtro">00:00:00</span><span class="stat-sub">Sin clasificar</span></div>
-<div class="stat-cell"><span class="stat-label">Higher Rate</span><span class="stat-value" id="resumenDiaHigherRate">$0.00</span><span class="stat-sub">Bono ganado hoy</span></div>
+<div class="stat-cell"><span class="stat-label">Break</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaBreak">00:00:00</span><span class="stat-sub">Tiempo tomado</span></div></div>
+<div class="stat-cell"><span class="stat-label">Lunch</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaLunch">00:00:00</span><span class="stat-sub">Tiempo tomado</span></div></div>
+<div class="stat-cell"><span class="stat-label">Otro</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaOtro">00:00:00</span><span class="stat-sub">Sin clasificar</span></div></div>
+<div class="stat-cell"><span class="stat-label">Higher Rate</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaHigherRate">$0.00</span><span class="stat-sub">Bono ganado hoy</span></div></div>
 </div>
 </div>
 </details>
