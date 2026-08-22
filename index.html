@@ -441,6 +441,98 @@
         color: #fff;
         background: var(--pink);
       }
+      /* Pedido del usuario (v208): en tema claro, el texto de TODOS los
+         botones de la app pasa a blanco al hacer hover/tap o cuando el
+         botón queda en un estado "activo" (día seleccionado, nivel
+         elegido de .rate-tile, botón .action-btn en curso...) — antes
+         cada botón heredaba su propio criterio (texto de acento, texto
+         oscuro, sin cambio alguno), inconsistente entre secciones. Donde
+         el fondo de reposo/hover ya era claro (botones secundarios tipo
+         Horario/Editar/‹›/Cancelar), se oscurece también ese fondo
+         (mismo sólido oscuro que ya usan los botones "primary" de cada
+         modal, var(--text)) para que el blanco se siga leyendo — sin eso
+         el texto blanco quedaría invisible sobre un fondo casi blanco.
+         Donde el fondo de hover/activo YA es un color sólido saturado
+         (relleno de .action-btn, warn/bad de modales, Bronce/Silver/Gold
+         de .rate-tile), no hace falta oscurecer nada más, solo forzar el
+         texto a blanco. Solo modo claro — oscuro no se toca, ya usa
+         blanco en sus propios estados de hover/activo de por sí. */
+      :root:not(.theme-dark) .hero-action-btn:not(.danger):hover,
+      :root:not(.theme-dark) .hero-action-btn:not(.danger):focus-visible {
+        background: var(--text);
+        color: #fff;
+      }
+      :root:not(.theme-dark) .hero-action-btn.danger:hover {
+        background: rgb(var(--pink-rgb));
+        color: #fff;
+      }
+      :root:not(.theme-dark) .gap-edit-btn:hover {
+        background: var(--text);
+        color: #fff;
+      }
+      :root:not(.theme-dark) .day-nav-btn:hover,
+      :root:not(.theme-dark) .day-nav-btn:focus-visible {
+        background: var(--text);
+        color: #fff;
+      }
+      :root:not(.theme-dark) .week-nav button:hover {
+        background: var(--text);
+        color: #fff;
+      }
+      :root:not(.theme-dark) .day-tab.active {
+        background: var(--text);
+        border-color: var(--text);
+        color: #fff;
+      }
+      :root:not(.theme-dark) .modal-close:hover {
+        background: var(--text);
+        color: #fff;
+      }
+      :root:not(.theme-dark) .button-row button:hover,
+      :root:not(.theme-dark) .import-actions button:hover,
+      :root:not(.theme-dark) .footer-tools button:hover,
+      :root:not(.theme-dark) .modal-actions button:hover {
+        background: var(--text);
+        color: #fff;
+      }
+      :root:not(.theme-dark) .modal-actions button.warn:hover,
+      :root:not(.theme-dark) .button-row button.warn:hover {
+        background: rgb(var(--warn-rgb));
+        color: #fff;
+      }
+      :root:not(.theme-dark) .modal-actions button.bad:hover,
+      :root:not(.theme-dark) .button-row button.bad:hover {
+        background: rgb(var(--pink-rgb));
+        color: #fff;
+      }
+      :root:not(.theme-dark) .rate-tile:hover,
+      :root:not(.theme-dark) .rate-tile:focus-visible,
+      :root:not(.theme-dark) .rate-tile.selected {
+        background: var(--text);
+        border-color: var(--text);
+      }
+      :root:not(.theme-dark) .rate-tile:hover .rate-tile-amount,
+      :root:not(.theme-dark) .rate-tile:hover .rate-tile-label,
+      :root:not(.theme-dark) .rate-tile.selected .rate-tile-amount,
+      :root:not(.theme-dark) .rate-tile.selected .rate-tile-label {
+        color: #fff;
+      }
+      :root:not(.theme-dark) .emoji-option:hover,
+      :root:not(.theme-dark) .emoji-option.selected {
+        background: var(--text);
+        border-color: var(--text);
+      }
+      :root:not(.theme-dark) .emoji-option.emoji-clear:hover {
+        color: #fff;
+      }
+      :root:not(.theme-dark) .action-btn:hover .action-label,
+      :root:not(.theme-dark) .action-btn.is-pressed .action-label,
+      :root:not(.theme-dark) .action-btn:hover .action-sub,
+      :root:not(.theme-dark) .action-btn.is-pressed .action-sub,
+      :root:not(.theme-dark) .action-btn.is-active .action-label,
+      :root:not(.theme-dark) .action-btn.is-active .action-sub {
+        color: #fff;
+      }
     }
     html.theme-light .action-btn:not(.is-active) {
       border-color: var(--line-2);
@@ -526,6 +618,82 @@
     html.theme-light .slot-status.bad {
       color: #fff;
       background: var(--pink);
+    }
+    html.theme-light .hero-action-btn:not(.danger):hover,
+    html.theme-light .hero-action-btn:not(.danger):focus-visible {
+      background: var(--text);
+      color: #fff;
+    }
+    html.theme-light .hero-action-btn.danger:hover {
+      background: rgb(var(--pink-rgb));
+      color: #fff;
+    }
+    html.theme-light .gap-edit-btn:hover {
+      background: var(--text);
+      color: #fff;
+    }
+    html.theme-light .day-nav-btn:hover,
+    html.theme-light .day-nav-btn:focus-visible {
+      background: var(--text);
+      color: #fff;
+    }
+    html.theme-light .week-nav button:hover {
+      background: var(--text);
+      color: #fff;
+    }
+    html.theme-light .day-tab.active {
+      background: var(--text);
+      border-color: var(--text);
+      color: #fff;
+    }
+    html.theme-light .modal-close:hover {
+      background: var(--text);
+      color: #fff;
+    }
+    html.theme-light .button-row button:hover,
+    html.theme-light .import-actions button:hover,
+    html.theme-light .footer-tools button:hover,
+    html.theme-light .modal-actions button:hover {
+      background: var(--text);
+      color: #fff;
+    }
+    html.theme-light .modal-actions button.warn:hover,
+    html.theme-light .button-row button.warn:hover {
+      background: rgb(var(--warn-rgb));
+      color: #fff;
+    }
+    html.theme-light .modal-actions button.bad:hover,
+    html.theme-light .button-row button.bad:hover {
+      background: rgb(var(--pink-rgb));
+      color: #fff;
+    }
+    html.theme-light .rate-tile:hover,
+    html.theme-light .rate-tile:focus-visible,
+    html.theme-light .rate-tile.selected {
+      background: var(--text);
+      border-color: var(--text);
+    }
+    html.theme-light .rate-tile:hover .rate-tile-amount,
+    html.theme-light .rate-tile:hover .rate-tile-label,
+    html.theme-light .rate-tile.selected .rate-tile-amount,
+    html.theme-light .rate-tile.selected .rate-tile-label {
+      color: #fff;
+    }
+    html.theme-light .emoji-option:hover,
+    html.theme-light .emoji-option.selected {
+      background: var(--text);
+      border-color: var(--text);
+    }
+    html.theme-light .emoji-option.emoji-clear:hover {
+      color: #fff;
+    }
+    html.theme-light .action-btn:hover .action-label,
+    html.theme-light .action-btn.is-pressed .action-label,
+    html.theme-light .action-btn:hover .action-sub,
+    html.theme-light .action-btn.is-pressed .action-sub,
+    html.theme-light .action-btn.is-active .action-label,
+    html.theme-light .action-btn.is-active .action-sub {
+      color: #fff;
     }
 
     * { box-sizing: border-box; }
