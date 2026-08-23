@@ -5558,7 +5558,12 @@
 <div class="sidebar-section-label">Navegación</div>
 <div class="sidebar-links">
 <button class="sidebar-link active" data-page="home" type="button"><span class="sidebar-link-icon sidebar-link-icon-home">🏠</span><span class="sidebar-link-label">Inicio</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
-<button class="sidebar-link" data-page="schedule" type="button"><span class="sidebar-link-icon sidebar-link-icon-schedule">🗓️</span><span class="sidebar-link-label">Horario</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
+<!-- v270 — Pedido del usuario: orden del menú lateral — Inicio, Bloques del
+     día, Horario, Reportes, Avisos (antes: Inicio, Horario, Bloques del
+     día, Reportes, Avisos). Solo se reordenan estos 2 botones entre sí —
+     mismos ids/data-page de siempre (schedule/blocks), sin tocar
+     navigateToPage() ni ninguna otra lógica, que ya rutea por data-page sin
+     depender del orden en el DOM. -->
 <!-- v250 — Pedido del usuario: "Bloques del día" (antes la 2da sección
      dentro de la página "🗓️ Horario", justo debajo del editor) pasa a su
      PROPIA página del menú lateral — ver #pageBlocks más abajo. Se separa
@@ -5566,6 +5571,7 @@
      DÍA (Bloques del día, ahora acá) — mismo criterio de "una página, un
      propósito" que ya separa Horario de Reportes. -->
 <button class="sidebar-link" data-page="blocks" type="button"><span class="sidebar-link-icon sidebar-link-icon-blocks">📋</span><span class="sidebar-link-label">Bloques del día</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
+<button class="sidebar-link" data-page="schedule" type="button"><span class="sidebar-link-icon sidebar-link-icon-schedule">🗓️</span><span class="sidebar-link-label">Horario</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
 <button class="sidebar-link" data-page="reports" type="button"><span class="sidebar-link-icon sidebar-link-icon-reports">📊</span><span class="sidebar-link-label">Reportes</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
 <!-- v251 — Pedido del usuario: el botón/página del menú lateral se
      renombra de "⚙️ Ajustes" a "🔔 Avisos" — desde v242, Ajustes y
