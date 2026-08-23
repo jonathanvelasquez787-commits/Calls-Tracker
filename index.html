@@ -3199,18 +3199,25 @@
          `.grid` (se movieron a Inicio/Reportes respectivamente, ver HTML)
          así que ya no hace falta `justify-self` — el mismo margin:auto de
          siempre las centra igual que al resto. */
-      /* v265 — REVERSIÓN de v264. Pedido del usuario: "Llamadas"
-         (#callsSection) vuelve a vivir DENTRO de `.app-page` (página
-         Inicio, justo debajo de "Turno de Hoy") — deja de ser persistente
-         entre las 4 páginas del menú (ver el mismo cambio en el HTML, y en
-         el bloque de margin-bottom más abajo). Al volver a ser hija directa
-         de `.app-page`, ya calza sola con el selector de clase
-         `.app-page > section.card` de abajo — se quita el agregado
-         explícito de v264, que ya no aplica. */
+      /* v266 — Pedido del usuario: "Llamadas" (#callsSection) vive DENTRO
+         de `.app-page` (página Inicio, justo debajo de "Turno de Hoy")
+         cuando se está viendo Inicio — pero en las otras 3 páginas
+         (Horario/Bloques del día/Reportes/Avisos), donde "Turno de Hoy" no
+         existe, debe seguir siendo visible arriba de todo, como en v264.
+         Como un mismo nodo HTML no puede vivir en 2 lugares del DOM a la
+         vez sin duplicar ids (rompería los botones/JS), `relocateCallsSection()`
+         (ver el JS, llamada desde `navigateToPage()`) MUEVE el nodo real:
+         dentro de `#pageHome` en Inicio, o como hermano de `#heroSection`
+         (fuera de cualquier `.app-page`) en el resto. Este selector cubre
+         AMBOS casos con el mismo valor (14px), así que no importa dónde
+         esté el nodo en cada momento — se agrega aparte porque cuando vive
+         fuera de `.app-page` ya no calza con el selector de clase de
+         arriba. */
       .app-page > .accordion-card,
       .app-page > section.card,
       .app-page > .day-stats-grid,
-      #heroSection {
+      #heroSection,
+      #callsSection {
         max-width: 1200px;
         margin-left: auto;
         margin-right: auto;
@@ -4627,12 +4634,15 @@
        `.grid`, con su espaciado heredado del padre) ahora también son
        hijos directos de su `.app-page` — se suman al mismo selector de
        clase automáticamente, sin necesitar su propia excepción. */
-    /* v265 — REVERSIÓN de v264. "Llamadas" (#callsSection) vuelve a vivir
-       DENTRO de `.app-page` (página Inicio) — al ser de nuevo hija directa
-       de `.app-page`, ya calza sola con el selector de clase de abajo. Se
-       quita el agregado explícito de v264, que ya no aplica. */
+    /* v266 — Ver comentario extenso junto a la regla de max-width de
+       `#callsSection` más arriba en el archivo: el nodo se mueve por JS
+       entre `#pageHome` (Inicio) y fuera de `.app-page` (resto de páginas,
+       `relocateCallsSection()`) — se agrega aparte del selector de clase
+       de abajo para que el espaciado se mantenga sin importar dónde viva
+       en cada momento. */
     .app-page > .accordion-card,
-    .app-page > section.card {
+    .app-page > section.card,
+    #callsSection {
       margin-bottom: 14px;
     }
 
@@ -5615,10 +5625,15 @@
      contenido) + Tabla de llamadas (movida aquí desde el final de la
      página, ver comentario junto a #callTableAccordion más abajo). El
      header (#heroSection) queda FUERA de esta página a propósito — es
-     persistente entre las 4 páginas del menú. "Llamadas" (#callsSection)
-     vivió aquí afuera también entre v264 y v265 (ver el comentario v265,
-     junto a esa sección más abajo) — ya no: volvió a vivir DENTRO de esta
-     página, justo debajo de "Turno de Hoy". -->
+     persistente entre las 4 páginas del menú. "Llamadas" (#callsSection,
+     ver el comentario "v266" junto a esa sección más abajo) vive DENTRO
+     de esta página en el HTML de por sí — pero se MUEVE por JS
+     (relocateCallsSection(), llamada desde navigateToPage()) fuera de
+     cualquier `.app-page` cuando se navega a otra página, para que se
+     siga viendo arriba de todo ahí también. Este comentario describe la
+     posición de partida (Inicio); no asumas que #callsSection siempre
+     está aquí en el DOM — revisa relocateCallsSection() para el
+     comportamiento completo. -->
 <div class="app-page" data-page="home" id="pageHome">
 <!-- Pedido del usuario (v199): "Ganancias de hoy" sube arriba de "Llamadas"
      — es lo primero que el usuario quiere ver al entrar (cuánto llevo),
@@ -5689,19 +5704,27 @@
 </div>
 </details>
 
-<!-- v265 — REVERSIÓN de v264. Pedido del usuario: "Llamadas" (Iniciar
-     llamada/Pegar Llamadas/Agregar llamada) deja de ser persistente entre
-     las 4 páginas del menú — vuelve a vivir SOLO dentro de la página
-     "🏠 Inicio" (#pageHome), justo debajo de "Turno de Hoy" y arriba de
-     "Ganancias del ciclo". Ningún id cambió (callsSection/callControlBtn/
-     pasteCallsBtn/addCallManualBtn/callControlLabel/callControlTimer) — el
-     JS que ya los usa (renderHeader(), los listeners de los 3 botones)
-     sigue funcionando exactamente igual, solo cambió dónde vive en el
-     HTML. Se quita `#callsSection` de los 2 selectores de CSS que la
-     alcanzaban explícito desde v264 (max-width/centrado, margin-bottom) —
-     al volver a ser hija directa de `.app-page`, ya calza sola con el
-     selector de clase `.app-page > section.card` que ya cubre esta
-     sección, igual que el resto (ver esas 2 reglas, "v265"). -->
+<!-- v266 — Pedido del usuario: "Llamadas" (Iniciar llamada/Pegar
+     Llamadas/Agregar llamada) vive DENTRO de la página "🏠 Inicio"
+     (#pageHome), justo debajo de "Turno de Hoy" y arriba de "Ganancias del
+     ciclo") — ESTA es su posición en el HTML de partida. Pero a diferencia
+     de v265 (donde solo se veía en Inicio), ahora también debe seguir
+     viéndose en Horario/Bloques del día/Reportes/Avisos — como esas 4
+     páginas no tienen "Turno de Hoy" (ni tendría sentido meterlo ahí, cada
+     una tiene su propio contenido), la única forma de lograr "siempre
+     visible, pero dentro de Turno de Hoy solo en Inicio" es MOVIENDO el
+     nodo real del DOM según la página activa: `relocateCallsSection()`
+     (ver el JS, llamada desde `navigateToPage()`) lo reinserta aquí mismo
+     al volver a Inicio, o lo saca de `.app-page` (como hermano de
+     `#heroSection`, arriba de todo) en cualquier otra página. Ningún id
+     cambió (callsSection/callControlBtn/pasteCallsBtn/addCallManualBtn/
+     callControlLabel/callControlTimer) — el JS que ya los usa
+     (renderHeader(), los listeners de los 3 botones) sigue funcionando
+     exactamente igual, solo cambia dónde vive el nodo en cada momento.
+     `#callsSection` se agregó de vuelta a los 2 selectores de CSS de
+     max-width/centrado y margin-bottom (buscar "v266" en el CSS) — a
+     diferencia de v265, esta vez el agregado explícito SÍ hace falta,
+     porque el nodo pasa buena parte del tiempo fuera de `.app-page`. -->
 <section class="card span-12" id="callsSection">
 <div class="section-title">
 <div>
@@ -14444,6 +14467,39 @@ function render() {
     // sugería que hiciera falta recordar la última página vista).
     let currentPage = 'home';
 
+    // v266 — Pedido del usuario: "Llamadas" (#callsSection) debe verse
+    // SIEMPRE (Inicio y las otras 3 páginas), pero en Inicio específicamente
+    // debe vivir justo debajo de "Turno de Hoy" — no arriba de todo como en
+    // v264. Un mismo nodo del DOM no puede estar en 2 lugares a la vez sin
+    // duplicar ids (rompería callControlBtn/pasteCallsBtn/addCallManualBtn y
+    // sus listeners), así que se MUEVE el nodo real según la página activa:
+    // - Inicio: hijo de `#pageHome`, reinsertado justo antes de
+    //   `#cycleAccordion` (mismo lugar de siempre: debajo de "Turno de Hoy",
+    //   arriba de "Ganancias del ciclo").
+    // - Cualquier otra página: hermano de `#heroSection` (fuera de
+    //   cualquier `.app-page`), insertado justo después — arriba de todo,
+    //   debajo del header, mismo lugar que tenía en v264.
+    // `insertBefore`/`insertAdjacentElement` no fallan si el nodo ya está
+    // en esa posición (son idempotentes) — no hace falta chequear si ya
+    // estaba movido antes de llamar.
+    function relocateCallsSection(page) {
+      const callsSection = document.getElementById('callsSection');
+      if (!callsSection) return;
+      if (page === 'home') {
+        const pageHome = document.getElementById('pageHome');
+        const cycleAccordion = document.getElementById('cycleAccordion');
+        if (!pageHome) return;
+        if (cycleAccordion && cycleAccordion.parentElement === pageHome) {
+          pageHome.insertBefore(callsSection, cycleAccordion);
+        } else {
+          pageHome.appendChild(callsSection);
+        }
+      } else {
+        const heroSection = document.getElementById('heroSection');
+        if (heroSection) heroSection.insertAdjacentElement('afterend', callsSection);
+      }
+    }
+
     function navigateToPage(page) {
       // v250 — Pedido del usuario: "Bloques del día" se muda a su propia
       // página ("blocks", ver #pageBlocks en el HTML) — se agrega aquí a
@@ -14452,6 +14508,7 @@ function render() {
       const pages = ['home', 'schedule', 'blocks', 'reports', 'settings'];
       if (!pages.includes(page)) page = 'home';
       currentPage = page;
+      relocateCallsSection(page);
       document.querySelectorAll('.app-page').forEach(el => {
         el.hidden = el.getAttribute('data-page') !== page;
       });
