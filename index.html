@@ -1496,9 +1496,22 @@
        para el mismo problema) — el grupo nunca se parte a una segunda
        línea; si no cabe todo, se desliza. max-width evita que en pantallas
        muy angostas el grupo empuje a la marca fuera de la fila. */
+    /* v246 — Pedido del usuario (con captura): en mobile, "Ajustes" se veía
+       más arriba que "Higher Rate" en vez de a la misma altura. Causa:
+       `align-items: center` centraba verticalmente cada hijo de esta fila
+       contra el más alto de todos — y el más alto es
+       `.hero-ajustes-reset-group` (Ajustes+Reiniciar apilados en columna en
+       mobile, ver esa regla más abajo), más alto que un solo botón de una
+       línea. Al centrarse, Higher Rate (una sola línea) quedaba a la mitad
+       de esa altura mayor, y Ajustes (arriba del todo de su propia columna)
+       terminaba por encima del top de Higher Rate. `flex-start` alinea todo
+       por arriba en vez de centrar — así el top de Ajustes coincide con el
+       top de Higher Rate. Sin cambio en escritorio: ahí el grupo es una
+       fila (no columna), misma altura que el resto, así que center vs.
+       flex-start se ven idénticos. */
     .hero-top-actions {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: flex-end;
       flex-wrap: nowrap;
       gap: 8px;
@@ -4197,6 +4210,24 @@
     .gap-edit-btn.call-delete-btn {
       background: rgba(255,111,143,.12);
       border-color: rgba(255,111,143,.3);
+    }
+
+    /* v246 — Pedido del usuario (con captura): "Vaciar llamadas del día" se
+       veía grande y centrado, pese a que v244 ya lo había pasado a un
+       botón CHICO pegado a la izquierda. Causa: su padre directo,
+       `.accordion-body`, es `display: grid` sin `justify-items` propio —
+       por default (`stretch`), CUALQUIER hijo directo de un grid se estira
+       al ancho completo de su columna, sin importar que el botón en sí sea
+       `inline-flex` con padding chico (eso solo definía su tamaño ANTES de
+       que el grid lo estirara). `justify-self: start` saca a este botón en
+       particular de ese estiramiento — vuelve a medir solo lo que su
+       contenido necesita y queda pegado a la izquierda, como se pidió en
+       v244. Scoped por id (no toda `.gap-edit-btn.call-delete-btn`, que
+       también se usa en el botón "Eliminar" de cada fila — ese vive dentro
+       de una celda de tabla, no como hijo directo de `.accordion-body`, así
+       que nunca tuvo este problema y no necesita este ajuste). */
+    #clearDayCallsBtn {
+      justify-self: start;
     }
 
     @media (max-width: 760px) {
