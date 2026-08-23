@@ -3222,10 +3222,27 @@
       gap: 4px;
     }
 
+    /* Bug reportado por el usuario (con captura): la nota de "Más corta"
+       (statsShortestNote, ver comentario junto a esa clase en el HTML) se
+       salía del borde derecho de la tarjeta "Estadísticas del día" — el
+       texto no tenía ningún tope de ancho propio, así que si su línea
+       completa (sin puntos de quiebre "convenientes" para el navegador
+       cerca del final) terminaba calculando un ancho apenas mayor al de su
+       contenedor, `.accordion-card` (que tiene `overflow: hidden`, ver esa
+       regla) lo recortaba en seco en vez de bajarlo a una segunda línea —
+       de ahí el corte limpio sin puntos suspensivos que se ve en la
+       captura. `max-width: 100%` fuerza a esta nota a nunca ser más ancha
+       que su contenedor real, y `overflow-wrap: anywhere` le da al
+       navegador permiso de partir la línea donde haga falta (no solo en
+       espacios) para respetar ese ancho — mismo criterio en TODOS los usos
+       de `.gap-note` (también aparece en Tabla de llamadas), sin necesitar
+       una regla aparte solo para esta nota. */
     .gap-note {
       color: var(--warn);
       font-size: 11px;
       line-height: 1.2;
+      max-width: 100%;
+      overflow-wrap: anywhere;
     }
 
     .imported-late {
