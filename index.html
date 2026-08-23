@@ -1959,6 +1959,39 @@
       min-width: 0;
     }
 
+    /* v239 — Pedido del usuario: la tarjeta de ACW en "Turno de Hoy" ahora
+       tiene su propia meta editable (ver #acwGoalModal más abajo en el
+       HTML) — este botón (✎) vive dentro de `.bsc-top`, pegado a la
+       derecha, SOLO en tarjetas que declaran `c.editable` en JS (por ahora
+       nada más ACW — el resto de tarjetas de Turno de Hoy no lo llevan).
+       `margin-left:auto` lo empuja al extremo derecho de la fila sin
+       necesitar un contenedor aparte; `position:relative;z-index:2` para
+       quedar arriba del `.bsc-fill` (el relleno "líquido" que cubre toda
+       la tarjeta, ver esa regla) y seguir siendo clickeable incluso
+       cuando el relleno ya pasó por debajo del ícono. */
+    .block-summary-card .bsc-edit-btn {
+      position: relative;
+      z-index: 2;
+      margin-left: auto;
+      flex: 0 0 auto;
+      width: 20px;
+      height: 20px;
+      border-radius: 7px;
+      border: 1px solid rgba(255,255,255,.28);
+      background: rgba(0,0,0,.18);
+      color: #fff;
+      font-size: 10.5px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+    }
+    .block-summary-card .bsc-edit-btn:hover {
+      background: rgba(0,0,0,.32);
+    }
+
     .block-summary-card .bsc-icon {
       font-size: 13px;
       line-height: 1;
@@ -2722,9 +2755,10 @@
        .hero-shift-actions más arriba, junto a .summary-pill — y esa sección
        se elimina; ya no queda ningún .action-btn grande de Shift/Break/
        Lunch en el cuerpo de la página. */
-    .table-tags-top {
-      margin-bottom: 12px;
-    }
+    /* v239 — `.table-tags-top` (el margen bajo la fila de píldoras que
+       vivía arriba de "Tabla de llamadas") se elimina — esa fila se movió
+       a "Ganancias de hoy" (ver earningsTagsHtml en renderHeader()), así
+       que ya no queda ningún `.table-tags-top` en el HTML que la use. */
 
     #earningsSectionTitle {
       scroll-margin-top: 90px;
@@ -5826,6 +5860,33 @@ $0.72"></textarea>
 
 </div>
 </div>
+<!-- v239 — Pedido del usuario: la tarjeta de ACW en "Turno de Hoy" pasa de
+     llenarse contra la duración TOTAL del turno (poco intuitivo — 2 horas
+     de ACW en un turno de 9h apenas se veían al 22%) a llenarse contra tu
+     PROPIA meta máxima de ACW, editable con el ✎ de la tarjeta. Modal
+     chico (mismo patrón que #gapModal — un solo campo + Guardar/Cancelar),
+     un único valor GLOBAL (settings.acwMaxGoalMin, no por día) — mismo
+     criterio que ya usan productiveGoalMin/earningsGoal (metas globales,
+     no una por fecha). -->
+<div aria-hidden="true" class="modal-overlay" id="acwGoalModal">
+<div aria-labelledby="acwGoalModalTitle" aria-modal="true" class="modal-card" role="dialog">
+<div class="modal-head">
+<div>
+<h3 id="acwGoalModalTitle">⏱️ Meta máxima de ACW</h3>
+<p>La tarjeta de ACW en "Turno de Hoy" se llena contra este número — no contra la duración de tu turno. Al llegar al máximo se ve al 100%, aunque sigas acumulando ACW después.</p>
+</div>
+<button aria-label="Cerrar" class="modal-close" data-close-modal="acwGoalModal" type="button">×</button>
+</div>
+<div class="field">
+<label for="acwGoalMinInput">Máximo de ACW (minutos)</label>
+<input id="acwGoalMinInput" inputmode="numeric" min="1" step="1" type="number"/>
+</div>
+<div class="modal-actions">
+<button class="primary" id="saveAcwGoalBtn" type="button">Guardar</button>
+<button class="warn" data-close-modal="acwGoalModal" type="button">Cancelar</button>
+</div>
+</div>
+</div>
 <div aria-hidden="true" class="modal-overlay" id="gapModal">
 <div aria-labelledby="gapModalTitle" aria-modal="true" class="modal-card" role="dialog">
 <div class="modal-head">
@@ -6609,6 +6670,12 @@ $0.72"></textarea>
         // existen Meta en minutos/dólares/moneda), editable en Horario junto
         // a la ventana de gracia. Default 95 — umbral típico de un WFM real.
         adherenceGoalPct: 95,
+        // v239 — Pedido del usuario: la tarjeta de ACW en "Turno de Hoy"
+        // se llena contra esta meta máxima (editable con el ✎ de la
+        // tarjeta, ver #acwGoalModal) en vez de contra la duración total
+        // del turno. Default 60 min — un punto de partida razonable,
+        // ajustable de inmediato al gusto de cada quien.
+        acwMaxGoalMin: 60,
         // Pedido del usuario: aviso (toast + sonido) al completar N minutos
         // productivos acumulados desde tu última pausa (o desde el inicio
         // del turno si no has tomado ninguna hoy) — avisa que ya tienes
@@ -6681,6 +6748,8 @@ $0.72"></textarea>
       if (!Number.isFinite(Number(settings.alertBeforeBreakEndMin)) || Number(settings.alertBeforeBreakEndMin) < 0) settings.alertBeforeBreakEndMin = fallback.alertBeforeBreakEndMin;
       if (!Number.isFinite(Number(settings.adherenceGraceMin)) || Number(settings.adherenceGraceMin) < 0) settings.adherenceGraceMin = fallback.adherenceGraceMin;
       if (!Number.isFinite(Number(settings.adherenceGoalPct)) || Number(settings.adherenceGoalPct) <= 0 || Number(settings.adherenceGoalPct) > 100) settings.adherenceGoalPct = fallback.adherenceGoalPct;
+      // v239 — Ver comentario junto a acwMaxGoalMin en defaultSettings().
+      if (!Number.isFinite(Number(settings.acwMaxGoalMin)) || Number(settings.acwMaxGoalMin) <= 0) settings.acwMaxGoalMin = fallback.acwMaxGoalMin;
       if (!['auto', 'light', 'dark'].includes(settings.theme)) settings.theme = fallback.theme;
       if (!Number.isFinite(Number(settings.masterVolume)) || Number(settings.masterVolume) < 0 || Number(settings.masterVolume) > 100) settings.masterVolume = fallback.masterVolume;
       if (!settings.accordionState || typeof settings.accordionState !== 'object' || Array.isArray(settings.accordionState)) settings.accordionState = {};
@@ -12120,23 +12189,29 @@ function renderHeader() {
   if (cycleTotalEl) cycleTotalEl.textContent = `Total: ${formatDuration(cycle.totalProductiveMin * 60000)}`;
   // Antes esto era un solo <div class="big-meta"> con texto plano ("X
   // llamada(s) · Y completados · ACW Z"). Pedido del usuario: mostrar esta
-  // info como los mismos tags/pills que ya usa "Tabla completa" (misma
+  // info como los mismos tags/pills que ya usa "Tabla de llamadas" (misma
   // clase .tag, mismo tamaño — no una versión más grande), agregando
   // también "Conectado", todo colocado arriba de la barra de progreso de
   // "Ganancias de hoy". Se reutiliza la clase .table-tags (ya existente,
-  // usada para envolver los tags de Tabla completa) para heredar el mismo
-  // tamaño/espaciado sin escribir CSS nuevo.
-  // Pedido del usuario (v181): con "Turno de Hoy" (Shift/Break/Lunch/ACW) y
-  // "Resumen del día" (Llamadas=Total) ya mostrando estos mismos datos con
-  // más contexto, se quitan de aquí Total/ACW/Break/Lunch — quedaban
-  // repetidos 2-3 veces en pantalla. Se conserva lo que NO vive en ningún
-  // otro lado: Conectado, Tiempo llamadas, Billable, Dropped, Otro (y el
-  // bono de Higher Rate, si aplica).
+  // usada para envolver los tags de Tabla de llamadas) para heredar el
+  // mismo tamaño/espaciado sin escribir CSS nuevo.
+  // v239 — Pedido del usuario: las píldoras que hasta ahora vivían SOLO
+  // arriba de "Tabla de llamadas" (Total/ACW/Break/Lunch, ver renderTable
+  // más abajo — antes esa sección tenía su propia fila de tags, ahora
+  // eliminada) se suman aquí — el usuario pidió juntarlas todas en un solo
+  // lugar, sin repetir las que ya estaban (Tiempo llamadas/Billable/
+  // Dropped/Otro no se duplican). Con Tabla de llamadas viviendo justo
+  // debajo de esta sección en la página Inicio (desde v238), tener 2 filas
+  // de tags casi idénticas una encima de la otra ya no tenía sentido.
   const earningsTagsHtml = [
     `<span class="tag ${hasShift ? 'good' : ''}">Conectado: ${hasShift ? formatDuration(connected * 60000) : '—'}</span>`,
     `<span class="tag good">Tiempo llamadas: ${formatCallTimeLabel(stats.total)}</span>`,
+    `<span class="tag">Total: ${dayCalls.length}</span>`,
     `<span class="tag">Billable: ${stats.billable}</span>`,
     `<span class="tag">Dropped: ${stats.dropped}</span>`,
+    `<span class="tag good">ACW: ${formatDuration(stats.gapTotal * 60000)}</span>`,
+    stats.breakGapTotal > 0 ? `<span class="tag warn">Break: ${formatDuration(stats.breakGapTotal * 60000)}</span>` : '',
+    stats.lunchGapTotal > 0 ? `<span class="tag cyan">Lunch: ${formatDuration(stats.lunchGapTotal * 60000)}</span>` : '',
     stats.otherGapTotal > 0 ? `<span class="tag">Otro: ${formatDuration(stats.otherGapTotal * 60000)}</span>` : '',
     higherRateBreakdownTagsHtml(stats.higherRateBreakdown, 'tag'),
   ].join('');
@@ -12180,6 +12255,30 @@ let editingGapContext = null;
 
 function findGapRow(dayKey, gapKey) {
   return dayGapRows(dayKey).find(g => g.gapKey === gapKey) || null;
+}
+
+// v239 — Pedido del usuario: editor de la meta máxima de ACW (ver
+// #acwGoalModal en el HTML y el botón ✎ de la tarjeta de ACW en "Turno de
+// Hoy"). Mismo patrón simple que el resto de editores chicos de la app
+// (openGapEditor/openDayNoteModal): un solo campo, Guardar/Cancelar.
+function openAcwGoalEditor() {
+  const input = document.getElementById('acwGoalMinInput');
+  if (input) input.value = Number(settings.acwMaxGoalMin) > 0 ? Number(settings.acwMaxGoalMin) : 60;
+  openModal('acwGoalModal');
+}
+
+function saveAcwGoalEditor() {
+  const input = document.getElementById('acwGoalMinInput');
+  const mins = Number(input?.value);
+  if (!Number.isFinite(mins) || mins <= 0) {
+    toast('La meta debe ser un número mayor a 0');
+    return;
+  }
+  settings.acwMaxGoalMin = mins;
+  saveSettingsOnly();
+  closeModal('acwGoalModal');
+  render();
+  toast(`Meta máxima de ACW: ${formatMinutes(mins)} min`);
 }
 
 function openGapEditor(dayKey, gapKey) {
@@ -12797,12 +12896,21 @@ function renderBlockSummaryStrip(cards) {
       `;
     }
     const pct = Math.max(0, Math.min(100, Number(c.pct) || 0));
+    // v239 — Pedido del usuario: la tarjeta de ACW lleva un botón ✎ para
+    // editar su propia meta máxima (ver #acwGoalModal, delegado por
+    // `data-edit-card`) — genérico por si en el futuro otra tarjeta
+    // también necesita su propio editor, aunque hoy solo ACW lo declara
+    // (`c.editable`, ver el push de ACW en renderSchedule()).
+    const editBtnHtml = c.editable
+      ? `<button class="bsc-edit-btn" type="button" data-edit-card="${escapeHtml(c.editable)}" aria-label="Editar meta de ${escapeHtml(c.name)}" title="Editar meta">✎</button>`
+      : '';
     return `
       <div class="block-summary-card ${extraClass}" data-accent="${escapeHtml(c.accent)}" style="--bsc-pct:${pct}%">
         <div class="bsc-fill" style="width:${pct}%"></div>
         <div class="bsc-top">
           <span class="bsc-icon">${c.icon}</span>
           <span class="bsc-name">${escapeHtml(c.name)}</span>
+          ${editBtnHtml}
         </div>
         <div class="bsc-range">${escapeHtml(c.range)}</div>
         ${c.rangeExtra ? `<div class="bsc-range" style="opacity:.7;">${escapeHtml(c.rangeExtra)}</div>` : ''}
@@ -13201,17 +13309,24 @@ function renderSchedule() {
 
       // ACW (última): total de ACW acumulado en el día (mismo
       // importedCallStats().gapTotal que ya usa el tag "ACW" de Ganancias de
-      // hoy/Tabla de llamadas) — % contra la duración planeada del turno,
-      // ya que ACW no tiene una "duración planeada" propia con la cual
-      // compararse 1 a 1.
+      // hoy/Tabla de llamadas).
+      // v239 — Pedido del usuario: antes el % se calculaba contra la
+      // duración TOTAL del turno planeado (plannedShiftMin) — poco
+      // intuitivo, ya que 2 horas de ACW en un turno de 9h apenas llenaban
+      // la barra un 22%, sin relación con "cuánto ACW es demasiado ACW".
+      // Ahora se llena contra settings.acwMaxGoalMin (editable con el ✎ de
+      // la propia tarjeta, ver #acwGoalModal) — un tope que el usuario
+      // define para SÍ MISMO, no un porcentaje del turno completo.
       const dayCallStatsForCard = importedCallStats(dayCalls, dayKey);
-      const acwPct = plannedShiftMin > 0 ? Math.min(100, (dayCallStatsForCard.gapTotal / plannedShiftMin) * 100) : 0;
+      const acwGoalMin = Number(settings.acwMaxGoalMin) > 0 ? Number(settings.acwMaxGoalMin) : 60;
+      const acwPct = Math.min(100, (dayCallStatsForCard.gapTotal / acwGoalMin) * 100);
       summaryCards.push({
         name: 'ACW',
         icon: '⏱️',
         accent: 'good',
-        range: `Total: ${formatDuration(dayCallStatsForCard.gapTotal * 60000)}`,
+        range: `Total: ${formatDuration(dayCallStatsForCard.gapTotal * 60000)} de meta ${formatMinutes(acwGoalMin)} min`,
         pct: acwPct,
+        editable: 'acw',
       });
 
       renderBlockSummaryStrip(summaryCards);
@@ -13429,21 +13544,15 @@ function renderTable() {
       rows.reverse();
       cards.reverse();
 
-      const stats = importedCallStats(sorted, dayKey);
-      const tagsHtml = `
-        <span class="tag good">Tiempo llamadas: ${formatCallTimeLabel(stats.total)}</span>
-        <span class="tag">Total: ${sorted.length}</span>
-        <span class="tag">Billable: ${stats.billable}</span>
-        <span class="tag">Dropped: ${stats.dropped}</span>
-        <span class="tag good">ACW: ${formatDuration(stats.gapTotal * 60000)}</span>
-        ${stats.breakGapTotal > 0 ? `<span class="tag warn">Break: ${formatDuration(stats.breakGapTotal * 60000)}</span>` : ''}
-        ${stats.lunchGapTotal > 0 ? `<span class="tag cyan">Lunch: ${formatDuration(stats.lunchGapTotal * 60000)}</span>` : ''}
-        ${stats.otherGapTotal > 0 ? `<span class="tag">Otro: ${formatDuration(stats.otherGapTotal * 60000)}</span>` : ''}
-        ${higherRateBreakdownTagsHtml(stats.higherRateBreakdown, 'tag')}
-      `;
-
+      // v239 — Pedido del usuario: la fila de píldoras que vivía aquí
+      // (Tiempo llamadas/Total/Billable/Dropped/ACW/Break/Lunch/Otro/
+      // Higher Rate) se mueve a "Ganancias de hoy" (ver earningsTagsHtml
+      // en renderHeader()) — con Tabla de llamadas viviendo justo debajo
+      // de esa sección en la página Inicio (desde v238), tener 2 filas de
+      // tags casi idénticas una encima de la otra no aportaba nada. Se
+      // quita `stats`/`tagsHtml`/`.table-tags-top` de aquí sin reemplazo
+      // — el dato no se pierde, solo se ve en un solo lugar.
       wrap.innerHTML = `
-        <div class="table-tags table-tags-top">${tagsHtml}</div>
         <div class="table-desktop">
           <table>
             <thead>
@@ -13586,6 +13695,7 @@ function render() {
       closeModal('callEditModal');
       closeModal('manualCallModal');
       closeModal('confirmModal');
+      closeModal('acwGoalModal');
     }
 
     // ---- v238 — Menú lateral / ruteo entre páginas ----
@@ -13727,6 +13837,18 @@ function render() {
       const call = calls.find(c => c.id === callId);
       if (!call) return;
       appConfirm(`¿Eliminar la llamada #${call.customerId} (${call.callDate} · ${call.callStart})? Esta acción no se puede deshacer.`, () => deleteCallRecord(callId));
+    });
+
+    // v239 — Pedido del usuario: botón ✎ dentro de la tarjeta de ACW (Turno
+    // de Hoy) — abre #acwGoalModal para editar la meta máxima de ACW.
+    // Delegado en document (mismo patrón que data-gap-edit/data-call-edit
+    // arriba): #blockSummaryStrip se reconstruye por completo en cada
+    // render(), así que un listener puesto directo en el botón se perdería
+    // cada vez que se repinta.
+    document.addEventListener('click', (e) => {
+      const target = e.target instanceof Element ? e.target.closest('[data-edit-card="acw"]') : null;
+      if (!target) return;
+      openAcwGoalEditor();
     });
 
     document.getElementById('clearDayCallsBtn').addEventListener('click', clearActiveDayCalls);
@@ -14024,6 +14146,7 @@ function render() {
     document.getElementById('cycleNextBtn').addEventListener('click', () => { cycleViewOffset += 1; renderHeader(); });
     document.getElementById('cycleCurrentBtn').addEventListener('click', () => { cycleViewOffset = 0; renderHeader(); });
     document.getElementById('saveGapBtn').addEventListener('click', saveGapEditor);
+    document.getElementById('saveAcwGoalBtn').addEventListener('click', saveAcwGoalEditor);
     document.getElementById('saveDayNoteBtn').addEventListener('click', saveDayNoteFromModal);
     document.getElementById('clearDayNoteBtn').addEventListener('click', clearDayNoteFromModal);
     document.getElementById('saveCallEditBtn').addEventListener('click', saveCallEditor);
@@ -14054,6 +14177,13 @@ function render() {
     document.getElementById('gapModal').addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
         saveGapEditor();
+      }
+    });
+    // v239 — Mismo patrón que #gapModal: Ctrl/Cmd+Enter guarda sin
+    // necesitar tocar el botón.
+    document.getElementById('acwGoalModal').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        saveAcwGoalEditor();
       }
     });
 
