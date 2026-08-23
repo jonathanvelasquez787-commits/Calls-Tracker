@@ -364,6 +364,11 @@
          .is-active, que sigue coloreando el borde con más fuerza). */
       :root:not(.theme-dark) .action-btn:not(.is-active) {
         border-color: var(--line-2);
+        /* v235 — Ver comentario junto a `.action-btn:not(.is-active)` (regla
+           base, fuera de este bloque): ese nuevo fondo tenue es SOLO para
+           modo oscuro — aquí se revierte a transparente para no tocar el
+           diseño "fantasma" ya elegido para modo claro. */
+        background: transparent;
       }
       /* Botones utilitarios chicos ("Editar", "Editar gap", "Probar
          sonido"...) — antes SIEMPRE cian, repetido decenas de veces por
@@ -837,6 +842,8 @@
     }
     html.theme-light .action-btn:not(.is-active) {
       border-color: var(--line-2);
+      /* v235 — Ver comentario gemelo en la rama @media de arriba. */
+      background: transparent;
     }
     html.theme-light .gap-edit-btn {
       background: var(--btn-secondary-bg);
@@ -2998,6 +3005,28 @@
       isolation: isolate;
       text-align: center;
       transition: transform .14s ease, border-color .18s ease, opacity .14s ease;
+    }
+
+    /* v235 — Pedido del usuario: en modo oscuro, los 6 botones de Controles
+       (Iniciar shift/Break/Lunch, Iniciar llamada, Pegar Llamadas, Agregar
+       llamada) se veían "flotando" sobre el fondo de la tarjeta — su fondo
+       de reposo es transparente (ver `.action-btn` arriba, "fondo fantasma",
+       diseño de Controles), así que se confundían con el fondo del panel
+       detrás. Se les agrega un fondo tenue SOLO en reposo (excluyendo
+       `.is-active`, que ya tiene su propio relleno sólido de acento) — el
+       mismo azul que ya usa el fondo de cada bloque en "Bloques del día"
+       (`.slot`, ver esa regla más abajo: `--slot-rgb: 111, 151, 255` en modo
+       oscuro, compartido por Trabajo/Break/Lunch desde v226), a la misma
+       opacidad (.12) — mismo lenguaje visual entre ambas secciones, sin
+       inventar un tono nuevo. Es un color FIJO (no por acento del botón)
+       porque eso es justo lo que tiene "Bloques del día": un solo azul
+       compartido por los 3 tipos, no uno por tipo. Solo modo oscuro — en
+       modo claro estos botones ya tienen su propio diseño "fantasma"
+       intencional (ver `.action-btn:not(.is-active)` dentro de
+       `@media (prefers-color-scheme: light)`/`html.theme-light`, donde se
+       revierte a `transparent` para no tocar ese rediseño). */
+    .action-btn:not(.is-active) {
+      background: rgba(111, 151, 255, .12);
     }
 
     /* El "relleno tipo onda": un círculo grande (340px, bastante más ancho
