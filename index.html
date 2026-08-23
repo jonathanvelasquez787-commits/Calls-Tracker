@@ -3214,7 +3214,7 @@
       isolation: isolate;
       background: rgba(var(--slot-rgb, var(--cyan-rgb)), .12);
       border: none;
-      border-left: 4px solid rgb(var(--slot-rgb, var(--cyan-rgb)));
+      border-left: 4px solid rgb(var(--slot-border-rgb, var(--slot-rgb, var(--cyan-rgb))));
       border-radius: 0 16px 16px 0;
     }
 
@@ -3272,8 +3272,25 @@
        cambio, así que se agrega un override propio de claro con el ámbar
        de siempre (ver ese bloque más abajo) para que Break en modo claro
        quede exactamente igual que antes. */
-    .slot[data-accent="cyan"] { --slot-rgb: 111, 151, 255; }
-    .slot[data-accent="warn"] { --slot-rgb: 111, 151, 255; }
+    /* v228 — Pedido del usuario ("la línea a la izquierda de los bloques
+       del día debería cambiar su color dependiendo del bloque, solo en
+       modo oscuro"): REVERSIÓN PARCIAL de v226 — v226 unificó el color de
+       Trabajo/Break/Lunch (fondo Y borde izquierdo, ambos venían del mismo
+       --slot-rgb) al azul de Lunch, solo en esta regla base (modo oscuro).
+       El usuario ahora pide que el borde izquierdo vuelva a distinguirse
+       por tipo — pero el FONDO tenue (background, arriba) se queda tal
+       cual quedó en v226 (azul uniforme), no se revierte esa parte. Se
+       separa el borde a su propia variable (--slot-border-rgb, con
+       fallback a --slot-rgb si no se define — así Lunch, que no se
+       redefine abajo, sigue con el mismo azul de siempre sin duplicar el
+       valor) en vez de reusar --slot-rgb para ambos usos. Trabajo y Break
+       recuperan aquí los mismos colores que tenían ANTES de v226 (esmeralda/
+       ámbar, ver ese comentario) — Lunch no se toca, nunca cambió. Modo
+       claro no se toca en absoluto: sus 2 bloques (@media/html.theme-light)
+       siguen definiendo background/border-left directo desde --slot-rgb,
+       sin usar --slot-border-rgb — ganan por especificidad como siempre. */
+    .slot[data-accent="cyan"] { --slot-rgb: 111, 151, 255; --slot-border-rgb: 16, 185, 129; }
+    .slot[data-accent="warn"] { --slot-rgb: 111, 151, 255; --slot-border-rgb: 251, 188, 0; }
     .slot[data-accent="blue"] { --slot-rgb: 111, 151, 255; }
 
     /* Sube los 3 hijos de contenido reales (nombre/rango/estado, cuerpo del
