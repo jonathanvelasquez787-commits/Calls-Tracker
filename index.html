@@ -456,18 +456,20 @@
       :root:not(.theme-dark) .slot[data-accent="blue"] {
         --slot-rgb: 34, 69, 131;
       }
-      /* Pedido del usuario (v217): la tarjeta de Shift en "Turno de Hoy"
-         también usa data-accent="cyan" — mismo problema (--cyan-rgb es en
-         realidad rosa/magenta en este tema) pero ahí el usuario pidió
-         específicamente un ROJO fuerte, no el tono slate que usan los
-         bloques de Trabajo arriba ni el cian #00F0FF que sí aplica en otros
-         lugares decorativos. Scoped a `.block-summary-card-shift` (la clase
-         extra que solo lleva la tarjeta de Shift, ver
-         renderBlockSummaryStrip) — el resto de usos de data-accent="cyan"
-         (Pegar Llamadas, Iniciar shift, etc.) quedan intactos. */
-      :root:not(.theme-dark) .block-summary-card-shift[data-accent="cyan"] {
-        --bsc-rgb: var(--danger-red-rgb);
-      }
+      /* Pedido del usuario (v219): REVERSIÓN EXPLÍCITA de v217. En v217 se
+         separó la tarjeta de Shift a rojo fuerte (--danger-red-rgb) para
+         que no se confundiera con el rosa/magenta que --cyan-rgb resuelve
+         en este tema. El usuario vio el resultado (captura) y no le gustó
+         ese rojo — pidió que la tarjeta de Shift use el MISMO color que ya
+         usa el texto del botón "Pegar Llamadas" (mismo `data-accent="cyan"`,
+         sin ningún override — resuelve a --cyan-rgb, el rosa/magenta de
+         --primary #EC1E7A). Se quita el override de v217 sin reemplazo: al
+         no quedar ninguna regla para `.block-summary-card-shift[data-accent
+         ="cyan"]`, vuelve a heredar `--bsc-rgb: var(--cyan-rgb)` de la regla
+         genérica `.block-summary-card[data-accent="cyan"]` (fuera de este
+         bloque, sin tocar) — mismo rosa que "Pegar Llamadas"/"Iniciar
+         shift"/etc. Solo modo claro — oscuro nunca tuvo este override, sigue
+         igual. */
       /* Pedido del usuario: la insignia de tipo (Work/Break/Lunch, extremo
          derecho de cada bloque) y los badges de estado (Completo/Tarde/
          Hecho/etc., .slot-status) pasan de "pastilla pálida" a sólida con
@@ -777,11 +779,8 @@
     html.theme-light .slot[data-accent="blue"] {
       --slot-rgb: 34, 69, 131;
     }
-    /* Ver comentario gemelo en la rama @media de arriba (v217) — mismo
-       criterio, misma regla. */
-    html.theme-light .block-summary-card-shift[data-accent="cyan"] {
-      --bsc-rgb: var(--danger-red-rgb);
-    }
+    /* Ver comentario gemelo en la rama @media de arriba (v219) — reversión
+       explícita de v217, mismo criterio. */
     html.theme-light .slot .type {
       background: rgb(var(--slot-rgb, var(--cyan-rgb)));
       border-color: rgb(var(--slot-rgb, var(--cyan-rgb)));
