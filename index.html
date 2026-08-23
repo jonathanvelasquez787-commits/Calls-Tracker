@@ -33,9 +33,17 @@
          a un navy de la MISMA familia que --panel-navy, pero más oscuro que
          su extremo más oscuro (#0a0e26) — así el fondo se distingue de las
          tarjetas por contraste sutil, en vez de mezclarse (muy claro) o
-         verse negro/desconectado (como antes). */
-      --bg: #0a0e22;
-      --bg-2: #070a1a;
+         verse negro/desconectado (como antes).
+         v269 — Pedido del usuario: v268 dejó el fondo bien pero un poco
+         gris/apagado — se mostraron 4 mockups (A=v268, B=más oscuro,
+         C=más azulado, D=negro casi puro de referencia/antes de v268) y el
+         usuario eligió explícitamente "Opción C" antes de tocar código.
+         Se reemplazan los valores de v268 por los de esa opción — mismo
+         criterio de "más oscuro que --panel-navy para que el fondo se
+         distinga de las tarjetas", solo que con más tinte azul (menos
+         gris) que v268. */
+      --bg: #0d1230;
+      --bg-2: #0a0f24;
       --panel: rgba(16, 24, 40, 0.88);
       --panel-2: rgba(13, 20, 36, 0.97);
       /* v267 — Pedido del usuario: el fondo azul marino con resplandor cian
@@ -5860,7 +5868,17 @@
 <div class="earnings-big earnings-value-accent" style="font-size: clamp(24px, 3.2vw, 36px);" id="cycleEarningsValue">$0.00</div>
 <div class="helper" id="cycleEarningsConvertedText"></div>
 </div>
-<div class="goal-stack">
+<!-- v269 — Pedido del usuario: "Ciclo: ..." y "Pago: ..." se veían apiladas
+     (una debajo de la otra) porque su contenedor era .goal-stack (grid de
+     1 columna, mismo patrón que usan las 2 filas de Meta/restantes en
+     "Ganancias de hoy" — ahí SÍ se quiere apiladas). Aquí solo hay 2
+     píldoras sueltas, sin ninguna otra fila que apilar contra ellas — se
+     cambia a .goal-pair (la misma clase que ya usa la app para poner 2
+     píldoras en una sola fila, ver "Meta $X" / "≈ L X" en Ganancias de
+     hoy), sin CSS nuevo. En mobile, .goal-pair ya tiene su propio ajuste
+     (justify-content:flex-start) igual que .goal-stack lo tenía, así que
+     el comportamiento angosto no cambia. -->
+<div class="goal-pair">
 <div class="goal-badge goal-soft" id="cycleRangeBadge">Ciclo: — – —</div>
 <div class="goal-badge goal-soft" id="cyclePayDateBadge">Pago: —</div>
 </div>
