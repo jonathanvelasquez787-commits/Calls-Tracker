@@ -1253,25 +1253,57 @@
       transform: translateX(0);
     }
 
-    .sidebar-nav-head {
+    /* Pedido del usuario (rediseño del sidebar, con captura de referencia
+       "TRKR"): la cabecera pasa de un título genérico "Menú" a un bloque
+       de marca (ícono + nombre + tagline) — mismo patrón visual que ya usa
+       `.brand` en el header de la app (ícono en cuadrito + texto), pero a
+       tamaño de sidebar. `.sidebar-nav-head-actions` (📌/✕) se conserva tal
+       cual, solo cambia de vecino (antes al lado de "Menú", ahora al lado
+       del bloque de marca). Los botones 📌/✕ en sí NO cambiaron de
+       id/clase — `.sidebar-icon-btn` sigue siendo la clase que ambos usan. */
+    .sidebar-brand-block {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
       gap: 8px;
-      padding: 4px 6px 12px;
-      margin-bottom: 6px;
+      padding: 4px 6px 14px;
+      margin-bottom: 10px;
       border-bottom: 1px solid var(--line);
     }
-    .sidebar-nav-title {
+    .sidebar-brand-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .sidebar-brand-icon {
+      flex: 0 0 auto;
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      background: linear-gradient(135deg, rgba(var(--cyan-rgb), .22), rgba(var(--blue-rgb), .22));
+      border: 1px solid rgba(var(--blue-rgb), .32);
+    }
+    .sidebar-brand-name {
       font-weight: 900;
-      font-size: 13px;
-      letter-spacing: .04em;
-      text-transform: uppercase;
+      font-size: 17px;
+      letter-spacing: -.02em;
+      line-height: 1.15;
+    }
+    .sidebar-brand-tagline {
       color: var(--muted);
+      font-size: 12px;
+      line-height: 1.3;
+      margin-top: 1px;
     }
     .sidebar-nav-head-actions {
       display: flex;
       gap: 6px;
+      flex: 0 0 auto;
     }
     .sidebar-icon-btn {
       width: 30px;
@@ -1302,28 +1334,226 @@
       #sidebarPinBtn { display: none; }
     }
 
+    /* Etiqueta de sección ("Navegación"/"Mi progreso") — mismo tratamiento
+       tipográfico que ya usaba `.sidebar-nav-title` (mayúsculas, muted,
+       letter-spacing), reutilizado como separador de grupo en vez de único
+       título de la cabecera. */
+    .sidebar-section-label {
+      font-weight: 900;
+      font-size: 11px;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 10px 10px 2px;
+    }
+
+    .sidebar-links {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    /* Cada link pasa de "ícono+texto plano" a una fila con ícono en
+       cuadrito de color propio por sección (mismo lenguaje visual que ya
+       usa `.action-icon-wrap`/`data-accent` en Controles) + flecha ‹›
+       apuntando a la derecha (mismo indicador que un menú de ajustes tipo
+       iOS/Android) — el link ACTIVO reemplaza la flecha por un punto
+       sólido, mismo criterio que el dot de "Inicio" en la referencia. */
     .sidebar-link {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       padding: 11px 12px;
-      border-radius: 12px;
+      border-radius: 14px;
       border: 1px solid transparent;
       background: transparent;
       color: var(--text);
       font-weight: 700;
-      font-size: 14px;
+      font-size: 14.5px;
       text-align: left;
       cursor: pointer;
       white-space: nowrap;
+      transition: background .14s ease, border-color .14s ease, transform .14s ease;
     }
     .sidebar-link:hover {
       background: rgba(255,255,255,.06);
+      transform: translateX(1px);
     }
     .sidebar-link.active {
       background: rgba(var(--cyan-rgb), .14);
       border-color: rgba(var(--cyan-rgb), .35);
       color: var(--text);
+    }
+    .sidebar-link-icon {
+      flex: 0 0 auto;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      background: rgba(var(--icon-rgb), .14);
+      border: 1px solid rgba(var(--icon-rgb), .28);
+    }
+    /* Un acento propio por sección (mismo criterio de color que ya usa el
+       resto de la app para distinguir tipos: --cyan/--blue/--pink/--good/
+       --warn ya existen en el theming claro/oscuro, sin variables nuevas). */
+    .sidebar-link-icon-home { --icon-rgb: var(--cyan-rgb); }
+    .sidebar-link-icon-schedule { --icon-rgb: var(--blue-rgb); }
+    .sidebar-link-icon-blocks { --icon-rgb: var(--pink-rgb); }
+    .sidebar-link-icon-reports { --icon-rgb: var(--good-rgb); }
+    .sidebar-link-icon-alerts { --icon-rgb: var(--warn-rgb); }
+    .sidebar-link-label {
+      flex: 1 1 auto;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sidebar-link-arrow {
+      flex: 0 0 auto;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1;
+    }
+    .sidebar-link-dot {
+      flex: 0 0 auto;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 10px rgba(var(--cyan-rgb), .6);
+    }
+    /* Un link inactivo nunca muestra el punto (solo el activo lo pinta vía
+       la regla de abajo) — se deja transparente en reposo en vez de display
+       none, así el layout de la fila no salta al activar/desactivar. */
+    .sidebar-link:not(.active) .sidebar-link-dot { display: none; }
+    .sidebar-link.active .sidebar-link-arrow { display: none; }
+
+    /* "Mi progreso": tarjeta con anillo de % (conic-gradient, sin SVG) +
+       texto — pedido del usuario, con captura de referencia. El botón
+       navega a "Reportes" al tocarlo (mismo destino que el link de arriba)
+       ya que es donde vive el detalle de productividad. El % se pinta vía
+       la variable `--ring-pct` (0-100), actualizada en JS junto al resto
+       del render — ver updateSidebarProgressWidget(). */
+    .sidebar-progress-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      margin: 2px 2px 4px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      cursor: pointer;
+      text-align: left;
+      font: inherit;
+      color: inherit;
+    }
+    .sidebar-progress-card:hover {
+      background: rgba(255,255,255,.06);
+    }
+    .sidebar-progress-ring {
+      flex: 0 0 auto;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background: conic-gradient(var(--blue) calc(var(--ring-pct, 0) * 1%), rgba(255,255,255,.10) 0);
+    }
+    .sidebar-progress-ring::before {
+      content: '';
+      position: absolute;
+      inset: 5px;
+      border-radius: 50%;
+      background: var(--panel-2);
+    }
+    .sidebar-progress-ring span {
+      position: relative;
+      z-index: 1;
+      font-weight: 900;
+      font-size: 13px;
+      letter-spacing: -.02em;
+    }
+    .sidebar-progress-text { min-width: 0; }
+    .sidebar-progress-title {
+      font-weight: 800;
+      font-size: 13px;
+      line-height: 1.25;
+    }
+    .sidebar-progress-sub {
+      color: var(--muted);
+      font-size: 11.5px;
+      margin-top: 2px;
+      line-height: 1.3;
+    }
+
+    /* Pie del sidebar: toggle de Modo oscuro — mismo dato/acción que ya
+       controla `#themeToggleBtn` del header (settings.theme), presentado
+       aquí como un switch on/off simple en vez del ciclo de 3 estados
+       (Auto/Claro/Oscuro) del botón del header. Encender el switch fuerza
+       'dark'; apagarlo fuerza 'light' — quien quiera "Auto" sigue usando
+       el botón 🌓 del header, que no se toca. */
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+    }
+    .sidebar-darkmode-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .sidebar-darkmode-icon { font-size: 15px; flex: 0 0 auto; }
+    .sidebar-darkmode-row > span:nth-child(2) { flex: 1 1 auto; }
+    .sidebar-switch {
+      flex: 0 0 auto;
+      position: relative;
+      width: 44px;
+      height: 26px;
+      display: inline-block;
+    }
+    .sidebar-switch input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      margin: 0;
+      cursor: pointer;
+    }
+    .sidebar-switch-track {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background: rgba(255,255,255,.14);
+      border: 1px solid var(--line-2);
+      transition: background .16s ease, border-color .16s ease;
+    }
+    .sidebar-switch-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,.35);
+      transition: transform .16s ease;
+    }
+    .sidebar-switch input:checked ~ .sidebar-switch-track {
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      border-color: transparent;
+    }
+    .sidebar-switch input:checked ~ .sidebar-switch-track .sidebar-switch-thumb {
+      transform: translateX(18px);
+    }
+    .sidebar-switch input:focus-visible ~ .sidebar-switch-track {
+      outline: 2px solid rgba(var(--cyan-rgb), .6);
+      outline-offset: 2px;
     }
 
     /* Escritorio con el sidebar FIJADO (pedido del usuario: "colapsado
@@ -5179,23 +5409,36 @@
      `.hero-brand-row` más abajo), visible en las 4 páginas. -->
 <button aria-hidden="true" class="sidebar-overlay" id="sidebarOverlay" tabindex="-1" type="button"></button>
 <nav aria-label="Navegación principal" class="sidebar-nav" id="sidebarNav">
-<div class="sidebar-nav-head">
-<span class="sidebar-nav-title">Menú</span>
+<!-- Pedido del usuario (rediseño con captura de referencia "TRKR"):
+     cabecera de marca en vez del título genérico "Menú" — puramente
+     decorativo (ícono + nombre + tagline), no vive en ningún dato de
+     settings/state. Los botones 📌/✕ conservan exactamente su
+     id/clase/listener de siempre. -->
+<div class="sidebar-brand-block">
+<div class="sidebar-brand-row">
+<span class="sidebar-brand-icon" aria-hidden="true">📊</span>
+<div>
+<div class="sidebar-brand-name">TRKR</div>
+<div class="sidebar-brand-tagline">Enfócate y hazlo contar.</div>
+</div>
+</div>
 <div class="sidebar-nav-head-actions">
 <button aria-label="Fijar menú abierto" aria-pressed="false" class="sidebar-icon-btn" id="sidebarPinBtn" title="Fijar menú abierto" type="button">📌</button>
 <button aria-label="Cerrar menú" class="sidebar-icon-btn" id="sidebarCloseBtn" type="button">✕</button>
 </div>
 </div>
-<button class="sidebar-link active" data-page="home" type="button">🏠 Inicio</button>
-<button class="sidebar-link" data-page="schedule" type="button">🗓️ Horario</button>
+<div class="sidebar-section-label">Navegación</div>
+<div class="sidebar-links">
+<button class="sidebar-link active" data-page="home" type="button"><span class="sidebar-link-icon sidebar-link-icon-home">🏠</span><span class="sidebar-link-label">Inicio</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
+<button class="sidebar-link" data-page="schedule" type="button"><span class="sidebar-link-icon sidebar-link-icon-schedule">🗓️</span><span class="sidebar-link-label">Horario</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
 <!-- v250 — Pedido del usuario: "Bloques del día" (antes la 2da sección
      dentro de la página "🗓️ Horario", justo debajo del editor) pasa a su
      PROPIA página del menú lateral — ver #pageBlocks más abajo. Se separa
      el CONFIGURAR (Horario, sigue en su propia página) de VER CÓMO VA EL
      DÍA (Bloques del día, ahora acá) — mismo criterio de "una página, un
      propósito" que ya separa Horario de Reportes. -->
-<button class="sidebar-link" data-page="blocks" type="button">📋 Bloques del día</button>
-<button class="sidebar-link" data-page="reports" type="button">📊 Reportes</button>
+<button class="sidebar-link" data-page="blocks" type="button"><span class="sidebar-link-icon sidebar-link-icon-blocks">📋</span><span class="sidebar-link-label">Bloques del día</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
+<button class="sidebar-link" data-page="reports" type="button"><span class="sidebar-link-icon sidebar-link-icon-reports">📊</span><span class="sidebar-link-label">Reportes</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
 <!-- v251 — Pedido del usuario: el botón/página del menú lateral se
      renombra de "⚙️ Ajustes" a "🔔 Avisos" — desde v242, Ajustes y
      Reiniciar viven como accesos rápidos en el header (junto a "Oscuro"),
@@ -5205,7 +5448,30 @@
      link (texto del botón) — el id de la página (`data-page="settings"`,
      `id="pageSettings"`) y el resto de ids/lógica (notificationsMiniBtn,
      navigateToPage(), settings.accordionState, etc.) no se tocan. -->
-<button class="sidebar-link" data-page="settings" type="button">🔔 Avisos</button>
+<button class="sidebar-link" data-page="settings" type="button"><span class="sidebar-link-icon sidebar-link-icon-alerts">🔔</span><span class="sidebar-link-label">Avisos</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
+</div>
+<!-- Pedido del usuario: tarjeta "Mi progreso" con anillo de % — dato
+     derivado (productivo de la semana actual vs. tu meta diaria × 7, ver
+     updateSidebarProgressWidget()), no un valor nuevo que se guarde en
+     settings/state. Toca la misma página "Reportes" que ya existe. -->
+<div class="sidebar-section-label">Mi progreso</div>
+<button class="sidebar-progress-card" id="sidebarProgressCard" type="button" title="Ver Reportes">
+<div class="sidebar-progress-ring" id="sidebarProgressRing" style="--ring-pct:0;"><span id="sidebarProgressPct">0%</span></div>
+<div class="sidebar-progress-text">
+<div class="sidebar-progress-title">Productividad semanal</div>
+<div class="sidebar-progress-sub" id="sidebarProgressSub">Cargando…</div>
+</div>
+</button>
+<div class="sidebar-footer">
+<div class="sidebar-darkmode-row">
+<span class="sidebar-darkmode-icon">🌙</span>
+<span>Modo oscuro</span>
+<label class="sidebar-switch">
+<input aria-label="Modo oscuro" id="sidebarDarkModeInput" type="checkbox"/>
+<span class="sidebar-switch-track"><span class="sidebar-switch-thumb"></span></span>
+</label>
+</div>
+</div>
 </nav>
 <div class="app"><section class="hero" id="heroSection">
 <div>
@@ -7154,13 +7420,40 @@ $0.72"></textarea>
       return '🌓 Auto';
     }
 
+    // Pedido del usuario (rediseño de sidebar): el switch "Modo oscuro" del
+    // sidebar necesita saber si el tema resultante es oscuro AHORA MISMO —
+    // no solo `settings.theme==='dark'`, sino también cuando está en 'auto'
+    // y el sistema no pide explícitamente claro (mismo criterio que ya usa
+    // el CSS: `@media (prefers-color-scheme: light)` es la única rama que
+    // activa el tema claro en 'auto', todo lo demás es oscuro por default).
+    function isEffectivelyDark() {
+      const root = document.documentElement;
+      if (root.classList.contains('theme-light')) return false;
+      if (root.classList.contains('theme-dark')) return true;
+      return !(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
+    }
+
     function updateThemeButtonUI() {
       const btn = document.getElementById('themeToggleBtn');
       if (btn) btn.textContent = themeButtonLabel(settings.theme);
+      const sidebarSwitch = document.getElementById('sidebarDarkModeInput');
+      if (sidebarSwitch) sidebarSwitch.checked = isEffectivelyDark();
     }
 
     function toggleTheme() {
       settings.theme = cycleTheme(settings.theme);
+      saveSettingsOnly();
+      applyTheme();
+      toast(`Tema: ${themeButtonLabel(settings.theme)}`);
+    }
+
+    // Pedido del usuario: switch de Modo oscuro en el sidebar — mismo dato
+    // (settings.theme) que ya controla `#themeToggleBtn`, pero como on/off
+    // simple en vez del ciclo de 3 estados (Auto/Claro/Oscuro). Encenderlo
+    // fuerza 'dark', apagarlo fuerza 'light' — 'auto' se queda disponible
+    // solo desde el botón 🌓 del header, sin tocar ese flujo.
+    function setThemeFromSidebarSwitch(isDark) {
+      settings.theme = isDark ? 'dark' : 'light';
       saveSettingsOnly();
       applyTheme();
       toast(`Tema: ${themeButtonLabel(settings.theme)}`);
@@ -14024,6 +14317,7 @@ function render() {
       renderTable();
       renderDayStatsCards();
       updateLiveActivityBar();
+      updateSidebarProgressWidget();
     }
 
     function toast(msg) {
@@ -14144,16 +14438,42 @@ function render() {
       if (pinned) openSidebar();
     }
 
+    // Pedido del usuario: tarjeta "Mi progreso" (anillo de %) en el sidebar
+    // — Productividad semanal = minutos productivos ya acumulados esta
+    // semana (mismos totals.productive que ya calcula weekSummaryForOffset,
+    // reutilizado en Resumen semanal) contra un estimado de meta semanal
+    // (tu meta diaria × 7 días — no hay una "meta semanal" propia
+    // configurada en la app, así que se deriva de la única meta que sí
+    // existe, sin agregar ningún campo nuevo a settings). Puramente
+    // informativo — no cambia si el usuario llega o no a la meta en
+    // ningún otro lado de la app.
+    function updateSidebarProgressWidget() {
+      const ring = document.getElementById('sidebarProgressRing');
+      const pctEl = document.getElementById('sidebarProgressPct');
+      const subEl = document.getElementById('sidebarProgressSub');
+      if (!ring || !pctEl || !subEl) return;
+      const summary = weekSummaryForOffset(0);
+      const weeklyGoalMin = Math.max(1, Number(settings.productiveGoalMin) || 0) * 7;
+      const pct = Math.max(0, Math.min(100, Math.round((summary.totals.productive / weeklyGoalMin) * 100)));
+      ring.style.setProperty('--ring-pct', String(pct));
+      pctEl.textContent = `${pct}%`;
+      subEl.textContent = pct >= 90 ? '¡Vas por buen camino!' : pct >= 50 ? 'Sigue así, ya vas a la mitad.' : 'Toca para ver el detalle.';
+    }
+
     function initSidebarNav() {
       const menuToggleBtn = document.getElementById('menuToggleBtn');
       const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
       const sidebarPinBtn = document.getElementById('sidebarPinBtn');
       const sidebarOverlay = document.getElementById('sidebarOverlay');
       const sidebarNav = document.getElementById('sidebarNav');
+      const sidebarDarkModeInput = document.getElementById('sidebarDarkModeInput');
+      const sidebarProgressCard = document.getElementById('sidebarProgressCard');
       if (menuToggleBtn) menuToggleBtn.addEventListener('click', toggleSidebar);
       if (sidebarCloseBtn) sidebarCloseBtn.addEventListener('click', closeSidebar);
       if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
       if (sidebarPinBtn) sidebarPinBtn.addEventListener('click', toggleSidebarPin);
+      if (sidebarDarkModeInput) sidebarDarkModeInput.addEventListener('change', (e) => setThemeFromSidebarSwitch(e.target.checked));
+      if (sidebarProgressCard) sidebarProgressCard.addEventListener('click', () => navigateToPage('reports'));
       if (sidebarNav) {
         sidebarNav.addEventListener('click', (e) => {
           const btn = e.target instanceof Element ? e.target.closest('.sidebar-link') : null;
@@ -14161,6 +14481,8 @@ function render() {
           navigateToPage(btn.getAttribute('data-page'));
         });
       }
+      updateThemeButtonUI();
+      updateSidebarProgressWidget();
       navigateToPage('home');
     }
 
