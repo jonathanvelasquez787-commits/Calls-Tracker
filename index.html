@@ -3199,17 +3199,18 @@
          `.grid` (se movieron a Inicio/Reportes respectivamente, ver HTML)
          así que ya no hace falta `justify-self` — el mismo margin:auto de
          siempre las centra igual que al resto. */
-      /* v264 — Pedido del usuario: "Llamadas" (#callsSection) se movió
-         fuera de `.app-page` junto a `#heroSection` (persistente entre las
-         4 páginas, ver ese comentario en el HTML) — se agrega aquí
-         explícito, mismo criterio que `#heroSection`, ya que dejó de
-         calzar con el selector de clase `.app-page > section.card` de
-         arriba al salir de `.app-page`. */
+      /* v265 — REVERSIÓN de v264. Pedido del usuario: "Llamadas"
+         (#callsSection) vuelve a vivir DENTRO de `.app-page` (página
+         Inicio, justo debajo de "Turno de Hoy") — deja de ser persistente
+         entre las 4 páginas del menú (ver el mismo cambio en el HTML, y en
+         el bloque de margin-bottom más abajo). Al volver a ser hija directa
+         de `.app-page`, ya calza sola con el selector de clase
+         `.app-page > section.card` de abajo — se quita el agregado
+         explícito de v264, que ya no aplica. */
       .app-page > .accordion-card,
       .app-page > section.card,
       .app-page > .day-stats-grid,
-      #heroSection,
-      #callsSection {
+      #heroSection {
         max-width: 1200px;
         margin-left: auto;
         margin-right: auto;
@@ -4626,15 +4627,12 @@
        `.grid`, con su espaciado heredado del padre) ahora también son
        hijos directos de su `.app-page` — se suman al mismo selector de
        clase automáticamente, sin necesitar su propia excepción. */
-    /* v264 — Pedido del usuario: "Llamadas" (#callsSection) se movió fuera
-       de `.app-page` (junto a `#heroSection`, ver ese comentario en el
-       HTML) — se agrega aquí explícito, ya que dejó de calzar con el
-       selector de clase de arriba al salir de `.app-page`. `#heroSection`
-       no necesita este mismo agregado porque `.hero` ya trae su propio
-       `margin-bottom: 14px` (ver esa regla). */
+    /* v265 — REVERSIÓN de v264. "Llamadas" (#callsSection) vuelve a vivir
+       DENTRO de `.app-page` (página Inicio) — al ser de nuevo hija directa
+       de `.app-page`, ya calza sola con el selector de clase de abajo. Se
+       quita el agregado explícito de v264, que ya no aplica. */
     .app-page > .accordion-card,
-    .app-page > section.card,
-    #callsSection {
+    .app-page > section.card {
       margin-bottom: 14px;
     }
 
@@ -5612,46 +5610,15 @@
 </div>
 </section>
 
-<!-- v264 — Pedido del usuario: "Llamadas" (Iniciar llamada/Pegar Llamadas/
-     Agregar llamada) se muda aquí, junto a #heroSection — FUERA de
-     `.app-page` — para que, igual que Iniciar shift/Break/Lunch (que ya
-     viven en el header, persistente), estos 3 botones se sigan viendo sin
-     importar a qué página del menú se navegue, en vez de desaparecer al
-     salir de "Inicio". Ningún id cambió (callsSection/callControlBtn/
-     pasteCallsBtn/addCallManualBtn/callControlLabel/callControlTimer) — el
-     JS que ya los usa (renderHeader(), los listeners de los 3 botones)
-     sigue funcionando exactamente igual, solo cambió dónde vive en el
-     HTML. Se agrega `#callsSection` a los mismos 2 selectores de CSS que
-     ya usa `#heroSection` para max-width/margin (ver esas reglas) — antes
-     heredaba ambos de `.app-page > section.card`, que ya no aplica al
-     salir de `.app-page`. -->
-<section class="card span-12" id="callsSection">
-<div class="section-title">
-<div>
-<h2>Llamadas</h2>
-<p>Inicia una llamada, pega tu exportación de Propio o agrega una manual.</p>
-</div>
-</div>
-
-<div class="controls-grid">
-<button class="action-btn" id="callControlBtn" type="button" data-accent="pink">
-<span class="action-ripple"></span>
-<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📞</span></span>
-<span class="action-label" id="callControlLabel">Iniciar llamada</span>
-<span class="action-sub" id="callControlTimer">00:00:00</span>
-</button>
-<button class="action-btn" id="pasteCallsBtn" type="button" data-accent="cyan"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📋</span></span><span class="action-label">Pegar Llamadas</span><span class="action-sub">Importar data</span></button>
-<button class="action-btn" id="addCallManualBtn" type="button" data-accent="good"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">➕</span></span><span class="action-label">Agregar llamada</span><span class="action-sub">Manual</span></button>
-</div>
-</section>
-
 <!-- v238 — Pedido del usuario: página "🏠 Inicio" del menú lateral —
      Ganancias de hoy, Turno de Hoy, Ganancias del ciclo (sin cambios de
      contenido) + Tabla de llamadas (movida aquí desde el final de la
      página, ver comentario junto a #callTableAccordion más abajo). El
-     header (#heroSection) y "Llamadas" (#callsSection, ver v264) quedan
-     FUERA de esta página a propósito — son persistentes entre las 4
-     páginas del menú, no exclusivos de Inicio. -->
+     header (#heroSection) queda FUERA de esta página a propósito — es
+     persistente entre las 4 páginas del menú. "Llamadas" (#callsSection)
+     vivió aquí afuera también entre v264 y v265 (ver el comentario v265,
+     junto a esa sección más abajo) — ya no: volvió a vivir DENTRO de esta
+     página, justo debajo de "Turno de Hoy". -->
 <div class="app-page" data-page="home" id="pageHome">
 <!-- Pedido del usuario (v199): "Ganancias de hoy" sube arriba de "Llamadas"
      — es lo primero que el usuario quiere ver al entrar (cuánto llevo),
@@ -5721,6 +5688,39 @@
   <div id="blockSummaryStrip"></div>
 </div>
 </details>
+
+<!-- v265 — REVERSIÓN de v264. Pedido del usuario: "Llamadas" (Iniciar
+     llamada/Pegar Llamadas/Agregar llamada) deja de ser persistente entre
+     las 4 páginas del menú — vuelve a vivir SOLO dentro de la página
+     "🏠 Inicio" (#pageHome), justo debajo de "Turno de Hoy" y arriba de
+     "Ganancias del ciclo". Ningún id cambió (callsSection/callControlBtn/
+     pasteCallsBtn/addCallManualBtn/callControlLabel/callControlTimer) — el
+     JS que ya los usa (renderHeader(), los listeners de los 3 botones)
+     sigue funcionando exactamente igual, solo cambió dónde vive en el
+     HTML. Se quita `#callsSection` de los 2 selectores de CSS que la
+     alcanzaban explícito desde v264 (max-width/centrado, margin-bottom) —
+     al volver a ser hija directa de `.app-page`, ya calza sola con el
+     selector de clase `.app-page > section.card` que ya cubre esta
+     sección, igual que el resto (ver esas 2 reglas, "v265"). -->
+<section class="card span-12" id="callsSection">
+<div class="section-title">
+<div>
+<h2>Llamadas</h2>
+<p>Inicia una llamada, pega tu exportación de Propio o agrega una manual.</p>
+</div>
+</div>
+
+<div class="controls-grid">
+<button class="action-btn" id="callControlBtn" type="button" data-accent="pink">
+<span class="action-ripple"></span>
+<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📞</span></span>
+<span class="action-label" id="callControlLabel">Iniciar llamada</span>
+<span class="action-sub" id="callControlTimer">00:00:00</span>
+</button>
+<button class="action-btn" id="pasteCallsBtn" type="button" data-accent="cyan"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📋</span></span><span class="action-label">Pegar Llamadas</span><span class="action-sub">Importar data</span></button>
+<button class="action-btn" id="addCallManualBtn" type="button" data-accent="good"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">➕</span></span><span class="action-label">Agregar llamada</span><span class="action-sub">Manual</span></button>
+</div>
+</section>
 
 <!-- v262 — Pedido del usuario: "Ganancias del ciclo" se muda aquí (antes
      vivía en la página "📊 Reportes", ver #cycleAccordion) — justo debajo
