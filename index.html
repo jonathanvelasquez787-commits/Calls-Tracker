@@ -595,6 +595,20 @@
         background: var(--text);
         color: var(--hover-flip); /* v224 */
       }
+      /* Pedido del usuario (v230): SOLO estos 2 grupos de botones (Resumen
+         semanal / Ganancias del ciclo) pasan, en modo claro, de fondo negro
+         (var(--text), heredado de la regla de arriba) a un azul tipo "aero"
+         — pedido explícito de no tocar ningún otro botón ni ningún otro
+         `.week-nav` de la app (ej. "Semana específica" en Horario, que se
+         queda negro). `:where()` no suma especificidad — gana por venir
+         después en la hoja, mismo patrón que el resto de overrides scoped
+         del archivo (ver v216/v217) — buscar "v230". */
+      :root:not(.theme-dark) :where(#weekSummaryAccordion) .week-nav button:hover,
+      :root:not(.theme-dark) :where(#cycleAccordion) .week-nav button:hover {
+        background: #4a90e2;
+        border-color: #4a90e2;
+        color: #fff;
+      }
       :root:not(.theme-dark) .day-tab.active {
         background: var(--text);
         border-color: var(--text);
@@ -881,6 +895,14 @@
     html.theme-light .week-nav button:hover {
       background: var(--text);
       color: var(--hover-flip); /* v224 */
+    }
+    /* Ver comentario gemelo en la rama @media de arriba (v230) — mismo
+       criterio, mismas reglas. */
+    html.theme-light :where(#weekSummaryAccordion) .week-nav button:hover,
+    html.theme-light :where(#cycleAccordion) .week-nav button:hover {
+      background: #4a90e2;
+      border-color: #4a90e2;
+      color: #fff;
     }
     html.theme-light .day-tab.active {
       background: var(--text);
@@ -1223,10 +1245,28 @@
     :where(#callTableAccordion) .gap-edit-btn:not([data-call-delete]):hover,
     :where(#callTableAccordion) .gap-edit-btn:not([data-call-delete]):focus-visible,
     :where(#weekSummaryAccordion) .gap-edit-btn:hover,
-    :where(#weekSummaryAccordion) .gap-edit-btn:focus-visible,
-    :where(#weekSummaryAccordion) .week-nav button:hover,
-    :where(#weekSummaryAccordion) .week-nav button:focus-visible {
+    :where(#weekSummaryAccordion) .gap-edit-btn:focus-visible {
       color: var(--hover-flip); /* v227 */
+    }
+
+    /* Pedido del usuario (v230): "‹ Anterior / Esta semana / Siguiente ›"
+       (Resumen semanal) y "‹ Anterior / Ciclo actual / Siguiente ›"
+       (Ganancias del ciclo) no se veían igual que el resto de botones del
+       header (ej. "⚙️ Ajustes") al hacer hover en modo oscuro — la regla
+       base `.week-nav button:hover` (ver más abajo) solo aplica
+       `filter: brightness(1.1)` sobre su propio fondo tenue, sin el mismo
+       fondo sólido `rgba(255,255,255,.09)` ni el cambio de color a
+       `--hover-flip` que ya llevan los botones del header desde v215/v227.
+       Se saca de la regla compartida de arriba (que además cubre
+       .gap-edit-btn, no tocado aquí) y se scoped a estas 2 secciones —
+       ningún otro `.week-nav` de la app se toca (ej. "Semana específica" en
+       Horario, que se queda con su hover de siempre) — buscar "v230". */
+    :where(#weekSummaryAccordion) .week-nav button:hover,
+    :where(#weekSummaryAccordion) .week-nav button:focus-visible,
+    :where(#cycleAccordion) .week-nav button:hover,
+    :where(#cycleAccordion) .week-nav button:focus-visible {
+      background: rgba(255,255,255,.09);
+      color: var(--hover-flip);
     }
 
     .hero-action-btn.danger {
