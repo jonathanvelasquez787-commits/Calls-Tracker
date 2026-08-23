@@ -5694,6 +5694,47 @@
 </div>
 </details>
 
+<!-- v262 — Pedido del usuario: "Ganancias del ciclo" se muda aquí (antes
+     vivía en la página "📊 Reportes", ver #cycleAccordion) — justo debajo
+     de "Turno de Hoy", en Inicio. Ningún id cambió
+     (cycleAccordion/cyclePrevBtn/cycleCurrentBtn/cycleNextBtn/
+     cycleEarningsValue/cycleEarningsConvertedText/cycleRangeBadge/
+     cyclePayDateBadge/cycleWeek1ProductiveTag/cycleWeek2ProductiveTag/
+     cycleTotalProductiveTag) — el JS que ya los usa (renderHeader(), el
+     wiring de cyclePrevBtn/cycleCurrentBtn/cycleNextBtn) sigue funcionando
+     exactamente igual, solo cambió dónde vive en el HTML. -->
+<details class="accordion-card" id="cycleAccordion">
+<summary>
+  <div class="accordion-head">
+    <h2>Ganancias del ciclo</h2>
+    <p>Total del ciclo de pago actual (14 días) y la próxima fecha de pago.</p>
+  </div>
+  <div class="accordion-chevron">⌄</div>
+</summary>
+<div class="accordion-body">
+<div class="week-nav">
+<button id="cyclePrevBtn" type="button">‹ Anterior</button>
+<button id="cycleCurrentBtn" type="button">Ciclo actual</button>
+<button id="cycleNextBtn" type="button">Siguiente ›</button>
+</div>
+<div class="earn-row">
+<div>
+<div class="earnings-big earnings-value-accent" style="font-size: clamp(24px, 3.2vw, 36px);" id="cycleEarningsValue">$0.00</div>
+<div class="helper" id="cycleEarningsConvertedText"></div>
+</div>
+<div class="goal-stack">
+<div class="goal-badge goal-soft" id="cycleRangeBadge">Ciclo: — – —</div>
+<div class="goal-badge goal-soft" id="cyclePayDateBadge">Pago: —</div>
+</div>
+</div>
+<div class="table-tags" style="margin-top:4px;">
+<span class="tag" id="cycleWeek1ProductiveTag">Semana 1: 00:00:00</span>
+<span class="tag" id="cycleWeek2ProductiveTag">Semana 2: 00:00:00</span>
+<span class="tag good" id="cycleTotalProductiveTag">Total: 00:00:00</span>
+</div>
+</div>
+</details>
+
 <!-- v238 — Pedido del usuario: "Tabla de llamadas" se mueve aquí (antes
      vivía al final de la página, dentro de `.grid` junto a "Resumen
      semanal") para poder editar llamadas rápido sin salir de Inicio.
@@ -5998,38 +6039,6 @@
 </div>
 </details>
 </div>
-
-<details class="accordion-card" id="cycleAccordion">
-<summary>
-  <div class="accordion-head">
-    <h2>Ganancias del ciclo</h2>
-    <p>Total del ciclo de pago actual (14 días) y la próxima fecha de pago.</p>
-  </div>
-  <div class="accordion-chevron">⌄</div>
-</summary>
-<div class="accordion-body">
-<div class="week-nav">
-<button id="cyclePrevBtn" type="button">‹ Anterior</button>
-<button id="cycleCurrentBtn" type="button">Ciclo actual</button>
-<button id="cycleNextBtn" type="button">Siguiente ›</button>
-</div>
-<div class="earn-row">
-<div>
-<div class="earnings-big earnings-value-accent" style="font-size: clamp(24px, 3.2vw, 36px);" id="cycleEarningsValue">$0.00</div>
-<div class="helper" id="cycleEarningsConvertedText"></div>
-</div>
-<div class="goal-stack">
-<div class="goal-badge goal-soft" id="cycleRangeBadge">Ciclo: — – —</div>
-<div class="goal-badge goal-soft" id="cyclePayDateBadge">Pago: —</div>
-</div>
-</div>
-<div class="table-tags" style="margin-top:4px;">
-<span class="tag" id="cycleWeek1ProductiveTag">Semana 1: 00:00:00</span>
-<span class="tag" id="cycleWeek2ProductiveTag">Semana 2: 00:00:00</span>
-<span class="tag good" id="cycleTotalProductiveTag">Total: 00:00:00</span>
-</div>
-</div>
-</details>
 
 <details class="accordion-card" id="weekSummaryAccordion" open>
 <summary>
