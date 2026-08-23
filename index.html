@@ -6012,6 +6012,27 @@
       font-weight: 700;
       font-size: 12.5px;
     }
+    /* v273 — Bug reportado por el usuario (con captura, en mobile): las
+       horas de cada bloque del timeline (.sched-tl-time-input, agregadas en
+       v272) se veían cortadas ("08:(", "10:.:") con un ícono de reloj
+       superpuesto encima del texto. Causa: a diferencia de
+       .sched-time-field (Inicio/Fin del turno, cabecera del día — ver esa
+       regla más arriba), que sí apaga el ícono nativo de
+       <input type="time"> con ::-webkit-calendar-picker-indicator, estos
+       inputs compactos del timeline nunca recibieron ese mismo apagado —
+       en Chrome/Android el navegador sigue dibujando su propio ícono de
+       reloj DENTRO del campo, que junto al ancho ya angosto (max-width en
+       mobile, ver el @media más abajo) no dejaba espacio ni para el ícono
+       ni para el texto completo de la hora, cortando ambos. A diferencia
+       de .sched-time-field (que necesita mantener el indicador nativo
+       "vivo" pero invisible, para que un click ahí abra el time-picker
+       encima de su propio ícono decorativo 🕐), aquí no hay ningún ícono
+       decorativo que cubrir — se apaga con display:none sin más; el resto
+       del campo se sigue pudiendo tocar para abrir el time-picker nativo,
+       como cualquier otro <input type="time">. */
+    .sched-tl-time-input::-webkit-calendar-picker-indicator {
+      display: none;
+    }
     .sched-tl-goal {
       padding: 8px 10px;
       margin: 0;
@@ -6033,7 +6054,12 @@
       .sched-tl-rail { display: none; }
       .sched-tl-icon { width: 28px; height: 28px; font-size: 13px; }
       .sched-tl-handle { display: none; }
-      .sched-tl-time-input { font-size: 13.5px; max-width: 66px; }
+      /* v273 — max-width sube un poco (66px→72px): con el ícono nativo ya
+         apagado (ver .sched-tl-time-input::-webkit-calendar-picker-
+         indicator más arriba) el texto de la hora ya no necesita competir
+         por espacio, pero se deja un pequeño margen extra de todos modos
+         para que "08:00" nunca quede al límite justo del borde. */
+      .sched-tl-time-input { font-size: 13.5px; max-width: 72px; }
     }
 
     /* ---- "+ Agregar bloque": último paso de la línea de tiempo ----
