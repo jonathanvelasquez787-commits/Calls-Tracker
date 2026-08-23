@@ -4513,6 +4513,61 @@
       line-height: 1.45;
     }
 
+    /* v279 — Pedido del usuario: "Plantilla" y "Semana específica" (dentro
+       de Horario) usan exactamente el mismo formulario (mismos tabs de día,
+       mismos campos, mismo layout) — visualmente casi idénticos, y la única
+       pista de en cuál de los dos se está era el tab activo arriba, fácil
+       de pasar por alto. Se agregan 2 señales extra, ambas condicionadas al
+       modo actual (ver syncScheduleWeekNavUI() en el JS, que alterna la
+       clase `.sched-week-active` en `#scheduleConfigAccordion` y el
+       contenido de `#scheduleModeBanner`):
+       1) Un banner de una línea, arriba de todo el formulario, que dice
+          explícitamente en cuál modo se está y qué implica ("se repite cada
+          semana" vs. "editando SOLO esta semana, tu plantilla no se toca").
+       2) Un borde de acento (azul, mismo --blue que ya usa el resto de esta
+          sección para "Trabajo"/elementos activos) alrededor de TODA la
+          tarjeta del acordeón mientras se edita una semana específica — así
+          la distinción se nota de reojo, sin tener que leer el tab. Modo
+          "Plantilla" se queda con el borde/fondo neutro de siempre (ningún
+          cambio ahí, cero regresión). */
+    .sched-mode-banner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 12px;
+      padding: 9px 12px;
+      font-size: 12.5px;
+      font-weight: 700;
+      line-height: 1.35;
+      margin: 2px 0 0;
+    }
+    .sched-mode-banner-icon {
+      flex: 0 0 auto;
+      font-size: 15px;
+      line-height: 1;
+    }
+    .sched-mode-banner.tone-template {
+      background: rgba(255, 255, 255, .03);
+      color: var(--muted);
+      border: 1px solid var(--line);
+    }
+    .sched-mode-banner.tone-week {
+      background: rgba(var(--blue-rgb), .12);
+      color: var(--blue);
+      border: 1px solid rgba(var(--blue-rgb), .35);
+    }
+    #scheduleConfigAccordion.sched-week-active {
+      border-color: rgba(var(--blue-rgb), .5);
+      box-shadow: 0 0 0 1px rgba(var(--blue-rgb), .22);
+    }
+    /* Mismo acento también en la tarjeta de cabecera del día (Inicio/Fin de
+       turno) — refuerza la misma señal un nivel más adentro del formulario,
+       sin tener que levantar la vista hasta el borde del acordeón. */
+    #scheduleConfigAccordion.sched-week-active .sched-day-card {
+      border-color: rgba(var(--blue-rgb), .4);
+      background: rgba(var(--blue-rgb), .04);
+    }
+
     .sched-checkbox-row {
       display: flex;
       align-items: center;
@@ -7297,6 +7352,7 @@
       <button class="day-tab" data-mode="week" type="button">📅 Semana específica</button>
     </div>
     <p class="sched-hint">"Plantilla" es tu horario de siempre — se repite igual cada semana. Usa "Semana específica" solo cuando UNA semana en particular va a ser distinta de tu plantilla (ej. cambiaste de turno por una semana nada más) — se guarda aparte, sin tocar tu plantilla de siempre.</p>
+    <div class="sched-mode-banner tone-template" id="scheduleModeBanner"><span class="sched-mode-banner-icon" aria-hidden="true">🔁</span><span id="scheduleModeBannerText">Editando tu horario de siempre — se repite cada semana.</span></div>
   </div>
 
   <div id="scheduleWeekNav" class="sched-block" style="display:none;">
@@ -13353,6 +13409,41 @@ function renderWeekSummary() {
       if (list) list.querySelectorAll('input, select, button').forEach(el => { el.disabled = disabled; });
     }
 
+    // v279 — Pedido del usuario: "Plantilla" y "Semana específica" se veían
+    // casi idénticas (mismo formulario) — se agrega un banner de una línea
+    // (arriba del formulario) + un borde de acento en toda la tarjeta del
+    // acordeón (ver CSS `.sched-mode-banner`/`#scheduleConfigAccordion.
+    // sched-week-active`) para que quede claro de reojo, sin leer el tab,
+    // en cuál de los dos modos se está. Se llama desde los 2 puntos de
+    // salida de syncScheduleWeekNavUI() (modo plantilla, y modo semana ya
+    // con isPast/hasCustom resueltos) para poder distinguir también "semana
+    // personalizada activa" de "viendo la plantilla de referencia, sin
+    // activar todavía" — mismo dato (`hasCustom`) que ya decide si el
+    // formulario está habilitado o no.
+    function syncScheduleModeBanner(isWeekMode, hasCustom = false) {
+      const accordion = document.getElementById('scheduleConfigAccordion');
+      const banner = document.getElementById('scheduleModeBanner');
+      const bannerText = document.getElementById('scheduleModeBannerText');
+      const bannerIcon = banner ? banner.querySelector('.sched-mode-banner-icon') : null;
+      if (accordion) accordion.classList.toggle('sched-week-active', isWeekMode && hasCustom);
+      if (!banner || !bannerText || !bannerIcon) return;
+      if (!isWeekMode) {
+        banner.className = 'sched-mode-banner tone-template';
+        bannerIcon.textContent = '🔁';
+        bannerText.textContent = 'Editando tu horario de siempre — se repite cada semana.';
+      } else if (!hasCustom) {
+        banner.className = 'sched-mode-banner tone-template';
+        bannerIcon.textContent = '👁️';
+        bannerText.textContent = 'Viendo tu plantilla como referencia — activa "Personalizar esta semana" para editar solo esta semana.';
+      } else {
+        const weekStart = scheduleWeekStartDate(scheduleWeekOffset);
+        const weekEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6);
+        banner.className = 'sched-mode-banner tone-week';
+        bannerIcon.textContent = '📅';
+        bannerText.textContent = `Editando SOLO ${formatWeekRangeLabel(weekStart, weekEnd)} — tu plantilla no se toca.`;
+      }
+    }
+
     function syncScheduleWeekNavUI() {
       const nav = document.getElementById('scheduleWeekNav');
       if (!nav) return;
@@ -13376,6 +13467,7 @@ function renderWeekSummary() {
       // todo en cuanto se sale de modo 'week'.
       if (!isWeekMode) {
         setScheduleFormDisabled(false);
+        syncScheduleModeBanner(false);
         return;
       }
 
@@ -13400,6 +13492,7 @@ function renderWeekSummary() {
       // "Personalizar esta semana" (si no, se está viendo la plantilla nada
       // más como referencia, de solo lectura, hasta que se active).
       setScheduleFormDisabled(isPast || !hasCustom);
+      syncScheduleModeBanner(true, hasCustom);
     }
 
     function syncShiftModalFields() {
