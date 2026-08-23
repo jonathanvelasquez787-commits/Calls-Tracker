@@ -1945,20 +1945,20 @@
       font-size: 9px;
     }
 
-    /* Pedido del usuario (v195): en estos 3 botones chicos del header
-       (Shift/Break/Lunch), el label y el sub deben verse SIEMPRE en blanco
-       — a diferencia de los botones grandes de "Llamadas" (.controls-grid),
-       que siguen usando el color de acento en reposo (var(--accent), pedido
-       explícito de v187). Selector con más especificidad que la regla base
-       `.action-label`/`.action-sub` (color: var(--accent)) por tener 2
-       clases en vez de 1, así gana sin importar el orden en la hoja de
-       estilos — sin necesitar !important. No pisa las reglas de
-       hover/pressed/active (ya fuerzan var(--text) = blanco también), solo
-       cambia el color de REPOSO de estos 3 botones en particular. */
-    .hero-shift-actions .action-btn .action-label,
-    .hero-shift-actions .action-btn .action-sub {
-      color: var(--text);
-    }
+    /* Pedido del usuario (v211): REVERSIÓN de v195 (ver historial: v195
+       forzaba el texto de estos 3 botones a var(--text) SIEMPRE, a
+       diferencia de los botones de "Llamadas"). El usuario pidió
+       explícitamente que Shift/Break/Lunch vuelvan a seguir las MISMAS
+       pautas que los botones grandes de Llamadas (.controls-grid): color
+       de acento (var(--accent)) en reposo, blanco solo en hover/pressed/
+       activo — sin ninguna regla especial aparte para estos 3 botones. Se
+       elimina la regla de v195 sin reemplazo: al no haber ya ningún
+       override de color aquí, .action-label/.action-sub (la regla base,
+       ver más abajo) y las reglas de hover/pressed/is-active ya existentes
+       (compartidas con Llamadas) vuelven a aplicar tal cual, igual que en
+       los botones de Llamadas. Solo se revierte el COLOR — el tamaño de
+       fuente más chico de estos botones (.action-label/.action-sub arriba,
+       10.5px/9px) no se toca. */
 
     /* Pedido del usuario: que "Día activo" se vea y se use como un
        calendario de verdad. El elemento pasó de <select> a
