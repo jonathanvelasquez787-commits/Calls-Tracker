@@ -6126,6 +6126,48 @@
          por espacio, pero se deja un pequeño margen extra de todos modos
          para que "08:00" nunca quede al límite justo del borde. */
       .sched-tl-time-input { font-size: 13.5px; max-width: 72px; }
+
+      /* v274 — Bug reportado por el usuario (con capturas, comparando
+         mobile vs escritorio): en mobile, `.sched-tl-card-top` heredaba el
+         mismo `flex-wrap: wrap` sin control que usa escritorio (ver esa
+         regla, fuera de este @media) — con menos ancho disponible, el
+         navegador decidía por su cuenta dónde cortar la línea, y el botón
+         "✕" (a veces también el rango de horas) terminaba cayendo solo en
+         su propia línea, descolgado — nunca hubo un layout mobile
+         INTENCIONAL para esta fila, solo el mismo flex de escritorio
+         apretado a un ancho menor. Se reemplaza por un grid explícito de 3
+         filas fijas — mismo contenido, mismas clases (nada de HTML ni JS
+         cambia), pero con una posición predecible para cada pieza sin
+         importar qué tan largo sea el nombre/subtítulo del bloque:
+         1. ícono + nombre/subtítulo
+         2. rango de horas completo
+         3. píldora de duración (izquierda) + botón "✕" (derecha)
+         El botón "✕" además se deja siempre visible en mobile
+         (opacity:1) — el fade-in por :hover que usa escritorio no tiene
+         forma de dispararse en touch, así que ahí "aparecer solo en
+         hover" significaba en la práctica "nunca visible" hasta que el
+         usuario tocara la tarjeta primero (revelándolo por su propio
+         :hover-mediante-tap inconsistente). */
+      .sched-tl-card-top {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        grid-template-areas:
+          "icon title title"
+          "time time time"
+          "dur  dur  remove";
+        row-gap: 6px;
+        column-gap: 8px;
+      }
+      .sched-tl-icon { grid-area: icon; }
+      .sched-tl-titles { grid-area: title; flex: unset; }
+      .sched-tl-time-inline { grid-area: time; flex: unset; }
+      .sched-tl-duration { grid-area: dur; justify-self: start; }
+      .sched-tl-item .block-remove-btn.sched-tl-remove {
+        grid-area: remove;
+        justify-self: end;
+        align-self: center;
+        opacity: 1;
+      }
     }
 
     /* ---- "+ Agregar bloque": último paso de la línea de tiempo ----
