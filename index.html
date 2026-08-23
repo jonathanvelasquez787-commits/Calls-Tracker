@@ -1511,15 +1511,29 @@
     .hero-top-actions::-webkit-scrollbar { display: none; }
     .hero-top-actions .hero-action-btn { flex-shrink: 0; }
 
-    /* v243 — Pedido del usuario: "Reiniciar" (la única acción de peligro del
-       header) se separa del resto del grupo y baja a su PROPIA fila, pegada
-       al extremo derecho, abajo del todo del hero — lejos de los otros
-       botones para no apretarlo por accidente al buscar Ajustes/Higher
-       Rate/Oscuro. */
-    .hero-bottom-row {
+    /* v245 — Pedido del usuario: "Reiniciar" (antes en su propia fila hasta
+       abajo del hero, ver v243) vuelve a vivir junto a Ajustes — pero solo
+       Ajustes y Reiniciar quedan agrupados juntos entre sí: en escritorio
+       lado a lado (Reiniciar a la derecha de Ajustes), en mobile Reiniciar
+       cae DEBAJO de Ajustes (no del grupo completo Oscuro/Higher Rate,
+       solo de Ajustes) — por eso es un sub-grupo propio dentro de
+       `.hero-top-actions` (ver HTML), no parte de la fila general: así el
+       cambio de fila→columna solo afecta a este par de botones, sin tocar
+       el nowrap+scroll del resto del grupo (Oscuro/Higher Rate). Mismo
+       breakpoint (760px) que ya usa el resto de la app para mobile. */
+    .hero-ajustes-reset-group {
       display: flex;
-      justify-content: flex-end;
-      margin-top: 10px;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 760px) {
+      .hero-ajustes-reset-group {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 6px;
+      }
     }
 
     /* Pedido del usuario (v154 seguía partiendo "Ajustes" a una segunda
@@ -5103,16 +5117,28 @@
      línea DEBAJO de la marca (se pidió que se quede SIEMPRE en la misma
      fila que "Propio Shift Tracker") — se resuelve en el CSS (ver
      `.hero-top-actions`) pasando de wrap a nowrap + scroll horizontal,
-     mismo patrón que ya usan `.hero-actions`/`.chips`.
-     Reiniciar SALE por completo de este grupo — pidió que quede en su
-     PROPIA fila, abajo a la derecha del hero, lejos de los otros 3
-     botones para no apretarlo sin querer al buscar Ajustes/Higher Rate/
-     Oscuro. Ver `.hero-bottom-row` (CSS) y el nuevo `resetHeaderBtn` más
-     abajo, ya fuera de `.hero-top-actions`. */-->
+     mismo patrón que ya usan `.hero-actions`/`.chips`. En esa versión
+     Reiniciar salía por completo del grupo a su propia fila hasta abajo
+     del hero — ver v245 para la reversión parcial de eso.
+
+     v245 — Pedido del usuario (con captura): Reiniciar vuelve a vivir
+     junto a Ajustes (ya no solo en su fila hasta abajo del hero) — pero
+     con un comportamiento responsive propio: en escritorio, a la derecha
+     de Ajustes (misma fila); en mobile, debajo de Ajustes (no debajo del
+     grupo completo Oscuro/Higher Rate — solo de Ajustes). Por eso Ajustes
+     y Reiniciar se envuelven en su propio `.hero-ajustes-reset-group`
+     (ver CSS) dentro de `.hero-top-actions` — ese sub-grupo cambia de fila
+     a columna en mobile (breakpoint 760px, mismo que ya usa el resto de
+     la app), sin afectar el nowrap+scroll del resto del contenedor
+     (Oscuro/Higher Rate siguen en una sola fila con la marca, como en
+     v243). */-->
 <div class="hero-top-actions">
 <button class="hero-action-btn" id="themeToggleBtn" type="button" title="Auto = sigue el modo de tu sistema. Toca para forzar Claro/Oscuro.">🌓 Auto</button>
 <button class="hero-action-btn" id="higherRateHeaderBtn" type="button">🔥 Higher Rate</button>
+<div class="hero-ajustes-reset-group">
 <button class="hero-action-btn" id="ajustesHeaderBtn" type="button">⚙️ Ajustes</button>
+<button class="hero-action-btn danger" id="resetHeaderBtn" type="button">♻️ Reiniciar</button>
+</div>
 </div>
 </div>
 <div class="title-row">
@@ -5154,9 +5180,6 @@
 <span class="action-sub" id="lunchControlTimer">00:00:00</span>
 </button>
 </div>
-</div>
-<div class="hero-bottom-row">
-<button class="hero-action-btn danger" id="resetHeaderBtn" type="button">♻️ Reiniciar</button>
 </div>
 </div>
 </section>
