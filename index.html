@@ -52,6 +52,12 @@
          (aquí, default) mismo rojo que ya usa --bad en este tema; en las 2
          ramas de modo claro (ver --hover-flip: #2563EB) un azul real. */
       --hover-flip: var(--bad);
+      /* v234 — Contraparte en formato "r,g,b" de --hover-flip (mismo
+         criterio que --cyan-rgb/--bad-rgb junto a sus variables hex), para
+         poder usarse en `rgba(var(--accent-rgb), .XX)` — ver el nuevo
+         override de `.action-btn[data-accent="cyan"]` en modo claro, más
+         abajo. En oscuro (aquí, default) mismo triplete que ya usa --bad. */
+      --hover-flip-rgb: var(--bad-rgb);
       /* Pedido del usuario (rediseño del tema Blanco): decenas de reglas
          decorativas (brand pill, foco de inputs, tags activos, botón
          primario, etc.) usaban el triplete RGB del cian OSCURO
@@ -256,6 +262,9 @@
            criterio, misma variable: aquí (modo claro) un azul real en vez
            del rojo que usa el tema oscuro. */
         --hover-flip: #2563EB;
+        /* v234 — Ver comentario junto a --hover-flip-rgb en :root — mismo
+           azul de arriba (#2563EB), como triplete "r,g,b". */
+        --hover-flip-rgb: 37, 99, 235;
       }
     }
 
@@ -328,6 +337,8 @@
       /* Ver comentario gemelo en la rama @media de arriba (v227) — misma
          variable, mismo criterio. */
       --hover-flip: #2563EB;
+      /* v234 — Ver comentario gemelo en la rama @media de arriba. */
+      --hover-flip-rgb: 37, 99, 235;
     }
 
     /* ---- Rediseño del tema claro (pedido del usuario) ----
@@ -801,6 +812,28 @@
         border-color: rgba(var(--accent-decorative-rgb), .4);
         background: rgba(var(--accent-decorative-rgb), .07);
       }
+      /* v234 — Bug reportado por el usuario (con capturas): en modo claro,
+         "Pegar Llamadas" (y por el mismo motivo "Iniciar shift" en su
+         estado de reposo, antes de arrancar el turno — ambos usan
+         data-accent="cyan") se veían con el borde y el texto en rosa/
+         magenta en vez de azul como en modo oscuro. Causa: estos botones
+         toman su color de `--accent`, que en `.action-btn[data-accent=
+         "cyan"]` apunta a `var(--cyan)` — y `--cyan` en este tema resuelve
+         a `--primary` (el mismo rosa de peligro/Dropped), el mismo "cian
+         prestado que en realidad se ve rosa" que ya motivó --accent-
+         decorative (v209) y --hover-flip (v227), pero que nunca se había
+         corregido para ESTE componente en particular. Se reasignan
+         --accent/--accent-pale/--accent-rgb a --hover-flip/--hover-flip-rgb
+         (el mismo azul #2563EB que ya usa el resto de "acentos cian" del
+         tema claro) SOLO para este data-accent, sin tocar --cyan en sí (que
+         sigue sirviendo sin cambios a cualquier otro uso, ej. el brand dot).
+         El ícono no se ve afectado (usa `color: var(--text)`, heredado del
+         botón, no `--accent`) — solo borde/relleno de la onda/texto. */
+      :root:not(.theme-dark) .action-btn[data-accent="cyan"] {
+        --accent: var(--hover-flip);
+        --accent-pale: var(--hover-flip);
+        --accent-rgb: var(--hover-flip-rgb);
+      }
     }
     html.theme-light .action-btn:not(.is-active) {
       border-color: var(--line-2);
@@ -1084,6 +1117,12 @@
     html.theme-light .week-mobile-card.week-mobile-today {
       border-color: rgba(var(--accent-decorative-rgb), .4);
       background: rgba(var(--accent-decorative-rgb), .07);
+    }
+    /* v234 — Ver comentario gemelo en la rama @media de arriba. */
+    html.theme-light .action-btn[data-accent="cyan"] {
+      --accent: var(--hover-flip);
+      --accent-pale: var(--hover-flip);
+      --accent-rgb: var(--hover-flip-rgb);
     }
 
     * { box-sizing: border-box; }
