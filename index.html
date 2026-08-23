@@ -1166,9 +1166,13 @@
        el usuario antes de escribir código:
        - Mobile: overlay que cubre el contenido (position:fixed, con un
          fondo semitransparente detrás que cierra el menú al tocarlo).
-       - Escritorio: colapsado por default (mismo overlay que mobile), pero
-         con un botón "📌 Fijar" que lo deja fijo/visible (empuja el
-         contenido en vez de taparlo, ver body.sidebar-pinned más abajo).
+       - Escritorio: con un botón "📌 Fijar" que lo deja fijo/visible (empuja
+         el contenido en vez de taparlo, ver body.sidebar-pinned más abajo).
+         v259 — Pedido del usuario: pineado POR DEFECTO en escritorio (antes
+         arrancaba colapsado siempre) y esa elección se recuerda entre
+         sesiones (settings.sidebarPinned, ver defaultSettings()/
+         applySidebarPinnedState()) — si el usuario lo despinea, la próxima
+         vez que abra la app sigue sin pinear.
        El botón ☰ vive junto a la marca en el header (.hero-top-row),
        visible en TODAS las páginas — no se toca nada de lo que ya existe
        ahí, solo se agrega al lado.
@@ -5449,7 +5453,7 @@
 </div>
 </div>
 <div class="sidebar-nav-head-actions">
-<button aria-label="Fijar menú abierto" aria-pressed="false" class="sidebar-icon-btn" id="sidebarPinBtn" title="Fijar menú abierto" type="button">📌</button>
+<button aria-label="Fijar menú abierto" aria-pressed="true" class="sidebar-icon-btn" id="sidebarPinBtn" title="Fijar menú abierto" type="button">📌</button>
 <button aria-label="Cerrar menú" class="sidebar-icon-btn" id="sidebarCloseBtn" type="button">✕</button>
 </div>
 </div>
@@ -7337,6 +7341,18 @@ $0.72"></textarea>
         // tocó esa sección) respeta el estado default ya escrito en el
         // HTML (`open` o sin `open`), sin forzar nada.
         accordionState: {},
+        // v259 — Pedido del usuario: en escritorio, el sidebar debe arrancar
+        // PINEADO por defecto (antes arrancaba sin fijar en cada carga,
+        // sin importar qué se hubiera elegido la vez anterior — ver v238).
+        // Este flag persiste la elección del botón 📌 (ver toggleSidebarPin())
+        // en localStorage, igual que el resto de settings — si el usuario lo
+        // despinea y cierra el navegador, la próxima vez sigue sin pinear.
+        // Solo tiene efecto visual en escritorio (≥901px, ver CSS
+        // `body.sidebar-pinned` dentro de `@media (min-width: 901px)`) — en
+        // mobile el botón 📌 ni siquiera se muestra (`#sidebarPinBtn` oculto
+        // por su propio `@media (max-width: 900px)`), así que este valor no
+        // fuerza nada ahí aunque quede en `true`.
+        sidebarPinned: true,
       };
     }
 
@@ -7360,6 +7376,8 @@ $0.72"></textarea>
       if (!['auto', 'light', 'dark'].includes(settings.theme)) settings.theme = fallback.theme;
       if (!Number.isFinite(Number(settings.masterVolume)) || Number(settings.masterVolume) < 0 || Number(settings.masterVolume) > 100) settings.masterVolume = fallback.masterVolume;
       if (!settings.accordionState || typeof settings.accordionState !== 'object' || Array.isArray(settings.accordionState)) settings.accordionState = {};
+      // v259 — Ver comentario junto a sidebarPinned en defaultSettings().
+      if (typeof settings.sidebarPinned !== 'boolean') settings.sidebarPinned = true;
       if (!Number.isFinite(Number(settings.productiveBreakEarnMin)) || Number(settings.productiveBreakEarnMin) <= 0) settings.productiveBreakEarnMin = fallback.productiveBreakEarnMin;
       if (!Number.isFinite(Number(settings.productiveBreakAwardMin)) || Number(settings.productiveBreakAwardMin) < 0) settings.productiveBreakAwardMin = fallback.productiveBreakAwardMin;
       if (!['classic', 'chime', 'custom'].includes(settings.productiveBreakSound)) settings.productiveBreakSound = fallback.productiveBreakSound;
@@ -14463,14 +14481,38 @@ function render() {
     // contenido (ver `body.sidebar-pinned` en el CSS) en vez de flotar
     // encima — independiente de sidebar-open/closeSidebar(), que dejan de
     // tener efecto visual mientras está fijado (el CSS de `.sidebar-
-    // pinned` gana por especificidad). No se persiste entre sesiones a
-    // propósito — mismo criterio que currentPage, arranca sin fijar cada
-    // vez que se abre la app.
+    // pinned` gana por especificidad).
+    // v259 — Pedido del usuario: la elección SÍ se persiste entre sesiones
+    // ahora (antes arrancaba sin fijar cada vez, a propósito — ver
+    // historial). Se guarda en `settings.sidebarPinned` (localStorage),
+    // mismo patrón que el resto de preferencias — si el usuario despinea y
+    // cierra el navegador, la próxima carga respeta ese "despineado".
+    // Aplicado al cargar la página desde `applySidebarPinnedState()`, ver
+    // `initSidebarNav()`.
     function toggleSidebarPin() {
       const pinned = document.body.classList.toggle('sidebar-pinned');
       const btn = document.getElementById('sidebarPinBtn');
       if (btn) btn.setAttribute('aria-pressed', pinned ? 'true' : 'false');
       if (pinned) openSidebar();
+      settings.sidebarPinned = pinned;
+      saveSettingsOnly();
+    }
+
+    // v259 — Aplica al cargar la página lo que ya está guardado en
+    // `settings.sidebarPinned` (default `true`, ver defaultSettings()) —
+    // mismo resultado visual que si el usuario acabara de tocar 📌, pero sin
+    // volver a guardar nada (ya viene de lo guardado). Solo abre el sidebar
+    // de entrada en escritorio (`min-width: 901px`, mismo breakpoint que ya
+    // usa el CSS de `.sidebar-pinned` para empujar el contenido) — en mobile
+    // no tiene sentido abrir el overlay completo al cargar la página solo
+    // porque `sidebarPinned` haya quedado en `true` en el mismo perfil.
+    function applySidebarPinnedState() {
+      const pinned = settings.sidebarPinned !== false;
+      document.body.classList.toggle('sidebar-pinned', pinned);
+      const btn = document.getElementById('sidebarPinBtn');
+      if (btn) btn.setAttribute('aria-pressed', pinned ? 'true' : 'false');
+      const isDesktopWidth = window.matchMedia('(min-width: 901px)').matches;
+      if (pinned && isDesktopWidth) openSidebar();
     }
 
     // Pedido del usuario: tarjeta "Mi progreso" (anillo de %) en el sidebar
@@ -14518,6 +14560,7 @@ function render() {
       }
       updateThemeButtonUI();
       updateSidebarProgressWidget();
+      applySidebarPinnedState();
       navigateToPage('home');
     }
 
