@@ -5273,11 +5273,22 @@
 </summary>
 <div class="accordion-body">
   <div class="note">Detalle de cada fila importada con su gap.</div>
-  <div class="table-wrap" id="callTableWrap"></div>
-  <div class="modal-actions" style="margin-top:0;">
-    <button class="bad" id="clearDayCallsBtn" type="button">🗑️ Vaciar llamadas del día</button>
-  </div>
+  <!-- v244 — Pedido del usuario (con captura): "Vaciar llamadas del día"
+       pasa de botón grande (clase `.bad` de `.modal-actions`, ocupando
+       ancho completo, hasta abajo de la sección) a un botón CHICO, pegado
+       a la izquierda, arriba de la tabla — antes de la tabla, no después.
+       Reutiliza el mismo tamaño/forma que `.gap-edit-btn` (ya usado en
+       toda la app para acciones secundarias chicas) con el MISMO combo de
+       clases que ya usa el botón "Eliminar" de cada fila individual
+       (`.call-delete-btn`) — mismo tono rojo/peligro, y las reglas ya
+       existentes para esas 2 clases dentro de `#callTableAccordion` (ver
+       CSS, v217/v233) se aplican automáticamente sin código nuevo, en
+       ambos temas. Sin `data-call-delete` (a propósito — ese atributo es
+       lo que activa el listener de borrar UNA fila; este botón sigue
+       wireado por su `id`, sin tocar esa lógica). -->
+  <button class="gap-edit-btn call-delete-btn" id="clearDayCallsBtn" type="button">🗑️ Vaciar llamadas del día</button>
   <p class="alert-hint">Borra TODAS las llamadas de <strong id="clearDayCallsDayLabel">—</strong> (el día activo). No toca tu turno, pausas ni horario de ese día — para eso usa "Reiniciar día" en el botón ♻️ Reiniciar del header.</p>
+  <div class="table-wrap" id="callTableWrap"></div>
 </div>
 </details>
 
