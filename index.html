@@ -1592,26 +1592,30 @@
     }
 
     @media (max-width: 760px) {
-      /* v254 — Pedido del usuario (con captura): el `position: absolute` de
-         v253 dejaba a Reiniciar invisible/cortado en mobile (el hueco de
-         compensación no bastaba en todos los anchos) — y de paso pidió que
-         Reiniciar se vea ARRIBA de Ajustes, no debajo. Se revierte a un
-         apilado EN FLUJO normal (nada de position:absolute):
-         `.hero-ajustes-reset-group` pasa a `flex-direction: column-reverse`
-         solo en mobile — como Reiniciar es el ÚLTIMO hijo en el HTML
-         (después de Ajustes), `column-reverse` lo dibuja PRIMERO (arriba),
-         sin tocar el orden del HTML ni el resto de la lógica. `align-items:
-         stretch` iguala el ancho de ambos botones (mismo resultado visual
-         que el `left:0;right:0` de v253, pero como parte del flujo normal).
-         Al volver a estar en flujo, `.hero-top-actions`/`.hero-top-row`
-         crecen solos para contener el grupo apilado (~2 botones de alto) —
-         el navegador se encarga, ya no hace falta ningún margen de
-         compensación manual (ver `.hero-top-row` más abajo, vuelve a su
-         valor base de siempre). */
+      /* v255 — Pedido del usuario (con captura): con `flex-direction:
+         column-reverse` + `align-items: stretch` (v254), "⚙️ Ajustes"
+         seguía sin igualar el ancho de "♻️ Reiniciar" — quedaba más angosto
+         y desalineado a la izquierda respecto al de arriba. `align-items:
+         stretch` en un contenedor flex `column` cuyo propio ancho es
+         "auto" (sin `width` fijo) es un caso donde varios motores calculan
+         el ancho del contenedor ANTES de aplicar el stretch a los hijos —
+         así el hijo más angosto (Ajustes) terminaba estirándose contra un
+         ancho de contenedor mal calculado, no necesariamente el del hijo
+         más ancho (Reiniciar). Se cambia a CSS Grid de una sola columna:
+         los grid items son `stretch` por DEFAULT en el eje inline (ningún
+         `align-items`/`justify-items` que declarar a mano, sin la
+         ambigüedad de "quién define el ancho primero" que tiene flexbox
+         aquí) — ambos botones quedan garantizados al mismo ancho, sin
+         importar cuál tenga más texto. El orden visual (Reiniciar arriba)
+         se logra con `order: -1` en `#resetHeaderBtn` — Grid respeta
+         `order` para el auto-placement igual que Flexbox, así que no hace
+         falta tocar el HTML (Ajustes sigue siendo el primer hijo real). */
       .hero-ajustes-reset-group {
-        flex-direction: column-reverse;
-        align-items: stretch;
+        display: grid;
         gap: 6px;
+      }
+      .hero-ajustes-reset-group #resetHeaderBtn {
+        order: -1;
       }
     }
 
