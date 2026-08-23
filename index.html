@@ -1840,44 +1840,25 @@
       position: relative;
     }
 
-    /* v249 — Ver comentario junto al @media de abajo (stretch): con ambos
-       botones igualados al ancho del más ancho en mobile, sin esto el
-       ícono+texto de cada uno quedaría pegado a la izquierda del pill,
-       dejando un hueco vacío a la derecha en el más angosto — se centra el
-       contenido para que se vea parejo. Sin efecto en escritorio: ahí cada
-       botón mide justo lo que su contenido necesita, así que centrar o no
-       da exactamente el mismo resultado visual. */
-    .hero-ajustes-reset-group .hero-action-btn {
-      justify-content: center;
-    }
-
-    @media (max-width: 760px) {
-      /* v255 — Pedido del usuario (con captura): con `flex-direction:
-         column-reverse` + `align-items: stretch` (v254), "⚙️ Ajustes"
-         seguía sin igualar el ancho de "♻️ Reiniciar" — quedaba más angosto
-         y desalineado a la izquierda respecto al de arriba. `align-items:
-         stretch` en un contenedor flex `column` cuyo propio ancho es
-         "auto" (sin `width` fijo) es un caso donde varios motores calculan
-         el ancho del contenedor ANTES de aplicar el stretch a los hijos —
-         así el hijo más angosto (Ajustes) terminaba estirándose contra un
-         ancho de contenedor mal calculado, no necesariamente el del hijo
-         más ancho (Reiniciar). Se cambia a CSS Grid de una sola columna:
-         los grid items son `stretch` por DEFAULT en el eje inline (ningún
-         `align-items`/`justify-items` que declarar a mano, sin la
-         ambigüedad de "quién define el ancho primero" que tiene flexbox
-         aquí) — ambos botones quedan garantizados al mismo ancho, sin
-         importar cuál tenga más texto. El orden visual (Reiniciar arriba)
-         se logra con `order: -1` en `#resetHeaderBtn` — Grid respeta
-         `order` para el auto-placement igual que Flexbox, así que no hace
-         falta tocar el HTML (Ajustes sigue siendo el primer hijo real). */
-      .hero-ajustes-reset-group {
-        display: grid;
-        gap: 6px;
-      }
-      .hero-ajustes-reset-group #resetHeaderBtn {
-        order: -1;
-      }
-    }
+    /* v260 — Pedido del usuario (con captura): apilar "⚙️ Ajustes" y
+       "♻️ Reiniciar" en una columna junto a "🔥 Higher Rate" se veía
+       raro/desordenado en mobile — se pidió que los 3 queden en la MISMA
+       fila, uno al lado del otro, igual que en escritorio. Se quita por
+       completo el @media que convertía este grupo en grid de una sola
+       columna en mobile (v255/v254/v253, ver esos comentarios arriba para
+       el historial de por qué se apiló en primer lugar) — `.hero-ajustes-
+       reset-group` vuelve a heredar solo su regla base (flex row, arriba),
+       quedando visualmente IDÉNTICA a escritorio en cualquier ancho. Junto
+       con esa reversión se quita también `justify-content: center` (v249,
+       que solo tenía efecto cuando ambos botones se estiraban al mismo
+       ancho en esa columna) — sin ese stretch, cada botón vuelve a medir
+       justo lo que su contenido necesita, así que centrar ya no cambia
+       nada; se retira para no dejar una regla sin uso real. Si el conjunto
+       completo (Oscuro + Higher Rate + Ajustes + Reiniciar) no cabe en una
+       sola línea muy angosta, `.hero-top-actions` ya tiene su propio
+       overflow-x:auto + scroll horizontal con la barra oculta (ver esa
+       regla, sin cambios) — se desliza en vez de partirse, mismo patrón
+       que ya usa el resto del header para este mismo problema. */
 
     /* Pedido del usuario (v154 seguía partiendo "Ajustes" a una segunda
        línea solo, en varios anchos de pantalla distintos — mobile Y
