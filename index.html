@@ -5422,6 +5422,19 @@
 <div class="stat-cell"><span class="stat-label">Otro</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaOtro">00:00:00</span><span class="stat-sub">Sin clasificar</span></div></div>
 <div class="stat-cell"><span class="stat-label">Higher Rate</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaHigherRate">$0.00</span><span class="stat-sub">Bono ganado hoy</span></div></div>
 </div>
+<!-- v240 — Pedido del usuario (parte 3 del pedido original de 3 partes):
+     Conectado/Tiempo llamadas/Billable/Dropped como stat-cell nuevas en
+     "Resumen del día" — mismos datos que ya se ven como píldoras en
+     "Ganancias de hoy" (renderHeader) y en Tabla de llamadas, sin lugar
+     propio hasta ahora dentro de Reportes. Tercera fila del mismo
+     componente .stats-row, mismo criterio que ya usó v199 para la segunda
+     fila (Break/Lunch/Otro/Higher Rate) — sin CSS nuevo. -->
+<div class="stats-row" style="margin-top:10px;">
+<div class="stat-cell"><span class="stat-label">Conectado</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaConectado">00:00:00</span><span class="stat-sub">Inicio a fin de shift</span></div></div>
+<div class="stat-cell"><span class="stat-label">Tiempo llamadas</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaTiempoLlamadas">00:00:00</span><span class="stat-sub">Suma de duraciones</span></div></div>
+<div class="stat-cell"><span class="stat-label">Billable</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaBillable">0</span><span class="stat-sub">Llamadas</span></div></div>
+<div class="stat-cell"><span class="stat-label">Dropped</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaDropped">0</span><span class="stat-sub">Llamadas</span></div></div>
+</div>
 </div>
 </details>
 <details class="accordion-card" id="statsAccordion" open>
@@ -13689,6 +13702,19 @@ function renderDayStatsCards() {
   setText('resumenDiaLunch', formatDuration(stats.lunchGapTotal * 60000));
   setText('resumenDiaOtro', formatDuration(stats.otherGapTotal * 60000));
   setText('resumenDiaHigherRate', money(stats.higherRateBonus || 0));
+
+  // v240 — Pedido del usuario (parte 3): Conectado/Tiempo llamadas/
+  // Billable/Dropped, mismos datos que ya alimentan las píldoras de
+  // "Ganancias de hoy" (renderHeader) — Conectado usa el mismo criterio de
+  // ahí (dayShiftBounds/connectedMinutesForDay, '—' sin turno iniciado ese
+  // día); el resto sale directo de `stats` (importedCallStats), ya
+  // calculado arriba en esta misma función.
+  const dayShiftBoundsForStats = dayShiftBounds(dayKey);
+  const hasShiftForStats = !!dayShiftBoundsForStats.start;
+  setText('resumenDiaConectado', hasShiftForStats ? formatDuration(connectedMinutesForDay(dayKey) * 60000) : '—');
+  setText('resumenDiaTiempoLlamadas', formatDuration(stats.total * 60000));
+  setText('resumenDiaBillable', String(stats.billable));
+  setText('resumenDiaDropped', String(stats.dropped));
 
   // Hueco más largo/promedio (ya calculados por importedCallStats()) + pago
   // promedio por llamada (Ganancias ÷ Total de llamadas). '—' sin llamadas
