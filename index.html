@@ -12258,18 +12258,18 @@ function renderHeader() {
   // Dropped/Otro no se duplican). Con Tabla de llamadas viviendo justo
   // debajo de esta sección en la página Inicio (desde v238), tener 2 filas
   // de tags casi idénticas una encima de la otra ya no tenía sentido.
-  // v240 — Pedido del usuario (parte 2 pendiente del pedido original de
-  // 3 partes, retomado después del desvío de v239/ACW): se agregan las 2
-  // píldoras que faltaban, "Adherencia %" y "Meta productiva" — "Total" ya
-  // había quedado cubierto en v239 por el camino de unificar Tabla de
-  // llamadas. Adherencia reutiliza dayAdherence() (mismo dato/mismos 3
-  // umbrales de color que ya usa el badge de "Bloques del día"); Meta
-  // productiva reutiliza dayProductivityGoalTotals() (extraída de
-  // renderSchedule() para no duplicar el cálculo, ver esa función). Ambas
-  // solo se muestran cuando hay algo que medir — sin horario/Adherencia
-  // calculable, o sin ningún bloque de Trabajo con meta configurada ese
-  // día, la píldora correspondiente simplemente no aparece (mismo criterio
-  // que ya usan Break/Lunch/Otro un poco más abajo en esta misma lista).
+  // v241 — Pedido del usuario (con captura): "Meta productiva" (esta
+  // píldora) se veía justo al lado de "Meta $X"/"Meta N min" (el badge de
+  // la meta GENERAL, arriba de esta fila — ver goalAmountBadge/goalMinBadge
+  // en el HTML) — dos cosas distintas ambas llamadas "Meta" una junto a la
+  // otra, confuso aunque midan cosas diferentes (una es tu meta única
+  // configurada en Ajustes; esta es la suma de las metas por bloque de
+  // Horario → Bloques). Se renombra SOLO esta píldora a "Meta bloques" para
+  // distinguirla a simple vista — el cálculo no cambia, y el resto de
+  // lugares donde aparece "Meta productiva" (el badge de "Bloques del día",
+  // el texto por-bloque, el campo del editor en Horario) se dejan igual:
+  // ahí no compiten visualmente con la meta general, así que no generan la
+  // misma confusión.
   const adherenceForTag = dayAdherence(dayKey);
   const productivityGoalTotalsForTag = dayProductivityGoalTotals(dayKey);
   const earningsTagsHtml = [
@@ -12284,7 +12284,7 @@ function renderHeader() {
     stats.otherGapTotal > 0 ? `<span class="tag">Otro: ${formatDuration(stats.otherGapTotal * 60000)}</span>` : '',
     higherRateBreakdownTagsHtml(stats.higherRateBreakdown, 'tag'),
     adherenceForTag ? `<span class="tag ${adherenceForTag.scorePct >= 90 ? 'good' : adherenceForTag.scorePct >= 70 ? 'warn' : 'bad'}">Adherencia: ${adherenceForTag.scorePct}%</span>` : '',
-    productivityGoalTotalsForTag.targetMin > 0.05 ? `<span class="tag ${productivityGoalTotalsForTag.achievedMin >= productivityGoalTotalsForTag.targetMin - 0.05 ? 'good' : ''}">Meta productiva: ${formatMinutes(productivityGoalTotalsForTag.achievedMin)}/${formatMinutes(productivityGoalTotalsForTag.targetMin)} min</span>` : '',
+    productivityGoalTotalsForTag.targetMin > 0.05 ? `<span class="tag ${productivityGoalTotalsForTag.achievedMin >= productivityGoalTotalsForTag.targetMin - 0.05 ? 'good' : ''}" title="Suma de las metas por bloque configuradas en Horario → Bloques del día — distinta de tu meta general de arriba.">Meta bloques: ${formatMinutes(productivityGoalTotalsForTag.achievedMin)}/${formatMinutes(productivityGoalTotalsForTag.targetMin)} min</span>` : '',
   ].join('');
   document.getElementById('earningsTagsRow').innerHTML = earningsTagsHtml;
   const earnBar = document.getElementById('earningsBar');
