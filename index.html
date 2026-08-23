@@ -979,6 +979,29 @@
       color: var(--cyan);
     }
 
+    /* Pedido del usuario (v216): mismo cian que ya usa el hover de "Día
+       activo" (v214) y de los botones del header (v215) — aplicado ahora a
+       Tabla de llamadas (botones "Editar"/"Editar gap") y Resumen semanal
+       (‹ Anterior/Esta semana/Siguiente › y "✎ Editar día" de cada fila).
+       Excluye los de peligro: "Eliminar" (data-call-delete, fondo rosado
+       inline en renderTable(), sigue con su propio hover) y "🗑️ Vaciar
+       llamadas del día" (.modal-actions button.bad, clase distinta, ya
+       fuera de este selector). El ámbito (#callTableAccordion/
+       #weekSummaryAccordion) va envuelto en :where(...) para que NO sume
+       especificidad — así esta regla queda al mismo nivel que la base de
+       siempre (.gap-edit-btn:hover/.week-nav button:hover) y en modo claro
+       sigue ganando el hover más específico ya existente desde v208 (fondo
+       oscuro sólido + texto blanco, decisión ya tomada, sin tocarse) —
+       buscar "v216". */
+    :where(#callTableAccordion) .gap-edit-btn:not([data-call-delete]):hover,
+    :where(#callTableAccordion) .gap-edit-btn:not([data-call-delete]):focus-visible,
+    :where(#weekSummaryAccordion) .gap-edit-btn:hover,
+    :where(#weekSummaryAccordion) .gap-edit-btn:focus-visible,
+    :where(#weekSummaryAccordion) .week-nav button:hover,
+    :where(#weekSummaryAccordion) .week-nav button:focus-visible {
+      color: var(--cyan);
+    }
+
     .hero-action-btn.danger {
       color: var(--pale-bad);
       border-color: rgba(251, 113, 133, .35);
