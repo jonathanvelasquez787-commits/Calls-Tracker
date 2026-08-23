@@ -28,6 +28,22 @@
       --bg-2: #07101f;
       --panel: rgba(16, 24, 40, 0.88);
       --panel-2: rgba(13, 20, 36, 0.97);
+      /* v267 — Pedido del usuario: el fondo azul marino con resplandor cian
+         que ya usa `.sidebar-nav` (degradado #141c46 → #0c1130 → #0a0e26 +
+         un radial-gradient sutil de --cyan-rgb en la esquina, ver esa regla
+         más abajo) se reutiliza como fondo de tarjetas/secciones/modales/
+         toast en modo oscuro — SOLO oscuro, el usuario lo confirmó
+         explícitamente. Se centraliza aquí en una variable nueva (mismo
+         criterio que --panel/--panel-2/--accordion-bg) en vez de repetir el
+         gradiente en cada regla — `var(--cyan-rgb)` ya existe en este mismo
+         :root, así que no hace falta declarar el color del resplandor dos
+         veces. NO se redefine en ninguna de las 2 ramas de modo claro
+         (@media prefers-color-scheme:light / html.theme-light) — ese tema
+         no necesita esta variable, ya que las reglas que la usan (ver
+         "v267" en cada una) tienen su propio override explícito ahí que
+         revierte a var(--panel)/var(--panel-2) de siempre, mismo patrón que
+         ya usa `.sidebar-nav` desde v257. */
+      --panel-navy: radial-gradient(circle 220px at 0% 0%, rgba(var(--cyan-rgb), .10), transparent), linear-gradient(165deg, #141c46 0%, #0c1130 60%, #0a0e26 100%);
       --text: #edf4ff;
       --muted: #90a0be;
       --line: rgba(145, 163, 184, 0.16);
@@ -388,6 +404,28 @@
          este bloque) pinta el degradado navy sin condición — aquí, en la
          rama de modo claro, se revierte a var(--panel-2) para no tocarlo. */
       :root:not(.theme-dark) .sidebar-nav {
+        background: var(--panel-2);
+      }
+      /* v267 — Ver comentario junto a --panel-navy en :root. Mismo patrón
+         dark-only que .sidebar-nav arriba (v257): las reglas base (fuera de
+         este bloque) ahora pintan var(--panel-navy) sin condición — aquí,
+         en la rama de modo claro, cada una se revierte a su valor de
+         siempre (var(--panel)/var(--panel-2)/var(--accordion-bg)), sin
+         ningún otro cambio. */
+      :root:not(.theme-dark) .hero,
+      :root:not(.theme-dark) .card,
+      :root:not(.theme-dark) .mini,
+      :root:not(.theme-dark) .table-card,
+      :root:not(.theme-dark) .list-card {
+        background: var(--panel);
+      }
+      :root:not(.theme-dark) .accordion-card {
+        background: var(--accordion-bg);
+      }
+      :root:not(.theme-dark) .modal-card,
+      :root:not(.theme-dark) textarea,
+      :root:not(.theme-dark) .toast,
+      :root:not(.theme-dark) .sidebar-progress-ring::before {
         background: var(--panel-2);
       }
       /* Botones utilitarios chicos ("Editar", "Editar gap", "Probar
@@ -868,6 +906,24 @@
     /* v257 — Ver comentario gemelo en la rama @media de arriba: fondo navy
        del sidebar es dark-only, aquí (forzado "Claro") se revierte igual. */
     html.theme-light .sidebar-nav {
+      background: var(--panel-2);
+    }
+    /* v267 — Ver comentario gemelo en la rama @media de arriba: mismo
+       revert dark-only, aquí (forzado "Claro"). */
+    html.theme-light .hero,
+    html.theme-light .card,
+    html.theme-light .mini,
+    html.theme-light .table-card,
+    html.theme-light .list-card {
+      background: var(--panel);
+    }
+    html.theme-light .accordion-card {
+      background: var(--accordion-bg);
+    }
+    html.theme-light .modal-card,
+    html.theme-light textarea,
+    html.theme-light .toast,
+    html.theme-light .sidebar-progress-ring::before {
       background: var(--panel-2);
     }
     html.theme-light .gap-edit-btn {
@@ -1498,7 +1554,13 @@
       position: absolute;
       inset: 5px;
       border-radius: 50%;
-      background: var(--panel-2);
+      /* v267 — Ver comentario junto a --panel-navy en :root. Este círculo
+         decorativo vive DENTRO del propio sidebar (ya sobre el fondo
+         navy), así que pasa a fundirse con ese mismo fondo en vez de
+         quedar como un círculo blanco/gris de otro tono encima. Override
+         de vuelta a var(--panel-2) en las 2 ramas de modo claro, buscar
+         "v267" ahí. */
+      background: var(--panel-navy);
     }
     .sidebar-progress-ring span {
       position: relative;
@@ -1699,7 +1761,10 @@
     }
 
     .hero, .card, .mini, .table-card, .list-card {
-      background: var(--panel);
+      /* v267 — Ver comentario junto a --panel-navy en :root. Override de
+         vuelta a var(--panel) en las 2 ramas de modo claro, buscar "v267"
+         ahí. */
+      background: var(--panel-navy);
       border: 1px solid var(--line);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
@@ -3469,7 +3534,10 @@
       width: min(720px, 100%);
       max-height: min(86vh, 920px);
       overflow: auto;
-      background: var(--panel-2);
+      /* v267 — Ver comentario junto a --panel-navy en :root. Override de
+         vuelta a var(--panel-2) en las 2 ramas de modo claro, buscar
+         "v267" ahí. */
+      background: var(--panel-navy);
       border: 1px solid var(--line);
       border-radius: 24px;
       box-shadow: var(--shadow);
@@ -4017,7 +4085,10 @@
       resize: vertical;
       border-radius: 18px;
       border: 1px solid var(--line);
-      background: var(--panel-2);
+      /* v267 — Ver comentario junto a --panel-navy en :root. Override de
+         vuelta a var(--panel-2) en las 2 ramas de modo claro, buscar
+         "v267" ahí. */
+      background: var(--panel-navy);
       color: var(--text);
       padding: 14px;
       outline: none;
@@ -4590,7 +4661,10 @@
       padding: 0;
       border-radius: 20px;
       border: 1px solid var(--line);
-      background: var(--accordion-bg);
+      /* v267 — Ver comentario junto a --panel-navy en :root. Override de
+         vuelta a var(--accordion-bg) en las 2 ramas de modo claro, buscar
+         "v267" ahí. */
+      background: var(--panel-navy);
       overflow: hidden;
     }
 
@@ -5037,7 +5111,10 @@
       transform: translateX(-50%) translateY(18px);
       opacity: 0;
       pointer-events: none;
-      background: var(--panel-2);
+      /* v267 — Ver comentario junto a --panel-navy en :root. Override de
+         vuelta a var(--panel-2) en las 2 ramas de modo claro, buscar
+         "v267" ahí. */
+      background: var(--panel-navy);
       border: 1px solid var(--line);
       padding: 12px 14px;
       border-radius: 14px;
