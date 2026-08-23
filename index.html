@@ -2863,13 +2863,27 @@
        fina .slot-progress sin modificador — no un cálculo nuevo). El acento
        por tipo reutiliza el MISMO mapeo de color que ya usan las tarjetas
        de "Turno de Hoy" para Shift/Break/Lunch (Work=cyan, Break=warn,
-       Lunch=blue) — mismo lenguaje visual entre ambas secciones. */
+       Lunch=blue) — mismo lenguaje visual entre ambas secciones.
+       Pedido del usuario (v212, mockup de 3 opacidades ya mostrado —
+       eligió "Opción C: sólida"): pasa de opacity .38 a .94 para igualar
+       exactamente el mismo tratamiento que ya usa .bsc-fill en "Turno de
+       Hoy" — antes las dos secciones ("Turno de Hoy" y "Bloques del día")
+       usaban el MISMO color por tipo pero una opacidad distinta entre sí
+       (.94 vs .38), lo que las hacía sentir inconsistentes entre ellas y
+       distintas del relleno sólido que ya usan los botones de Controles al
+       tocarlos/estar activos. El color en sí no cambia — sigue siendo
+       rgb(var(--slot-rgb)), el mismo cyan/warn/blue que ya usan Shift/
+       Break/Lunch/Llamadas en ambos temas. Solo modo oscuro: en modo claro
+       este relleno ya está apagado a propósito desde v207 (decisión ya
+       tomada, borde izquierdo en vez de líquido — ver la regla
+       `:root:not(.theme-dark) .slot .slot-fill { opacity: 0; }` más abajo,
+       sin tocar). */
     .slot-fill {
       position: absolute;
       inset: 0;
       width: 0%;
       background: rgb(var(--slot-rgb, var(--cyan-rgb)));
-      opacity: .38;
+      opacity: .94;
       transition: width .5s cubic-bezier(.22, .85, .4, 1);
       z-index: 0;
     }
