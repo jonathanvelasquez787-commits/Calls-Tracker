@@ -1592,41 +1592,26 @@
     }
 
     @media (max-width: 760px) {
-      /* v253 — REVERSIÓN EXPLÍCITA de v249. El enfoque de v249 (columna +
-         stretch, ambos botones dentro del flujo flex normal) funcionaba
-         para que Reiniciar quedara bien alineado debajo de Ajustes, pero
-         tenía un efecto secundario que motivó v246/v247 y que el usuario
-         volvió a reportar en v252/v253: al vivir DENTRO del flujo flex de
-         `.hero-top-actions`, la columna apilada (Ajustes+Reiniciar, ~2x la
-         altura de un botón normal) inflaba la altura de TODA
-         `.hero-top-actions` muy por encima de los 38px del botón ☰ — y
-         cualquier intento de centrar esta fila contra esa altura inflada
-         terminaba empujando algo (la marca, o el resto de los botones)
-         fuera de su lugar. Se saca a Reiniciar del flujo flex por completo
-         con `position: absolute`, flotando debajo de Ajustes (que se queda
-         como el único hijo "real" en flujo de `.hero-ajustes-reset-group`)
-         — así la altura de `.hero-top-actions` vuelve a ser la de un botón
-         de una sola línea, igual que Oscuro/Higher Rate, y `align-items:
-         center` en los 3 niveles (`.hero-top-row`/`.hero-top-actions`/
-         `.hero-brand-row`, ver esas reglas) puede centrar TODO limpiamente
-         contra el ☰ sin que Reiniciar lo arruine. `left:0; right:0` iguala
-         el ancho de Reiniciar al de Ajustes automáticamente (mismo
-         resultado visual que el `stretch` de v249, pero sin que Reiniciar
-         cuente para la altura del contenedor) — el ancho de
-         `.hero-ajustes-reset-group` en mobile ahora lo define solo Ajustes
-         (su único hijo en flujo), y Reiniciar hereda ese mismo ancho por
-         quedar posicionado respecto a ese mismo contenedor
-         (`position: relative` en `.hero-ajustes-reset-group`, ver arriba).
-         Como Reiniciar ya no ocupa espacio real en el documento, se
-         compensa el hueco que deja con más `margin-bottom` en
-         `.hero-top-row` (ver esa regla, dentro de este mismo @media más
-         abajo) — si no, se vería flotando encima del saludo ("Buen día"). */
-      .hero-ajustes-reset-group #resetHeaderBtn {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        margin-top: 6px;
+      /* v254 — Pedido del usuario (con captura): el `position: absolute` de
+         v253 dejaba a Reiniciar invisible/cortado en mobile (el hueco de
+         compensación no bastaba en todos los anchos) — y de paso pidió que
+         Reiniciar se vea ARRIBA de Ajustes, no debajo. Se revierte a un
+         apilado EN FLUJO normal (nada de position:absolute):
+         `.hero-ajustes-reset-group` pasa a `flex-direction: column-reverse`
+         solo en mobile — como Reiniciar es el ÚLTIMO hijo en el HTML
+         (después de Ajustes), `column-reverse` lo dibuja PRIMERO (arriba),
+         sin tocar el orden del HTML ni el resto de la lógica. `align-items:
+         stretch` iguala el ancho de ambos botones (mismo resultado visual
+         que el `left:0;right:0` de v253, pero como parte del flujo normal).
+         Al volver a estar en flujo, `.hero-top-actions`/`.hero-top-row`
+         crecen solos para contener el grupo apilado (~2 botones de alto) —
+         el navegador se encarga, ya no hace falta ningún margen de
+         compensación manual (ver `.hero-top-row` más abajo, vuelve a su
+         valor base de siempre). */
+      .hero-ajustes-reset-group {
+        flex-direction: column-reverse;
+        align-items: stretch;
+        gap: 6px;
       }
     }
 
@@ -4878,18 +4863,12 @@
       .hero, .card, .table-card, .list-card, .mini { padding: 14px; }
       .hero { margin-bottom: 10px; }
       .brand { padding: 6px 10px; font-size: 10.5px; }
-      /* v253 — Ver comentario junto a `.hero-ajustes-reset-group
-         #resetHeaderBtn` (arriba, mismo @media): "♻️ Reiniciar" ahora es
-         `position: absolute` en mobile — ya NO ocupa espacio real en el
-         documento, así que sin este ajuste quedaría flotando encima del
-         saludo ("Buen día...") que viene justo debajo. Se sube el margen de
-         10px (el mismo valor de siempre) a 46px — suficiente para el alto
-         de un botón chico (~24-26px con el padding/tipografía de esta misma
-         sección) + los 6px de separación que ya trae `margin-top` en
-         `#resetHeaderBtn` + un pequeño colchón. Sin cambio en escritorio
-         (>760px): ahí Reiniciar sigue en flujo normal, al lado de Ajustes,
-         sin necesitar espacio extra. */
-      .hero-top-row { margin-bottom: 46px; }
+      /* v254 — REVERSIÓN de v253: Reiniciar vuelve a vivir EN FLUJO normal
+         (ver `.hero-ajustes-reset-group` en el @media de arriba), así que
+         esta fila ya no necesita ningún margen extra de compensación —
+         vuelve a su valor base de siempre (10px, mismo que el resto de la
+         app en este ancho). */
+      .hero-top-row { margin-bottom: 10px; }
       .hero-actions { gap: 5px; margin-bottom: 18px; }
       .hero-action-btn { padding: 5px 8px; font-size: 10.5px; gap: 4px; }
       .title-row { flex-direction: column; align-items: flex-start; gap: 2px; }
