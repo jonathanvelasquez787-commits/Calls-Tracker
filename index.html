@@ -6615,6 +6615,198 @@
       .sblk-icon { font-size: 16px; }
       .sblk-name { font-size: 13px; }
     }
+
+    /* ==========================================================
+       v278 — "Bloques del día": relleno líquido VERTICAL, punto del
+       riel sincronizado, texto legible sobre el líquido, y toggle
+       "Contraer bloques al terminar" (pedido del usuario, aprobado con
+       2 mockups interactivos antes de escribir código). Mismo patrón
+       que ya usan `.slot-fill`/`.bsc-fill` (relleno tipo líquido,
+       `position:absolute` detrás del contenido) — aquí crece en
+       `height` (arriba→abajo) en vez de `width`, porque así se pidió
+       en el mockup. `stats.pct` es el MISMO dato que renderSchedule()
+       ya calculaba por slot para la barra "Usado" (`.sblk-bar-track`)
+       — no hay ningún cálculo nuevo, solo 2 superficies más donde se
+       pinta ese mismo número: el alto de `.sblk-fill` y el `top` de
+       `.sblk-dot`, ambos vía la variable inline `--sblk-pct` / el
+       estilo `top` que ya setea renderSchedule() por bloque. */
+    .sblk-card {
+      overflow: hidden;
+      isolation: isolate;
+    }
+    /* Sube TODO el contenido real (cabecera + `.sblk-extra`) por encima
+       del relleno — mismo patrón que ya usa `.slot > div:not(.slot-fill)`
+       para el mismo problema (un hijo `position:absolute` se pinta
+       DESPUÉS que los hijos normales del grid si no se le da z-index). */
+    .sblk-card > *:not(.sblk-fill) {
+      position: relative;
+      z-index: 1;
+    }
+    .sblk-fill {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 0%;
+      background: rgb(var(--sblk-rgb, var(--blue-rgb)));
+      opacity: .92;
+      transition: height .5s cubic-bezier(.22, .85, .4, 1);
+      z-index: 0;
+    }
+    /* Color por tipo — mismo mapeo que ya usa `data-accent` en esta
+       misma tarjeta (Trabajo=cyan, Break=warn, Lunch=blue, ver
+       `slotAccent` en renderSchedule(), sin tocar). */
+    .sblk-card[data-accent="cyan"] { --sblk-rgb: var(--cyan-rgb); }
+    .sblk-card[data-accent="warn"] { --sblk-rgb: var(--warn-rgb); }
+    .sblk-card[data-accent="blue"] { --sblk-rgb: var(--blue-rgb); }
+
+    /* Punto del riel: pasa de vivir en el flujo normal (margin-top fijo)
+       a `position:absolute` con `top` en % — controlado por JS con el
+       mismo `stats.pct` que ya alimenta `.sblk-fill` (un solo dato, dos
+       usos). `translate(-50%,-50%)` centra el punto sobre ese % exacto:
+       en 0% queda arriba del todo (bloque futuro, igual que antes), en
+       100% abajo del todo (bloque terminado). La transición hace que el
+       punto "baje" suave entre un tick de reloj y el siguiente (cada
+       1s, ver el setInterval que ya llama a renderSchedule()) en vez de
+       saltar en seco. Esta regla va DESPUÉS de la definición base de
+       `.sblk-dot` (arriba) y de su override mobile (`@media max-width:
+       760px`, arriba) a propósito — misma especificidad, gana por orden
+       en la hoja, así que `position:absolute`/`top` aplican siempre,
+       en cualquier ancho. */
+    .sblk-dot {
+      position: absolute;
+      left: 50%;
+      top: 0%;
+      margin-top: 0;
+      transform: translate(-50%, -50%);
+      transition: top .5s cubic-bezier(.22, .85, .4, 1);
+    }
+
+    /* Texto legible sobre el relleno: mismo truco de degradado de 2
+       colores con corte duro + recorte de texto (background-clip:text)
+       que ya usan `.slot .meta`/`.slot .range` (v186) y
+       `.bsc-name`/`.bsc-range`/`.bsc-pct` (v210) — aquí rotado a
+       vertical (`to bottom`, ya que el relleno crece en `height`, no en
+       `width`), usando la misma variable `--sblk-pct` que ya setea
+       `.sblk-fill`. Blanco hasta el % ya cubierto por el líquido, color
+       normal (`var(--text)`/`var(--muted)`) después — así el texto se
+       lee tanto sobre el relleno sólido como sobre la parte aún vacía.
+       Decisión de modo claro (documentada en resumen_v278.md): SIN
+       override — a diferencia de `.slot` (que sí apaga este mismo
+       efecto en modo claro, decisión ya tomada en v207/v218),
+       `.sblk-card` nunca tuvo su propia rama de tema (ni en
+       `@media (prefers-color-scheme: light)` ni en `html.theme-light`)
+       — ya se veía idéntica en ambos temas antes de este cambio, mismo
+       criterio "sin distinción de tema" que ya siguen `.bsc-fill`/
+       `.bsc-name`/`.bsc-range`/`.bsc-pct` (Turno de Hoy), el análogo más
+       cercano a esta tarjeta — ninguno de esos tiene override de modo
+       claro pese a ser igual de "líquido sólido". Se sigue ese mismo
+       precedente aquí, no el de `.slot`. */
+    .sblk-card .sblk-name {
+      background-image: linear-gradient(to bottom, #fff 0%, #fff var(--sblk-pct, 0%), var(--text) var(--sblk-pct, 0%), var(--text) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+    }
+    .sblk-card .sblk-range,
+    .sblk-card .sblk-meta-line,
+    .sblk-card .sblk-bar-label-row {
+      background-image: linear-gradient(to bottom, #fff 0%, #fff var(--sblk-pct, 0%), var(--muted) var(--sblk-pct, 0%), var(--muted) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* "Contraer bloques al terminar": toggle chico tipo checkbox, mismo
+       lenguaje visual que ya usa `.sidebar-icon-btn[aria-pressed="true"]`
+       (píldora con borde/fondo/texto en cian cuando está activo). Vive
+       arriba de `#scheduleList`, dentro del mismo `.accordion-body` de
+       "Bloques del día" — ver HTML. Persistido en
+       `settings.collapseCompletedBlocks` (ver defaultSettings()/
+       ensureCurrencySettings()), mismo patrón que `sidebarPinned`. */
+    .sblk-collapse-row {
+      display: flex;
+      justify-content: flex-end;
+      margin: -2px 0 2px;
+    }
+    .sblk-collapse-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: border-color .14s ease, color .14s ease, background .14s ease;
+    }
+    .sblk-collapse-toggle:hover,
+    .sblk-collapse-toggle:focus-visible {
+      border-color: var(--line-2);
+      color: var(--text);
+      outline: none;
+    }
+    .sblk-collapse-check {
+      width: 14px;
+      height: 14px;
+      flex: 0 0 auto;
+      border-radius: 4px;
+      border: 1.5px solid var(--line-2);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 900;
+      line-height: 1;
+      color: transparent;
+      background: transparent;
+      transition: color .14s ease, background .14s ease, border-color .14s ease;
+    }
+    .sblk-collapse-toggle[aria-pressed="true"] {
+      color: var(--cyan);
+      border-color: rgba(var(--cyan-rgb), .45);
+      background: rgba(var(--cyan-rgb), .1);
+    }
+    .sblk-collapse-toggle[aria-pressed="true"] .sblk-collapse-check {
+      color: #07101f;
+      background: var(--cyan);
+      border-color: var(--cyan);
+    }
+    @media (max-width: 620px) {
+      .sblk-collapse-toggle { padding: 5px 10px; font-size: 10.5px; }
+    }
+
+    /* Bloque "Hecho" contraído: se oculta `.sblk-range` (dentro de la
+       cabecera, `.sblk-head`, que nunca se toca) y se colapsa
+       `.sblk-extra` — el wrapper nuevo que envuelve TODO lo demás
+       (barra "Usado", Productividad, Meta productiva, el texto de
+       `progressLabel`, el detalle de estado y el diagnóstico de Nivel
+       3) — con una transición de altura, dejando solo ícono + nombre +
+       badge de estado (`.sblk-head`) visibles, como pidió el usuario.
+       El punto del riel y el relleno líquido (arriba) siguen
+       funcionando exactamente igual dentro de una tarjeta contraída:
+       ambos usan % relativo al propio alto de `.sblk-card`/`.sblk-rail`
+       (`align-items: stretch` en `.sblk-item`, sin tocar), así que si
+       la tarjeta se achica, el punto/relleno se achican con ella sin
+       ningún ajuste extra de por medio. */
+    .sblk-extra {
+      overflow: hidden;
+      max-height: 600px;
+      opacity: 1;
+      transition: max-height .35s ease, opacity .25s ease, margin-top .35s ease;
+    }
+    .sblk-card.is-collapsed .sblk-extra {
+      max-height: 0;
+      opacity: 0;
+    }
+    .sblk-card.is-collapsed .sblk-range {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -7287,6 +7479,15 @@
       <span class="slot-status" id="productivityGoalBadge" title="Minutos productivos logrados hoy vs. la suma de las metas configuradas en cada bloque de Trabajo (Horario → Bloques). Un bloque sin meta configurada no cuenta para este total.">Meta productiva: —</span>
     </div>
     <span class="slot-status bad live-exception" id="adherenceLiveBadge" style="display:none;">⚠️ Fuera de adherencia ahora</span>
+  </div>
+  <!-- v278 — Pedido del usuario: toggle "Contraer bloques al terminar",
+       persistido en settings.collapseCompletedBlocks (ver
+       defaultSettings()/toggleCollapseCompletedBlocks() en el JS). -->
+  <div class="sblk-collapse-row">
+    <button class="sblk-collapse-toggle" id="collapseCompletedBlocksBtn" type="button" aria-pressed="false">
+      <span class="sblk-collapse-check" aria-hidden="true">✓</span>
+      <span>Contraer bloques al terminar</span>
+    </button>
   </div>
   <div class="schedule sblk-timeline" id="scheduleList"></div>
 </div>
@@ -8673,6 +8874,12 @@ $0.72"></textarea>
         // por su propio `@media (max-width: 900px)`), así que este valor no
         // fuerza nada ahí aunque quede en `true`.
         sidebarPinned: true,
+        // v278 — Pedido del usuario: toggle "Contraer bloques al terminar"
+        // dentro de "Bloques del día" (ver #collapseCompletedBlocksBtn) —
+        // cuando está activo, cualquier bloque ya "Hecho" se contrae a una
+        // fila angosta (nombre + badge de estado, ver renderSchedule()).
+        // Persiste entre sesiones, mismo patrón que sidebarPinned arriba.
+        collapseCompletedBlocks: false,
       };
     }
 
@@ -8698,6 +8905,8 @@ $0.72"></textarea>
       if (!settings.accordionState || typeof settings.accordionState !== 'object' || Array.isArray(settings.accordionState)) settings.accordionState = {};
       // v259 — Ver comentario junto a sidebarPinned en defaultSettings().
       if (typeof settings.sidebarPinned !== 'boolean') settings.sidebarPinned = true;
+      // v278 — Ver comentario junto a collapseCompletedBlocks en defaultSettings().
+      if (typeof settings.collapseCompletedBlocks !== 'boolean') settings.collapseCompletedBlocks = false;
       if (!Number.isFinite(Number(settings.productiveBreakEarnMin)) || Number(settings.productiveBreakEarnMin) <= 0) settings.productiveBreakEarnMin = fallback.productiveBreakEarnMin;
       if (!Number.isFinite(Number(settings.productiveBreakAwardMin)) || Number(settings.productiveBreakAwardMin) < 0) settings.productiveBreakAwardMin = fallback.productiveBreakAwardMin;
       if (!['classic', 'chime', 'custom'].includes(settings.productiveBreakSound)) settings.productiveBreakSound = fallback.productiveBreakSound;
@@ -15292,11 +15501,27 @@ function renderSchedule() {
           ? `<div class="sblk-meta-line" style="${statusClass ? `color: var(--${statusClass}); font-weight: 700;` : ''}">${escapeHtml(stats.status)}</div>`
           : '';
 
+        // v278 — Pedido del usuario: relleno líquido vertical + punto del
+        // riel sincronizado + texto legible sobre el líquido — mismo
+        // `stats.pct` que ya alimenta `.sblk-bar-track` de "Usado" arriba,
+        // capado 0-100 (slotStats() ya lo capa a 100 por arriba; el
+        // Math.max de aquí es solo defensivo contra NaN/negativos). Un solo
+        // número, 3 usos: el alto de `.sblk-fill`, el `top` de `.sblk-dot`,
+        // y la variable `--sblk-pct` que leen los degradados de texto (ver
+        // CSS, sección "v278"). `isCollapsed` (toggle "Contraer bloques al
+        // terminar", ver #collapseCompletedBlocksBtn) reutiliza el mismo
+        // `done` que este mismo loop ya calcula para el badge de estado —
+        // ningún criterio nuevo, solo una clase CSS más cuando ambas
+        // condiciones se cumplen.
+        const sblkPct = Math.max(0, Math.min(100, Number(stats.pct) || 0));
+        const isCollapsed = !!settings.collapseCompletedBlocks && done;
+
         return `
           <div class="sblk-item" data-block-type="${slot.type.toLowerCase()}">
             <div class="sblk-hour">${slot.start}</div>
-            <div class="sblk-rail" aria-hidden="true"><span class="sblk-dot"></span></div>
-            <div class="sblk-card ${active ? 'is-active' : ''} ${done ? 'is-done' : ''}" data-accent="${slotAccent}">
+            <div class="sblk-rail" aria-hidden="true"><span class="sblk-dot" style="top:${sblkPct}%"></span></div>
+            <div class="sblk-card ${active ? 'is-active' : ''} ${done ? 'is-done' : ''} ${isCollapsed ? 'is-collapsed' : ''}" data-accent="${slotAccent}" style="--sblk-pct:${sblkPct}%">
+              <div class="sblk-fill" style="height:${sblkPct}%"></div>
               <div class="sblk-head">
                 <span class="sblk-icon" aria-hidden="true">${icon}</span>
                 <div class="sblk-titles">
@@ -15305,15 +15530,17 @@ function renderSchedule() {
                 </div>
                 <span class="sblk-status ${badgeToneClass}">${escapeHtml(statusText)}</span>
               </div>
-              <div class="sblk-bar-row">
-                <div class="sblk-bar-label-row"><span>Usado</span><span>${formatDuration(stats.filledMin * 60000)} / ${formatDuration(stats.durationMin * 60000)} · ${Math.round(stats.pct)}%</span></div>
-                <div class="sblk-bar-track" aria-label="${escapeHtml(slot.name)} progreso"><div style="width:${stats.pct}%; background:${usedFillColor};"></div></div>
+              <div class="sblk-extra">
+                <div class="sblk-bar-row">
+                  <div class="sblk-bar-label-row"><span>Usado</span><span>${formatDuration(stats.filledMin * 60000)} / ${formatDuration(stats.durationMin * 60000)} · ${Math.round(stats.pct)}%</span></div>
+                  <div class="sblk-bar-track" aria-label="${escapeHtml(slot.name)} progreso"><div style="width:${stats.pct}%; background:${usedFillColor};"></div></div>
+                </div>
+                ${productivityBarHtml}
+                ${goalBarHtml}
+                <div class="sblk-meta-line">${escapeHtml(progressLabel)}</div>
+                ${statusDetailLine}
+                ${adherenceBarHtml}
               </div>
-              ${productivityBarHtml}
-              ${goalBarHtml}
-              <div class="sblk-meta-line">${escapeHtml(progressLabel)}</div>
-              ${statusDetailLine}
-              ${adherenceBarHtml}
             </div>
           </div>
         `;
@@ -15971,6 +16198,27 @@ function render() {
       if (pinned && isDesktopWidth) openSidebar();
     }
 
+    // v278 — Pedido del usuario: toggle "Contraer bloques al terminar" en
+    // "Bloques del día" (#collapseCompletedBlocksBtn). Mismo patrón que
+    // toggleSidebarPin()/applySidebarPinnedState() arriba: se persiste en
+    // settings (saveSettingsOnly) y se refleja en el atributo
+    // `aria-pressed` del botón (mismo lenguaje visual que
+    // `.sidebar-icon-btn[aria-pressed="true"]`). renderSchedule() ya lee
+    // `settings.collapseCompletedBlocks` directo en cada render — solo
+    // hace falta volver a pintar "Bloques del día" (no toda la app) para
+    // que el cambio se vea al instante.
+    function toggleCollapseCompletedBlocks() {
+      settings.collapseCompletedBlocks = !settings.collapseCompletedBlocks;
+      saveSettingsOnly();
+      syncCollapseCompletedBlocksUI();
+      renderSchedule();
+    }
+
+    function syncCollapseCompletedBlocksUI() {
+      const btn = document.getElementById('collapseCompletedBlocksBtn');
+      if (btn) btn.setAttribute('aria-pressed', settings.collapseCompletedBlocks ? 'true' : 'false');
+    }
+
     // Pedido del usuario: tarjeta "Mi progreso" (anillo de %) en el sidebar
     // — Productividad semanal = minutos productivos ya acumulados esta
     // semana (mismos totals.productive que ya calcula weekSummaryForOffset,
@@ -16512,6 +16760,10 @@ function render() {
     wireAccordionPersistence();
     wireActionButtonPress();
     initSidebarNav();
+    // v278 — Toggle "Contraer bloques al terminar".
+    const collapseCompletedBlocksBtn = document.getElementById('collapseCompletedBlocksBtn');
+    if (collapseCompletedBlocksBtn) collapseCompletedBlocksBtn.addEventListener('click', toggleCollapseCompletedBlocks);
+    syncCollapseCompletedBlocksUI();
 
     // Pedido del usuario ("sigue sin verse nada, ni un poco"): el enfoque
     // anterior (agregar la clase `.is-pressed` y dejar que la transición
