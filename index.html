@@ -5154,6 +5154,13 @@
 </div>
 <button class="sidebar-link active" data-page="home" type="button">🏠 Inicio</button>
 <button class="sidebar-link" data-page="schedule" type="button">🗓️ Horario</button>
+<!-- v250 — Pedido del usuario: "Bloques del día" (antes la 2da sección
+     dentro de la página "🗓️ Horario", justo debajo del editor) pasa a su
+     PROPIA página del menú lateral — ver #pageBlocks más abajo. Se separa
+     el CONFIGURAR (Horario, sigue en su propia página) de VER CÓMO VA EL
+     DÍA (Bloques del día, ahora acá) — mismo criterio de "una página, un
+     propósito" que ya separa Horario de Reportes. -->
+<button class="sidebar-link" data-page="blocks" type="button">📋 Bloques del día</button>
 <button class="sidebar-link" data-page="reports" type="button">📊 Reportes</button>
 <button class="sidebar-link" data-page="settings" type="button">⚙️ Ajustes</button>
 </nav>
@@ -5403,7 +5410,11 @@
      Horario + Bloques del día (sin cambios de contenido). Higher Rate
      vivió aquí como sección inline desde esta misma v238 hasta v248, que
      lo devolvió a ser un popup propio (#higherRateModal, ver header) — ya
-     no vive en esta página. -->
+     no vive en esta página.
+     v250 — Pedido del usuario: "Bloques del día" (#scheduleAccordion) se
+     muda a su PROPIA página ("📋 Bloques del día", ver #pageBlocks más
+     abajo) — esta página se queda SOLO con el editor de Horario
+     (#scheduleConfigAccordion). -->
 <div class="app-page" data-page="schedule" hidden id="pageSchedule">
 <!-- v236 — Pedido del usuario: "Horario" (antes un modal, #shiftModal) pasa
      a ser una sección expandible más de la página, mismo patrón que "Tabla
@@ -5426,12 +5437,17 @@
      v238 — El botón "🗓️ Horario" del header (que abría/scrolleaba hasta
      aquí) se quita — esta sección ahora vive en su propia página del menú
      lateral ("🗓️ Horario"), a la que se llega directo desde el sidebar sin
-     necesitar scroll ni forzar el open. -->
+     necesitar scroll ni forzar el open.
+     v250 — Nota sobre el párrafo de arriba ("se coloca justo arriba de
+     'Bloques del día'"): ya no es así — "Bloques del día" se mudó a su
+     propia página ("📋 Bloques del día", ver #pageBlocks), separada de
+     esta. Se deja el resto del comentario tal cual por su valor histórico
+     (explica por qué el editor de Horario tiene la forma que tiene). -->
 <details class="accordion-card" id="scheduleConfigAccordion">
 <summary>
   <div class="accordion-head">
     <h2>Horario</h2>
-    <p>Cuándo empiezas, cuándo terminas, y tus breaks/lunch de cada día. "Bloques del día" (abajo) se dibuja sobre este plan.</p>
+    <p>Cuándo empiezas, cuándo terminas, y tus breaks/lunch de cada día. "Bloques del día" (su propia página, en el menú ☰) se dibuja sobre este plan.</p>
   </div>
   <div class="accordion-chevron">⌄</div>
 </summary>
@@ -5513,6 +5529,37 @@
 </div>
 </details>
 
+<!-- v248 — Pedido del usuario: "Higher Rate" vuelve a ser un modal propio
+     (higherRateModal, ver más abajo junto al resto de modales) — el
+     usuario pidió que se abra igual que "Ajustes" (un popup), no que
+     navegue a otra página/sección de la app. Reversión de v238 (que lo
+     había convertido en esta sección inline dentro de "Horario"): se quita
+     de aquí sin dejar nada — los mismos ids de siempre
+     (higherRateWindowsList/addHigherRateWindowBtn/
+     higherRateHistoryAccordion/higherRateHistoryList/
+     purgeHigherRateWindowsBtn) y el JS que los usa
+     (renderHigherRateWindowsEditor/addHigherRateWindowRow/
+     removeHigherRateWindowRowAt/purgePastHigherRateWindows) se mudan tal
+     cual al modal nuevo, sin tocar su lógica. -->
+
+</div><!-- /pageSchedule -->
+
+<!-- v250 — Pedido del usuario: "Bloques del día" (antes la 2da sección de
+     la página "🗓️ Horario", justo debajo del editor de Horario) pasa a su
+     PROPIA página del menú lateral ("📋 Bloques del día") — separa
+     CONFIGURAR el horario (página "Horario") de VER cómo va el día en
+     curso contra ese plan (esta página). Ningún id cambió
+     (scheduleAccordion/scheduleSubtitle/scheduleOffWorkedNote/
+     dayMetricsRow/adherenceAccordion/adherenceBadge/
+     adherenceCheckpointList/adherenceGoalBadge/adherenceLiveBadge/
+     productivityGoalBadge/scheduleList) — el JS que ya los usa
+     (renderSchedule/dayAdherence/slotMinuteAdherence/etc.) sigue
+     funcionando exactamente igual, solo cambió qué `.app-page` los
+     envuelve. `applyAccordionState()`/`wireAccordionPersistence()` ya
+     iteran `details[id]` de forma genérica (no por página), así que el
+     recuerdo de abierto/cerrado de este acordeón sigue funcionando sin
+     tocar nada ahí. -->
+<div class="app-page" data-page="blocks" hidden id="pageBlocks">
 <details class="accordion-card" id="scheduleAccordion" open>
 <summary>
   <div class="accordion-head">
@@ -5538,21 +5585,7 @@
   <div class="schedule" id="scheduleList"></div>
 </div>
 </details>
-
-<!-- v248 — Pedido del usuario: "Higher Rate" vuelve a ser un modal propio
-     (higherRateModal, ver más abajo junto al resto de modales) — el
-     usuario pidió que se abra igual que "Ajustes" (un popup), no que
-     navegue a otra página/sección de la app. Reversión de v238 (que lo
-     había convertido en esta sección inline dentro de "Horario"): se quita
-     de aquí sin dejar nada — los mismos ids de siempre
-     (higherRateWindowsList/addHigherRateWindowBtn/
-     higherRateHistoryAccordion/higherRateHistoryList/
-     purgeHigherRateWindowsBtn) y el JS que los usa
-     (renderHigherRateWindowsEditor/addHigherRateWindowRow/
-     removeHigherRateWindowRowAt/purgePastHigherRateWindows) se mudan tal
-     cual al modal nuevo, sin tocar su lógica. -->
-
-</div><!-- /pageSchedule -->
+</div><!-- /pageBlocks -->
 
 <!-- v238 — Pedido del usuario: página "📊 Reportes" del menú lateral —
      Resumen del día/Estadísticas del día, Ganancias del ciclo y Resumen
@@ -14005,7 +14038,11 @@ function render() {
     let currentPage = 'home';
 
     function navigateToPage(page) {
-      const pages = ['home', 'schedule', 'reports', 'settings'];
+      // v250 — Pedido del usuario: "Bloques del día" se muda a su propia
+      // página ("blocks", ver #pageBlocks en el HTML) — se agrega aquí a
+      // la lista de páginas válidas, mismo criterio que ya usa cada id
+      // existente.
+      const pages = ['home', 'schedule', 'blocks', 'reports', 'settings'];
       if (!pages.includes(page)) page = 'home';
       currentPage = page;
       document.querySelectorAll('.app-page').forEach(el => {
