@@ -14435,7 +14435,22 @@ function render() {
       // cualquier otro caso (mobile, o escritorio sin fijar) se cierra
       // solo tras elegir una página — mismo comportamiento esperado de
       // cualquier menú lateral tipo overlay.
-      if (!document.body.classList.contains('sidebar-pinned')) closeSidebar();
+      // v263 — Bug reportado por el usuario: en mobile, tocar una sección
+      // del menú (ej. "Avisos") NO cerraba el menú — había que tocar la
+      // "X" a mano. Causa: `body.sidebar-pinned` se agrega SIEMPRE que
+      // `settings.sidebarPinned` sea true (default de fábrica, ver
+      // `applySidebarPinnedState()`) — sin importar el ancho de pantalla.
+      // El efecto VISUAL de "fijado" solo existe en CSS dentro de
+      // `@media (min-width: 901px)` (el botón 📌 ni siquiera se muestra en
+      // mobile, ver `#sidebarPinBtn` en ese mismo breakpoint), pero esta
+      // condición solo miraba la clase, no el ancho — en mobile, con
+      // `sidebar-pinned` puesto de fábrica, `closeSidebar()` nunca se
+      // llegaba a ejecutar. Se agrega el mismo chequeo de ancho que ya usa
+      // `applySidebarPinnedState()` — el sidebar solo se queda abierto
+      // cuando de verdad se ve fijado (fijado Y escritorio), igual que el
+      // comentario de arriba ya decía que debía comportarse.
+      const isPinnedOnDesktop = document.body.classList.contains('sidebar-pinned') && window.matchMedia('(min-width: 901px)').matches;
+      if (!isPinnedOnDesktop) closeSidebar();
       // Volver arriba de la página nueva — sin esto, si se navega estando
       // scrolleado hacia abajo en la página anterior, la nueva se ve "a la
       // mitad" hasta que el usuario suba a mano.
@@ -14654,9 +14669,13 @@ function render() {
         // v238 — Escape también cierra el sidebar cuando está abierto en
         // modo overlay (mobile, o escritorio sin fijar) — mismo criterio
         // que el resto de la app usa para cerrar cualquier overlay con
-        // teclado. Si está FIJADO no se toca — fijar es justo pedirle a
-        // la app que se quede abierto sin depender de este tipo de cierres.
-        if (!document.body.classList.contains('sidebar-pinned')) closeSidebar();
+        // teclado. Si está FIJADO en escritorio no se toca — fijar es
+        // justo pedirle a la app que se quede abierto sin depender de este
+        // tipo de cierres.
+        // v263 — Mismo fix que navigateToPage(): el chequeo debe incluir el
+        // ancho de pantalla, no solo la clase (ver ese comentario para el
+        // detalle completo del bug).
+        if (!(document.body.classList.contains('sidebar-pinned') && window.matchMedia('(min-width: 901px)').matches)) closeSidebar();
       }
     });
 
