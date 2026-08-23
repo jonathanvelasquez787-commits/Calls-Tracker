@@ -4796,6 +4796,22 @@
 </div>
 </div>
 <div class="note">El ciclo siempre dura 14 días desde la fecha que pongas arriba. Se guarda solo. Ajusta esto si tus ciclos reales no coinciden con "Ganancias del ciclo".</div>
+<div class="divider"></div>
+<!-- Pedido del usuario (v229): Exportar/Importar JSON vivían dentro de
+     "Pegar Llamadas", sin ninguna relación conceptual con pegar texto de
+     Propio — se mudan a Ajustes, junto al resto de configuración/backup de
+     la app. Mismos ids/handlers de siempre (exportBtn/importJsonBtn/
+     importJsonFile/exportJSON()/handleImportJsonFile()), solo cambia dónde
+     viven en el HTML — buscar "v229". -->
+<div class="field" style="margin-bottom:4px;">
+<label style="font-weight:900;">Backup de datos</label>
+</div>
+<div class="modal-actions" style="margin-top:0;">
+<button id="exportBtn" type="button">Exportar JSON</button>
+<button id="importJsonBtn" type="button">Importar JSON</button>
+<input accept="application/json,.json" id="importJsonFile" style="display:none;" type="file"/>
+</div>
+<div class="note">"Exportar JSON" descarga un respaldo de tus llamadas, turnos y pausas. "Importar JSON" restaura un backup ya exportado (reemplaza llamadas/turnos/pausas actuales — tu horario y metas no se tocan).</div>
 <div class="modal-actions">
 <button class="primary" data-close-modal="goalsModal" type="button">Listo</button>
 </div>
@@ -5150,11 +5166,8 @@ $0.72"></textarea>
 <div class="modal-actions">
 <button class="primary" id="importBtn" type="button">Importar</button>
 <button class="warn" id="clearCallsBtn" type="button">Limpiar</button>
-<button id="exportBtn" type="button">Exportar JSON</button>
-<button id="importJsonBtn" type="button">Importar JSON</button>
-<input accept="application/json,.json" id="importJsonFile" style="display:none;" type="file"/>
 </div>
-<div class="note">Después de importar, el campo se vacía y las filas se guardan localmente en el navegador. "Importar JSON" restaura un backup ya exportado (reemplaza llamadas/turnos/pausas actuales — tu horario y metas no se tocan).</div>
+<div class="note">Después de importar, el campo se vacía y las filas se guardan localmente en el navegador.</div>
 
 </div>
 </div>
