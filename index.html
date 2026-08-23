@@ -444,14 +444,19 @@
          par de modo oscuro (mejor contraste sobre fondo blanco) — Trabajo
          = esmeralda (--secondary #006d43 exacto, reemplaza el slate neutro
          que tenía desde v207), Lunch = índigo (--on-primary-fixed-variant
-         #224583 exacto, ver la regla nueva justo debajo). Break no
-         necesita override aquí — el ámbar (--tertiary-fixed #fbbc00) ya es
-         idéntico en ambos temas, ver la regla base `.slot[data-accent=
-         "warn"]`. Ya no deriva de --cyan (que en este tema apunta a
+         #224583 exacto, ver la regla nueva justo debajo). Break lleva su
+         propio override desde v226 (ver ese comentario, en la regla base
+         `.slot[data-accent="warn"]`): esa regla base ahora comparte color
+         con Lunch para modo OSCURO, así que aquí se fija el ámbar de
+         siempre (--tertiary-fixed #fbbc00) para que Break en modo claro
+         no cambie. Ya no deriva de --cyan (que en este tema apunta a
          --primary/rosa) — son valores fijos de la nueva paleta categórica,
          independientes del theming rosa/magenta del resto de la app. */
       :root:not(.theme-dark) .slot[data-accent="cyan"] {
         --slot-rgb: 0, 109, 67;
+      }
+      :root:not(.theme-dark) .slot[data-accent="warn"] {
+        --slot-rgb: 251, 188, 0; /* v226 — mismo ámbar de siempre, ver comentario arriba */
       }
       :root:not(.theme-dark) .slot[data-accent="blue"] {
         --slot-rgb: 34, 69, 131;
@@ -791,10 +796,13 @@
     html.theme-light .slot .slot-fill {
       opacity: 0;
     }
-    /* Ver comentario gemelo en la rama @media de arriba (v218) — mismo
+    /* Ver comentario gemelo en la rama @media de arriba (v218/v226) — mismo
        criterio, misma paleta DESIGN.md. */
     html.theme-light .slot[data-accent="cyan"] {
       --slot-rgb: 0, 109, 67;
+    }
+    html.theme-light .slot[data-accent="warn"] {
+      --slot-rgb: 251, 188, 0; /* v226 — mismo ámbar de siempre, ver comentario en la rama @media */
     }
     html.theme-light .slot[data-accent="blue"] {
       --slot-rgb: 34, 69, 131;
@@ -3230,20 +3238,22 @@
       z-index: 0;
     }
 
-    /* Pedido del usuario (v218): 3 acentos categóricos tomados de
-       DESIGN.md — Trabajo = esmeralda (familia --secondary #006d43),
-       Break = ámbar (--tertiary-fixed #fbbc00, idéntico en ambos temas —
-       no necesita override en claro), Lunch = índigo (familia --primary
-       #001b44 / --on-primary-fixed-variant #224583). Triple espaciada en
-       el círculo cromático (verde~150° / ámbar~45° / índigo~225°) para que
-       las 3 se distingan de un vistazo sin depender de --cyan/--warn/--blue
-       (variables compartidas con el resto de la app — no tocadas). Valor
-       aquí = tono para MODO OSCURO (más brillante, se ve bien sobre fondo
-       casi negro); modo claro tiene su propio override más abajo con tonos
-       más oscuros/saturados de la misma familia (mejor contraste sobre
-       blanco). */
-    .slot[data-accent="cyan"] { --slot-rgb: 16, 185, 129; }
-    .slot[data-accent="warn"] { --slot-rgb: 251, 188, 0; }
+    /* v226 — Pedido del usuario ("que todos los bloques del día tengan los
+       colores de bloque lunch... solo en modo oscuro"): Trabajo y Break
+       pasan a compartir el mismo --slot-rgb que ya usa Lunch (111,151,255)
+       — SOLO en esta regla base, que es lo que se renderiza en modo
+       oscuro (nunca en un @media/html.theme-light). Antes Trabajo era
+       esmeralda (16,185,129) y Break ámbar (251,188,0); Lunch no se toca,
+       ya tenía este valor. Modo claro no se toca: Trabajo ya tiene su
+       propio override abajo (:root:not(.theme-dark) .slot[data-accent=
+       "cyan"], sin cambios); Break dependía de ESTA regla base para su
+       color en claro también (el comentario de v218 decía "idéntico en
+       ambos temas, no necesita override") — eso ya no es cierto tras este
+       cambio, así que se agrega un override propio de claro con el ámbar
+       de siempre (ver ese bloque más abajo) para que Break en modo claro
+       quede exactamente igual que antes. */
+    .slot[data-accent="cyan"] { --slot-rgb: 111, 151, 255; }
+    .slot[data-accent="warn"] { --slot-rgb: 111, 151, 255; }
     .slot[data-accent="blue"] { --slot-rgb: 111, 151, 255; }
 
     /* Sube los 3 hijos de contenido reales (nombre/rango/estado, cuerpo del
