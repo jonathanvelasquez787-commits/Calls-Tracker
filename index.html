@@ -6066,127 +6066,15 @@
      botón del sidebar. El id de la página (`pageSettings`/
      `data-page="settings"`) se deja igual a propósito, sin renombrar ids
      por un simple cambio de etiqueta visible. */-->
-<div class="settings-menu-card">
-<button class="settings-menu-btn" id="notificationsMiniBtn" type="button">🔔 Avisos<span class="settings-menu-sub">Volumen, avisos con sonido de turno/Break/Lunch y descanso por productividad</span></button>
-</div>
-</div><!-- /pageSettings -->
-
-<div class="footer">Todo queda local en el navegador hasta que exportes o descargues el archivo.</div></div>
-<div aria-hidden="true" class="modal-overlay" id="goalsModal">
-<div aria-labelledby="goalsModalTitle" aria-modal="true" class="modal-card" role="dialog">
-<div class="modal-head">
-<div>
-<h3 id="goalsModalTitle">Ajustes</h3>
-<p>Ajusta minutos o dólares. Uno actualiza al otro usando tu tasa por minuto (editable abajo).</p>
-</div>
-<button aria-label="Cerrar" class="modal-close" data-close-modal="goalsModal" type="button">×</button>
-</div>
-<div class="field" style="margin-bottom:4px;">
-<label style="font-weight:900;">Tu perfil</label>
-</div>
-<div class="goal-fields">
-<div class="field">
-<label for="userNameInput">Tu nombre</label>
-<input id="userNameInput" maxlength="40" placeholder="Ej. Jonathan" type="text"/>
-</div>
-<div class="field">
-<label for="userEmojiInput">Emoji (opcional)</label>
-<input id="userEmojiInput" maxlength="8" placeholder="🙂" type="text"/>
-</div>
-</div>
-<div class="emoji-picker" id="emojiPickerMetas" aria-label="Elegir emoji para el saludo"></div>
-<div class="note" style="margin-top:-4px;">El emoji aparece junto a tu nombre en el saludo de arriba (ej. "Buenas tardes, Jonathan 🙂"). Toca uno de la lista o escribe cualquier otro en el cuadro de texto. Déjalo vacío para no mostrar ninguno.</div>
-<div class="divider"></div>
-<div class="field" style="margin-bottom:4px;">
-<label style="font-weight:900;">Tu meta</label>
-</div>
-<div class="goal-fields">
-<div class="field">
-<label for="productiveGoalInput">Meta en minutos</label>
-<input id="productiveGoalInput" inputmode="decimal" min="0.1" step="0.1" type="number"/>
-</div>
-<div class="field">
-<label for="earningsGoalInput">Meta en dólares</label>
-<input id="earningsGoalInput" inputmode="decimal" min="0" step="0.01" type="number"/>
-</div>
-<div class="field" id="goalCurrencyField" style="display:none;">
-<label for="goalCurrencyInput" id="goalCurrencyLabel">Meta en tu moneda</label>
-<input id="goalCurrencyInput" inputmode="decimal" min="0" step="0.01" type="number"/>
-</div>
-</div>
-<div class="divider"></div>
-<div class="field" style="margin-bottom:4px;">
-<label style="font-weight:900;">Tasa y moneda</label>
-</div>
-<div class="goal-fields">
-<div class="field">
-<label for="rateInput">Tasa por minuto ($)</label>
-<input id="rateInput" inputmode="decimal" min="0.01" step="0.01" type="number"/>
-</div>
-<div class="field">
-<label for="exchangeRateInput">Tasa de cambio (moneda por $1)</label>
-<input id="exchangeRateInput" inputmode="decimal" min="0" step="0.01" type="number"/>
-</div>
-</div>
-<div class="goal-fields">
-<!-- Bug reportado por el usuario: este campo usaba flex:1 1 100% para
-     ocupar las 2 columnas de .goal-fields, pero .goal-fields es
-     display:grid (no flex) — flex-basis/flex-grow no hacen nada en un
-     grid item, así que el campo quedaba encogido en la 1ra columna,
-     dejando la 2da vacía. grid-column: 1 / -1 es la forma correcta de
-     ocupar el ancho completo dentro de un grid. -->
-<div class="field" style="grid-column: 1 / -1;">
-<label for="currencyLabelInput">Moneda secundaria (símbolo o código)</label>
-<input id="currencyLabelInput" maxlength="6" placeholder="Ej. L, HNL, MXN..." type="text"/>
-</div>
-</div>
-<div class="note">La meta de dólares usa la tasa por minuto de arriba — súbela si tu pago por minuto aumenta. La tasa de cambio y la moneda secundaria muestran un equivalente junto a tus ganancias (ej. Lempiras); déjala en 0 o vacía para ocultarlo.</div>
-<div class="divider"></div>
-<div class="field" style="margin-bottom:4px;">
-<label style="font-weight:900;">Ciclo de pago</label>
-</div>
-<div class="goal-fields">
-<div class="field">
-<label for="cycleAnchorInput">Un día conocido en que empieza un ciclo</label>
-<input id="cycleAnchorInput" type="date"/>
-</div>
-<div class="field">
-<label for="cyclePayOffsetInput">Días desde fin de ciclo hasta el pago</label>
-<input id="cyclePayOffsetInput" inputmode="numeric" min="0" step="1" type="number"/>
-</div>
-</div>
-<div class="note">El ciclo siempre dura 14 días desde la fecha que pongas arriba. Se guarda solo. Ajusta esto si tus ciclos reales no coinciden con "Ganancias del ciclo".</div>
-<div class="divider"></div>
-<!-- Pedido del usuario (v229): Exportar/Importar JSON vivían dentro de
-     "Pegar Llamadas", sin ninguna relación conceptual con pegar texto de
-     Propio — se mudan a Ajustes, junto al resto de configuración/backup de
-     la app. Mismos ids/handlers de siempre (exportBtn/importJsonBtn/
-     importJsonFile/exportJSON()/handleImportJsonFile()), solo cambia dónde
-     viven en el HTML — buscar "v229". -->
-<div class="field" style="margin-bottom:4px;">
-<label style="font-weight:900;">Backup de datos</label>
-</div>
-<div class="modal-actions" style="margin-top:0;">
-<button id="exportBtn" type="button">Exportar JSON</button>
-<button id="importJsonBtn" type="button">Importar JSON</button>
-<input accept="application/json,.json" id="importJsonFile" style="display:none;" type="file"/>
-</div>
-<div class="note">"Exportar JSON" descarga un respaldo de tus llamadas, turnos y pausas. "Importar JSON" restaura un backup ya exportado (reemplaza llamadas/turnos/pausas actuales — tu horario y metas no se tocan).</div>
-<div class="modal-actions">
-<button class="primary" data-close-modal="goalsModal" type="button">Listo</button>
-</div>
-
-</div>
-</div>
-<div aria-hidden="true" class="modal-overlay" id="notificationsModal">
-<div aria-labelledby="notificationsModalTitle" aria-modal="true" class="modal-card" role="dialog">
-<div class="modal-head">
-<div>
-<h3 id="notificationsModalTitle">🔔 Sonido y Notificaciones</h3>
-<p>Volumen, avisos con sonido y Descanso por productividad — configuración global, no depende del día. Separado de Horario porque no es horario: es cómo y cuándo te avisa la app.</p>
-</div>
-<button aria-label="Cerrar" class="modal-close" data-close-modal="notificationsModal" type="button">×</button>
-</div>
+<details class="accordion-card" id="notificationsAccordion">
+<summary>
+  <div class="accordion-head">
+    <h2>🔔 Avisos</h2>
+    <p>Volumen, avisos con sonido y Descanso por productividad — configuración global, no depende del día.</p>
+  </div>
+  <div class="accordion-chevron">⌄</div>
+</summary>
+<div class="accordion-body">
 <div class="alert-group">
 <div class="alert-group-head">
 <span class="alert-group-icon">🔊</span>
@@ -6351,9 +6239,115 @@
 </div>
 <p class="alert-hint">Al acumular los minutos productivos configurados desde tu última pausa (o desde el inicio del turno si no has tomado ninguna hoy), suena el aviso — se reinicia cada vez que tomas un Break/Lunch real. Solo informativo, no reserva ni descuenta nada.</p>
 </div>
-<div class="modal-actions">
-<button data-close-modal="notificationsModal" type="button">Listo</button>
 </div>
+</details>
+</div><!-- /pageSettings -->
+
+<div class="footer">Todo queda local en el navegador hasta que exportes o descargues el archivo.</div></div>
+<div aria-hidden="true" class="modal-overlay" id="goalsModal">
+<div aria-labelledby="goalsModalTitle" aria-modal="true" class="modal-card" role="dialog">
+<div class="modal-head">
+<div>
+<h3 id="goalsModalTitle">Ajustes</h3>
+<p>Ajusta minutos o dólares. Uno actualiza al otro usando tu tasa por minuto (editable abajo).</p>
+</div>
+<button aria-label="Cerrar" class="modal-close" data-close-modal="goalsModal" type="button">×</button>
+</div>
+<div class="field" style="margin-bottom:4px;">
+<label style="font-weight:900;">Tu perfil</label>
+</div>
+<div class="goal-fields">
+<div class="field">
+<label for="userNameInput">Tu nombre</label>
+<input id="userNameInput" maxlength="40" placeholder="Ej. Jonathan" type="text"/>
+</div>
+<div class="field">
+<label for="userEmojiInput">Emoji (opcional)</label>
+<input id="userEmojiInput" maxlength="8" placeholder="🙂" type="text"/>
+</div>
+</div>
+<div class="emoji-picker" id="emojiPickerMetas" aria-label="Elegir emoji para el saludo"></div>
+<div class="note" style="margin-top:-4px;">El emoji aparece junto a tu nombre en el saludo de arriba (ej. "Buenas tardes, Jonathan 🙂"). Toca uno de la lista o escribe cualquier otro en el cuadro de texto. Déjalo vacío para no mostrar ninguno.</div>
+<div class="divider"></div>
+<div class="field" style="margin-bottom:4px;">
+<label style="font-weight:900;">Tu meta</label>
+</div>
+<div class="goal-fields">
+<div class="field">
+<label for="productiveGoalInput">Meta en minutos</label>
+<input id="productiveGoalInput" inputmode="decimal" min="0.1" step="0.1" type="number"/>
+</div>
+<div class="field">
+<label for="earningsGoalInput">Meta en dólares</label>
+<input id="earningsGoalInput" inputmode="decimal" min="0" step="0.01" type="number"/>
+</div>
+<div class="field" id="goalCurrencyField" style="display:none;">
+<label for="goalCurrencyInput" id="goalCurrencyLabel">Meta en tu moneda</label>
+<input id="goalCurrencyInput" inputmode="decimal" min="0" step="0.01" type="number"/>
+</div>
+</div>
+<div class="divider"></div>
+<div class="field" style="margin-bottom:4px;">
+<label style="font-weight:900;">Tasa y moneda</label>
+</div>
+<div class="goal-fields">
+<div class="field">
+<label for="rateInput">Tasa por minuto ($)</label>
+<input id="rateInput" inputmode="decimal" min="0.01" step="0.01" type="number"/>
+</div>
+<div class="field">
+<label for="exchangeRateInput">Tasa de cambio (moneda por $1)</label>
+<input id="exchangeRateInput" inputmode="decimal" min="0" step="0.01" type="number"/>
+</div>
+</div>
+<div class="goal-fields">
+<!-- Bug reportado por el usuario: este campo usaba flex:1 1 100% para
+     ocupar las 2 columnas de .goal-fields, pero .goal-fields es
+     display:grid (no flex) — flex-basis/flex-grow no hacen nada en un
+     grid item, así que el campo quedaba encogido en la 1ra columna,
+     dejando la 2da vacía. grid-column: 1 / -1 es la forma correcta de
+     ocupar el ancho completo dentro de un grid. -->
+<div class="field" style="grid-column: 1 / -1;">
+<label for="currencyLabelInput">Moneda secundaria (símbolo o código)</label>
+<input id="currencyLabelInput" maxlength="6" placeholder="Ej. L, HNL, MXN..." type="text"/>
+</div>
+</div>
+<div class="note">La meta de dólares usa la tasa por minuto de arriba — súbela si tu pago por minuto aumenta. La tasa de cambio y la moneda secundaria muestran un equivalente junto a tus ganancias (ej. Lempiras); déjala en 0 o vacía para ocultarlo.</div>
+<div class="divider"></div>
+<div class="field" style="margin-bottom:4px;">
+<label style="font-weight:900;">Ciclo de pago</label>
+</div>
+<div class="goal-fields">
+<div class="field">
+<label for="cycleAnchorInput">Un día conocido en que empieza un ciclo</label>
+<input id="cycleAnchorInput" type="date"/>
+</div>
+<div class="field">
+<label for="cyclePayOffsetInput">Días desde fin de ciclo hasta el pago</label>
+<input id="cyclePayOffsetInput" inputmode="numeric" min="0" step="1" type="number"/>
+</div>
+</div>
+<div class="note">El ciclo siempre dura 14 días desde la fecha que pongas arriba. Se guarda solo. Ajusta esto si tus ciclos reales no coinciden con "Ganancias del ciclo".</div>
+<div class="divider"></div>
+<!-- Pedido del usuario (v229): Exportar/Importar JSON vivían dentro de
+     "Pegar Llamadas", sin ninguna relación conceptual con pegar texto de
+     Propio — se mudan a Ajustes, junto al resto de configuración/backup de
+     la app. Mismos ids/handlers de siempre (exportBtn/importJsonBtn/
+     importJsonFile/exportJSON()/handleImportJsonFile()), solo cambia dónde
+     viven en el HTML — buscar "v229". -->
+<div class="field" style="margin-bottom:4px;">
+<label style="font-weight:900;">Backup de datos</label>
+</div>
+<div class="modal-actions" style="margin-top:0;">
+<button id="exportBtn" type="button">Exportar JSON</button>
+<button id="importJsonBtn" type="button">Importar JSON</button>
+<input accept="application/json,.json" id="importJsonFile" style="display:none;" type="file"/>
+</div>
+<div class="note">"Exportar JSON" descarga un respaldo de tus llamadas, turnos y pausas. "Importar JSON" restaura un backup ya exportado (reemplaza llamadas/turnos/pausas actuales — tu horario y metas no se tocan).</div>
+<div class="modal-actions">
+<button class="primary" data-close-modal="goalsModal" type="button">Listo</button>
+</div>
+
 </div>
 </div>
 <div aria-hidden="true" class="modal-overlay" id="resetModal">
@@ -14393,7 +14387,6 @@ function render() {
     function closeAllModals() {
       closeModal('goalsModal');
       closeModal('callsModal');
-      closeModal('notificationsModal');
       closeModal('resetModal');
       closeModal('gapModal');
       closeModal('dayNoteModal');
@@ -14716,7 +14709,6 @@ function render() {
       }
       syncShiftModalFields();
     });
-    document.getElementById('notificationsMiniBtn').addEventListener('click', () => { syncNotificationsModalFields(); openModal('notificationsModal'); });
     document.getElementById('copyDayToAllBtn').addEventListener('click', copyDayToAll);
     document.getElementById('copyWeekendBtn').addEventListener('click', copyDayToWeekend);
     document.getElementById('confirmModalOkBtn').addEventListener('click', () => {
@@ -14984,6 +14976,11 @@ function render() {
     // presente en la página "Horario", así que se sincroniza una sola vez
     // aquí al cargar, junto al resto de la sincronización inicial.
     syncHigherRateModalFields();
+    // v261 — Pedido del usuario: "Avisos" pasa de popup (notificationsModal,
+    // que se sincronizaba recién al abrirlo) a sección siempre presente en
+    // la página "🔔 Avisos" (notificationsAccordion) — mismo criterio que ya
+    // usa Higher Rate arriba: se sincroniza una sola vez aquí al cargar.
+    syncNotificationsModalFields();
     applyAccordionState();
     wireAccordionPersistence();
     wireActionButtonPress();
