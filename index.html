@@ -39,6 +39,19 @@
       --good: #66e2a5;
       --warn: #ffd15c;
       --bad: #ff6b72;
+      /* Pedido del usuario (v227, con mock mockup_hover_v2.html — eligió
+         "Opción C" invertida): los botones cuyo hover usaba var(--cyan)
+         (Auto/Horario/Higher Rate/Avisos/Ajustes, Editar/Editar gap, ‹›,
+         Esta semana/Anterior/Siguiente, "Día activo", "X" de modales,
+         botones de modales, nombre/monto de Bronce/Silver/Gold) se veían
+         cian en oscuro pero rosa/magenta en claro (--cyan en este tema
+         resuelve a --primary) — el usuario pidió invertir: claro debe verse
+         azul, oscuro debe verse rojo. Se crea esta variable APARTE de
+         --cyan (que sigue usándose sin cambios en botones/estados que no
+         eran parte de este pedido, ej. data-accent="cyan") — en oscuro
+         (aquí, default) mismo rojo que ya usa --bad en este tema; en las 2
+         ramas de modo claro (ver --hover-flip: #2563EB) un azul real. */
+      --hover-flip: var(--bad);
       /* Pedido del usuario (rediseño del tema Blanco): decenas de reglas
          decorativas (brand pill, foco de inputs, tags activos, botón
          primario, etc.) usaban el triplete RGB del cian OSCURO
@@ -239,6 +252,10 @@
            reglas scoped (mismo patrón :where() que ya usa v216). */
         --danger-red: #DC2626;
         --danger-red-rgb: 220, 38, 38;
+        /* Ver comentario junto a --hover-flip en :root (v227) — mismo
+           criterio, misma variable: aquí (modo claro) un azul real en vez
+           del rojo que usa el tema oscuro. */
+        --hover-flip: #2563EB;
       }
     }
 
@@ -308,6 +325,9 @@
          variable, mismo criterio. */
       --danger-red: #DC2626;
       --danger-red-rgb: 220, 38, 38;
+      /* Ver comentario gemelo en la rama @media de arriba (v227) — misma
+         variable, mismo criterio. */
+      --hover-flip: #2563EB;
     }
 
     /* ---- Rediseño del tema claro (pedido del usuario) ----
@@ -535,7 +555,7 @@
       :root:not(.theme-dark) .hero-action-btn:not(.danger):hover,
       :root:not(.theme-dark) .hero-action-btn:not(.danger):focus-visible {
         background: var(--text);
-        color: var(--cyan);
+        color: var(--hover-flip); /* v227 */
       }
       /* Pedido del usuario (v217): "Reiniciar" pasa de rosa/magenta
          (--pink-rgb, heredado de --primary en este tema) a un rojo de
@@ -564,16 +584,16 @@
          (regla justo debajo) — mismo resultado visual sin duplicar CSS. */
       :root:not(.theme-dark) .gap-edit-btn:hover {
         background: var(--text);
-        color: var(--cyan); /* v224 */
+        color: var(--hover-flip); /* v224 */
       }
       :root:not(.theme-dark) .day-nav-btn:hover,
       :root:not(.theme-dark) .day-nav-btn:focus-visible {
         background: var(--text);
-        color: var(--cyan); /* v224 */
+        color: var(--hover-flip); /* v224 */
       }
       :root:not(.theme-dark) .week-nav button:hover {
         background: var(--text);
-        color: var(--cyan); /* v224 */
+        color: var(--hover-flip); /* v224 */
       }
       :root:not(.theme-dark) .day-tab.active {
         background: var(--text);
@@ -582,14 +602,14 @@
       }
       :root:not(.theme-dark) .modal-close:hover {
         background: var(--text);
-        color: var(--cyan); /* v224 */
+        color: var(--hover-flip); /* v224 */
       }
       :root:not(.theme-dark) .button-row button:hover,
       :root:not(.theme-dark) .import-actions button:hover,
       :root:not(.theme-dark) .footer-tools button:hover,
       :root:not(.theme-dark) .modal-actions button:hover {
         background: var(--text);
-        color: var(--cyan); /* v224 */
+        color: var(--hover-flip); /* v224 */
       }
       :root:not(.theme-dark) .modal-actions button.warn:hover,
       :root:not(.theme-dark) .button-row button.warn:hover {
@@ -609,7 +629,7 @@
       }
       :root:not(.theme-dark) .rate-tile:hover .rate-tile-amount,
       :root:not(.theme-dark) .rate-tile:hover .rate-tile-label {
-        color: var(--cyan); /* v224 */
+        color: var(--hover-flip); /* v224 */
       }
       :root:not(.theme-dark) .rate-tile.selected .rate-tile-amount,
       :root:not(.theme-dark) .rate-tile.selected .rate-tile-label {
@@ -831,7 +851,7 @@
     html.theme-light .hero-action-btn:not(.danger):hover,
     html.theme-light .hero-action-btn:not(.danger):focus-visible {
       background: var(--text);
-      color: var(--cyan);
+      color: var(--hover-flip); /* v227 */
     }
     /* Ver comentarios gemelos en la rama @media de arriba (v217) — mismo
        criterio, mismas reglas. */
@@ -851,16 +871,16 @@
        justo debajo. */
     html.theme-light .gap-edit-btn:hover {
       background: var(--text);
-      color: var(--cyan); /* v224 */
+      color: var(--hover-flip); /* v224 */
     }
     html.theme-light .day-nav-btn:hover,
     html.theme-light .day-nav-btn:focus-visible {
       background: var(--text);
-      color: var(--cyan); /* v224 */
+      color: var(--hover-flip); /* v224 */
     }
     html.theme-light .week-nav button:hover {
       background: var(--text);
-      color: var(--cyan); /* v224 */
+      color: var(--hover-flip); /* v224 */
     }
     html.theme-light .day-tab.active {
       background: var(--text);
@@ -869,14 +889,14 @@
     }
     html.theme-light .modal-close:hover {
       background: var(--text);
-      color: var(--cyan); /* v224 */
+      color: var(--hover-flip); /* v224 */
     }
     html.theme-light .button-row button:hover,
     html.theme-light .import-actions button:hover,
     html.theme-light .footer-tools button:hover,
     html.theme-light .modal-actions button:hover {
       background: var(--text);
-      color: var(--cyan); /* v224 */
+      color: var(--hover-flip); /* v224 */
     }
     html.theme-light .modal-actions button.warn:hover,
     html.theme-light .button-row button.warn:hover {
@@ -896,7 +916,7 @@
     }
     html.theme-light .rate-tile:hover .rate-tile-amount,
     html.theme-light .rate-tile:hover .rate-tile-label {
-      color: var(--cyan); /* v224 */
+      color: var(--hover-flip); /* v224 */
     }
     html.theme-light .rate-tile.selected .rate-tile-amount,
     html.theme-light .rate-tile.selected .rate-tile-label {
@@ -1183,7 +1203,7 @@
        sigue ganando por especificidad — sin cambios ahí. */
     .hero-action-btn:not(.danger):hover,
     .hero-action-btn:not(.danger):focus-visible {
-      color: var(--cyan);
+      color: var(--hover-flip); /* v227 */
     }
 
     /* Pedido del usuario (v216): mismo cian que ya usa el hover de "Día
@@ -1206,7 +1226,7 @@
     :where(#weekSummaryAccordion) .gap-edit-btn:focus-visible,
     :where(#weekSummaryAccordion) .week-nav button:hover,
     :where(#weekSummaryAccordion) .week-nav button:focus-visible {
-      color: var(--cyan);
+      color: var(--hover-flip); /* v227 */
     }
 
     .hero-action-btn.danger {
@@ -2156,7 +2176,7 @@
     }
     .day-active-label-btn:hover,
     .day-active-label-btn:focus-visible {
-      color: var(--cyan);
+      color: var(--hover-flip); /* v227 */
       outline: none;
     }
 
