@@ -12058,6 +12058,28 @@ function renderBlockSummaryStrip(cards) {
     return;
   }
   const cardHtml = (c, extraClass = '') => {
+    // v225 — Pedido del usuario: si hoy no hay ningún Break/Lunch
+    // planeado, la tarjeta correspondiente en "Turno de Hoy" ya NO
+    // desaparece (antes summaryCards.push() se saltaba por completo si
+    // breakCount/lunchCount era 0) — se sigue mostrando, pero sin relleno
+    // ni barra de progreso (no hay nada planeado contra qué medir "usado")
+    // y con un mensaje corto en vez del rango de horas. Reutiliza las
+    // mismas clases .bsc-name/.bsc-range de siempre — su degradado de
+    // texto ya cae en var(--text)/var(--muted) por default cuando no se
+    // setea --bsc-pct inline (mismo truco que .slot .meta/.range, ver
+    // v186), así que no hace falta ningún estilo aparte para el color.
+    if (c.noPlan) {
+      return `
+        <div class="block-summary-card ${extraClass}" data-accent="${escapeHtml(c.accent)}" style="opacity:.82;">
+          <div class="bsc-top">
+            <span class="bsc-icon">${c.icon}</span>
+            <span class="bsc-name">${escapeHtml(c.name)}</span>
+          </div>
+          <div class="bsc-range">${escapeHtml(c.range)}</div>
+          ${c.rangeExtra ? `<div class="bsc-range" style="opacity:.7;">${escapeHtml(c.rangeExtra)}</div>` : ''}
+        </div>
+      `;
+    }
     const pct = Math.max(0, Math.min(100, Number(c.pct) || 0));
     return `
       <div class="block-summary-card ${extraClass}" data-accent="${escapeHtml(c.accent)}" style="--bsc-pct:${pct}%">
@@ -12381,9 +12403,9 @@ function renderSchedule() {
       // Break/Lunch (agregadas): combinan TODOS los bloques de ese tipo del
       // día en una sola tarjeta — % ponderado por minutos (planeado/usado
       // real sumados de todos los bloques), no un promedio simple de %.
-      // Se omite la tarjeta por completo si ese día no tiene ningún bloque
-      // de ese tipo (breakCount/lunchCount === 0) — sin bloques que
-      // resumir, no hay nada que mostrar.
+      // v225: la tarjeta ya NO se omite si ese día no tiene ningún bloque
+      // de ese tipo (breakCount/lunchCount === 0) — se agrega igual, en su
+      // variante `noPlan` (ver más abajo), en vez de desaparecer del todo.
       // Pedido del usuario (v193): el rango ya no dice "Total: HH:MM:SS" —
       // muestra la hora de inicio/fin del PRIMER bloque de ese tipo (mismo
       // formato que ya usa la tarjeta de Shift, horas planeadas), y si hay
@@ -12409,6 +12431,15 @@ function renderSchedule() {
         const rangeExtra = extraCount > 0 ? `${nextText} · +${extraCount} más` : nextText;
         return { range, rangeExtra };
       };
+      // v225 — Pedido del usuario: antes, si hoy no había ningún bloque de
+      // Break/Lunch planeado, la tarjeta correspondiente simplemente no se
+      // agregaba (breakCount/lunchCount === 0 → summaryCards.push() nunca
+      // corría) — la tarjeta desaparecía del todo en vez de avisar que no
+      // hay nada planeado. Ahora SIEMPRE se agrega una de las dos; sin
+      // bloques de ese tipo, se marca `noPlan: true` (ver cardHtml() en
+      // renderBlockSummaryStrip) y se cambia el rango por un mensaje corto
+      // — la barra de progreso no tiene sentido sin nada planeado contra
+      // qué medir "usado", así que esa tarjeta se pinta sin relleno/%.
       if (breakCount > 0) {
         const { range, rangeExtra } = rangeWithNext(breakBlockTimes);
         summaryCards.push({
@@ -12418,6 +12449,16 @@ function renderSchedule() {
           range,
           rangeExtra,
           pct: breakPlannedMin > 0 ? Math.min(100, (breakFilledMin / breakPlannedMin) * 100) : 0,
+        });
+      } else {
+        summaryCards.push({
+          name: 'Break',
+          icon: '☕',
+          accent: 'warn',
+          range: 'Sin Break planeado hoy',
+          rangeExtra: 'Puedes tomarlo cuando quieras',
+          pct: 0,
+          noPlan: true,
         });
       }
       if (lunchCount > 0) {
@@ -12429,6 +12470,16 @@ function renderSchedule() {
           range,
           rangeExtra,
           pct: lunchPlannedMin > 0 ? Math.min(100, (lunchFilledMin / lunchPlannedMin) * 100) : 0,
+        });
+      } else {
+        summaryCards.push({
+          name: 'Lunch',
+          icon: '🍽️',
+          accent: 'blue',
+          range: 'Sin Lunch planeado hoy',
+          rangeExtra: 'Puedes tomarlo cuando quieras',
+          pct: 0,
+          noPlan: true,
         });
       }
 
