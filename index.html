@@ -9456,6 +9456,48 @@ function dayAdherence(dayKey) {
 
 function now_isBefore(date) { return new Date() < date; }
 
+// v240 — Pedido del usuario: "Meta productiva" (suma de goalMin/achievedMin
+// de todos los bloques de Trabajo del día que sí tienen una meta
+// configurada) ahora también se muestra como píldora en "Ganancias de hoy"
+// (ver earningsTagsHtml en renderHeader()), no solo como badge dentro de
+// "Bloques del día". Se extrae aquí el mismo cálculo que renderSchedule()
+// ya hacía en su propio loop (dayGoalTargetMin/dayGoalAchievedMin, sumando
+// stats.productivityGoal de cada slot de Trabajo vía slotStats()) para que
+// ambos lugares usen exactamente el mismo número sin duplicar la lógica.
+// renderSchedule() sigue calculando su propio acumulado en su loop (ya
+// necesita slotStats() por slot para pintar la barra de cada bloque, así
+// que no vale la pena recalcular todo dos veces ahí) — esta función es solo
+// para consumidores que necesitan el TOTAL del día sin más detalle, como
+// renderHeader().
+function dayProductivityGoalTotals(dayKey = getActiveDayKey()) {
+  const dayCalls = callsForDay(dayKey);
+  const dayPauses = [
+    ...dayPauseIntervals(dayKey),
+    ...manualGapPauseIntervals(dayKey, 'break'),
+    ...manualGapPauseIntervals(dayKey, 'lunch'),
+  ].map(p => ({ type: p.type, start: new Date(p.startedAt || p.start), end: new Date(p.endedAt || p.end) }));
+  const { start: shiftStart, end: shiftEnd } = dayShiftBounds(dayKey);
+  const plannedSlots = getEffectiveScheduleForDay(dayKey);
+  const firstWorkIndex = plannedSlots.findIndex(s => s.type === 'Work');
+  let lastWorkIndex = -1;
+  for (let i = plannedSlots.length - 1; i >= 0; i--) {
+    if (plannedSlots[i].type === 'Work') { lastWorkIndex = i; break; }
+  }
+  let targetMin = 0;
+  let achievedMin = 0;
+  plannedSlots.forEach((slot, idx) => {
+    if (slot.type !== 'Work') return;
+    const extendStart = idx === firstWorkIndex ? shiftStart : null;
+    const extendEnd = idx === lastWorkIndex ? shiftEnd : null;
+    const stats = slotStats(slot, dayCalls, dayPauses, shiftStart, shiftEnd, dayKey, extendStart, extendEnd);
+    if (stats.productivityGoal) {
+      targetMin += stats.productivityGoal.goalMin;
+      achievedMin += stats.productivityGoal.achievedMin;
+    }
+  });
+  return { targetMin, achievedMin };
+}
+
 // ---- Vista semanal / resumen (mejora nueva, no era bug) ----
 // Antes solo existía la vista de un día a la vez. Esto da un vistazo de la
 // semana completa (lunes a domingo) con navegación entre semanas, mostrando
@@ -12203,6 +12245,20 @@ function renderHeader() {
   // Dropped/Otro no se duplican). Con Tabla de llamadas viviendo justo
   // debajo de esta sección en la página Inicio (desde v238), tener 2 filas
   // de tags casi idénticas una encima de la otra ya no tenía sentido.
+  // v240 — Pedido del usuario (parte 2 pendiente del pedido original de
+  // 3 partes, retomado después del desvío de v239/ACW): se agregan las 2
+  // píldoras que faltaban, "Adherencia %" y "Meta productiva" — "Total" ya
+  // había quedado cubierto en v239 por el camino de unificar Tabla de
+  // llamadas. Adherencia reutiliza dayAdherence() (mismo dato/mismos 3
+  // umbrales de color que ya usa el badge de "Bloques del día"); Meta
+  // productiva reutiliza dayProductivityGoalTotals() (extraída de
+  // renderSchedule() para no duplicar el cálculo, ver esa función). Ambas
+  // solo se muestran cuando hay algo que medir — sin horario/Adherencia
+  // calculable, o sin ningún bloque de Trabajo con meta configurada ese
+  // día, la píldora correspondiente simplemente no aparece (mismo criterio
+  // que ya usan Break/Lunch/Otro un poco más abajo en esta misma lista).
+  const adherenceForTag = dayAdherence(dayKey);
+  const productivityGoalTotalsForTag = dayProductivityGoalTotals(dayKey);
   const earningsTagsHtml = [
     `<span class="tag ${hasShift ? 'good' : ''}">Conectado: ${hasShift ? formatDuration(connected * 60000) : '—'}</span>`,
     `<span class="tag good">Tiempo llamadas: ${formatCallTimeLabel(stats.total)}</span>`,
@@ -12214,6 +12270,8 @@ function renderHeader() {
     stats.lunchGapTotal > 0 ? `<span class="tag cyan">Lunch: ${formatDuration(stats.lunchGapTotal * 60000)}</span>` : '',
     stats.otherGapTotal > 0 ? `<span class="tag">Otro: ${formatDuration(stats.otherGapTotal * 60000)}</span>` : '',
     higherRateBreakdownTagsHtml(stats.higherRateBreakdown, 'tag'),
+    adherenceForTag ? `<span class="tag ${adherenceForTag.scorePct >= 90 ? 'good' : adherenceForTag.scorePct >= 70 ? 'warn' : 'bad'}">Adherencia: ${adherenceForTag.scorePct}%</span>` : '',
+    productivityGoalTotalsForTag.targetMin > 0.05 ? `<span class="tag ${productivityGoalTotalsForTag.achievedMin >= productivityGoalTotalsForTag.targetMin - 0.05 ? 'good' : ''}">Meta productiva: ${formatMinutes(productivityGoalTotalsForTag.achievedMin)}/${formatMinutes(productivityGoalTotalsForTag.targetMin)} min</span>` : '',
   ].join('');
   document.getElementById('earningsTagsRow').innerHTML = earningsTagsHtml;
   const earnBar = document.getElementById('earningsBar');
