@@ -3799,14 +3799,30 @@
        ÍCONO/LABEL/SUB los que suben con z-index POSITIVO — mismo resultado
        visual (texto siempre encima del relleno), pero sin depender de
        z-index negativo en ningún lado. */
+    /* v273 — Bug reportado por el usuario (con captura, en escritorio): en
+       botones ANCHOS (ej. "Pegar Llamadas" en el grid de 3 columnas de
+       Controles/Llamadas, hasta ~390-400px de ancho en ese breakpoint), el
+       relleno tipo "onda" se veía como un óvalo que no llegaba a cubrir las
+       esquinas izquierda/derecha del botón — quedaba un borde sin pintar
+       alrededor. Causa: este círculo tiene un diámetro FIJO de 340px,
+       pensado en su momento para el ancho más angosto de los botones
+       chicos del header (.hero-shift-actions) — nunca se ajustó al agregar
+       botones más anchos después. Se agranda a 900px (bastante más que la
+       diagonal de cualquier botón real en este layout, incluso en
+       pantallas anchas — la sección que los contiene ya está topada a
+       1200px de ancho total, ver `.app-page > section.card` en el
+       @media de escritorio) — el efecto visual de "onda que nace del
+       ícono" se conserva (sigue siendo un círculo que crece desde el mismo
+       punto), solo que ahora crece lo suficiente para tapar el botón
+       completo sin importar qué tan ancho sea. */
     .action-ripple {
       position: absolute;
       left: 50%;
       top: 38%;
-      width: 340px;
-      height: 340px;
-      margin-left: -170px;
-      margin-top: -170px;
+      width: 900px;
+      height: 900px;
+      margin-left: -450px;
+      margin-top: -450px;
       border-radius: 50%;
       background: var(--accent);
       transform: scale(0);
