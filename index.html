@@ -1180,9 +1180,37 @@
       outline: none;
     }
 
+    /* v252 — Bug reportado por el usuario (con captura, después de 4
+       intentos previos sin resultado): "Oscuro"/"Higher Rate"/"Ajustes"
+       seguían sin verse a la misma altura que "Propio Shift Tracker",
+       pese a que v246/v247 ya habían alineado el TOP de `.hero-brand-row`
+       contra `.hero-top-actions` dentro de `.hero-top-row` (ver esos
+       comentarios, sin tocar) — pero ninguno de esos fixes tocó la
+       alineación INTERNA de `.hero-brand-row`, que es donde estaba la
+       causa real. `.hero-brand-row` centraba verticalmente
+       (`align-items: center`) sus 2 hijos: el botón ☰ (`#menuToggleBtn`,
+       tamaño FIJO 38×38px) y la píldora `.brand` (bastante más baja, ~28-
+       30px de alto según el padding del tema/ancho). Con `center`, el
+       texto "Propio Shift Tracker" quedaba centrado dentro de esos 38px
+       del botón ☰ — empujado ~19px desde el top real de la fila. Los
+       botones de `.hero-top-actions` (Oscuro/Higher Rate/Ajustes), al ser
+       de una sola línea con poco padding, centran su propio texto mucho
+       más arriba (~11-13px desde ese mismo top). Esa diferencia de ~6-7px
+       es la que se veía como "no están a la misma altura" en la captura.
+       `align-items: flex-start` hace que la píldora `.brand` ya no se
+       centre contra el botón ☰ (más alto) — ambos arrancan desde el mismo
+       top de `.hero-brand-row`, y con eso el texto de la píldora queda a
+       solo 1-2px del texto de los botones de acción (que ya arrancan del
+       mismo top por herencia de `.hero-top-actions`/`.hero-top-row`,
+       ambos con align-items:flex-start desde v247). El ícono ☰ en sí NO
+       se ve afectado — sigue centrado DENTRO de su propio botón de 38×38
+       (`.menu-toggle-btn` tiene su propio `align-items:center;
+       justify-content:center`, ajeno a esta regla) — solo cambia dónde
+       arranca esa caja de 38px respecto al resto de la fila, no cómo se
+       ve el ícono adentro. */
     .hero-brand-row {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 10px;
     }
 
