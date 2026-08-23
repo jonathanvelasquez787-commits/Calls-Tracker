@@ -2502,6 +2502,31 @@
     .stats-list-row span { color: var(--muted); }
     .stats-list-row strong { color: var(--text); }
 
+    /* v222 — Bug reportado por el usuario (con captura): la nota de "Más
+       corta" (statsShortestNote) se veía atravesada por la línea divisoria
+       de la fila de arriba — el texto quedaba "cortado" por el
+       border-bottom. Causa: la nota vivía como hermano SUELTO después de
+       `.stats-list-row`, con un margin-top NEGATIVO (-4px) para acercarla a
+       la fila — pero ese border-bottom pertenece a la CAJA de la fila
+       ("Más corta"), fija en su lugar sin importar el margen del hermano
+       siguiente; al subir la nota con margin negativo, esta terminaba
+       flotando justo encima/a través de esa línea en vez de debajo de ella.
+       Fix: se envuelve la fila + su nota en `.stats-list-row-wrap`, que es
+       quien ahora lleva el único border-bottom del grupo — la fila interna
+       y la nota pierden su propio borde/margen negativo, así que ya no hay
+       ninguna línea cruzando el texto. */
+    .stats-list-row-wrap {
+      border-bottom: 1px solid var(--line);
+    }
+    .stats-list-row-wrap .stats-list-row {
+      border-bottom: none;
+      padding-bottom: 2px;
+    }
+    .stats-list-row-wrap .gap-note {
+      margin: 0 0 6px;
+      text-align: right;
+    }
+
     @media (min-width: 1201px) {
       .day-stats-grid {
         display: grid;
@@ -4448,8 +4473,10 @@
      aclara cuántas llamadas de 0 min hubo y cuál es la siguiente más corta
      por encima de 0 — el número principal NO cambia, sigue siendo el
      mínimo real. */-->
+<div class="stats-list-row-wrap">
 <div class="stats-list-row"><span>Más corta:</span><strong id="statsShortest">—</strong></div>
-<div class="gap-note" id="statsShortestNote" style="display:none; text-align:right; margin: -4px 0 6px;"></div>
+<div class="gap-note" id="statsShortestNote" style="display:none;"></div>
+</div>
 <div class="stats-list-row"><span>Más larga:</span><strong id="statsLongest">—</strong></div>
 <div class="stats-list-row"><span>Promedio:</span><strong id="statsAvg">—</strong></div>
 <!-- Pedido del usuario (v199): hueco más largo/promedio del día (ya
@@ -12627,8 +12654,13 @@ function renderDayStatsCards() {
   const shortestNoteEl = document.getElementById('statsShortestNote');
   if (shortestNoteEl) {
     if (dayCalls.length && stats.shortest === 0 && stats.zeroCount > 0 && stats.shortestNonZero !== null) {
-      const plural = stats.zeroCount === 1 ? 'llamada de 0 min' : `${stats.zeroCount} llamadas de 0 min`;
-      shortestNoteEl.textContent = `Hubo ${plural} — siguiente: ${formatDuration(stats.shortestNonZero * 60000)}`;
+      // v222 — Pedido del usuario: el texto anterior ("Hubo 1 llamada de 0
+      // min — siguiente: 00:01:00") no dejaba claro qué relación tenía ese
+      // "siguiente" con el 00:00:00 de arriba. Se reescribe para que quede
+      // explícito: cuántas llamadas de 0 min hubo, y cuál es la más corta
+      // REAL si no se cuentan esas.
+      const intro = stats.zeroCount === 1 ? '1 llamada duró 0 min' : `${stats.zeroCount} llamadas duraron 0 min`;
+      shortestNoteEl.textContent = `${intro} — sin contar esa(s), la más corta fue ${formatDuration(stats.shortestNonZero * 60000)}`;
       shortestNoteEl.style.display = '';
     } else {
       shortestNoteEl.style.display = 'none';
