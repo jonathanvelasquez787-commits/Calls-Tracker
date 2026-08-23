@@ -1893,6 +1893,29 @@
       gap: 6px;
     }
 
+    /* Pedido del usuario (v214): el texto "Día activo" ahora es un botón —
+       tocarlo salta directo a Hoy (mismo mecanismo que ya usan las
+       flechitas ‹/›, ver shiftActiveDayBy()/jumpActiveDayToToday()), sin
+       tener que abrir el date-picker ni tocar dos veces la flecha "›" para
+       volver desde un día pasado/futuro lejano. font:inherit hereda el
+       mismo tamaño/color que ya trae .summary-pill (11px, var(--text)) —
+       antes era un <span> sin ningún estilo propio de botón nativo que
+       sobreescribir. */
+    .day-active-label-btn {
+      border: 0;
+      background: transparent;
+      padding: 0;
+      margin: 0;
+      font: inherit;
+      color: inherit;
+      cursor: pointer;
+    }
+    .day-active-label-btn:hover,
+    .day-active-label-btn:focus-visible {
+      color: var(--cyan);
+      outline: none;
+    }
+
     /* Pedido del usuario (v192): Iniciar shift/Break/Lunch (antes su propia
        sección "Acciones del turno", debajo del todo) suben a la misma fila
        de chips del header — a la par de "No iniciado"/"Día activo", pegados
@@ -4003,7 +4026,7 @@
 <div class="chip"><span class="dot-state" id="stateDot"></span><strong id="stateText">No iniciado</strong></div>
 <div class="chip" id="acwLiveChip" style="display:none;" title="Tiempo que llevas disponible/en ACW ahora mismo — sin llamada activa ni Break/Lunch activo.">⏱️ ACW/Available <strong id="acwLiveTimer">00:00:00</strong></div>
 <div class="summary-pill">
-  <span>Día activo</span>
+  <button class="day-active-label-btn" id="dayActiveLabelBtn" type="button" title="Ir a Hoy">Día activo</button>
   <button class="day-nav-btn" id="dayPrevBtn" type="button" aria-label="Día anterior" title="Día anterior">‹</button>
   <input id="daySelector" aria-label="Día activo" type="date"/>
   <button class="day-nav-btn" id="dayNextBtn" type="button" aria-label="Día siguiente" title="Día siguiente">›</button>
@@ -7244,6 +7267,17 @@ function shiftActiveDayBy(deltaDays) {
     toast('📅 Ese día todavía no llega — vas a ver un día futuro sin datos.');
   }
   setActiveDayKey(todayCallDateKey(next));
+}
+
+// Pedido del usuario (v214): tocar el texto "Día activo" (antes un <span>
+// sin acción) salta directo a Hoy — mismo setActiveDayKey() que ya usan las
+// flechitas ‹/›/el date-picker/las filas de Resumen semanal, sin repetir
+// lógica. Si ya se está viendo Hoy, no hace nada (ni toast) — no hay a
+// dónde "saltar".
+function jumpActiveDayToToday() {
+  if (isViewingToday()) return;
+  setActiveDayKey(todayCallDateKey());
+  toast('📅 Volviste a Hoy');
 }
 
 // Los controles "en vivo" (Iniciar/Finalizar shift, Break, Lunch) escriben
@@ -12749,6 +12783,7 @@ function render() {
     });
     document.getElementById('dayPrevBtn').addEventListener('click', () => shiftActiveDayBy(-1));
     document.getElementById('dayNextBtn').addEventListener('click', () => shiftActiveDayBy(1));
+    document.getElementById('dayActiveLabelBtn').addEventListener('click', jumpActiveDayToToday);
     document.getElementById('weekPrevBtn').addEventListener('click', () => { weekViewOffset -= 1; renderWeekSummary(); });
     document.getElementById('weekNextBtn').addEventListener('click', () => { weekViewOffset += 1; renderWeekSummary(); });
     document.getElementById('weekTodayBtn').addEventListener('click', () => { weekViewOffset = 0; renderWeekSummary(); });
