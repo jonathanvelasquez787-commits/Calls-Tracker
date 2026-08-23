@@ -1557,10 +1557,35 @@
       flex-shrink: 0;
     }
 
+    /* v249 — Ver comentario junto al @media de abajo (stretch): con ambos
+       botones igualados al ancho del más ancho en mobile, sin esto el
+       ícono+texto de cada uno quedaría pegado a la izquierda del pill,
+       dejando un hueco vacío a la derecha en el más angosto — se centra el
+       contenido para que se vea parejo. Sin efecto en escritorio: ahí cada
+       botón mide justo lo que su contenido necesita, así que centrar o no
+       da exactamente el mismo resultado visual. */
+    .hero-ajustes-reset-group .hero-action-btn {
+      justify-content: center;
+    }
+
     @media (max-width: 760px) {
+      /* v249 — Pedido del usuario (con captura, 3ra vez que se reporta este
+         mismo grupo): "Reiniciar" no se veía bien debajo de "Ajustes" pese
+         a los fixes de v246/v247 (esos arreglaron la ALTURA — que el grupo
+         quedara a la misma altura que la marca/Higher Rate — pero nunca
+         tocaron esto). Causa real, sin tocar hasta ahora: `align-items:
+         flex-end` solo alinea el BORDE DERECHO de los 2 botones — como
+         "♻️ Reiniciar" es más ancho que "⚙️ Ajustes", el ancho de cada
+         botón queda distinto, y Reiniciar se extendía más hacia la
+         izquierda que Ajustes (mismo borde derecho, pero Ajustes con hueco
+         vacío a su izquierda) — se veía descuadrado en vez de una columna
+         limpia. `stretch` iguala el ancho de AMBOS botones al del más ancho
+         (Reiniciar) — con el mismo ancho, los 2 bordes (izquierdo y
+         derecho) coinciden entre sí, Reiniciar queda de verdad debajo de
+         Ajustes, no solo alineado por un lado. */
       .hero-ajustes-reset-group {
         flex-direction: column;
-        align-items: flex-end;
+        align-items: stretch;
         gap: 6px;
       }
     }
