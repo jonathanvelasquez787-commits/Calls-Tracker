@@ -5538,19 +5538,66 @@
        explícita del usuario de NO seguir la convención de color de
        .slot/.action-btn en el resto de la app para estos mismos 3 tipos. */
 
-    /* ---- Cabecera de la sección: ícono en cuadrito + título/subtítulo ---- */
+    /* ---- Cabecera de la sección: ícono en cuadrito + título/subtítulo ----
+       v272 — Pedido del usuario (ajuste contra referencia visual): el
+       cuadrito pasa de fondo tenue (.16 de opacidad) a AZUL SÓLIDO, más
+       grande (48px, antes 30px) — mismo criterio que ya usa
+       `.sidebar-brand-icon`/`.sched-tl-icon` de acento, solo que aquí a
+       todo color en vez de tenue, para que la cabecera de la sección
+       destaque más. */
     .sched-header-icon {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 30px;
-      height: 30px;
-      margin-right: 10px;
-      border-radius: 10px;
-      font-size: 15px;
-      vertical-align: -8px;
-      background: rgba(var(--blue-rgb), .16);
-      border: 1px solid rgba(var(--blue-rgb), .3);
+      width: 48px;
+      height: 48px;
+      margin-right: 14px;
+      border-radius: 14px;
+      font-size: 22px;
+      vertical-align: -16px;
+      background: var(--blue);
+      border: 1px solid rgba(var(--blue-rgb), .5);
+      box-shadow: 0 6px 16px rgba(var(--blue-rgb), .28);
+    }
+
+    /* v272 — Botón "¿Cómo funciona?" en la cabecera, arriba a la derecha
+       (junto al chevron del acordeón) — puramente informativo, abre un
+       toast() explicativo (ver el listener en el JS) en vez de un modal
+       nuevo. Mismo lenguaje visual "pill con borde" que ya usa el resto de
+       la app para botones chicos (ej. `.gap-edit-btn`/`.day-nav-btn`), sin
+       inventar un componente nuevo. `stopPropagation` en el listener evita
+       que el click también dispare el toggle nativo de abrir/cerrar el
+       `<details>` (el botón vive dentro del `<summary>`). */
+    .sched-header-help-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 7px 13px;
+      font-weight: 800;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: border-color .14s ease, color .14s ease, background .14s ease;
+    }
+    .sched-header-help-btn:hover,
+    .sched-header-help-btn:focus-visible {
+      border-color: rgba(var(--blue-rgb), .45);
+      color: var(--blue);
+      background: rgba(var(--blue-rgb), .08);
+      outline: none;
+    }
+    .sched-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    @media (max-width: 620px) {
+      .sched-header-help-btn span.sched-header-help-label { display: none; }
     }
 
     /* ---- #scheduleModeTabs / #scheduleDayTabs: segmented control en una
@@ -5599,8 +5646,16 @@
       padding: 7px 11px;
     }
 
-    /* ---- Tarjeta de cabecera del día (tabs de día + "Día libre" +
-       Inicio/Fin del turno) ---- */
+    /* ---- Tarjeta de cabecera del día ("Lunes" + "Día libre" +
+       Inicio/Fin del turno) ----
+       v272 — Pedido del usuario (ajuste contra referencia visual): el
+       título de la tarjeta pasa de "Día a editar" (fuera de la tarjeta,
+       junto a los tabs) a el NOMBRE COMPLETO del día activo ("Lunes",
+       "Martes"...) DENTRO de la tarjeta, con ícono 📅 — en la misma fila
+       que "Día libre (sin turno)". El texto se actualiza en
+       syncShiftModalFields() (ver JS, `#schedDayCardTitle`), puramente
+       decorativo — no reemplaza a `#scheduleDayTabs` (los tabs Lun/Mar/...
+       siguen intactos, arriba de esta tarjeta, sin tocarse). */
     .sched-day-card {
       display: grid;
       gap: 16px;
@@ -5617,6 +5672,27 @@
       justify-content: space-between;
       gap: 12px;
     }
+    .sched-day-card-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 900;
+      font-size: 16px;
+      letter-spacing: -.01em;
+      color: var(--text);
+    }
+    .sched-day-card-icon {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      font-size: 14px;
+      background: rgba(var(--blue-rgb), .16);
+      border: 1px solid rgba(var(--blue-rgb), .3);
+    }
     .sched-dayoff-toggle {
       margin: 0;
       flex: 0 0 auto;
@@ -5624,13 +5700,39 @@
     .sched-time-row {
       gap: 14px;
     }
+    /* v272 — Labels a minúsculas normales, más chicos y sin mayúsculas/
+       letter-spacing (antes 11.5px uppercase+tracking, "peso de formulario
+       viejo") — mismo texto de siempre ("Inicio del turno"/"Fin del
+       turno"), solo tratamiento tipográfico más discreto. */
     .sched-time-field label {
-      font-size: 11.5px;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-      font-weight: 800;
+      font-size: 12.5px;
+      text-transform: none;
+      letter-spacing: normal;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    /* v272 — Envoltorio puramente decorativo alrededor de cada
+       `<input type="time">` real (dayStartInput/dayEndInput, sin tocar) que
+       permite pintar un ícono de reloj 🕐 absolute-positioned DENTRO del
+       campo, pegado a la derecha — el input en sí no gana ningún atributo
+       ni pseudo-elemento nuevo (los `<input>` no soportan `::after`), solo
+       queda envuelto. `pointer-events:none` en el ícono para que un click
+       ahí mismo siga cayendo sobre el input (abre el time-picker nativo). */
+    .sched-time-field-wrap {
+      position: relative;
+    }
+    .sched-time-field-clock {
+      position: absolute;
+      top: 50%;
+      right: 14px;
+      transform: translateY(-50%);
+      font-size: 15px;
+      color: var(--muted);
+      pointer-events: none;
+      line-height: 1;
     }
     .sched-time-field input[type="time"] {
+      width: 100%;
       border: 1px solid var(--line);
       border-radius: 14px;
       background: var(--panel-2);
@@ -5638,25 +5740,55 @@
       font-weight: 900;
       font-size: 22px;
       letter-spacing: -.02em;
-      padding: 10px 12px;
+      padding: 10px 40px 10px 12px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
+    /* El ícono nativo de calendario/reloj que ya trae `<input type="time">`
+       en Chrome/Edge/Android queda encimado con el 🕐 decorativo de arriba
+       — se apaga (mismo criterio que ya usa el resto de la app para
+       inputs de fecha con su propio ícono decorativo) para que solo se vea
+       uno. */
+    .sched-time-field input[type="time"]::-webkit-calendar-picker-indicator {
+      opacity: 0;
+      position: absolute;
+      right: 0;
+      width: 40px;
+      height: 100%;
+      cursor: pointer;
+    }
     @media (max-width: 760px) {
-      .sched-time-field input[type="time"] { font-size: 18px; padding: 8px 10px; }
+      .sched-time-field input[type="time"] { font-size: 18px; padding: 8px 34px 8px 10px; }
+      .sched-time-field-clock { right: 10px; font-size: 13px; }
     }
 
-    /* ---- Timeline de bloques ---- */
+    /* ---- Timeline de bloques ----
+       v272 — Pedido del usuario (ajuste contra referencia visual): se
+       agrega una columna nueva a la izquierda de la línea/punto conector
+       con la hora de INICIO de cada bloque como texto suelto (`.sched-
+       tl-hour`) — dato puramente derivado de `slot.start` (el mismo
+       `startVal` que ya calcula renderBlocksEditor() para prellenar el
+       input real), solo mostrado ahí para lectura rápida, sin ningún
+       input ni control nuevo. */
     .sched-timeline {
       gap: 0;
     }
     .sched-tl-item {
       display: grid;
-      grid-template-columns: 34px 1fr;
-      gap: 12px;
+      grid-template-columns: 44px 22px 1fr;
+      gap: 10px;
       align-items: stretch;
       padding: 0 0 18px;
     }
     .sched-tl-item:last-child { padding-bottom: 0; }
+    .sched-tl-hour {
+      padding-top: 8px;
+      text-align: right;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      white-space: nowrap;
+    }
 
     /* Columna de la izquierda: punto + línea conectora continua entre
        bloques (::before dibuja la línea completa de la fila; el último
@@ -5691,27 +5823,43 @@
     .sched-tl-item[data-block-type="break"] .sched-tl-dot { border-color: var(--muted); }
     .sched-tl-item[data-block-type="lunch"] .sched-tl-dot { border-color: rgba(var(--good-rgb), .8); }
 
+    /* v272 — Pedido del usuario: TODA la tarjeta lleva un tinte de fondo
+       sutil del color del tipo (antes solo el borde izquierdo tenía
+       color, el fondo era el panel neutro de siempre) — mismo mapeo de
+       acento por tipo (Trabajo=--blue, Break=neutro, Lunch=--good), solo
+       que ahora también pinta el `background`. */
     .sched-tl-card {
       display: grid;
       gap: 10px;
       padding: 13px 14px;
       border-radius: 16px;
       border: 1px solid var(--line);
-      background: var(--panel-2);
+      background: rgba(var(--blue-rgb), .10);
       border-left: 3px solid rgba(var(--blue-rgb), .55);
       transition: border-color .14s ease, background .14s ease;
     }
     .sched-tl-item[data-block-type="break"] .sched-tl-card {
       border-left-color: var(--line-2);
-      background: rgba(255,255,255,.015);
+      background: rgba(255,255,255,.035);
     }
     .sched-tl-item[data-block-type="lunch"] .sched-tl-card {
       border-left-color: rgba(var(--good-rgb), .5);
+      background: rgba(var(--good-rgb), .08);
     }
     .sched-tl-item:hover .sched-tl-card { border-color: var(--line-2); }
 
+    /* v272 — Pedido del usuario (CAMBIO GRANDE contra referencia visual):
+       antes el rango de horas (Inicio–Fin) vivía en su propia fila debajo
+       del header de la tarjeta, con inputs grandes tipo reloj. Ahora TODO
+       va en una sola fila horizontal — ícono, nombre+subtítulo, rango
+       compacto en línea, píldora de duración, handle y ✕ — así
+       `.sched-tl-card-top` pasa a `flex-wrap:wrap` (para no desbordar en
+       anchos angostos) y absorbe también el rango de horas
+       (`.sched-tl-time-inline`, ver más abajo), que antes vivía en
+       `.sched-tl-time-row` aparte. */
     .sched-tl-card-top {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 10px;
     }
@@ -5737,7 +5885,7 @@
     }
 
     .sched-tl-titles {
-      flex: 1 1 auto;
+      flex: 1 1 160px;
       min-width: 0;
     }
     /* El "Tipo" real (<select>) se pinta como texto con peso fuerte, sin
@@ -5826,25 +5974,30 @@
       opacity: 1;
     }
 
-    .sched-tl-time-row {
+    /* v272 — Pedido del usuario: el rango de horas se ve como texto EN
+       LÍNEA con el resto de la fila (mismo peso/tamaño que el nombre del
+       bloque, no destacado como antes) — vive ahora dentro de
+       `.sched-tl-card-top`, junto al nombre/subtítulo y la píldora de
+       duración, en vez de en su propia fila con inputs grandes. Siguen
+       siendo los mismos <input type="time"> reales (.block-start-input/
+       .block-end-input, sin tocar), solo que compactos y sin caja propia
+       en reposo. */
+    .sched-tl-time-inline {
       display: flex;
-      align-items: baseline;
-      gap: 8px;
+      align-items: center;
+      gap: 4px;
+      flex: 0 1 auto;
     }
-    /* Inicio/Fin: la hora ES el input — sin caja/borde propios en reposo,
-       tamaño grande y legible; solo se resalta al enfocar/tocar. Siguen
-       siendo <input type="time"> reales (.block-start-input/
-       .block-end-input), leídos igual por readBlocksFromEditor(). */
     .sched-tl-time-input {
       border: 1px solid transparent;
       background: transparent;
-      border-radius: 8px;
+      border-radius: 6px;
       color: var(--text);
-      font-weight: 800;
-      font-size: 17px;
-      padding: 2px 4px;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 3px 4px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      max-width: 100px;
+      max-width: 74px;
     }
     .sched-tl-time-input:hover {
       background: rgba(255,255,255,.05);
@@ -5857,6 +6010,7 @@
     .sched-tl-time-sep {
       color: var(--muted);
       font-weight: 700;
+      font-size: 12.5px;
     }
     .sched-tl-goal {
       padding: 8px 10px;
@@ -5875,67 +6029,120 @@
 
     @media (max-width: 760px) {
       .sched-tl-item { grid-template-columns: 20px 1fr; gap: 8px; }
+      .sched-tl-hour { display: none; }
       .sched-tl-rail { display: none; }
       .sched-tl-icon { width: 28px; height: 28px; font-size: 13px; }
       .sched-tl-handle { display: none; }
-      .sched-tl-time-input { font-size: 15px; max-width: 84px; }
+      .sched-tl-time-input { font-size: 13.5px; max-width: 66px; }
     }
 
-    /* ---- "+ Agregar bloque": último paso de la línea de tiempo, en vez de
-       botón grande separado — línea punteada + círculo con "+". ---- */
+    /* ---- "+ Agregar bloque": último paso de la línea de tiempo ----
+       v272 — Pedido del usuario (ajuste contra referencia visual): pasa de
+       "botón chico suelto" a una TARJETA completa del mismo ancho/alto
+       aproximado que las tarjetas de bloque (`.sched-add-block-btn` ahora
+       se estira `width:100%` con el mismo padding que `.sched-tl-card`),
+       con borde punteado y el texto centrado en azul. El círculo "+" se
+       mueve a la columna de la línea de tiempo (mismo ancho que los
+       puntos `.sched-tl-dot`), alineado con el resto de puntos de arriba
+       — ya no vive dentro del botón. Misma grilla de 3 columnas
+       (hora/rail/tarjeta) que `.sched-tl-item`, con la columna de hora
+       vacía (nada que mostrar ahí para esta fila). */
     .sched-timeline-add-row {
       display: grid;
-      grid-template-columns: 34px 1fr;
-      gap: 12px;
-      align-items: center;
+      grid-template-columns: 44px 22px 1fr;
+      gap: 10px;
+      align-items: stretch;
       margin-top: 6px;
+    }
+    .sched-timeline-add-hour {
+      /* Columna vacía a propósito — mantiene la alineación de la grilla
+         con el resto de filas del timeline, sin ningún dato que mostrar. */
     }
     .sched-timeline-add-rail {
       display: flex;
       justify-content: center;
-    }
-    .sched-timeline-add-rail::before {
-      content: '';
-      width: 0;
-      height: 14px;
-      border-left: 2px dashed var(--line-2);
-    }
-    .sched-add-block-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      width: fit-content;
-      border: 1px dashed var(--line-2);
-      background: transparent;
-      color: var(--muted);
-      border-radius: 12px;
-      padding: 9px 14px;
-      font-weight: 800;
-      font-size: 13px;
-      cursor: pointer;
-      transition: border-color .14s ease, color .14s ease, background .14s ease;
-    }
-    .sched-add-block-btn:hover,
-    .sched-add-block-btn:focus-visible {
-      border-color: rgba(var(--blue-rgb), .5);
-      color: var(--blue);
-      background: rgba(var(--blue-rgb), .06);
-      outline: none;
+      padding-top: 8px;
     }
     .sched-add-block-plus {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 18px;
-      height: 18px;
+      width: 22px;
+      height: 22px;
       border-radius: 50%;
-      border: 1.5px dashed currentColor;
-      font-size: 12px;
+      border: 1.5px dashed rgba(var(--blue-rgb), .6);
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 900;
       line-height: 1;
+      background: var(--bg);
     }
+    .sched-add-block-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      min-height: 52px;
+      border: 1.5px dashed var(--line-2);
+      background: transparent;
+      color: var(--blue);
+      border-radius: 16px;
+      padding: 13px 14px;
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+      transition: border-color .14s ease, color .14s ease, background .14s ease;
+    }
+    .sched-add-block-btn:hover,
+    .sched-add-block-btn:focus-visible {
+      border-color: rgba(var(--blue-rgb), .55);
+      color: var(--blue);
+      background: rgba(var(--blue-rgb), .07);
+      outline: none;
+    }
+    /* Ya no hay ningún ".sched-add-block-plus" dentro del botón — el
+       círculo "+" ahora vive en la columna de la línea de tiempo (ver
+       `.sched-timeline-add-rail` arriba). Se conserva el nombre de clase
+       en el `<span>` del rail para no duplicar reglas nuevas. */
     @media (max-width: 760px) {
       .sched-timeline-add-row { grid-template-columns: 20px 1fr; }
+      .sched-timeline-add-hour,
+      .sched-timeline-add-rail { display: none; }
     }
+
+    /* ---- Leyenda al final del editor de bloques ----
+       v272 — Pedido del usuario: fila final, puramente informativa (3
+       chips de referencia rápida por tipo), debajo de "+ Agregar bloque"
+       — no se re-renderiza junto con `#blocksEditorList`, vive fija en el
+       HTML. Reutiliza el mismo lenguaje visual chico de pill/chip que ya
+       usa el resto de la app (`.tag`), con su propio acento por tipo. */
+    .sched-legend-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .sched-legend-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 11px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.3;
+    }
+    .sched-legend-chip strong {
+      color: var(--text);
+      font-weight: 800;
+    }
+    .sched-legend-chip[data-legend="work"] { border-color: rgba(var(--blue-rgb), .32); }
+    .sched-legend-chip[data-legend="work"] strong { color: var(--blue); }
+    .sched-legend-chip[data-legend="lunch"] { border-color: rgba(var(--good-rgb), .32); }
+    .sched-legend-chip[data-legend="lunch"] strong { color: var(--good); }
   </style>
 </head>
 <body>
@@ -6399,10 +6606,19 @@
 <details class="accordion-card sched-v271" id="scheduleConfigAccordion">
 <summary>
   <div class="accordion-head">
-    <h2><span class="sched-header-icon" aria-hidden="true">🗓️</span>Horario</h2>
+    <h2><span class="sched-header-icon" aria-hidden="true">📅</span>Horario</h2>
     <p>Cuándo empiezas, cuándo terminas, y tus breaks/lunch de cada día. "Bloques del día" (su propia página, en el menú ☰) se dibuja sobre este plan.</p>
   </div>
-  <div class="accordion-chevron">⌄</div>
+  <!-- v272 — Pedido del usuario: botón "¿Cómo funciona?" arriba a la
+       derecha, junto al chevron del acordeón — puramente informativo
+       (abre un toast() explicativo, ver el listener de #scheduleHelpBtn en
+       el JS), no un modal nuevo. `stopPropagation()` en el listener evita
+       que el click también abra/cierre el `<details>` (el botón vive
+       dentro del `<summary>`, que ya tiene su propio toggle nativo). -->
+  <div class="sched-header-actions">
+    <button class="sched-header-help-btn" id="scheduleHelpBtn" type="button">❓ <span class="sched-header-help-label">¿Cómo funciona?</span></button>
+    <div class="accordion-chevron">⌄</div>
+  </div>
 </summary>
 <div class="accordion-body">
   <div class="sched-block sched-segblock">
@@ -6432,11 +6648,23 @@
        reorganizados visualmente: tabs de día + checkbox "Día libre" en una
        fila, Inicio/Fin del turno grandes debajo. renderDayTabs() sigue
        pintando #scheduleDayTabs exactamente igual, sin tocarse. -->
+  <!-- v272 — Pedido del usuario (ajuste contra referencia visual): los tabs
+       de día (Lun/Mar/.../Dom) suben a su PROPIO bloque, arriba de la
+       tarjeta — la tarjeta en sí ya no lleva el título "Día a editar",
+       lleva el NOMBRE COMPLETO del día activo (`#schedDayCardTitle`, ver
+       syncShiftModalFields()) junto al checkbox "Día libre" en la misma
+       fila. Mismo `#scheduleDayTabs`/`renderDayTabs()` de siempre, sin
+       tocarse — solo cambió dónde vive en el HTML. -->
+  <div class="sched-block" style="margin:0;">
+    <div class="sched-section-title">Día a editar</div>
+    <div class="day-tabs sched-segmented" id="scheduleDayTabs"></div>
+  </div>
+
   <div class="sched-day-card">
     <div class="sched-day-card-top">
-      <div class="sched-block" style="margin:0;">
-        <div class="sched-section-title">Día a editar</div>
-        <div class="day-tabs sched-segmented" id="scheduleDayTabs"></div>
+      <div class="sched-day-card-title">
+        <span class="sched-day-card-icon" aria-hidden="true">📅</span>
+        <span id="schedDayCardTitle">Lunes</span>
       </div>
       <label class="sched-checkbox-row sched-dayoff-toggle"><input id="dayOffInput" type="checkbox"/> Día libre (sin turno)</label>
     </div>
@@ -6444,11 +6672,17 @@
     <div class="sched-row sched-time-row">
       <div class="sched-field sched-time-field">
         <label for="dayStartInput">Inicio del turno</label>
-        <input id="dayStartInput" inputmode="numeric" type="time"/>
+        <div class="sched-time-field-wrap">
+          <input id="dayStartInput" inputmode="numeric" type="time"/>
+          <span class="sched-time-field-clock" aria-hidden="true">🕐</span>
+        </div>
       </div>
       <div class="sched-field sched-time-field">
         <label for="dayEndInput">Fin del turno</label>
-        <input id="dayEndInput" inputmode="numeric" type="time"/>
+        <div class="sched-time-field-wrap">
+          <input id="dayEndInput" inputmode="numeric" type="time"/>
+          <span class="sched-time-field-clock" aria-hidden="true">🕐</span>
+        </div>
       </div>
     </div>
   </div>
@@ -6465,8 +6699,17 @@
     <p class="sched-hint">Cada franja de tu turno es un bloque. Agrega uno por cada Trabajo, Break o Lunch que planees, con su hora de inicio y de fin — el resto del turno que no cubras con ningún bloque simplemente queda sin plan, sin afectar tu Adherencia. Un bloque de Trabajo puede llevar además una "meta productiva": cuántos minutos en llamada esperas lograr en ese bloque.</p>
     <div class="gap-editor-list sched-timeline" id="blocksEditorList"></div>
     <div class="sched-timeline-add-row">
-      <span class="sched-timeline-add-rail" aria-hidden="true"></span>
-      <button class="sched-add-block-btn" id="addBlockBtn" type="button"><span class="sched-add-block-plus" aria-hidden="true">+</span>Agregar bloque</button>
+      <span class="sched-timeline-add-hour" aria-hidden="true"></span>
+      <span class="sched-timeline-add-rail" aria-hidden="true"><span class="sched-add-block-plus" aria-hidden="true">+</span></span>
+      <button class="sched-add-block-btn" id="addBlockBtn" type="button">Agregar bloque</button>
+    </div>
+    <!-- v272 — Pedido del usuario: leyenda de referencia rápida al final,
+         puramente decorativa/informativa — no depende de los bloques
+         configurados, no se re-renderiza junto con #blocksEditorList. -->
+    <div class="sched-legend-row" aria-hidden="true">
+      <span class="sched-legend-chip" data-legend="work">💼 <strong>Trabajo:</strong>&nbsp;Bloques de enfoque productivo</span>
+      <span class="sched-legend-chip" data-legend="break">☕ <strong>Break:</strong>&nbsp;Descansos cortos</span>
+      <span class="sched-legend-chip" data-legend="lunch">🍽️ <strong>Lunch:</strong>&nbsp;Almuerzo / Descanso largo</span>
     </div>
   </div>
 
@@ -12309,8 +12552,17 @@ function renderWeekSummary() {
         // .block-goal-input, exactamente igual que antes.
         const meta = BLOCK_TIMELINE_META[type] || BLOCK_TIMELINE_META.work;
         const durationLabel = formatBlockDurationLabel(durVal);
+        // v272 — Ver comentario junto a `.sched-tl-hour` en el CSS: la hora
+        // de inicio se repite aquí como texto suelto a la izquierda de la
+        // línea/punto conector — mismo `startVal` que ya prellena el input
+        // real, solo mostrado una segunda vez para lectura rápida (sin
+        // ningún control nuevo). El rango de horas dentro de la tarjeta
+        // (`.sched-tl-time-inline`) ahora vive en la MISMA fila que el
+        // nombre/subtítulo/duración (`.sched-tl-card-top`, ver CSS) — ya no
+        // en su propia fila aparte.
         return `
         <div class="block-row sched-tl-item" data-block-row="${i}" data-block-type="${type}">
+          <div class="sched-tl-hour" aria-hidden="true">${startVal}</div>
           <div class="sched-tl-rail" aria-hidden="true"><span class="sched-tl-dot"></span></div>
           <div class="sched-tl-card">
             <div class="sched-tl-card-top">
@@ -12323,14 +12575,14 @@ function renderWeekSummary() {
                 </select>
                 <div class="sched-tl-subtitle">${meta.subtitle}</div>
               </div>
+              <div class="sched-tl-time-inline">
+                <input type="time" class="block-start-input sched-tl-time-input" inputmode="numeric" value="${startVal}"/>
+                <span class="sched-tl-time-sep" aria-hidden="true">—</span>
+                <input type="time" class="block-end-input sched-tl-time-input" inputmode="numeric" value="${endVal}"/>
+              </div>
               <span class="sched-tl-duration">${durationLabel}</span>
               <span class="sched-tl-handle" aria-hidden="true" title="Orden (informativo)">⋮⋮</span>
               <button type="button" class="gap-edit-btn block-remove-btn sched-tl-remove" data-remove-block="${i}" aria-label="Eliminar bloque ${i + 1}">✕</button>
-            </div>
-            <div class="sched-tl-time-row">
-              <input type="time" class="block-start-input sched-tl-time-input" inputmode="numeric" value="${startVal}"/>
-              <span class="sched-tl-time-sep" aria-hidden="true">—</span>
-              <input type="time" class="block-end-input sched-tl-time-input" inputmode="numeric" value="${endVal}"/>
             </div>
             <div class="field block-goal-field sched-tl-goal" style="${type === 'work' ? '' : 'display:none;'}">
               <label>Meta productiva (min)</label>
@@ -12465,6 +12717,13 @@ function renderWeekSummary() {
       if (dayOffInput) dayOffInput.checked = !!cfg.off;
       if (startInput) startInput.value = formatHHMM(cfg.start || '07:00');
       if (endInput) endInput.value = formatHHMM(cfg.end || '16:00');
+      // v272 — Pedido del usuario: título de la tarjeta de cabecera del día
+      // muestra el NOMBRE COMPLETO del día activo (ver `.sched-day-card-
+      // title` en el CSS/HTML) — puramente decorativo, mismo dato
+      // (`WEEKDAY_LABELS[scheduleEditDay]`) que ya usa `renderDayTabs()`
+      // para el título de cada tab, solo mostrado en grande aquí también.
+      const schedDayCardTitle = document.getElementById('schedDayCardTitle');
+      if (schedDayCardTitle) schedDayCardTitle.textContent = WEEKDAY_LABELS[scheduleEditDay] || 'Lunes';
       renderBlocksEditor(blocks);
       if (lateSelect) lateSelect.value = settings.lateArrivalMode || 'anchor';
       // Pedido del usuario (v147): Adherencia vuelve a Horario (pasó por
@@ -15519,6 +15778,16 @@ function render() {
     document.getElementById('currencyLabelInput').addEventListener('change', updateCurrencySettings);
     document.getElementById('saveShiftWindowBtn').addEventListener('click', saveShiftWindow);
     document.getElementById('addBlockBtn').addEventListener('click', addBlockRow);
+    // v272 — Pedido del usuario: "¿Cómo funciona?" (cabecera de "Horario")
+    // — puramente informativo, un toast() explicativo en vez de un modal
+    // nuevo. stopPropagation() evita que el click también dispare el
+    // toggle nativo del <summary> que lo envuelve (abrir/cerrar el
+    // acordeón), ya que el botón vive dentro de él.
+    document.getElementById('scheduleHelpBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toast('🗓️ Configura Inicio/Fin del turno y agrega bloques de Trabajo/Break/Lunch con su hora — el resto del turno sin bloque queda sin plan. "Bloques del día" compara esto contra lo que hiciste de verdad.');
+    });
     // Delegado en el contenedor: las filas se reconstruyen por completo en
     // cada renderBlocksEditor()/addBlockRow()/removeBlockRowAt(), así que un
     // listener por botón individual se perdería cada vez que se repinta.
