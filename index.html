@@ -1487,12 +1487,39 @@
        o un scroll oculto sin pista visual. flex-wrap + justify-content:
        flex-end mantiene el grupo pegado al borde derecho tanto en una
        línea como en dos. */
+    /* v243 — Pedido del usuario (con captura): en anchos angostos, el grupo
+       de la v242 (Ajustes/Higher Rate/Oscuro/Reiniciar) envolvía a una
+       segunda línea DEBAJO de la marca — el usuario pidió que el grupo se
+       quede SIEMPRE en la misma fila que "Propio Shift Tracker", nunca
+       abajo. Se cambia de flex-wrap a nowrap + scroll horizontal con la
+       barra nativa oculta (mismo patrón que ya usa `.hero-actions`/`.chips`
+       para el mismo problema) — el grupo nunca se parte a una segunda
+       línea; si no cabe todo, se desliza. max-width evita que en pantallas
+       muy angostas el grupo empuje a la marca fuera de la fila. */
     .hero-top-actions {
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       gap: 8px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      max-width: 62%;
+    }
+
+    .hero-top-actions::-webkit-scrollbar { display: none; }
+    .hero-top-actions .hero-action-btn { flex-shrink: 0; }
+
+    /* v243 — Pedido del usuario: "Reiniciar" (la única acción de peligro del
+       header) se separa del resto del grupo y baja a su PROPIA fila, pegada
+       al extremo derecho, abajo del todo del hero — lejos de los otros
+       botones para no apretarlo por accidente al buscar Ajustes/Higher
+       Rate/Oscuro. */
+    .hero-bottom-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 10px;
     }
 
     /* Pedido del usuario (v154 seguía partiendo "Ajustes" a una segunda
@@ -5056,25 +5083,36 @@
      Ajustes y Reiniciar vivían SOLO como tarjetas grandes en la página
      "⚙️ Ajustes" del menú lateral (desde v238), y Higher Rate SOLO como
      sección dentro de "Horario" (desde v238 también) — ningún acceso
-     rápido desde el header. Se agrupan aquí, junto al botón de tema
-     (`themeToggleBtn`, sin tocar su lógica), en un contenedor propio
+     rápido desde el header. Se agrupan junto al botón de tema
+     (`themeToggleBtn`, sin tocar su lógica) en un contenedor propio
      (`.hero-top-actions`) para que `justify-content:space-between` de
-     `.hero-top-row` siga empujando la marca a la izquierda y este grupo
-     completo a la derecha, sin importar cuántos botones tenga adentro.
-     Orden pedido explícitamente: Ajustes, Higher Rate, (Oscuro, sin
-     mover), Reiniciar — Reiniciar queda el ÚLTIMO del grupo, pegado al
-     extremo derecho. Ajustes/Reiniciar se QUITAN de la página "Ajustes"
-     (ver más abajo, `.settings-menu-card`) — ya no hace falta duplicarlos
-     ahí, con el acceso rápido de aquí alcanza; esa página se queda solo
-     con "🔔 Avisos". Higher Rate NO se mueve de Horario (sigue siendo una
+     `.hero-top-row` siga empujando la marca a la izquierda y este grupo a
+     la derecha. Ajustes/Reiniciar se QUITAN de la página "Ajustes" (ver
+     más abajo, `.settings-menu-card`) — ya no hace falta duplicarlos ahí,
+     con el acceso rápido de aquí alcanza; esa página se queda solo con
+     "🔔 Avisos". Higher Rate NO se mueve de Horario (sigue siendo una
      sección completa con su propio editor, no cabe en el header) — este
      botón es solo un atajo que navega a Horario y abre/hace scroll directo
-     a esa sección, ver higherRateHeaderBtn más abajo en el JS. */-->
+     a esa sección, ver higherRateHeaderBtn más abajo en el JS.
+
+     v243 — Pedido del usuario (con captura): 2 ajustes sobre lo anterior.
+     (1) Orden — pidió explícitamente Oscuro, Higher Rate, Ajustes (antes
+     Ajustes, Higher Rate, Oscuro) — se reordena el HTML de
+     `.hero-top-actions` a ese orden exacto.
+     (2) Posición — en anchos angostos el grupo envolvía a una segunda
+     línea DEBAJO de la marca (se pidió que se quede SIEMPRE en la misma
+     fila que "Propio Shift Tracker") — se resuelve en el CSS (ver
+     `.hero-top-actions`) pasando de wrap a nowrap + scroll horizontal,
+     mismo patrón que ya usan `.hero-actions`/`.chips`.
+     Reiniciar SALE por completo de este grupo — pidió que quede en su
+     PROPIA fila, abajo a la derecha del hero, lejos de los otros 3
+     botones para no apretarlo sin querer al buscar Ajustes/Higher Rate/
+     Oscuro. Ver `.hero-bottom-row` (CSS) y el nuevo `resetHeaderBtn` más
+     abajo, ya fuera de `.hero-top-actions`. */-->
 <div class="hero-top-actions">
-<button class="hero-action-btn" id="ajustesHeaderBtn" type="button">⚙️ Ajustes</button>
-<button class="hero-action-btn" id="higherRateHeaderBtn" type="button">🔥 Higher Rate</button>
 <button class="hero-action-btn" id="themeToggleBtn" type="button" title="Auto = sigue el modo de tu sistema. Toca para forzar Claro/Oscuro.">🌓 Auto</button>
-<button class="hero-action-btn danger" id="resetHeaderBtn" type="button">♻️ Reiniciar</button>
+<button class="hero-action-btn" id="higherRateHeaderBtn" type="button">🔥 Higher Rate</button>
+<button class="hero-action-btn" id="ajustesHeaderBtn" type="button">⚙️ Ajustes</button>
 </div>
 </div>
 <div class="title-row">
@@ -5116,6 +5154,9 @@
 <span class="action-sub" id="lunchControlTimer">00:00:00</span>
 </button>
 </div>
+</div>
+<div class="hero-bottom-row">
+<button class="hero-action-btn danger" id="resetHeaderBtn" type="button">♻️ Reiniciar</button>
 </div>
 </div>
 </section>
