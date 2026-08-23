@@ -595,16 +595,24 @@
         background: var(--text);
         color: var(--hover-flip); /* v224 */
       }
-      /* Pedido del usuario (v230): SOLO estos 2 grupos de botones (Resumen
-         semanal / Ganancias del ciclo) pasan, en modo claro, de fondo negro
-         (var(--text), heredado de la regla de arriba) a un azul tipo "aero"
-         — pedido explícito de no tocar ningún otro botón ni ningún otro
-         `.week-nav` de la app (ej. "Semana específica" en Horario, que se
-         queda negro). `:where()` no suma especificidad — gana por venir
-         después en la hoja, mismo patrón que el resto de overrides scoped
-         del archivo (ver v216/v217) — buscar "v230". */
-      :root:not(.theme-dark) :where(#weekSummaryAccordion) .week-nav button:hover,
-      :root:not(.theme-dark) :where(#cycleAccordion) .week-nav button:hover {
+      /* Pedido del usuario (v230, corregido v231): SOLO estos 2 grupos de
+         botones (Resumen semanal / Ganancias del ciclo) pasan, en modo
+         claro, de fondo negro (var(--text), heredado de la regla de arriba)
+         a un azul tipo "aero" — pedido explícito de no tocar ningún otro
+         botón ni ningún otro `.week-nav` de la app (ej. "Semana específica"
+         en Horario, que se queda negro). v230 usaba `:where(#id)` (mismo
+         patrón que v216/v217) — pero ahí el objetivo era no sumar
+         especificidad para no pisar un hover YA más específico que debía
+         seguir ganando. Aquí es al revés: se necesita GANARLE a la regla de
+         arriba (`.week-nav button:hover`, línea previa), que tiene
+         EXACTAMENTE la misma especificidad (0,4,1) que una versión con
+         `:where()` — un empate que solo se resuelve por orden en la hoja,
+         frágil. Se usa el ID directo (sin `:where()`) para que la
+         especificidad sea mayor sin ambigüedad; no hay ningún otro selector
+         más específico en el archivo para estos 2 ids + `.week-nav` que esto
+         pudiera romper (verificado). Buscar "v230"/"v231". */
+      :root:not(.theme-dark) #weekSummaryAccordion .week-nav button:hover,
+      :root:not(.theme-dark) #cycleAccordion .week-nav button:hover {
         background: #4a90e2;
         border-color: #4a90e2;
         color: #fff;
@@ -896,10 +904,10 @@
       background: var(--text);
       color: var(--hover-flip); /* v224 */
     }
-    /* Ver comentario gemelo en la rama @media de arriba (v230) — mismo
+    /* Ver comentario gemelo en la rama @media de arriba (v230/v231) — mismo
        criterio, mismas reglas. */
-    html.theme-light :where(#weekSummaryAccordion) .week-nav button:hover,
-    html.theme-light :where(#cycleAccordion) .week-nav button:hover {
+    html.theme-light #weekSummaryAccordion .week-nav button:hover,
+    html.theme-light #cycleAccordion .week-nav button:hover {
       background: #4a90e2;
       border-color: #4a90e2;
       color: #fff;
@@ -1249,22 +1257,30 @@
       color: var(--hover-flip); /* v227 */
     }
 
-    /* Pedido del usuario (v230): "‹ Anterior / Esta semana / Siguiente ›"
-       (Resumen semanal) y "‹ Anterior / Ciclo actual / Siguiente ›"
-       (Ganancias del ciclo) no se veían igual que el resto de botones del
-       header (ej. "⚙️ Ajustes") al hacer hover en modo oscuro — la regla
-       base `.week-nav button:hover` (ver más abajo) solo aplica
-       `filter: brightness(1.1)` sobre su propio fondo tenue, sin el mismo
-       fondo sólido `rgba(255,255,255,.09)` ni el cambio de color a
-       `--hover-flip` que ya llevan los botones del header desde v215/v227.
-       Se saca de la regla compartida de arriba (que además cubre
-       .gap-edit-btn, no tocado aquí) y se scoped a estas 2 secciones —
-       ningún otro `.week-nav` de la app se toca (ej. "Semana específica" en
-       Horario, que se queda con su hover de siempre) — buscar "v230". */
-    :where(#weekSummaryAccordion) .week-nav button:hover,
-    :where(#weekSummaryAccordion) .week-nav button:focus-visible,
-    :where(#cycleAccordion) .week-nav button:hover,
-    :where(#cycleAccordion) .week-nav button:focus-visible {
+    /* Pedido del usuario (v230, corregido v231): "‹ Anterior / Esta semana /
+       Siguiente ›" (Resumen semanal) y "‹ Anterior / Ciclo actual /
+       Siguiente ›" (Ganancias del ciclo) no se veían igual que el resto de
+       botones del header (ej. "⚙️ Ajustes") al hacer hover en modo oscuro —
+       la regla base `.week-nav button:hover` (más abajo, "buscar v230/v231"
+       más arriba en el CSS) solo aplica `filter: brightness(1.1)` sobre su
+       propio fondo tenue, sin el mismo fondo sólido `rgba(255,255,255,.09)`
+       ni el cambio de color a `--hover-flip` que ya llevan los botones del
+       header desde v215/v227. v230 usaba `:where(#id)` para no sumar
+       especificidad — pero esa regla base tiene EXACTAMENTE la misma
+       especificidad (0,2,1) que `:where(#id) .week-nav button:hover`, un
+       empate que solo se resolvía por orden en la hoja (frágil, y en la
+       práctica no se aplicaba de forma confiable). v231: se usa el ID
+       directo (sin `:where()`) para ganar sin ambigüedad — no hay ningún
+       otro selector más específico en el archivo para estos 2 ids +
+       `.week-nav` que esto pudiera romper (verificado). Se saca de la regla
+       compartida de arriba (que además cubre .gap-edit-btn, no tocado aquí)
+       — ningún otro `.week-nav` de la app se toca (ej. "Semana específica"
+       en Horario, que se queda con su hover de siempre) — buscar
+       "v230"/"v231". */
+    #weekSummaryAccordion .week-nav button:hover,
+    #weekSummaryAccordion .week-nav button:focus-visible,
+    #cycleAccordion .week-nav button:hover,
+    #cycleAccordion .week-nav button:focus-visible {
       background: rgba(255,255,255,.09);
       color: var(--hover-flip);
     }
