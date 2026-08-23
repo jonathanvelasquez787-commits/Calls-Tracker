@@ -534,28 +534,16 @@
         background: rgb(var(--danger-red-rgb));
         color: #fff;
       }
-      /* Pedido del usuario (v217): Auto/Horario/Higher Rate/Avisos/Ajustes
-         pasan de "fondo oscuro + texto blanco" (v208) a un acento cian
-         #00F0FF en hover/foco — reutiliza --accent-decorative, la misma
-         variable ya usada para lo puramente decorativo/informativo (v209),
-         ya que estos botones no son "seleccionables" en el sentido de
-         .action-btn (no quedan en un estado persistente .is-active). Por
-         ID en vez de por clase para no depender de la especificidad exacta
-         de la regla de arriba — gana sin ambigüedad. */
-      :root:not(.theme-dark) #themeToggleBtn:hover,
-      :root:not(.theme-dark) #themeToggleBtn:focus-visible,
-      :root:not(.theme-dark) #scheduleMiniBtn:hover,
-      :root:not(.theme-dark) #scheduleMiniBtn:focus-visible,
-      :root:not(.theme-dark) #higherRateMiniBtn:hover,
-      :root:not(.theme-dark) #higherRateMiniBtn:focus-visible,
-      :root:not(.theme-dark) #notificationsMiniBtn:hover,
-      :root:not(.theme-dark) #notificationsMiniBtn:focus-visible,
-      :root:not(.theme-dark) #goalsMiniBtn:hover,
-      :root:not(.theme-dark) #goalsMiniBtn:focus-visible {
-        background: rgba(var(--accent-decorative-rgb), .16);
-        border-color: rgba(var(--accent-decorative-rgb), .5);
-        color: var(--accent-decorative-pale);
-      }
+      /* Pedido del usuario (v220): REVERSIÓN EXPLÍCITA de v217. El usuario
+         vio el resultado (captura) y no le gustó el acento cian/azul en
+         Auto/Horario/Higher Rate/Avisos/Ajustes — pidió que su hover se vea
+         como el de los botones "Editar" (.gap-edit-btn). Se quita el
+         override de v217 sin reemplazo: al no quedar ninguna regla por ID
+         para estos 5 botones, vuelven a heredar
+         `.hero-action-btn:not(.danger):hover` (más arriba en este mismo
+         bloque, v208 — fondo oscuro sólido + texto blanco), que es
+         EXACTAMENTE el mismo criterio que ya usa `.gap-edit-btn:hover`
+         (regla justo debajo) — mismo resultado visual sin duplicar CSS. */
       :root:not(.theme-dark) .gap-edit-btn:hover {
         background: var(--text);
         color: #fff;
@@ -814,20 +802,11 @@
       background: rgb(var(--danger-red-rgb));
       color: #fff;
     }
-    html.theme-light #themeToggleBtn:hover,
-    html.theme-light #themeToggleBtn:focus-visible,
-    html.theme-light #scheduleMiniBtn:hover,
-    html.theme-light #scheduleMiniBtn:focus-visible,
-    html.theme-light #higherRateMiniBtn:hover,
-    html.theme-light #higherRateMiniBtn:focus-visible,
-    html.theme-light #notificationsMiniBtn:hover,
-    html.theme-light #notificationsMiniBtn:focus-visible,
-    html.theme-light #goalsMiniBtn:hover,
-    html.theme-light #goalsMiniBtn:focus-visible {
-      background: rgba(var(--accent-decorative-rgb), .16);
-      border-color: rgba(var(--accent-decorative-rgb), .5);
-      color: var(--accent-decorative-pale);
-    }
+    /* Ver comentario gemelo en la rama @media de arriba (v220) — reversión
+       explícita de v217, mismo criterio: sin override por ID, estos 5
+       botones vuelven a heredar `.hero-action-btn:not(.danger):hover`
+       (fondo oscuro sólido + texto blanco), igual que `.gap-edit-btn:hover`
+       justo debajo. */
     html.theme-light .gap-edit-btn:hover {
       background: var(--text);
       color: #fff;
