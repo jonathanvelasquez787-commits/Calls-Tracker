@@ -118,6 +118,16 @@
          cambio visual); en los 2 bloques de modo claro (ver más abajo) pasa
          a var(--panel), el mismo blanco opaco que ya usan .hero/.card. */
       --accordion-bg: rgba(255,255,255,.03);
+      /* v237 — Pedido del usuario: SOLO el monto grande de "Ganancias de
+         hoy" y "Ganancias del ciclo" (el "$0.00" grande) pasa a un verde
+         más eléctrico — "verde primavera" (#00ff7f), elegido entre 5
+         opciones mostradas. El resto de usos de --good (Adherencia, tags
+         .tag.good, botones, badges, etc.) NO se tocan — se crea esta
+         variable APARTE, en vez de reasignar --good, justamente para no
+         afectar esos otros lugares. Valor fijo (no dual por tema): el
+         usuario pidió este tono puntual, no una paleta que cambie con
+         claro/oscuro. */
+      --earnings-value-color: #00ff7f;
     }
 
     /* Modo claro automático: se activa solo si el sistema operativo pide
@@ -1879,6 +1889,11 @@
     .warn { color: var(--warn); }
     .bad { color: var(--bad); }
     .cyan { color: var(--cyan); }
+    /* v237 — Ver comentario junto a --earnings-value-color en :root. Clase
+       dedicada SOLO para el "$0.00" grande de Ganancias de hoy/del ciclo —
+       reemplaza la clase .good que llevaban esos 2 elementos, sin tocar
+       .good en sí (que sigue igual para todo lo demás que la usa). */
+    .earnings-value-accent { color: var(--earnings-value-color); }
 
     .big-earnings {
       display: grid;
@@ -4815,7 +4830,7 @@
 <div class="big-earnings">
 <div class="earn-row">
 <div>
-<div class="earnings-big good" id="earningsValue">$0.00</div>
+<div class="earnings-big earnings-value-accent" id="earningsValue">$0.00</div>
 <div class="helper" id="earningsConvertedText"></div>
 </div>
 <div class="goal-stack">
@@ -4956,7 +4971,7 @@
 </div>
 <div class="earn-row">
 <div>
-<div class="earnings-big good" style="font-size: clamp(24px, 3.2vw, 36px);" id="cycleEarningsValue">$0.00</div>
+<div class="earnings-big earnings-value-accent" style="font-size: clamp(24px, 3.2vw, 36px);" id="cycleEarningsValue">$0.00</div>
 <div class="helper" id="cycleEarningsConvertedText"></div>
 </div>
 <div class="goal-stack">
