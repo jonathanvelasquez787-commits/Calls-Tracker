@@ -5576,14 +5576,20 @@
       box-shadow: 0 6px 16px rgba(var(--blue-rgb), .28);
     }
 
-    /* v272 — Botón "¿Cómo funciona?" en la cabecera, arriba a la derecha
-       (junto al chevron del acordeón) — puramente informativo, abre un
-       toast() explicativo (ver el listener en el JS) en vez de un modal
-       nuevo. Mismo lenguaje visual "pill con borde" que ya usa el resto de
-       la app para botones chicos (ej. `.gap-edit-btn`/`.day-nav-btn`), sin
-       inventar un componente nuevo. `stopPropagation` en el listener evita
-       que el click también dispare el toggle nativo de abrir/cerrar el
-       `<details>` (el botón vive dentro del `<summary>`). */
+    /* v273 — Pedido del usuario: el botón "¿Cómo funciona?" deja de
+       disparar un toast() al hacer click — ahora es un tooltip puro: la
+       información aparece SOLO al pasar el cursor por encima (o al
+       enfocarlo con teclado, `:focus-within`, para no dejar afuera a quien
+       navega sin mouse) y desaparece al quitar el cursor — ninguna otra
+       acción (no toggle del acordeón, no toast, no navegación). Mismo
+       lenguaje visual "pill con borde" de siempre para el botón en sí;
+       `cursor: default` (no `pointer`) porque ya no es clickeable — nada
+       que "presionar". */
+    .sched-help-wrap {
+      position: relative;
+      display: inline-flex;
+      flex: 0 0 auto;
+    }
     .sched-header-help-btn {
       display: inline-flex;
       align-items: center;
@@ -5596,16 +5602,60 @@
       padding: 7px 13px;
       font-weight: 800;
       font-size: 12px;
-      cursor: pointer;
+      cursor: default;
       white-space: nowrap;
       transition: border-color .14s ease, color .14s ease, background .14s ease;
     }
     .sched-header-help-btn:hover,
-    .sched-header-help-btn:focus-visible {
+    .sched-help-wrap:focus-within .sched-header-help-btn {
       border-color: rgba(var(--blue-rgb), .45);
       color: var(--blue);
       background: rgba(var(--blue-rgb), .08);
       outline: none;
+    }
+    /* La burbuja en sí: oculta por default (opacity/translate), aparece con
+       el mismo hover/focus-within de arriba. `pointer-events: none` — es
+       puramente informativa, no hay nada que tocar dentro. Alineada al
+       borde derecho del botón (right:0) porque el botón vive pegado al
+       borde derecho de la cabecera del acordeón — así la burbuja nunca se
+       sale por la derecha de la tarjeta. */
+    .sched-help-tooltip {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: min(280px, 78vw);
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      box-shadow: var(--shadow);
+      color: var(--text);
+      font-size: 12.5px;
+      font-weight: 500;
+      line-height: 1.5;
+      z-index: 30;
+      opacity: 0;
+      transform: translateY(-4px);
+      pointer-events: none;
+      transition: opacity .15s ease, transform .15s ease;
+    }
+    .sched-help-wrap:hover .sched-help-tooltip,
+    .sched-help-wrap:focus-within .sched-help-tooltip {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    /* `.accordion-card` recorta su contenido (overflow:hidden, ver esa
+       regla) para que el fondo/las esquinas redondeadas se vean limpias —
+       pero eso también recortaría esta burbuja si el acordeón está
+       CERRADO (la tarjeta mide solo el alto del `<summary>` en ese caso,
+       menos que lo que la burbuja necesita hacia abajo). Se libera el
+       recorte SOLO mientras el tooltip está visible — `:has()` deja
+       reaccionar al hover/foco de un descendiente sin tocar JS ni el
+       resto de reglas que sí dependen de `overflow:hidden` (esas siguen
+       aplicando el resto del tiempo, este override es momentáneo). */
+    .accordion-card:has(.sched-help-wrap:hover),
+    .accordion-card:has(.sched-help-wrap:focus-within) {
+      overflow: visible;
     }
     .sched-header-actions {
       display: flex;
@@ -6651,14 +6701,20 @@
     <h2><span class="sched-header-icon" aria-hidden="true">📅</span>Horario</h2>
     <p>Cuándo empiezas, cuándo terminas, y tus breaks/lunch de cada día. "Bloques del día" (su propia página, en el menú ☰) se dibuja sobre este plan.</p>
   </div>
-  <!-- v272 — Pedido del usuario: botón "¿Cómo funciona?" arriba a la
-       derecha, junto al chevron del acordeón — puramente informativo
-       (abre un toast() explicativo, ver el listener de #scheduleHelpBtn en
-       el JS), no un modal nuevo. `stopPropagation()` en el listener evita
-       que el click también abra/cierre el `<details>` (el botón vive
-       dentro del `<summary>`, que ya tiene su propio toggle nativo). -->
+  <!-- v273 — Pedido del usuario: "¿Cómo funciona?" pasa de click→toast a
+       tooltip puro por hover/foco (ver .sched-help-wrap/.sched-help-tooltip
+       en el CSS) — sin ninguna otra acción al hacer click (ni toast, ni
+       toggle del acordeón). El botón sigue viviendo dentro del `<summary>`,
+       así que un click accidental (ej. en touch, donde no hay hover real)
+       todavía necesita bloquear el toggle nativo de abrir/cerrar — eso se
+       resuelve con `type="button"` + el listener mínimo de preventDefault/
+       stopPropagation en el JS (ver #scheduleHelpBtn), que ya NO llama a
+       toast(). -->
   <div class="sched-header-actions">
-    <button class="sched-header-help-btn" id="scheduleHelpBtn" type="button">❓ <span class="sched-header-help-label">¿Cómo funciona?</span></button>
+    <div class="sched-help-wrap">
+      <button class="sched-header-help-btn" id="scheduleHelpBtn" type="button" aria-describedby="scheduleHelpTooltip">❓ <span class="sched-header-help-label">¿Cómo funciona?</span></button>
+      <div class="sched-help-tooltip" id="scheduleHelpTooltip" role="tooltip">🗓️ Configura Inicio/Fin del turno y agrega bloques de Trabajo/Break/Lunch con su hora — el resto del turno sin bloque queda sin plan. "Bloques del día" compara esto contra lo que hiciste de verdad.</div>
+    </div>
     <div class="accordion-chevron">⌄</div>
   </div>
 </summary>
@@ -15820,15 +15876,15 @@ function render() {
     document.getElementById('currencyLabelInput').addEventListener('change', updateCurrencySettings);
     document.getElementById('saveShiftWindowBtn').addEventListener('click', saveShiftWindow);
     document.getElementById('addBlockBtn').addEventListener('click', addBlockRow);
-    // v272 — Pedido del usuario: "¿Cómo funciona?" (cabecera de "Horario")
-    // — puramente informativo, un toast() explicativo en vez de un modal
-    // nuevo. stopPropagation() evita que el click también dispare el
-    // toggle nativo del <summary> que lo envuelve (abrir/cerrar el
-    // acordeón), ya que el botón vive dentro de él.
+    // v273 — Pedido del usuario: "¿Cómo funciona?" ya no hace nada al hacer
+    // click — la información vive en un tooltip que se muestra solo con
+    // hover/foco (ver .sched-help-wrap/.sched-help-tooltip en el CSS). Este
+    // listener se queda SOLO para evitar que un click (ej. en touch, donde
+    // no hay hover real) dispare el toggle nativo del `<summary>` que lo
+    // envuelve — sin ninguna otra acción de por medio.
     document.getElementById('scheduleHelpBtn').addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      toast('🗓️ Configura Inicio/Fin del turno y agrega bloques de Trabajo/Break/Lunch con su hora — el resto del turno sin bloque queda sin plan. "Bloques del día" compara esto contra lo que hiciste de verdad.');
     });
     // Delegado en el contenedor: las filas se reconstruyen por completo en
     // cada renderBlocksEditor()/addBlockRow()/removeBlockRowAt(), así que un
