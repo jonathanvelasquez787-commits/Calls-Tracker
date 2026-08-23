@@ -380,6 +380,16 @@
            diseño "fantasma" ya elegido para modo claro. */
         background: transparent;
       }
+      /* v257 — Pedido del usuario (con captura de referencia): fondo azul
+         marino para el panel del sidebar — pero SOLO en modo oscuro, el
+         usuario confirmó explícitamente que en modo claro se queda igual
+         que antes (var(--panel-2), blanco sólido). Mismo patrón dark-only
+         que `.action-btn:not(.is-active)` arriba: la regla base (fuera de
+         este bloque) pinta el degradado navy sin condición — aquí, en la
+         rama de modo claro, se revierte a var(--panel-2) para no tocarlo. */
+      :root:not(.theme-dark) .sidebar-nav {
+        background: var(--panel-2);
+      }
       /* Botones utilitarios chicos ("Editar", "Editar gap", "Probar
          sonido"...) — antes SIEMPRE cian, repetido decenas de veces por
          toda la app (cada fila de Tabla de llamadas, cada modal...). Se
@@ -855,6 +865,11 @@
       /* v235 — Ver comentario gemelo en la rama @media de arriba. */
       background: transparent;
     }
+    /* v257 — Ver comentario gemelo en la rama @media de arriba: fondo navy
+       del sidebar es dark-only, aquí (forzado "Claro") se revierte igual. */
+    html.theme-light .sidebar-nav {
+      background: var(--panel-2);
+    }
     html.theme-light .gap-edit-btn {
       background: var(--btn-secondary-bg);
       border-color: var(--line-2);
@@ -1231,13 +1246,24 @@
       pointer-events: auto;
     }
 
+    /* v257 — Pedido del usuario (con captura de referencia): fondo azul
+       marino para el panel del sidebar, SOLO en modo oscuro (revertido a
+       var(--panel-2) en las 2 ramas de modo claro, ver "v257" más arriba
+       en el archivo). Degradado sutil (navy oscuro abajo-derecha, un tinte
+       más azulado arriba-izquierda) en vez de un color plano — mismo
+       criterio de "sombra elegante, no fuerte" que ya usa el resto del
+       theming — con un leve resplandor de --cyan/--blue en la esquina
+       superior, reutilizando los mismos --cyan-rgb/--blue-rgb del theming
+       (nunca un color nuevo sin relación con la paleta ya existente). */
     .sidebar-nav {
       position: fixed;
       top: 0;
       left: 0;
       bottom: 0;
       width: min(280px, 84vw);
-      background: var(--panel-2);
+      background:
+        radial-gradient(circle 220px at 0% 0%, rgba(var(--cyan-rgb), .10), transparent),
+        linear-gradient(165deg, #141c46 0%, #0c1130 60%, #0a0e26 100%);
       border-right: 1px solid var(--line);
       box-shadow: var(--shadow);
       z-index: 95;
