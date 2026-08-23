@@ -5551,9 +5551,18 @@
      scroll — abre su PROPIO popup (`#higherRateModal`, ver junto al resto
      de modales), igual que Ajustes (`#goalsModal`). Reversión de la parte
      de v242 que lo mandaba a otra página (ver esa nota arriba, "atajo que
-     navega a Horario" — ya no aplica). */-->
+     navega a Horario" — ya no aplica).
+
+     v258 — Pedido del usuario: se quita el botón "🌓 Auto" de aquí — ya no
+     hace falta un acceso rápido de tema en el header porque el switch de
+     "Modo oscuro" del sidebar (ver #sidebarDarkModeInput, agregado en el
+     rediseño del menú lateral) ya cubre ese mismo cambio. Solo se retira el
+     BOTÓN; toggleTheme()/cycleTheme()/settings.theme/el ciclo Auto-Claro-
+     Oscuro no se tocan — el switch del sidebar sigue siendo on/off simple
+     (fuerza 'dark'/'light', sin pasar por 'auto'), sin cambios ahí tampoco.
+     Si en el futuro se necesita volver a exponer "Auto" en algún lado, la
+     lógica ya existe intacta, solo faltaría un control que la dispare. */-->
 <div class="hero-top-actions">
-<button class="hero-action-btn" id="themeToggleBtn" type="button" title="Auto = sigue el modo de tu sistema. Toca para forzar Claro/Oscuro.">🌓 Auto</button>
 <button class="hero-action-btn" id="higherRateHeaderBtn" type="button">🔥 Higher Rate</button>
 <div class="hero-ajustes-reset-group">
 <button class="hero-action-btn" id="ajustesHeaderBtn" type="button">⚙️ Ajustes</button>
@@ -14715,7 +14724,11 @@ function render() {
       openModal('resetModal');
     });
     document.getElementById('resetDayBtn').addEventListener('click', resetDay);
-    document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
+    // v258 — Ver comentario junto al botón (ya quitado) en el HTML: el
+    // cambio de tema ahora vive solo en el switch del sidebar
+    // (#sidebarDarkModeInput, wireado en initSidebarNav()) — se quita este
+    // listener sin reemplazo, toggleTheme() se queda sin usar por si se
+    // vuelve a necesitar un acceso directo a "Auto" más adelante.
     document.getElementById('eraseAllDataBtn').addEventListener('click', eraseAllData);
     // v242 — Mismo listener que antes tenía goalsMiniBtn (Settings page, ya
     // quitado) — reasignado al nuevo botón de header.
