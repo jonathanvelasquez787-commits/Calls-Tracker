@@ -5178,7 +5178,13 @@
      a columna en mobile (breakpoint 760px, mismo que ya usa el resto de
      la app), sin afectar el nowrap+scroll del resto del contenedor
      (Oscuro/Higher Rate siguen en una sola fila con la marca, como en
-     v243). */-->
+     v243).
+
+     v248 — Pedido del usuario: Higher Rate ya no navega a Horario ni hace
+     scroll — abre su PROPIO popup (`#higherRateModal`, ver junto al resto
+     de modales), igual que Ajustes (`#goalsModal`). Reversión de la parte
+     de v242 que lo mandaba a otra página (ver esa nota arriba, "atajo que
+     navega a Horario" — ya no aplica). */-->
 <div class="hero-top-actions">
 <button class="hero-action-btn" id="themeToggleBtn" type="button" title="Auto = sigue el modo de tu sistema. Toca para forzar Claro/Oscuro.">🌓 Auto</button>
 <button class="hero-action-btn" id="higherRateHeaderBtn" type="button">🔥 Higher Rate</button>
@@ -5369,10 +5375,10 @@
 </div><!-- /pageHome -->
 
 <!-- v238 — Pedido del usuario: página "🗓️ Horario" del menú lateral —
-     Horario + Bloques del día (sin cambios de contenido) + Higher Rate
-     (antes un modal aparte via higherRateMiniBtn, ver comentario junto a
-     #higherRateAccordion más abajo — se integra aquí como sección
-     inline, misma clase .accordion-card que el resto). -->
+     Horario + Bloques del día (sin cambios de contenido). Higher Rate
+     vivió aquí como sección inline desde esta misma v238 hasta v248, que
+     lo devolvió a ser un popup propio (#higherRateModal, ver header) — ya
+     no vive en esta página. -->
 <div class="app-page" data-page="schedule" hidden id="pageSchedule">
 <!-- v236 — Pedido del usuario: "Horario" (antes un modal, #shiftModal) pasa
      a ser una sección expandible más de la página, mismo patrón que "Tabla
@@ -5508,51 +5514,18 @@
 </div>
 </details>
 
-<!-- v238 — Pedido del usuario: "Higher Rate" pasa de modal (higherRateModal,
-     abierto antes desde un botón del header) a sección expandible más de
-     "Horario", mismo patrón que ya usa "Horario" en sí desde v236 (modal →
-     <details class="accordion-card">). Se quita el botón "×" de cerrar y
-     el "Listo" del final (ya no hay modal que cerrar). Ningún ID de campo
-     cambió (higherRateWindowsList/addHigherRateWindowBtn/
+<!-- v248 — Pedido del usuario: "Higher Rate" vuelve a ser un modal propio
+     (higherRateModal, ver más abajo junto al resto de modales) — el
+     usuario pidió que se abra igual que "Ajustes" (un popup), no que
+     navegue a otra página/sección de la app. Reversión de v238 (que lo
+     había convertido en esta sección inline dentro de "Horario"): se quita
+     de aquí sin dejar nada — los mismos ids de siempre
+     (higherRateWindowsList/addHigherRateWindowBtn/
      higherRateHistoryAccordion/higherRateHistoryList/
-     purgeHigherRateWindowsBtn) — el JS que ya los usa
+     purgeHigherRateWindowsBtn) y el JS que los usa
      (renderHigherRateWindowsEditor/addHigherRateWindowRow/
-     removeHigherRateWindowRowAt/purgePastHigherRateWindows) sigue
-     funcionando sin tocarse, solo cambió el HTML que los envuelve.
-     Cerrado por defecto (mismo criterio que "Ganancias del ciclo"/
-     "Horario"). -->
-<details class="accordion-card" id="higherRateAccordion">
-<summary>
-  <div class="accordion-head">
-    <h2>🔥 Higher Rate</h2>
-    <p>Fecha específica + hora de inicio/fin donde aplica un bono sobre la tasa por minuto — Propio lo avisa por correo, no lo expone en los datos que la app importa, así que se configura a mano.</p>
-  </div>
-  <div class="accordion-chevron">⌄</div>
-</summary>
-<div class="accordion-body">
-<div class="gap-editor-list" id="higherRateWindowsList"></div>
-<div class="modal-actions" style="margin-top:0;">
-<button class="warn" id="addHigherRateWindowBtn" type="button">+ Agregar ventana</button>
-</div>
-<p class="alert-hint">Una llamada cuenta COMPLETA (no solo la parte dentro de la ventana) si empieza hasta 5 minutos antes de que la ventana comience, o en cualquier momento antes de que termine, aunque se extienda después.</p>
-<details class="accordion-card" id="higherRateHistoryAccordion" style="margin-top:10px;">
-<summary>
-  <div class="accordion-head">
-    <h2 id="higherRateHistoryTitle">📜 Ventanas pasadas (0)</h2>
-    <p>Se mueven aquí solas apenas su fecha ya pasó — la lista de arriba se queda limpia con solo hoy y lo que viene. Siguen editables o eliminables cuando quieras, no se borran solas.</p>
-  </div>
-  <div class="accordion-chevron">⌄</div>
-</summary>
-<div class="accordion-body">
-  <div class="gap-editor-list" id="higherRateHistoryList"></div>
-  <div class="modal-actions" style="margin-top:0;">
-    <button class="bad" id="purgeHigherRateWindowsBtn" type="button">🗑️ Vaciar historial</button>
-  </div>
-  <p class="alert-hint">Borra TODAS las ventanas pasadas de un click. El bono ya ganado por llamadas reales se conserva siempre, aunque borres la ventana que lo generó.</p>
-</div>
-</details>
-</div>
-</details>
+     removeHigherRateWindowRowAt/purgePastHigherRateWindows) se mudan tal
+     cual al modal nuevo, sin tocar su lógica. -->
 
 </div><!-- /pageSchedule -->
 
@@ -6013,6 +5986,49 @@
 <p class="alert-hint">Borra TODO lo guardado por la app en este navegador: llamadas, turnos, pausas, horario semanal, metas, nombre/emoji — de TODOS los días, no solo el activo. No se puede deshacer.</p>
 <div class="modal-actions" style="margin-top:0;">
 <button class="bad" id="eraseAllDataBtn" type="button">Borrar todos los datos</button>
+</div>
+</div>
+</div>
+<!-- v248 — Pedido del usuario: "Higher Rate" abre su propio popup (como
+     "Ajustes"), no navega a otra página de la app — reversión de v238
+     (que lo había vuelto una sección inline dentro de "Horario", ver ese
+     comentario en pageSchedule). Mismos ids de siempre para el editor de
+     ventanas (higherRateWindowsList/addHigherRateWindowBtn/
+     higherRateHistoryAccordion/higherRateHistoryList/
+     purgeHigherRateWindowsBtn) — el JS que ya los usa no se toca, solo
+     cambia el HTML que los envuelve (ahora modal-card, antes accordion-body). -->
+<div aria-hidden="true" class="modal-overlay" id="higherRateModal">
+<div aria-labelledby="higherRateModalTitle" aria-modal="true" class="modal-card" role="dialog">
+<div class="modal-head">
+<div>
+<h3 id="higherRateModalTitle">🔥 Higher Rate</h3>
+<p>Fecha específica + hora de inicio/fin donde aplica un bono sobre la tasa por minuto — Propio lo avisa por correo, no lo expone en los datos que la app importa, así que se configura a mano.</p>
+</div>
+<button aria-label="Cerrar" class="modal-close" data-close-modal="higherRateModal" type="button">×</button>
+</div>
+<div class="gap-editor-list" id="higherRateWindowsList"></div>
+<div class="modal-actions" style="margin-top:0;">
+<button class="warn" id="addHigherRateWindowBtn" type="button">+ Agregar ventana</button>
+</div>
+<p class="alert-hint">Una llamada cuenta COMPLETA (no solo la parte dentro de la ventana) si empieza hasta 5 minutos antes de que la ventana comience, o en cualquier momento antes de que termine, aunque se extienda después.</p>
+<details class="accordion-card" id="higherRateHistoryAccordion" style="margin-top:10px;">
+<summary>
+  <div class="accordion-head">
+    <h2 id="higherRateHistoryTitle">📜 Ventanas pasadas (0)</h2>
+    <p>Se mueven aquí solas apenas su fecha ya pasó — la lista de arriba se queda limpia con solo hoy y lo que viene. Siguen editables o eliminables cuando quieras, no se borran solas.</p>
+  </div>
+  <div class="accordion-chevron">⌄</div>
+</summary>
+<div class="accordion-body">
+  <div class="gap-editor-list" id="higherRateHistoryList"></div>
+  <div class="modal-actions" style="margin-top:0;">
+    <button class="bad" id="purgeHigherRateWindowsBtn" type="button">🗑️ Vaciar historial</button>
+  </div>
+  <p class="alert-hint">Borra TODAS las ventanas pasadas de un click. El bono ya ganado por llamadas reales se conserva siempre, aunque borres la ventana que lo generó.</p>
+</div>
+</details>
+<div class="modal-actions">
+<button class="primary" data-close-modal="higherRateModal" type="button">Listo</button>
 </div>
 </div>
 </div>
@@ -13950,6 +13966,7 @@ function render() {
       closeModal('manualCallModal');
       closeModal('confirmModal');
       closeModal('acwGoalModal');
+      closeModal('higherRateModal');
     }
 
     // ---- v238 — Menú lateral / ruteo entre páginas ----
@@ -14244,24 +14261,14 @@ function render() {
     // v242 — Mismo listener que antes tenía goalsMiniBtn (Settings page, ya
     // quitado) — reasignado al nuevo botón de header.
     document.getElementById('ajustesHeaderBtn').addEventListener('click', () => openModal('goalsModal'));
-    // v242 — Pedido del usuario: atajo de header para Higher Rate — a
-    // diferencia de Ajustes/Reiniciar (que abren un modal), Higher Rate ya
-    // no es un modal desde v238: vive como sección inline dentro de
-    // "Horario" (#higherRateAccordion). Este botón navega a esa página,
-    // fuerza la sección abierta (por si el usuario la había colapsado o
-    // nunca la tocó) y hace scroll hasta ella — mismo resultado práctico
-    // que "abrir Higher Rate" tenía antes de v238, sin reintroducir un
-    // modal aparte.
+    // v248 — Pedido del usuario: Higher Rate abre su PROPIO popup (como
+    // Ajustes), no navega a otra sección de la app — reversión de la
+    // navegación que traía desde v242/v238. Mismo patrón que
+    // ajustesHeaderBtn: sincroniza el editor con lo ya guardado
+    // (syncHigherRateModalFields, que ya existía) y abre el modal.
     document.getElementById('higherRateHeaderBtn').addEventListener('click', () => {
-      navigateToPage('schedule');
-      const section = document.getElementById('higherRateAccordion');
-      if (section) {
-        section.open = true;
-        if (!settings.accordionState || typeof settings.accordionState !== 'object') settings.accordionState = {};
-        settings.accordionState.higherRateAccordion = true;
-        saveSettingsOnly();
-        setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
-      }
+      syncHigherRateModalFields();
+      openModal('higherRateModal');
     });
     document.getElementById('pasteCallsBtn').addEventListener('click', () => openModal('callsModal'));
     document.getElementById('addCallManualBtn').addEventListener('click', openManualCallModal);
@@ -14388,25 +14395,24 @@ function render() {
     });
     document.getElementById('addHigherRateWindowBtn').addEventListener('click', addHigherRateWindowRow);
     document.getElementById('purgeHigherRateWindowsBtn').addEventListener('click', purgePastHigherRateWindows);
-    // Delegado en la sección completa (no en un solo contenedor): desde
-    // v156 las filas viven en DOS listas distintas (#higherRateWindowsList
-    // para hoy/futuro, #higherRateHistoryList para pasadas, ver
+    // Delegado en el modal completo (no en un solo contenedor): desde v156
+    // las filas viven en DOS listas distintas (#higherRateWindowsList para
+    // hoy/futuro, #higherRateHistoryList para pasadas, ver
     // renderHigherRateWindowsEditor()) que se reconstruyen por completo en
-    // cada render — delegar en la sección cubre ambas con un solo
-    // listener, sin duplicar wiring por lista. Mismo patrón que ya usa
+    // cada render — delegar en el modal cubre ambas con un solo listener,
+    // sin duplicar wiring por lista. Mismo patrón que ya usa
     // #blocksEditorList para su propio caso (una sola lista).
-    // v238 — Antes delegado en #higherRateModal (el modal completo); ahora
-    // que Higher Rate es una sección inline dentro de "Horario" (ver
-    // #higherRateAccordion en el HTML), se delega ahí — mismo criterio,
-    // solo cambió el contenedor.
-    document.getElementById('higherRateAccordion').addEventListener('click', (e) => {
+    // v248 — Vuelve a delegarse en `#higherRateModal` (reversión de v238,
+    // que lo había movido a `#higherRateAccordion` cuando esto era una
+    // sección inline de Horario en vez de un popup).
+    document.getElementById('higherRateModal').addEventListener('click', (e) => {
       const btn = e.target instanceof Element ? e.target.closest('[data-remove-hr-window]') : null;
       if (!btn) return;
       const row = btn.closest('.block-row');
       const id = row ? row.getAttribute('data-hr-window-id') : null;
       if (id) removeHigherRateWindowRowAt(id);
     });
-    document.getElementById('higherRateAccordion').addEventListener('change', (e) => {
+    document.getElementById('higherRateModal').addEventListener('change', (e) => {
       if (!(e.target instanceof Element)) return;
       if (!e.target.closest('.block-row')) return;
       saveHigherRateWindowsFromEditor();
