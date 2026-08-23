@@ -6295,6 +6295,290 @@
     .sched-legend-chip[data-legend="work"] strong { color: var(--blue); }
     .sched-legend-chip[data-legend="lunch"] { border-color: rgba(var(--good-rgb), .32); }
     .sched-legend-chip[data-legend="lunch"] strong { color: var(--good); }
+
+    /* ==========================================================
+       v276 — REDISEÑO 100% VISUAL de "Bloques del día"
+       (#scheduleAccordion), pedido del usuario, aprobado por mockup de
+       texto antes de escribir código (ver resumen_v275.md/chat para el
+       mockup completo). Mismo criterio que el rediseño de "Horario"
+       (v271-275): SOLO apariencia — ningún id/clase funcional cambia
+       (scheduleAccordion, scheduleSubtitle, scheduleOffWorkedNote,
+       dayMetricsRow, adherenceAccordion, adherenceBadge,
+       adherenceCheckpointList, adherenceGoalBadge, adherenceLiveBadge,
+       productivityGoalBadge, scheduleList) — renderSchedule()/slotStats()/
+       dayAdherence()/slotMinuteAdherence() no se tocan, solo el HTML/CSS
+       que ese código ya genera dentro de cada `.slot` y del resumen de
+       arriba. Timeline igual al que ya usa "Horario" (columna de hora +
+       riel + punto conector) — mismo lenguaje visual entre ambas
+       secciones. Colores: solo var(--...) ya existentes, sin paleta
+       nueva — Work=cyan, Break=neutro, Lunch=good, mismo mapeo que ya
+       usa data-accent en el resto de la app. */
+
+    /* ---- Resumen de arriba: 3 mini-tarjetas en vez de píldoras en fila ---- */
+    .sched-blocks-summary-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+    @media (max-width: 620px) {
+      .sched-blocks-summary-row { grid-template-columns: 1fr; }
+    }
+    .sched-blocks-summary-card {
+      border-radius: 14px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.025);
+      min-width: 0;
+    }
+    .sched-blocks-summary-card[data-metric="adherence"] {
+      background: rgba(var(--pink-rgb), .07);
+      border-color: rgba(var(--pink-rgb), .24);
+    }
+    .sched-blocks-summary-card[data-metric="goal"] {
+      background: rgba(var(--warn-rgb), .07);
+      border-color: rgba(var(--warn-rgb), .24);
+    }
+    .sched-blocks-summary-card[data-metric="productivity"] {
+      background: rgba(var(--blue-rgb), .07);
+      border-color: rgba(var(--blue-rgb), .24);
+    }
+    .sched-blocks-summary-label {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--muted);
+    }
+    /* Los badges reales (#adherenceBadge/#adherenceGoalBadge/
+       #productivityGoalBadge) siguen siendo el mismo <span class="slot-status">
+       de siempre — aquí, dentro de su propia mini-tarjeta, se agrandan y
+       pierden la forma de "pastilla" para leerse como el número grande del
+       mockup, sin tocar el texto/clase que ya les pone renderSchedule(). */
+    .sched-blocks-summary-card .slot-status {
+      display: block;
+      width: auto;
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin-top: 4px;
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: -.02em;
+      color: var(--text);
+    }
+    .sched-blocks-summary-card .slot-status.good { color: var(--good); }
+    .sched-blocks-summary-card .slot-status.warn { color: var(--warn); }
+    .sched-blocks-summary-card .slot-status.bad { color: var(--bad); }
+    .sched-blocks-summary-summary {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      cursor: pointer;
+      list-style: none;
+    }
+    .sched-blocks-summary-summary::-webkit-details-marker { display: none; }
+    .sched-blocks-summary-card .mini-accordion-toggle {
+      flex: 0 0 auto;
+      margin-top: 2px;
+    }
+    .sched-blocks-summary-card .mini-accordion-body {
+      margin-top: 10px;
+    }
+    /* "Fuera de adherencia ahora" — banner de ancho completo debajo de las
+       3 mini-tarjetas (antes vivía metido en la misma fila que las
+       píldoras). Mismo id/clase de siempre, solo reposicionado — la
+       visibilidad la sigue controlando JS con style.display inline
+       ('' / 'none', ver renderSchedule()), así que aquí NO se fija ningún
+       `display` propio (pisaría ese toggle) — solo posición/tamaño, que
+       aplican sin importar el valor de display en cada momento. */
+    #adherenceLiveBadge {
+      grid-column: 1 / -1;
+      width: fit-content;
+      margin: -2px auto 14px;
+    }
+
+    /* ---- Timeline vertical (idéntico en estructura al de "Horario") ---- */
+    #scheduleList.sblk-timeline {
+      gap: 0;
+    }
+    .sblk-item {
+      display: grid;
+      grid-template-columns: 44px 22px 1fr;
+      gap: 10px;
+      align-items: stretch;
+      padding: 0 0 18px;
+    }
+    .sblk-item:last-child { padding-bottom: 0; }
+    .sblk-hour {
+      padding-top: 14px;
+      text-align: right;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      white-space: nowrap;
+    }
+    .sblk-rail {
+      position: relative;
+      display: flex;
+      justify-content: center;
+    }
+    .sblk-rail::before {
+      content: '';
+      position: absolute;
+      top: 4px;
+      bottom: -12px;
+      left: 50%;
+      width: 1.5px;
+      transform: translateX(-50%);
+      background: var(--line-2);
+    }
+    .sblk-item:last-child .sblk-rail::before { bottom: 50%; }
+    .sblk-dot {
+      position: relative;
+      z-index: 1;
+      width: 11px;
+      height: 11px;
+      margin-top: 8px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: 1.5px solid rgba(var(--blue-rgb), .75);
+    }
+    .sblk-item[data-block-type="break"] .sblk-dot { border-color: var(--muted); }
+    .sblk-item[data-block-type="lunch"] .sblk-dot { border-color: rgba(var(--good-rgb), .8); }
+
+    .sblk-card {
+      position: relative;
+      display: grid;
+      gap: 0;
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(var(--blue-rgb), .24);
+      background: rgba(var(--blue-rgb), .07);
+      transition: border-color .14s ease, background .14s ease;
+    }
+    .sblk-item[data-block-type="break"] .sblk-card {
+      border-color: var(--line);
+      background: rgba(255,255,255,.035);
+    }
+    .sblk-item[data-block-type="lunch"] .sblk-card {
+      border-color: rgba(var(--good-rgb), .24);
+      background: rgba(var(--good-rgb), .07);
+    }
+    .sblk-card.is-active {
+      border-color: rgba(var(--cyan-rgb), .5);
+      box-shadow: 0 0 0 1px rgba(var(--cyan-rgb), .18);
+    }
+
+    /* Nivel 1 — Estado, de un vistazo */
+    .sblk-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .sblk-icon {
+      flex: 0 0 auto;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .sblk-titles {
+      flex: 1 1 140px;
+      min-width: 0;
+    }
+    .sblk-name {
+      font-weight: 900;
+      font-size: 14px;
+      letter-spacing: -.01em;
+      color: var(--text);
+    }
+    .sblk-range {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+    .sblk-status {
+      flex: 0 0 auto;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .sblk-status.good { background: rgba(var(--good-rgb), .16); color: var(--pale-good); }
+    .sblk-status.warn { background: rgba(var(--warn-rgb), .16); color: var(--pale-warn); }
+    .sblk-status.bad { background: rgba(var(--pink-rgb), .16); color: var(--pale-bad); }
+
+    /* Nivel 2 — Resultado (barras con etiqueta pegada) */
+    .sblk-bar-row { margin-top: 12px; }
+    .sblk-bar-row.tight { margin-top: 10px; }
+    .sblk-bar-label-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .sblk-bar-label-row strong { color: var(--text); font-weight: 800; }
+    .sblk-bar-track {
+      height: 6px;
+      border-radius: 99px;
+      background: rgba(255,255,255,.07);
+      overflow: hidden;
+      border: 1px solid var(--line-2);
+    }
+    .sblk-bar-track > div {
+      height: 100%;
+      border-radius: inherit;
+      transition: width .18s ease;
+    }
+    .sblk-meta-line {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    /* Nivel 3 — Diagnóstico (adherencia + motivo, texto secundario, no otra
+       barra ancha del mismo peso que las de Nivel 2 — semáforo fino en vez
+       de una barra completa). */
+    .sblk-diagnostic {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .sblk-diagnostic-icon { flex: 0 0 auto; line-height: 1.3; }
+    .sblk-diagnostic.tone-good { color: var(--pale-good); }
+    .sblk-diagnostic.tone-warn { color: var(--pale-warn); }
+    .sblk-diagnostic.tone-bad { color: var(--pale-bad); }
+    .sblk-diagnostic-track {
+      margin-top: 5px;
+      height: 3px;
+      border-radius: 99px;
+      background: rgba(255,255,255,.07);
+      overflow: hidden;
+    }
+    .sblk-diagnostic-track > div { height: 100%; border-radius: inherit; }
+
+    @media (max-width: 760px) {
+      .sblk-item { grid-template-columns: 30px 16px 1fr; gap: 6px; }
+      .sblk-hour { padding-top: 12px; font-size: 10px; letter-spacing: -.02em; }
+      .sblk-rail::before { width: 1.2px; }
+      .sblk-dot { width: 9px; height: 9px; margin-top: 6px; border-width: 1.2px; }
+      .sblk-card { padding: 11px; }
+      .sblk-icon { font-size: 16px; }
+      .sblk-name { font-size: 13px; }
+    }
   </style>
 </head>
 <body>
@@ -6945,19 +7229,30 @@
   <div class="accordion-chevron">⌄</div>
 </summary>
 <div class="accordion-body">
-  <div class="day-metrics-row" id="dayMetricsRow">
-    <details class="mini-accordion" id="adherenceAccordion">
-      <summary class="mini-accordion-summary">
-        <span class="slot-status" id="adherenceBadge">Adherencia: —</span>
-        <span class="mini-accordion-toggle">Detalle ⌄</span>
-      </summary>
-      <div class="mini-accordion-body" id="adherenceCheckpointList"></div>
-    </details>
-    <span class="slot-status" id="adherenceGoalBadge" style="display:none;"></span>
+  <div class="day-metrics-row sched-blocks-summary-row" id="dayMetricsRow">
+    <div class="sched-blocks-summary-card" data-metric="adherence">
+      <details class="mini-accordion" id="adherenceAccordion">
+        <summary class="mini-accordion-summary sched-blocks-summary-summary">
+          <div style="min-width:0;">
+            <div class="sched-blocks-summary-label">Adherencia</div>
+            <span class="slot-status" id="adherenceBadge">Adherencia: —</span>
+          </div>
+          <span class="mini-accordion-toggle">Detalle ⌄</span>
+        </summary>
+        <div class="mini-accordion-body" id="adherenceCheckpointList"></div>
+      </details>
+    </div>
+    <div class="sched-blocks-summary-card" data-metric="goal">
+      <div class="sched-blocks-summary-label">Meta</div>
+      <span class="slot-status" id="adherenceGoalBadge" style="display:none;"></span>
+    </div>
+    <div class="sched-blocks-summary-card" data-metric="productivity">
+      <div class="sched-blocks-summary-label">Productividad</div>
+      <span class="slot-status" id="productivityGoalBadge" title="Minutos productivos logrados hoy vs. la suma de las metas configuradas en cada bloque de Trabajo (Horario → Bloques). Un bloque sin meta configurada no cuenta para este total.">Meta productiva: —</span>
+    </div>
     <span class="slot-status bad live-exception" id="adherenceLiveBadge" style="display:none;">⚠️ Fuera de adherencia ahora</span>
-    <span class="slot-status" id="productivityGoalBadge" title="Minutos productivos logrados hoy vs. la suma de las metas configuradas en cada bloque de Trabajo (Horario → Bloques). Un bloque sin meta configurada no cuenta para este total.">Meta productiva: —</span>
   </div>
-  <div class="schedule" id="scheduleList"></div>
+  <div class="schedule sblk-timeline" id="scheduleList"></div>
 </div>
 </details>
 </div><!-- /pageBlocks -->
@@ -14871,11 +15166,12 @@ function renderSchedule() {
           const goalText = g.met
             ? `✅ Meta productiva alcanzada: ${formatMinutes(g.achievedMin)}/${formatMinutes(g.goalMin)} min`
             : `Meta productiva: ${formatMinutes(g.achievedMin)}/${formatMinutes(g.goalMin)} min`;
-          const goalColor = g.met ? `color: var(--good); font-weight: 800;` : '';
+          const goalLabelColor = g.met ? `color: var(--good); font-weight: 800;` : '';
+          const goalFill = g.met ? 'linear-gradient(90deg, var(--good), var(--teal))' : 'linear-gradient(90deg, var(--teal), var(--blue))';
           goalBarHtml = `
-            <div class="meta" style="${goalColor}" title="Minutos productivos meta de este bloque, configurable en Horario → Bloques.">${escapeHtml(goalText)}</div>
-            <div class="slot-progress goal ${g.met ? 'met' : ''}" aria-label="${escapeHtml(slot.name)} meta productiva">
-              <div style="width:${g.pct}%"></div>
+            <div class="sblk-bar-row tight" title="Minutos productivos meta de este bloque, configurable en Horario → Bloques.">
+              <div class="sblk-bar-label-row" style="${goalLabelColor}"><span>${escapeHtml(goalText)}</span></div>
+              <div class="sblk-bar-track" aria-label="${escapeHtml(slot.name)} meta productiva"><div style="width:${g.pct}%; background:${goalFill};"></div></div>
             </div>
           `;
         }
@@ -14887,6 +15183,10 @@ function renderSchedule() {
         // slotMinuteAdherence) — en ese caso no se muestra nada, igual que
         // goalBarHtml no se muestra para bloques de Trabajo sin meta
         // configurada.
+        // Nivel 3 — Diagnóstico: adherencia del bloque + motivo dominante,
+        // como texto secundario bajo una línea divisoria (icono ⚠️/✅ + un
+        // semáforo FINO, no una barra ancha del mismo peso que Usado/
+        // Productividad/Meta — mismo criterio confirmado en el mockup).
         let adherenceBarHtml = '';
         const slotAdherence = slotMinuteAdherence(dayKey, originalPlannedSlots[slotIdx] || slot, bounds);
         if (slotAdherence) {
@@ -14896,12 +15196,16 @@ function renderSchedule() {
           // no hubo minutos de excepción (bloque perfecto).
           const dominant = dominantExceptionReason(slotAdherence.reasons);
           const reasonSuffix = dominant ? ` · ${dominant.label} (${formatMinutes(dominant.minutes)}m)` : '';
-          const text = `Adherencia bloque: ${slotAdherence.pct}% (${slotAdherence.adherentMinutes}/${slotAdherence.total} min)${reasonSuffix}`;
-          const adherenceColor = tone === 'good' ? '' : `color: var(--${tone}); font-weight: 800;`;
+          const text = `Adherencia del bloque: ${slotAdherence.pct}% (${slotAdherence.adherentMinutes}/${slotAdherence.total} min)${reasonSuffix}`;
+          const diagnosticIcon = tone === 'good' ? '✅' : '⚠️';
+          const diagnosticFill = tone === 'good' ? 'linear-gradient(90deg, var(--good), var(--teal))' : tone === 'warn' ? 'linear-gradient(90deg, var(--warn), #ffcf7d)' : 'linear-gradient(90deg, var(--bad), #ff8a95)';
           adherenceBarHtml = `
-            <div class="meta" style="${adherenceColor}">${escapeHtml(text)}</div>
-            <div class="slot-progress adherence ${tone === 'good' ? '' : tone}" aria-label="${escapeHtml(slot.name)} adherencia">
-              <div style="width:${slotAdherence.pct}%"></div>
+            <div class="sblk-diagnostic tone-${tone}">
+              <span class="sblk-diagnostic-icon" aria-hidden="true">${diagnosticIcon}</span>
+              <div style="min-width:0; flex:1 1 auto;">
+                <div>${escapeHtml(text)}</div>
+                <div class="sblk-diagnostic-track" aria-label="${escapeHtml(slot.name)} adherencia"><div style="width:${slotAdherence.pct}%; background:${diagnosticFill};"></div></div>
+              </div>
             </div>
           `;
         }
@@ -14916,9 +15220,9 @@ function renderSchedule() {
         // tampoco debería "aparecer" antes de que el día empiece).
         const productivityBarHtml = slot.type === 'Work' && stats.productivityPct !== null && !isFutureDay
           ? `
-              <div class="meta">Productividad: ${Math.round(stats.productivityPct)}%</div>
-              <div class="slot-progress productivity" aria-label="${escapeHtml(slot.name)} productividad">
-                <div style="width:${stats.productivityPct}%"></div>
+              <div class="sblk-bar-row tight">
+                <div class="sblk-bar-label-row"><span>Productividad</span><span>${Math.round(stats.productivityPct)}%</span></div>
+                <div class="sblk-bar-track" aria-label="${escapeHtml(slot.name)} productividad"><div style="width:${stats.productivityPct}%; background: linear-gradient(90deg, var(--good), var(--teal));"></div></div>
               </div>
             `
           : '';
@@ -14930,27 +15234,51 @@ function renderSchedule() {
         // visual. El % que llena el fondo es el mismo `stats.pct` que ya
         // alimenta la barra fina "Usado" de abajo — ningún cálculo nuevo.
         const slotAccent = slot.type === 'Work' ? 'cyan' : slot.type === 'Break' ? 'warn' : 'blue';
+        const usedFillColor = slot.type === 'Work' ? 'var(--cyan)' : slot.type === 'Break' ? 'var(--warn)' : 'var(--blue)';
+
+        // ---- v276 — Rediseño 100% visual (ver resumen_v275.md / mockup
+        // aprobado): timeline igual al de "Horario" (hora + riel + punto) y
+        // tarjeta en 3 niveles — Nivel 1 estado (ícono+nombre+rango+badge de
+        // statusText), Nivel 2 resultado (barra Usado + Productividad + Meta
+        // productiva, cada una con su etiqueta pegada), Nivel 3 diagnóstico
+        // (adherencia del bloque + motivo, texto secundario bajo una línea
+        // divisoria). `stats.detail`/`progressLabel`/`stats.status` (con su
+        // propio tono, ver statusClass) son EXACTAMENTE los mismos datos de
+        // siempre — solo se reubicaron dentro de la nueva jerarquía, ninguno
+        // se quitó. El badge de Nivel 1 usa `statusText` (Actual/Hecho/
+        // Próximo/Incompleto/Omitido/Sin actividad); `stats.status` (más
+        // detallado: "Entrada tarde +60m", "A tiempo", "Break no tomado"...)
+        // se muestra como su propia línea, coloreada con el mismo
+        // `statusClass`/`stats.statusTone` de siempre.
+        const badgeToneClass = statusText === 'Hecho' ? 'good' : statusText === 'Omitido' ? 'bad' : (statusText === 'Incompleto' || statusText === 'Actual') ? 'warn' : '';
+        const icon = slot.type === 'Work' ? '💼' : slot.type === 'Break' ? '☕' : '🍽️';
+        const statusDetailLine = stats.status
+          ? `<div class="sblk-meta-line" style="${statusClass ? `color: var(--${statusClass}); font-weight: 700;` : ''}">${escapeHtml(stats.status)}</div>`
+          : '';
 
         return `
-          <div class="slot ${active ? 'active' : ''} ${done ? 'done' : ''}" data-accent="${slotAccent}" style="--slot-pct:${stats.pct}%">
-            <div class="slot-fill" style="width:${stats.pct}%"></div>
-            <div>
-              <div class="name">${slot.name}</div>
-              <div class="range">${slot.start} — ${slot.end}</div>
-              <div class="meta">${statusText}</div>
-            </div>
-            <div class="slot-body">
-              <div class="meta">${stats.detail}</div>
-              <div class="slot-progress" aria-label="${escapeHtml(slot.name)} progreso">
-                <div style="width:${stats.pct}%"></div>
+          <div class="sblk-item" data-block-type="${slot.type.toLowerCase()}">
+            <div class="sblk-hour">${slot.start}</div>
+            <div class="sblk-rail" aria-hidden="true"><span class="sblk-dot"></span></div>
+            <div class="sblk-card ${active ? 'is-active' : ''} ${done ? 'is-done' : ''}" data-accent="${slotAccent}">
+              <div class="sblk-head">
+                <span class="sblk-icon" aria-hidden="true">${icon}</span>
+                <div class="sblk-titles">
+                  <div class="sblk-name">${escapeHtml(slot.name)}</div>
+                  <div class="sblk-range">${slot.start} – ${slot.end}</div>
+                </div>
+                <span class="sblk-status ${badgeToneClass}">${escapeHtml(statusText)}</span>
+              </div>
+              <div class="sblk-bar-row">
+                <div class="sblk-bar-label-row"><span>Usado</span><span>${formatDuration(stats.filledMin * 60000)} / ${formatDuration(stats.durationMin * 60000)} · ${Math.round(stats.pct)}%</span></div>
+                <div class="sblk-bar-track" aria-label="${escapeHtml(slot.name)} progreso"><div style="width:${stats.pct}%; background:${usedFillColor};"></div></div>
               </div>
               ${productivityBarHtml}
-              <div class="slot-status ${statusClass}">${escapeHtml(stats.status)}</div>
-              <div class="meta">${progressLabel}</div>
               ${goalBarHtml}
+              <div class="sblk-meta-line">${escapeHtml(progressLabel)}</div>
+              ${statusDetailLine}
               ${adherenceBarHtml}
             </div>
-            <div class="type">${slot.type}</div>
           </div>
         `;
       });
