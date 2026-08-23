@@ -2151,9 +2151,16 @@
       transition: transform .12s ease, border-color .12s ease, background .12s ease;
     }
 
+    /* v233 — Ver comentario junto a .gap-edit-btn arriba. Solo aplica a
+       "✕" (emoji-clear, texto real) — los emojis en sí son glifos a color
+       fijo del sistema, no toman `color` de CSS en la mayoría de
+       navegadores, así que cambiarles el color no tendría efecto visible. */
     .emoji-option:hover {
       transform: translateY(-1px);
       background: rgba(255,255,255,.08);
+    }
+    .emoji-option.emoji-clear:hover {
+      color: var(--hover-flip);
     }
 
     .emoji-option.selected {
@@ -2195,11 +2202,17 @@
       transition: transform .12s ease, border-color .12s ease, background .12s ease;
     }
 
+    /* v233 — Ver comentario junto a .gap-edit-btn arriba: mismo pedido
+       aplicado a los tiles de tarifa (Normal/Bronce/Silver/Gold). */
     .rate-tile:hover,
     .rate-tile:focus-visible {
       transform: translateY(-1px);
       background: rgba(255,255,255,.06);
       outline: none;
+    }
+    .rate-tile:hover .rate-tile-amount,
+    .rate-tile:hover .rate-tile-label {
+      color: var(--hover-flip);
     }
 
     .rate-tile.selected {
@@ -2397,9 +2410,12 @@
       padding: 0;
     }
 
+    /* v233 — Ver comentario junto a .gap-edit-btn arriba: mismo pedido
+       (texto rojo al hover) aplicado también en modo oscuro. */
     .day-nav-btn:hover,
     .day-nav-btn:focus-visible {
       background: rgba(255,255,255,.1);
+      color: var(--hover-flip);
       outline: none;
     }
 
@@ -2777,6 +2793,14 @@
       cursor: pointer;
       font-size: 18px;
       line-height: 1;
+    }
+
+    /* v233 — Pedido del usuario: la "×" de cerrar modal no tenía NINGÚN
+       estado de hover en modo oscuro (ni color, ni fondo) — se agrega el
+       mismo texto rojo (var(--hover-flip)) que ya usan el resto de
+       botones neutros de la app al hover en este tema. */
+    .modal-close:hover {
+      color: var(--hover-flip);
     }
 
     .modal-actions {
@@ -3222,6 +3246,19 @@
     .footer-tools button:hover,
     .primary-btn:hover { transform: translateY(-1px); filter: brightness(1.04); }
 
+    /* v233 — Pedido del usuario: botones neutros sin color propio dentro
+       de modales (ej. "Listo", "Cancelar"/"No") no tenían NINGÚN cambio de
+       color de texto al hover en modo oscuro — se agrega aquí. Se excluyen
+       .primary/.warn/.bad (ya tienen su propio fondo con acento — cyan/
+       ámbar/rosa — y no deben ponerse en rojo) y .primary-btn (el botón
+       grande sólido de "Importar", texto blanco fijo, sin tocar). */
+    .modal-actions button:not(.primary):not(.warn):not(.bad):hover,
+    .button-row button:not(.primary):not(.warn):not(.bad):hover,
+    .import-actions button:hover,
+    .footer-tools button:hover {
+      color: var(--hover-flip);
+    }
+
     .button-row button.primary { background: rgba(var(--cyan-rgb), .14); }
     .button-row button.warn { background: rgba(var(--warn-rgb), .12); }
     .button-row button.bad { background: rgba(var(--pink-rgb), .12); }
@@ -3641,6 +3678,17 @@
 
     .gap-edit-btn:hover {
       filter: brightness(1.04);
+    }
+
+    /* v233 — Pedido del usuario: en modo oscuro, el texto de .gap-edit-btn
+       se pone rojo (var(--hover-flip)) al hover — ya pasaba para "Editar"/
+       "Editar día" (scoped a #callTableAccordion/#weekSummaryAccordion
+       desde v215/v216), pero no para el resto (ej. "🔊 Probar" en Ajustes/
+       Avisos, que no vive en esas 2 secciones). Se agrega aquí en la regla
+       base, sin scoping, excluyendo el botón "Eliminar" (data-call-delete),
+       que ya tiene su propio color de peligro (rosa) y no debe cambiar. */
+    .gap-edit-btn:not([data-call-delete]):hover {
+      color: var(--hover-flip);
     }
 
     /* Pedido del usuario (v217): el botón "Eliminar" de Tabla de llamadas
@@ -4083,7 +4131,10 @@
       white-space: nowrap;
     }
 
-    .week-nav button:hover { filter: brightness(1.1); }
+    /* v233 — Ver comentario junto a .gap-edit-btn arriba. Cubre "Semana
+       específica" en Horario (#scheduleWeekNav), el único .week-nav que no
+       tenía ya el rojo de #weekSummaryAccordion/#cycleAccordion (v215). */
+    .week-nav button:hover { filter: brightness(1.1); color: var(--hover-flip); }
 
     tr.week-row-clickable {
       cursor: pointer;
