@@ -1478,6 +1478,23 @@
       margin-bottom: 10px;
     }
 
+    /* v242 — Pedido del usuario: Ajustes/Higher Rate/Reiniciar se agrupan
+       aquí junto al botón de tema, arriba a la derecha del header — ver el
+       comentario junto a `.hero-top-actions` en el HTML. Mismo patrón que
+       ya usa `.hero-shift-actions` (flex + wrap, sin scroll horizontal
+       forzado): con solo 4 botones chicos, envolver a una segunda línea en
+       viewports muy angostos se ve mejor que forzar una sola fila apretada
+       o un scroll oculto sin pista visual. flex-wrap + justify-content:
+       flex-end mantiene el grupo pegado al borde derecho tanto en una
+       línea como en dos. */
+    .hero-top-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
     /* Pedido del usuario (v154 seguía partiendo "Ajustes" a una segunda
        línea solo, en varios anchos de pantalla distintos — mobile Y
        desktop): en vez de seguir ajustando padding/font-size a mano para
@@ -5034,7 +5051,31 @@
 <button aria-expanded="false" aria-label="Abrir menú" class="menu-toggle-btn" id="menuToggleBtn" type="button">☰</button>
 <div class="brand"><span class="dot-state"></span>Propio Shift Tracker</div>
 </div>
+<!-- v242 — Pedido del usuario (con captura): Ajustes/Higher Rate/Reiniciar
+     "deberían estar mejor arriba a la derecha, al lado de Oscuro" — antes
+     Ajustes y Reiniciar vivían SOLO como tarjetas grandes en la página
+     "⚙️ Ajustes" del menú lateral (desde v238), y Higher Rate SOLO como
+     sección dentro de "Horario" (desde v238 también) — ningún acceso
+     rápido desde el header. Se agrupan aquí, junto al botón de tema
+     (`themeToggleBtn`, sin tocar su lógica), en un contenedor propio
+     (`.hero-top-actions`) para que `justify-content:space-between` de
+     `.hero-top-row` siga empujando la marca a la izquierda y este grupo
+     completo a la derecha, sin importar cuántos botones tenga adentro.
+     Orden pedido explícitamente: Ajustes, Higher Rate, (Oscuro, sin
+     mover), Reiniciar — Reiniciar queda el ÚLTIMO del grupo, pegado al
+     extremo derecho. Ajustes/Reiniciar se QUITAN de la página "Ajustes"
+     (ver más abajo, `.settings-menu-card`) — ya no hace falta duplicarlos
+     ahí, con el acceso rápido de aquí alcanza; esa página se queda solo
+     con "🔔 Avisos". Higher Rate NO se mueve de Horario (sigue siendo una
+     sección completa con su propio editor, no cabe en el header) — este
+     botón es solo un atajo que navega a Horario y abre/hace scroll directo
+     a esa sección, ver higherRateHeaderBtn más abajo en el JS. */-->
+<div class="hero-top-actions">
+<button class="hero-action-btn" id="ajustesHeaderBtn" type="button">⚙️ Ajustes</button>
+<button class="hero-action-btn" id="higherRateHeaderBtn" type="button">🔥 Higher Rate</button>
 <button class="hero-action-btn" id="themeToggleBtn" type="button" title="Auto = sigue el modo de tu sistema. Toca para forzar Claro/Oscuro.">🌓 Auto</button>
+<button class="hero-action-btn danger" id="resetHeaderBtn" type="button">♻️ Reiniciar</button>
+</div>
 </div>
 <div class="title-row">
 <div>
@@ -5527,11 +5568,14 @@
 <!-- v238 — Pedido del usuario: página "⚙️ Ajustes" del menú lateral — 3
      botones que abren los mismos modales de siempre (goalsModal/
      notificationsModal/resetModal, sin ningún cambio dentro de ellos, ver
-     más abajo) — antes vivían sueltos como botones chicos en el header. */-->
+     más abajo) — antes vivían sueltos como botones chicos en el header.
+     v242 — Ajustes y Reiniciar se QUITAN de aquí (ver el comentario junto
+     a `.hero-top-actions` en el header): ahora tienen acceso rápido desde
+     ahí mismo, arriba a la derecha junto a "Oscuro" — duplicarlos en esta
+     página ya no aportaba nada. Solo queda "🔔 Avisos", que no se pidió
+     mover. */-->
 <div class="settings-menu-card">
-<button class="settings-menu-btn" id="goalsMiniBtn" type="button">⚙️ Ajustes<span class="settings-menu-sub">Meta, tasa, moneda, tu perfil, ciclo de pago y backup (exportar/importar JSON)</span></button>
 <button class="settings-menu-btn" id="notificationsMiniBtn" type="button">🔔 Avisos<span class="settings-menu-sub">Volumen, avisos con sonido de turno/Break/Lunch y descanso por productividad</span></button>
-<button class="settings-menu-btn danger" id="resetDayMiniBtn" type="button">♻️ Reiniciar<span class="settings-menu-sub">Reiniciar el día activo, o borrar todos los datos guardados</span></button>
 </div>
 </div><!-- /pageSettings -->
 
@@ -14059,7 +14103,11 @@ function render() {
     document.getElementById('liveBarDiscardBtn').addEventListener('click', () => {
       if (currentLiveActivity) currentLiveActivity.onDiscard();
     });
-    document.getElementById('resetDayMiniBtn').addEventListener('click', () => {
+    // v242 — Pedido del usuario: mismo listener que antes tenía
+    // resetDayMiniBtn (Settings page, ya quitado) — se reasigna al nuevo
+    // botón de header, sin cambiar la lógica (mismo label del día activo
+    // antes de abrir el modal).
+    document.getElementById('resetHeaderBtn').addEventListener('click', () => {
       const label = document.getElementById('resetDayLabel');
       if (label) label.textContent = formatCallDayLabel(getActiveDayKey());
       openModal('resetModal');
@@ -14067,7 +14115,28 @@ function render() {
     document.getElementById('resetDayBtn').addEventListener('click', resetDay);
     document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
     document.getElementById('eraseAllDataBtn').addEventListener('click', eraseAllData);
-    document.getElementById('goalsMiniBtn').addEventListener('click', () => openModal('goalsModal'));
+    // v242 — Mismo listener que antes tenía goalsMiniBtn (Settings page, ya
+    // quitado) — reasignado al nuevo botón de header.
+    document.getElementById('ajustesHeaderBtn').addEventListener('click', () => openModal('goalsModal'));
+    // v242 — Pedido del usuario: atajo de header para Higher Rate — a
+    // diferencia de Ajustes/Reiniciar (que abren un modal), Higher Rate ya
+    // no es un modal desde v238: vive como sección inline dentro de
+    // "Horario" (#higherRateAccordion). Este botón navega a esa página,
+    // fuerza la sección abierta (por si el usuario la había colapsado o
+    // nunca la tocó) y hace scroll hasta ella — mismo resultado práctico
+    // que "abrir Higher Rate" tenía antes de v238, sin reintroducir un
+    // modal aparte.
+    document.getElementById('higherRateHeaderBtn').addEventListener('click', () => {
+      navigateToPage('schedule');
+      const section = document.getElementById('higherRateAccordion');
+      if (section) {
+        section.open = true;
+        if (!settings.accordionState || typeof settings.accordionState !== 'object') settings.accordionState = {};
+        settings.accordionState.higherRateAccordion = true;
+        saveSettingsOnly();
+        setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+      }
+    });
     document.getElementById('pasteCallsBtn').addEventListener('click', () => openModal('callsModal'));
     document.getElementById('addCallManualBtn').addEventListener('click', openManualCallModal);
     document.getElementById('manualCallDurationInput').addEventListener('input', updateManualCallPreview);
