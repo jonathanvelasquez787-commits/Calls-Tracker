@@ -6115,9 +6115,27 @@
     }
 
     @media (max-width: 760px) {
-      .sched-tl-item { grid-template-columns: 20px 1fr; gap: 8px; }
-      .sched-tl-hour { display: none; }
-      .sched-tl-rail { display: none; }
+      /* v275 — Bug reportado por el usuario (con capturas, 4ta vez que lo
+         señala): mobile nunca se veía "igual" a escritorio, sin importar
+         cuánto se ajustara el interior de cada tarjeta (ver v273/v274),
+         porque estas 2 líneas apagaban por completo la hora ("07:00") y el
+         riel (punto + línea conectora entre bloques) — justo el elemento
+         que define visualmente el diseño de Horario. Se reemplaza el
+         `display:none` por una versión a ESCALA REDUCIDA de los mismos 2
+         elementos (mismo HTML/JS de siempre — `.sched-tl-hour`/`.sched-
+         tl-rail`/`.sched-tl-dot`, sin tocarlos, ver esas reglas base fuera
+         de este @media) — hora con fuente más chica, punto más chico,
+         línea más fina — en vez de esconderlos. `.sched-tl-item` recupera
+         sus 3 columnas (antes 2, sin la de la hora) con anchos angostados
+         para el nuevo espacio disponible. */
+      .sched-tl-item { grid-template-columns: 30px 16px 1fr; gap: 6px; }
+      .sched-tl-hour {
+        padding-top: 6px;
+        font-size: 10px;
+        letter-spacing: -.02em;
+      }
+      .sched-tl-rail::before { width: 1.5px; }
+      .sched-tl-dot { width: 9px; height: 9px; margin-top: 5px; border-width: 1.5px; }
       .sched-tl-icon { width: 28px; height: 28px; font-size: 13px; }
       .sched-tl-handle { display: none; }
       /* v273 — max-width sube un poco (66px→72px): con el ícono nativo ya
