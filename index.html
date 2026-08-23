@@ -5162,7 +5162,16 @@
      propósito" que ya separa Horario de Reportes. -->
 <button class="sidebar-link" data-page="blocks" type="button">📋 Bloques del día</button>
 <button class="sidebar-link" data-page="reports" type="button">📊 Reportes</button>
-<button class="sidebar-link" data-page="settings" type="button">⚙️ Ajustes</button>
+<!-- v251 — Pedido del usuario: el botón/página del menú lateral se
+     renombra de "⚙️ Ajustes" a "🔔 Avisos" — desde v242, Ajustes y
+     Reiniciar viven como accesos rápidos en el header (junto a "Oscuro"),
+     así que esta página ya solo contiene el botón "🔔 Avisos" (ver
+     comentario v242 junto a #pageSettings más abajo) — "Ajustes" como
+     nombre ya no describía lo que hay adentro. Solo cambia la ETIQUETA del
+     link (texto del botón) — el id de la página (`data-page="settings"`,
+     `id="pageSettings"`) y el resto de ids/lógica (notificationsMiniBtn,
+     navigateToPage(), settings.accordionState, etc.) no se tocan. -->
+<button class="sidebar-link" data-page="settings" type="button">🔔 Avisos</button>
 </nav>
 <div class="app"><section class="hero" id="heroSection">
 <div>
@@ -5730,7 +5739,13 @@
      a `.hero-top-actions` en el header): ahora tienen acceso rápido desde
      ahí mismo, arriba a la derecha junto a "Oscuro" — duplicarlos en esta
      página ya no aportaba nada. Solo queda "🔔 Avisos", que no se pidió
-     mover. */-->
+     mover.
+     v251 — Con esta página reducida a un solo botón ("🔔 Avisos"), el
+     nombre de la página en el menú lateral (antes "⚙️ Ajustes") se renombra
+     a "🔔 Avisos" para que coincida con lo que de verdad contiene — ver el
+     botón del sidebar. El id de la página (`pageSettings`/
+     `data-page="settings"`) se deja igual a propósito, sin renombrar ids
+     por un simple cambio de etiqueta visible. */-->
 <div class="settings-menu-card">
 <button class="settings-menu-btn" id="notificationsMiniBtn" type="button">🔔 Avisos<span class="settings-menu-sub">Volumen, avisos con sonido de turno/Break/Lunch y descanso por productividad</span></button>
 </div>
