@@ -420,23 +420,18 @@
         color: var(--muted);
         -webkit-text-fill-color: currentColor;
       }
-      /* Pedido del usuario (v207, con mockup de 2 opciones — el usuario
-         eligió "borde izquierdo"): .slot-fill pintaba el 100% del área de
-         cada bloque de "Bloques del día" a un rosa/naranja/morado saturado
-         (opacity .38 sobre --cyan/--warn/--blue) — igual que el problema ya
-         corregido en "Turno de Hoy" (v206-preview), pero más notorio acá
-         porque cada bloque muestra bastante más texto/barras internas
-         encima de ese fondo saturado. Se apaga el relleno líquido en modo
-         claro (opacity 0 — el ancho que ya calcula JS vía --slot-pct no se
-         toca, solo deja de pintarse) y se reemplaza por una tarjeta casi
-         blanca (4% del acento) + borde izquierdo grueso de 4px con el color
-         sólido del bloque. border-radius solo en las 2 esquinas derechas —
-         un borde de un solo lado con las 4 esquinas redondeadas se ve
-         cortado/raro (mismo criterio que ya usan otros bordes de un solo
-         lado en el archivo). Solo modo claro — oscuro no se toca, ahí
-         .slot-fill sigue pintando exactamente igual que siempre. */
+      /* Pedido del usuario (v207 → rediseñado en v218 siguiendo DESIGN.md):
+         .slot-fill pintaba el 100% del área de cada bloque a un color
+         saturado — corregido en v207 (borde izquierdo + tarjeta tenue,
+         SOLO en modo claro). v218 lleva ese mismo criterio a AMBOS temas
+         (ver la regla base `.slot` fuera de este bloque, ya no exclusiva de
+         claro) y sube la opacidad del tinte de .04 a .10 — con la paleta
+         nueva (más saturada que el --cyan/--warn/--blue de antes) .04 se
+         veía casi invisible sobre blanco. border-radius solo en las 2
+         esquinas derechas — un borde de un solo lado con las 4 esquinas
+         redondeadas se ve cortado/raro. */
       :root:not(.theme-dark) .slot {
-        background: rgba(var(--slot-rgb, var(--cyan-rgb)), .04);
+        background: rgba(var(--slot-rgb, var(--cyan-rgb)), .10);
         border: none;
         border-left: 4px solid rgb(var(--slot-rgb, var(--cyan-rgb)));
         border-radius: 0 16px 16px 0;
@@ -444,16 +439,22 @@
       :root:not(.theme-dark) .slot .slot-fill {
         opacity: 0;
       }
-      /* Pedido del usuario: "Bloque de Trabajo" es el tipo de bloque más
-         repetido del día — con el mismo acento vivo que Break/Lunch
-         (--cyan, que en claro es --primary/rosa) se veía como el color
-         dominante de toda la sección. Se le da un tono neutro (slate) en
-         vez del rosa, dejando el rosa vivo para botones/CTAs reales. Solo
-         afecta el acento DENTRO de .slot — --cyan en sí no se toca, así que
-         el resto de usos de data-accent="cyan" (botones de Controles, el
-         botón de "Pegar Llamadas", etc.) siguen su color de siempre. */
+      /* Pedido del usuario (v218): acentos por tipo de bloque tomados de
+         DESIGN.md, tono OSCURECIDO/SATURADO de la misma familia que su
+         par de modo oscuro (mejor contraste sobre fondo blanco) — Trabajo
+         = esmeralda (--secondary #006d43 exacto, reemplaza el slate neutro
+         que tenía desde v207), Lunch = índigo (--on-primary-fixed-variant
+         #224583 exacto, ver la regla nueva justo debajo). Break no
+         necesita override aquí — el ámbar (--tertiary-fixed #fbbc00) ya es
+         idéntico en ambos temas, ver la regla base `.slot[data-accent=
+         "warn"]`. Ya no deriva de --cyan (que en este tema apunta a
+         --primary/rosa) — son valores fijos de la nueva paleta categórica,
+         independientes del theming rosa/magenta del resto de la app. */
       :root:not(.theme-dark) .slot[data-accent="cyan"] {
-        --slot-rgb: 100, 116, 139;
+        --slot-rgb: 0, 109, 67;
+      }
+      :root:not(.theme-dark) .slot[data-accent="blue"] {
+        --slot-rgb: 34, 69, 131;
       }
       /* Pedido del usuario (v217): la tarjeta de Shift en "Turno de Hoy"
          también usa data-accent="cyan" — mismo problema (--cyan-rgb es en
@@ -760,7 +761,7 @@
       -webkit-text-fill-color: currentColor;
     }
     html.theme-light .slot {
-      background: rgba(var(--slot-rgb, var(--cyan-rgb)), .04);
+      background: rgba(var(--slot-rgb, var(--cyan-rgb)), .10);
       border: none;
       border-left: 4px solid rgb(var(--slot-rgb, var(--cyan-rgb)));
       border-radius: 0 16px 16px 0;
@@ -768,8 +769,13 @@
     html.theme-light .slot .slot-fill {
       opacity: 0;
     }
+    /* Ver comentario gemelo en la rama @media de arriba (v218) — mismo
+       criterio, misma paleta DESIGN.md. */
     html.theme-light .slot[data-accent="cyan"] {
-      --slot-rgb: 100, 116, 139;
+      --slot-rgb: 0, 109, 67;
+    }
+    html.theme-light .slot[data-accent="blue"] {
+      --slot-rgb: 34, 69, 131;
     }
     /* Ver comentario gemelo en la rama @media de arriba (v217) — mismo
        criterio, misma regla. */
@@ -3078,14 +3084,29 @@
       grid-template-columns: 108px 1fr 76px 34px;
     }
 
-    /* Pedido del usuario: mismo relleno "líquido" de las tarjetas de "Turno
-       de Hoy" (v183), aplicado ahora a cada bloque de "Bloques del día"
-       (.slot). Solo `.slot` recibe el tratamiento — `.event` (usado en otro
-       lugar del archivo, no en esta sección) queda sin tocar. */
+    /* Pedido del usuario (v218): "no me gustan los colores de bloques del
+       día en ningún tema" — se retira el relleno líquido sólido (ver
+       .slot-fill, apagado arriba) y se reemplaza por el mismo tratamiento
+       "tonal tenue + borde de acento" que light mode ya usaba desde v207
+       (mockup de 2 opciones, el usuario eligió esta), ahora UNIFICADO en
+       ambos temas — antes dark tenía el fill saturado (.94 opacidad, la
+       "pared de color neón" reportada) y solo claro tenía este trato tenue.
+       .12 de opacidad de fondo (entre el .04 casi invisible que tenía claro
+       antes y el .94 saturado que tenía oscuro) — visible sin ser pesado en
+       ninguno de los 2 temas. Los 2 bloques de modo claro (@media +
+       html.theme-light, más abajo) siguen ganando por especificidad y
+       ajustan la opacidad/tono fino para su propio fondo — sin tocarse en
+       esta pasada salvo los colores de acento (ver ahí). Solo `.slot`
+       recibe el tratamiento — `.event` (usado en otro lugar del archivo, no
+       en esta sección) queda sin tocar. */
     .slot {
       position: relative;
       overflow: hidden;
       isolation: isolate;
+      background: rgba(var(--slot-rgb, var(--cyan-rgb)), .12);
+      border: none;
+      border-left: 4px solid rgb(var(--slot-rgb, var(--cyan-rgb)));
+      border-radius: 0 16px 16px 0;
     }
 
     /* Mismo criterio que .bsc-fill: fondo sólido semi-transparente (no la
@@ -3109,19 +3130,40 @@
        tomada, borde izquierdo en vez de líquido — ver la regla
        `:root:not(.theme-dark) .slot .slot-fill { opacity: 0; }` más abajo,
        sin tocar). */
+    /* Pedido del usuario (v218): rediseño de color de "Bloques del día"
+       siguiendo DESIGN.md (paleta navy/esmeralda/ámbar, teoría del color) —
+       mockup de 2 opciones mostrado, el usuario eligió "Opción A: tonal
+       tenue + borde de acento". El relleno líquido sólido (.94 de opacidad,
+       la "pared de color neón" de la captura) se apaga por completo, en
+       AMBOS temas — antes solo estaba apagado en modo claro (v207); ahora
+       .slot usa el mismo lenguaje visual tenue en oscuro y en claro (ver
+       la regla `.slot` más abajo). El ancho en JS (stats.pct) se sigue
+       seteando igual, solo que ya no se ve — inofensivo dejarlo. */
     .slot-fill {
       position: absolute;
       inset: 0;
       width: 0%;
       background: rgb(var(--slot-rgb, var(--cyan-rgb)));
-      opacity: .94;
+      opacity: 0;
       transition: width .5s cubic-bezier(.22, .85, .4, 1);
       z-index: 0;
     }
 
-    .slot[data-accent="cyan"] { --slot-rgb: var(--cyan-rgb); }
-    .slot[data-accent="warn"] { --slot-rgb: var(--warn-rgb); }
-    .slot[data-accent="blue"] { --slot-rgb: var(--blue-rgb); }
+    /* Pedido del usuario (v218): 3 acentos categóricos tomados de
+       DESIGN.md — Trabajo = esmeralda (familia --secondary #006d43),
+       Break = ámbar (--tertiary-fixed #fbbc00, idéntico en ambos temas —
+       no necesita override en claro), Lunch = índigo (familia --primary
+       #001b44 / --on-primary-fixed-variant #224583). Triple espaciada en
+       el círculo cromático (verde~150° / ámbar~45° / índigo~225°) para que
+       las 3 se distingan de un vistazo sin depender de --cyan/--warn/--blue
+       (variables compartidas con el resto de la app — no tocadas). Valor
+       aquí = tono para MODO OSCURO (más brillante, se ve bien sobre fondo
+       casi negro); modo claro tiene su propio override más abajo con tonos
+       más oscuros/saturados de la misma familia (mejor contraste sobre
+       blanco). */
+    .slot[data-accent="cyan"] { --slot-rgb: 16, 185, 129; }
+    .slot[data-accent="warn"] { --slot-rgb: 251, 188, 0; }
+    .slot[data-accent="blue"] { --slot-rgb: 111, 151, 255; }
 
     /* Sube los 3 hijos de contenido reales (nombre/rango/estado, cuerpo del
        slot, badge de tipo) por encima del relleno — sin esto, un hijo
