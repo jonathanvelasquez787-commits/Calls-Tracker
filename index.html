@@ -2535,6 +2535,7 @@
       #todayShiftAccordion,
       #cycleAccordion,
       #callsSection,
+      #scheduleConfigAccordion,
       #scheduleAccordion,
       #heroSection {
         max-width: 1200px;
@@ -3685,6 +3686,104 @@
       align-self: flex-end;
     }
 
+    /* v236 — Pedido del usuario: dentro de la nueva sección "Horario" (ver
+       #scheduleConfigAccordion en el HTML), cada fila de bloque ya no debe
+       verse como una tarjeta completa (fondo + borde + esquinas
+       redondeadas, la regla `.block-row` de arriba) — se reemplaza por un
+       separador inferior fino entre filas, más liviano, mismo criterio de
+       "agrupar con espaciado en vez de cajas repetidas" que pidió el
+       usuario para toda la sección. Scoped a `#blocksEditorList` (el
+       contenedor de ESTE editor, no `.block-row` en general) para no tocar
+       el editor de ventanas de Higher Rate (#higherRateWindowsList/
+       #higherRateHistoryList), que reutiliza la misma clase `.block-row` y
+       se queda con su look de tarjeta de siempre — no fue parte de este
+       pedido. */
+    #blocksEditorList .block-row {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--line);
+      border-radius: 0;
+      padding: 12px 0;
+    }
+    #blocksEditorList .block-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    #blocksEditorList .block-row:first-child {
+      padding-top: 0;
+    }
+
+    /* v236 — Bloques de construcción de la nueva sección "Horario"
+       (#scheduleConfigAccordion): en vez de anidar cajas (borde+fondo)
+       dentro de otras cajas como hacía el modal viejo (.alert-group >
+       .alert-fields-row > .alert-mini-field, hasta 3 niveles), cada grupo
+       (modo Plantilla/Semana, Bloques, "Si llegas tarde", Adherencia...)
+       es un simple bloque de texto+campos con espaciado/tipografía, sin su
+       propio fondo ni borde — la jerarquía se lee por el título en negrita
+       (.sched-section-title) y el texto de ayuda debajo (.sched-hint), no
+       por una caja. */
+    .sched-block {
+      display: grid;
+      gap: 8px;
+    }
+
+    .sched-section-title {
+      font-weight: 900;
+      font-size: 14px;
+      letter-spacing: -.01em;
+      color: var(--text);
+    }
+
+    .sched-hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .sched-checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 13.5px;
+      cursor: pointer;
+      color: var(--text);
+    }
+
+    /* Inicio/Fin del turno, y los 2 campos de Adherencia: antes cada uno
+       vivía en su propio `.field` (borde+fondo) dentro de `.goal-fields`
+       (grid) — una caja por campo. Aquí es una fila simple de 2 columnas,
+       sin caja alrededor de cada campo; solo el `<input>` en sí lleva
+       borde, como cualquier campo de formulario normal. */
+    .sched-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .sched-field {
+      display: grid;
+      gap: 4px;
+    }
+
+    .sched-field label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .sched-field input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 14px;
+      padding: 9px 11px;
+      outline: none;
+    }
+
     .gap-row {
       display: grid;
       grid-template-columns: minmax(0, 1.4fr) minmax(220px, .9fr);
@@ -3843,6 +3942,7 @@
     #todayShiftAccordion,
     #cycleAccordion,
     #callsSection,
+    #scheduleConfigAccordion,
     #scheduleAccordion {
       margin-bottom: 14px;
     }
@@ -4323,6 +4423,11 @@
       }
       .goal-fields { grid-template-columns: 1fr; }
       .alert-fields-row { grid-template-columns: 1fr; }
+      /* v236 — Ver comentario junto a .sched-row (regla base, más arriba) —
+         mismo criterio que .goal-fields/.alert-fields-row: 1 sola columna
+         en mobile, para que Inicio/Fin (o los 2 campos de Adherencia) no
+         queden apretados en un ancho angosto. */
+      .sched-row { grid-template-columns: 1fr; }
       .hero, .card, .table-card, .list-card, .mini { padding: 14px; }
       .hero { margin-bottom: 10px; }
       .brand { padding: 6px 10px; font-size: 10.5px; }
@@ -4867,6 +4972,111 @@
 </div>
 </details>
 
+<!-- v236 — Pedido del usuario: "Horario" (antes un modal, #shiftModal) pasa
+     a ser una sección expandible más de la página, mismo patrón que "Tabla
+     de llamadas"/"Resumen semanal" (<details class="accordion-card">) —
+     mejor jerarquía visual, sin el popup encima del resto de la app. Se
+     coloca justo arriba de "Bloques del día": configuras el horario aquí
+     mismo, justo arriba de donde se ve reflejado. Ningún ID de campo
+     cambió (dayOffInput, dayStartInput, dayEndInput, lateArrivalModeInput,
+     adherenceGraceMinInput, adherenceGoalPctInput, scheduleModeTabs,
+     scheduleWeekNav y sus hijos, scheduleDayTabs, blocksEditorList,
+     addBlockBtn, copyDayToAllBtn, copyWeekendBtn, saveShiftWindowBtn) — el
+     JS que ya los usa (syncShiftModalFields/renderBlocksEditor/
+     readBlocksFromEditor/renderDayTabs/syncScheduleWeekNavUI/
+     saveShiftWindow/copyDayToAll/copyDayToWeekend/validateDayConfig) sigue
+     funcionando sin tocarse, solo cambió el HTML/CSS que envuelve esos
+     campos. Se quita el botón "Listo" (ya no hay modal que cerrar) y la
+     "×" de cerrar (mismo motivo). Cerrado por defecto (como "Ganancias del
+     ciclo") — es configuración, no algo que se necesite ver todo el
+     tiempo; el botón "🗓️ Horario" del header lo abre y hace scroll hasta
+     aquí (ver el listener de scheduleMiniBtn, más abajo). -->
+<details class="accordion-card" id="scheduleConfigAccordion">
+<summary>
+  <div class="accordion-head">
+    <h2>Horario</h2>
+    <p>Cuándo empiezas, cuándo terminas, y tus breaks/lunch de cada día. "Bloques del día" (abajo) se dibuja sobre este plan.</p>
+  </div>
+  <div class="accordion-chevron">⌄</div>
+</summary>
+<div class="accordion-body">
+  <div class="sched-block">
+    <div class="day-tabs" id="scheduleModeTabs">
+      <button class="day-tab active" data-mode="template" type="button">🔁 Plantilla</button>
+      <button class="day-tab" data-mode="week" type="button">📅 Semana específica</button>
+    </div>
+    <p class="sched-hint">"Plantilla" es tu horario de siempre — se repite igual cada semana. Usa "Semana específica" solo cuando UNA semana en particular va a ser distinta de tu plantilla (ej. cambiaste de turno por una semana nada más) — se guarda aparte, sin tocar tu plantilla de siempre.</p>
+  </div>
+
+  <div id="scheduleWeekNav" class="sched-block" style="display:none;">
+    <div class="week-nav" style="margin: 0 0 8px;">
+      <button id="scheduleWeekPrevBtn" type="button">‹ Anterior</button>
+      <button id="scheduleWeekTodayBtn" type="button">Semana actual</button>
+      <button id="scheduleWeekNextBtn" type="button">Siguiente ›</button>
+    </div>
+    <p class="sched-hint" id="scheduleWeekRangeLabel" style="margin:0 0 10px;">—</p>
+    <label class="sched-checkbox-row"><input id="scheduleWeekCustomInput" type="checkbox"/> Personalizar el horario de esta semana (distinto a la plantilla)</label>
+    <p class="sched-hint" id="scheduleWeekLockedNote" style="display:none; color: var(--warn);">🔒 Esta semana ya pasó — queda protegida, solo lectura.</p>
+  </div>
+
+  <div class="sched-block">
+    <div class="sched-section-title">Día a editar</div>
+    <div class="day-tabs" id="scheduleDayTabs"></div>
+  </div>
+
+  <label class="sched-checkbox-row"><input id="dayOffInput" type="checkbox"/> Día libre (sin turno)</label>
+
+  <div class="sched-row">
+    <div class="sched-field">
+      <label for="dayStartInput">Inicio del turno</label>
+      <input id="dayStartInput" inputmode="numeric" type="time"/>
+    </div>
+    <div class="sched-field">
+      <label for="dayEndInput">Fin del turno</label>
+      <input id="dayEndInput" inputmode="numeric" type="time"/>
+    </div>
+  </div>
+
+  <div class="sched-block">
+    <div class="sched-section-title">Bloques del día (Trabajo, Break, Lunch)</div>
+    <p class="sched-hint">Cada franja de tu turno es un bloque. Agrega uno por cada Trabajo, Break o Lunch que planees, con su hora de inicio y de fin — el resto del turno que no cubras con ningún bloque simplemente queda sin plan, sin afectar tu Adherencia. Un bloque de Trabajo puede llevar además una "meta productiva": cuántos minutos en llamada esperas lograr en ese bloque.</p>
+    <div class="gap-editor-list" id="blocksEditorList"></div>
+    <button class="gap-edit-btn" id="addBlockBtn" type="button" style="margin-top:10px;">+ Agregar bloque</button>
+  </div>
+
+  <div class="sched-block">
+    <div class="sched-section-title">Si llegas tarde a tu turno</div>
+    <select class="alert-select" id="lateArrivalModeInput">
+      <option value="anchor">La hora de fin no se mueve (ese tiempo se pierde)</option>
+      <option value="shift">Se corre todo el turno esa misma cantidad de tiempo</option>
+    </select>
+    <p class="sched-hint">Aplica a todos los días. Solo cambia cómo se ve "Bloques del día" — tu Adherencia no depende de esta elección.</p>
+  </div>
+
+  <div class="sched-block">
+    <div class="sched-section-title">Adherencia</div>
+    <p class="sched-hint">"Bloques del día" compara, minuto a minuto, lo que hiciste de verdad contra lo que planeaste aquí arriba.</p>
+    <div class="sched-row">
+      <div class="sched-field">
+        <label for="adherenceGraceMinInput">Minutos de gracia</label>
+        <input id="adherenceGraceMinInput" inputmode="numeric" min="0" step="1" type="number"/>
+      </div>
+      <div class="sched-field">
+        <label for="adherenceGoalPctInput">Meta de Adherencia (%)</label>
+        <input id="adherenceGoalPctInput" inputmode="numeric" max="100" min="1" step="1" type="number"/>
+      </div>
+    </div>
+    <p class="sched-hint">"Minutos de gracia" perdona desvíos chicos justo alrededor de cada cambio de bloque (ej. empezar tu break unos minutos tarde) — 0 significa que cualquier desvío cuenta en tu contra de inmediato. "Meta de Adherencia" es tu propio objetivo de %, para compararlo contra tu Adherencia real de cada día.</p>
+  </div>
+
+  <div class="modal-actions">
+    <button class="warn" id="copyDayToAllBtn" type="button">Copiar a Lunes-Viernes</button>
+    <button class="warn" id="copyWeekendBtn" type="button">Copiar a Sábado-Domingo</button>
+    <button class="primary" id="saveShiftWindowBtn" type="button">Guardar día</button>
+  </div>
+</div>
+</details>
+
 <details class="accordion-card" id="scheduleAccordion" open>
 <summary>
   <div class="accordion-head">
@@ -5034,93 +5244,6 @@
 <button class="primary" data-close-modal="goalsModal" type="button">Listo</button>
 </div>
 
-</div>
-</div>
-<div aria-hidden="true" class="modal-overlay" id="shiftModal">
-<div aria-labelledby="shiftModalTitle" aria-modal="true" class="modal-card" role="dialog">
-<div class="modal-head">
-<div>
-<h3 id="shiftModalTitle">Horario semanal</h3>
-<p>Configura tu plan por día. Los bloques del día se dibujan sobre este plan — no sobre la hora en que realmente empezaste. Usa "📅 Semana específica" abajo si una semana en particular tuvo (o va a tener) un horario distinto de tu plantilla — queda guardada aparte, sin perder la de siempre.</p>
-</div>
-<button aria-label="Cerrar" class="modal-close" data-close-modal="shiftModal" type="button">×</button>
-</div>
-<div class="day-tabs" id="scheduleModeTabs">
-<button class="day-tab active" data-mode="template" type="button">🔁 Plantilla</button>
-<button class="day-tab" data-mode="week" type="button">📅 Semana específica</button>
-</div>
-<div id="scheduleWeekNav" style="display:none;">
-<div class="week-nav" style="margin: 4px 0 8px;">
-<button id="scheduleWeekPrevBtn" type="button">‹ Anterior</button>
-<button id="scheduleWeekTodayBtn" type="button">Semana actual</button>
-<button id="scheduleWeekNextBtn" type="button">Siguiente ›</button>
-</div>
-<p class="alert-hint" id="scheduleWeekRangeLabel" style="margin:0 0 8px;">—</p>
-<div class="field" style="margin-bottom:8px;">
-<label style="display:flex; align-items:center; gap:8px;"><input id="scheduleWeekCustomInput" type="checkbox"/> Personalizar el horario de esta semana (distinto a la plantilla)</label>
-</div>
-<p class="alert-hint" id="scheduleWeekLockedNote" style="display:none; color: var(--warn);">🔒 Esta semana ya pasó — queda protegida, solo lectura.</p>
-</div>
-<div class="day-tabs" id="scheduleDayTabs"></div>
-<div class="goal-fields">
-<!-- Mismo bug/fix que currencyLabelInput arriba: flex:1 1 100% no
-     hace nada dentro de .goal-fields (display:grid) — grid-column: 1 / -1
-     es la forma correcta de ocupar el ancho completo. -->
-<div class="field" style="grid-column: 1 / -1;">
-<label style="display:flex; align-items:center; gap:8px;"><input id="dayOffInput" type="checkbox"/> Día libre (sin turno)</label>
-</div>
-</div>
-<div class="goal-fields">
-<div class="field">
-<label for="dayStartInput">Inicio</label>
-<input id="dayStartInput" inputmode="numeric" type="time"/>
-</div>
-<div class="field">
-<label for="dayEndInput">Fin</label>
-<input id="dayEndInput" inputmode="numeric" type="time"/>
-</div>
-</div>
-<div class="field" style="flex:1 1 100%; margin-bottom:0;">
-<label style="font-weight:900;">Bloques (Trabajo / Break / Lunch)</label>
-</div>
-<div class="gap-editor-list" id="blocksEditorList"></div>
-<div class="modal-actions" style="margin-top:0;">
-<button class="warn" id="addBlockBtn" type="button">+ Agregar bloque</button>
-</div>
-<div class="alert-group">
-<div class="alert-group-head">
-<span class="alert-group-icon">⏱️</span>
-<span class="alert-group-title">Si llegas tarde a tu turno</span>
-</div>
-<select class="alert-select" id="lateArrivalModeInput">
-<option value="anchor">La hora de fin no se mueve (ese tiempo se pierde)</option>
-<option value="shift">Se corre todo el turno esa misma cantidad de tiempo</option>
-</select>
-<p class="alert-hint">Aplica a todos los días. Solo afecta cómo se ve "Bloques del día" — no cambia tu Adherencia.</p>
-</div>
-<div class="alert-group">
-<div class="alert-group-head">
-<span class="alert-group-icon">🎯</span>
-<span class="alert-group-title">Adherencia</span>
-</div>
-<div class="alert-fields-row">
-<div class="alert-mini-field">
-<label for="adherenceGraceMinInput">Minutos de gracia</label>
-<input id="adherenceGraceMinInput" inputmode="numeric" min="0" step="1" type="number"/>
-</div>
-<div class="alert-mini-field">
-<label for="adherenceGoalPctInput">Meta de Adherencia (%)</label>
-<input id="adherenceGoalPctInput" inputmode="numeric" max="100" min="1" step="1" type="number"/>
-</div>
-</div>
-<p class="alert-hint">"Bloques del día" calcula tu Adherencia minuto a minuto. La ventana de gracia perdona desvíos chicos cerca de cada transición del horario (ej. empezar un break unos minutos tarde) — 0 = cualquier desvío penaliza de inmediato. La Meta es tu objetivo personal de %, se compara contra tu Adherencia del día.</p>
-</div>
-<div class="modal-actions">
-<button class="warn" id="copyDayToAllBtn" type="button">Copiar a Lunes-Viernes</button>
-<button class="warn" id="copyWeekendBtn" type="button">Copiar a Sábado-Domingo</button>
-<button class="primary" id="saveShiftWindowBtn" type="button">Guardar día</button>
-<button data-close-modal="shiftModal" type="button">Listo</button>
-</div>
 </div>
 </div>
 <div aria-hidden="true" class="modal-overlay" id="notificationsModal">
@@ -13141,7 +13264,6 @@ function render() {
     function closeAllModals() {
       closeModal('goalsModal');
       closeModal('callsModal');
-      closeModal('shiftModal');
       closeModal('higherRateModal');
       closeModal('notificationsModal');
       closeModal('resetModal');
@@ -13256,7 +13378,26 @@ function render() {
       clockTimeVisible = !clockTimeVisible;
       renderHeader();
     });
-    document.getElementById('scheduleMiniBtn').addEventListener('click', () => { scheduleEditDay = weekdayKeyForDayKey(getActiveDayKey()); scheduleViewMode = 'template'; scheduleWeekOffset = 0; syncShiftModalFields(); openModal('shiftModal'); });
+    // v236 — "Horario" dejó de ser un modal (ver #scheduleConfigAccordion,
+    // más abajo en el HTML) y pasó a ser una sección expandible más de la
+    // página, como "Tabla de llamadas"/"Resumen semanal". Este botón ya no
+    // abre un popup: reinicia el mismo estado de edición de siempre
+    // (scheduleEditDay/scheduleViewMode/scheduleWeekOffset), sincroniza los
+    // campos (syncShiftModalFields(), sin cambios), y en vez de openModal()
+    // abre el <details> de esa sección y hace scroll suave hasta ahí —
+    // mismo patrón que ya usa la app al saltar a una fecha de "Resumen
+    // semanal" (ver el listener de [data-week-day], más abajo).
+    document.getElementById('scheduleMiniBtn').addEventListener('click', () => {
+      scheduleEditDay = weekdayKeyForDayKey(getActiveDayKey());
+      scheduleViewMode = 'template';
+      scheduleWeekOffset = 0;
+      syncShiftModalFields();
+      const section = document.getElementById('scheduleConfigAccordion');
+      if (section) {
+        section.open = true;
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
     // Pedido del usuario: horario por semana específica — tabs de modo
     // (Plantilla / Semana específica) + navegación entre semanas + checkbox
     // para activar/quitar la personalización de la semana que se está
