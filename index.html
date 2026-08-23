@@ -6314,58 +6314,82 @@
        nueva — Work=cyan, Break=neutro, Lunch=good, mismo mapeo que ya
        usa data-accent en el resto de la app. */
 
-    /* ---- Resumen de arriba: 3 mini-tarjetas en vez de píldoras en fila ---- */
+    /* ---- Resumen de arriba: 3 mini-tarjetas (v277 — rediseño pedido por el
+       usuario: la v276 quedó demasiado grande (número a 22px) tanto en
+       escritorio como en mobile — en mobile además colapsaban a 1 columna
+       de ancho completo, agrandando el problema — y los colores (rosa
+       fijo para Adherencia + texto rojo/naranja de estado encima) se veían
+       feos/en conflicto entre sí. Se compactan al mismo lenguaje visual que
+       ya usan las tarjetas de "Turno de Hoy" (`.block-summary-card`):
+       tamaño chico (padding ~9px, texto ~11-14px en vez de 22px), acento
+       sutil de borde/fondo por categoría (cyan/warn/blue, el mismo trío que
+       ya usa Shift/Break/Lunch — se quita el rosa, que no combinaba bien
+       con el rojo de estado "bad") y SIEMPRE 3 columnas (también en mobile,
+       igual que el grid de Turno de Hoy), no 1 columna apilada. El ícono de
+       cada label es puramente decorativo (::before por atributo
+       data-metric) — no toca ningún id/clase funcional. Los badges reales
+       (#adherenceBadge/#adherenceGoalBadge/#productivityGoalBadge) siguen
+       siendo el mismo <span class="slot-status"> de siempre, con el mismo
+       texto/clase good/warn/bad que ya les pone renderSchedule() — solo se
+       redimensionan. */
     .sched-blocks-summary-row {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
+      gap: 8px;
       margin-bottom: 4px;
-    }
-    @media (max-width: 620px) {
-      .sched-blocks-summary-row { grid-template-columns: 1fr; }
     }
     .sched-blocks-summary-card {
       border-radius: 14px;
-      padding: 12px 14px;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,.025);
+      padding: 9px 10px;
+      border: 1px solid rgba(var(--sbc-rgb), .26);
+      background: rgba(var(--sbc-rgb), .07);
+      display: grid;
+      gap: 4px;
       min-width: 0;
     }
-    .sched-blocks-summary-card[data-metric="adherence"] {
-      background: rgba(var(--pink-rgb), .07);
-      border-color: rgba(var(--pink-rgb), .24);
-    }
-    .sched-blocks-summary-card[data-metric="goal"] {
-      background: rgba(var(--warn-rgb), .07);
-      border-color: rgba(var(--warn-rgb), .24);
-    }
-    .sched-blocks-summary-card[data-metric="productivity"] {
-      background: rgba(var(--blue-rgb), .07);
-      border-color: rgba(var(--blue-rgb), .24);
-    }
+    .sched-blocks-summary-card[data-metric="adherence"] { --sbc-rgb: var(--cyan-rgb); }
+    .sched-blocks-summary-card[data-metric="goal"] { --sbc-rgb: var(--warn-rgb); }
+    .sched-blocks-summary-card[data-metric="productivity"] { --sbc-rgb: var(--blue-rgb); }
     .sched-blocks-summary-label {
-      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
       font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: .05em;
+      letter-spacing: .04em;
       color: var(--muted);
+      min-width: 0;
     }
+    .sched-blocks-summary-label::before {
+      flex: 0 0 auto;
+      font-size: 11px;
+      line-height: 1;
+    }
+    .sched-blocks-summary-card[data-metric="adherence"] .sched-blocks-summary-label::before { content: '🎯'; }
+    .sched-blocks-summary-card[data-metric="goal"] .sched-blocks-summary-label::before { content: '🏁'; }
+    .sched-blocks-summary-card[data-metric="productivity"] .sched-blocks-summary-label::before { content: '⚡'; }
     /* Los badges reales (#adherenceBadge/#adherenceGoalBadge/
        #productivityGoalBadge) siguen siendo el mismo <span class="slot-status">
-       de siempre — aquí, dentro de su propia mini-tarjeta, se agrandan y
-       pierden la forma de "pastilla" para leerse como el número grande del
-       mockup, sin tocar el texto/clase que ya les pone renderSchedule(). */
+       de siempre — aquí, dentro de su propia mini-tarjeta, se leen como un
+       valor chico y bold (color de la categoría por default, o good/warn/
+       bad si aplica), sin tocar el texto/clase que ya les pone
+       renderSchedule(). Sin nowrap/ellipsis a propósito — textos como "Meta
+       90% — te faltan 77pts" o "Meta productiva: 228/300 min" necesitan
+       poder pasar a una 2da línea en vez de cortarse. */
     .sched-blocks-summary-card .slot-status {
       display: block;
       width: auto;
       background: transparent;
       border: none;
       padding: 0;
-      margin-top: 4px;
-      font-size: 22px;
+      margin-top: 0;
+      font-size: 13px;
+      line-height: 1.25;
       font-weight: 900;
-      letter-spacing: -.02em;
-      color: var(--text);
+      letter-spacing: -.01em;
+      color: rgb(var(--sbc-rgb));
+      white-space: normal;
     }
     .sched-blocks-summary-card .slot-status.good { color: var(--good); }
     .sched-blocks-summary-card .slot-status.warn { color: var(--warn); }
@@ -6374,17 +6398,29 @@
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      gap: 8px;
+      gap: 6px;
       cursor: pointer;
       list-style: none;
     }
     .sched-blocks-summary-summary::-webkit-details-marker { display: none; }
     .sched-blocks-summary-card .mini-accordion-toggle {
       flex: 0 0 auto;
-      margin-top: 2px;
+      margin-top: 1px;
+      font-size: 10px;
+      color: var(--muted);
     }
     .sched-blocks-summary-card .mini-accordion-body {
-      margin-top: 10px;
+      margin-top: 8px;
+      padding: 8px 9px;
+      font-size: 11.5px;
+    }
+    @media (max-width: 620px) {
+      .sched-blocks-summary-row { gap: 5px; }
+      .sched-blocks-summary-card { padding: 7px 6px; border-radius: 11px; gap: 3px; }
+      .sched-blocks-summary-label { font-size: 8.5px; gap: 3px; }
+      .sched-blocks-summary-label::before { font-size: 9.5px; }
+      .sched-blocks-summary-card .slot-status { font-size: 11px; }
+      .sched-blocks-summary-card .mini-accordion-toggle { font-size: 9px; }
     }
     /* "Fuera de adherencia ahora" — banner de ancho completo debajo de las
        3 mini-tarjetas (antes vivía metido en la misma fila que las
