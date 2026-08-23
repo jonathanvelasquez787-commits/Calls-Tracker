@@ -1469,9 +1469,25 @@
        completa debajo (.hero-actions), separada, alineados a la izquierda
        (bajo la marca) — pedido del usuario: se ven mejor ahí que a la
        derecha (bajo Reiniciar, que es como arrancó este cambio). */
+    /* v247 — Pedido del usuario (con captura): "Oscuro"/"Higher Rate"/
+       "Ajustes" no quedaban a la misma altura que "Propio Shift Tracker"
+       — Reiniciar sí debe seguir cayendo debajo de Ajustes en mobile (ver
+       v245/v246), pero el resto del grupo debía verse en la misma fila que
+       la marca. Causa: `align-items: center` centraba verticalmente los 2
+       hijos de esta fila (la marca, de una sola línea, y todo el grupo de
+       botones) contra el más alto de los dos — y el más alto es
+       `.hero-top-actions`, que en mobile mide más por llevar apilados
+       Ajustes+Reiniciar (ver `.hero-ajustes-reset-group`). Centrar ese
+       grupo más alto contra la marca empujaba a la marca hacia abajo
+       respecto al top de Oscuro/Higher Rate/Ajustes (que ya están
+       alineados por arriba dentro de su propio contenedor, ver v246).
+       `flex-start` alinea ambos lados de la fila por arriba en vez de
+       centrarlos — el top de la marca ahora coincide con el top de esos 3
+       botones, y Reiniciar se sigue viendo debajo de Ajustes sin que esto
+       lo afecte. */
     .hero-top-row {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
       flex-wrap: wrap;
       gap: 8px;
@@ -5326,7 +5342,11 @@
   <div class="accordion-chevron">⌄</div>
 </summary>
 <div class="accordion-body">
-  <div class="note">Detalle de cada fila importada con su gap.</div>
+  <!-- v247 — Pedido del usuario (con captura): este `.note` repetía
+       exactamente el mismo texto que ya se ve en el subtítulo del
+       <summary> de arriba ("Detalle de cada fila importada con su gap."),
+       duplicado en pantalla. Se quita sin reemplazo — el subtítulo del
+       acordeón ya cumple ese rol. -->
   <!-- v244 — Pedido del usuario (con captura): "Vaciar llamadas del día"
        pasa de botón grande (clase `.bad` de `.modal-actions`, ocupando
        ancho completo, hasta abajo de la sección) a un botón CHICO, pegado
