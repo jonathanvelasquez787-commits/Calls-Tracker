@@ -1180,37 +1180,32 @@
       outline: none;
     }
 
-    /* v252 — Bug reportado por el usuario (con captura, después de 4
-       intentos previos sin resultado): "Oscuro"/"Higher Rate"/"Ajustes"
-       seguían sin verse a la misma altura que "Propio Shift Tracker",
-       pese a que v246/v247 ya habían alineado el TOP de `.hero-brand-row`
-       contra `.hero-top-actions` dentro de `.hero-top-row` (ver esos
-       comentarios, sin tocar) — pero ninguno de esos fixes tocó la
-       alineación INTERNA de `.hero-brand-row`, que es donde estaba la
-       causa real. `.hero-brand-row` centraba verticalmente
-       (`align-items: center`) sus 2 hijos: el botón ☰ (`#menuToggleBtn`,
-       tamaño FIJO 38×38px) y la píldora `.brand` (bastante más baja, ~28-
-       30px de alto según el padding del tema/ancho). Con `center`, el
-       texto "Propio Shift Tracker" quedaba centrado dentro de esos 38px
-       del botón ☰ — empujado ~19px desde el top real de la fila. Los
-       botones de `.hero-top-actions` (Oscuro/Higher Rate/Ajustes), al ser
-       de una sola línea con poco padding, centran su propio texto mucho
-       más arriba (~11-13px desde ese mismo top). Esa diferencia de ~6-7px
-       es la que se veía como "no están a la misma altura" en la captura.
-       `align-items: flex-start` hace que la píldora `.brand` ya no se
-       centre contra el botón ☰ (más alto) — ambos arrancan desde el mismo
-       top de `.hero-brand-row`, y con eso el texto de la píldora queda a
-       solo 1-2px del texto de los botones de acción (que ya arrancan del
-       mismo top por herencia de `.hero-top-actions`/`.hero-top-row`,
-       ambos con align-items:flex-start desde v247). El ícono ☰ en sí NO
-       se ve afectado — sigue centrado DENTRO de su propio botón de 38×38
-       (`.menu-toggle-btn` tiene su propio `align-items:center;
-       justify-content:center`, ajeno a esta regla) — solo cambia dónde
-       arranca esa caja de 38px respecto al resto de la fila, no cómo se
-       ve el ícono adentro. */
+    /* v253 — REVERSIÓN EXPLÍCITA de v252. El usuario vio el resultado (con
+       captura) y no le gustó: `align-items: flex-start` sí acercó el texto
+       de la píldora al de los botones, pero a costa de desalinear el
+       ÍCONO ☰ (que se quedó centrado dentro de su propia caja de 38×38,
+       ahora "colgando" más abajo respecto al resto, ya que esa caja ya no
+       se centraba contra nada). El usuario pidió lo contrario: que TODO
+       (ícono ☰, texto de la píldora, texto de cada botón) se alinee al
+       centro vertical del botón ☰ — no que el ☰ se quede fuera del reparto.
+       `align-items: center` es lo correcto para eso (centra cada hijo
+       contra el más alto del grupo, que es el ☰ de 38px) — el problema
+       real de v246/v247 (que motivó cambiar a flex-start en primer lugar)
+       NUNCA fue `center` en sí, sino que `.hero-ajustes-reset-group`
+       apilaba Ajustes+Reiniciar en mobile DENTRO de esta misma fila,
+       inflando la altura de `.hero-top-actions` muy por encima de los
+       38px del ☰ — centrar contra ESA altura inflada es lo que empujaba
+       todo hacia abajo. v253 saca a Reiniciar del flujo flex por completo
+       en mobile (ver `.hero-ajustes-reset-group`/`#resetHeaderBtn` más
+       abajo) — con eso, `.hero-top-actions` vuelve a medir lo mismo que
+       un botón de una sola línea, y `center` centra limpiamente TODO
+       (ícono, píldora, botones) contra los 38px del ☰, sin que Reiniciar
+       lo arruine. Ver el mismo criterio aplicado en `.hero-top-row`/
+       `.hero-top-actions` más abajo — los 3 niveles vuelven a `center` en
+       conjunto, ya no tiene sentido tenerlos en `flex-start`. */
     .hero-brand-row {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 10px;
     }
 
@@ -1497,25 +1492,19 @@
        completa debajo (.hero-actions), separada, alineados a la izquierda
        (bajo la marca) — pedido del usuario: se ven mejor ahí que a la
        derecha (bajo Reiniciar, que es como arrancó este cambio). */
-    /* v247 — Pedido del usuario (con captura): "Oscuro"/"Higher Rate"/
-       "Ajustes" no quedaban a la misma altura que "Propio Shift Tracker"
-       — Reiniciar sí debe seguir cayendo debajo de Ajustes en mobile (ver
-       v245/v246), pero el resto del grupo debía verse en la misma fila que
-       la marca. Causa: `align-items: center` centraba verticalmente los 2
-       hijos de esta fila (la marca, de una sola línea, y todo el grupo de
-       botones) contra el más alto de los dos — y el más alto es
-       `.hero-top-actions`, que en mobile mide más por llevar apilados
-       Ajustes+Reiniciar (ver `.hero-ajustes-reset-group`). Centrar ese
-       grupo más alto contra la marca empujaba a la marca hacia abajo
-       respecto al top de Oscuro/Higher Rate/Ajustes (que ya están
-       alineados por arriba dentro de su propio contenedor, ver v246).
-       `flex-start` alinea ambos lados de la fila por arriba en vez de
-       centrarlos — el top de la marca ahora coincide con el top de esos 3
-       botones, y Reiniciar se sigue viendo debajo de Ajustes sin que esto
-       lo afecte. */
+    /* v253 — REVERSIÓN EXPLÍCITA de v247 (ver comentario gemelo junto a
+       `.hero-brand-row`, más arriba): `flex-start` alineaba los TOPS de la
+       marca y del grupo de botones, pero el usuario pidió alinear los
+       CENTROS contra el ☰ — no lo mismo. Ahora que Reiniciar ya no infla
+       la altura de `.hero-top-actions` en mobile (ver
+       `.hero-ajustes-reset-group`/`#resetHeaderBtn`), ambos lados de esta
+       fila miden prácticamente lo mismo que el ☰ (38px) o menos, así que
+       `center` ya no arrastra nada hacia abajo de forma desproporcionada
+       — simplemente centra la marca y el grupo de botones contra el más
+       alto de los dos (el ☰), que es justo lo pedido. */
     .hero-top-row {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
       gap: 8px;
@@ -1540,22 +1529,22 @@
        para el mismo problema) — el grupo nunca se parte a una segunda
        línea; si no cabe todo, se desliza. max-width evita que en pantallas
        muy angostas el grupo empuje a la marca fuera de la fila. */
-    /* v246 — Pedido del usuario (con captura): en mobile, "Ajustes" se veía
-       más arriba que "Higher Rate" en vez de a la misma altura. Causa:
-       `align-items: center` centraba verticalmente cada hijo de esta fila
-       contra el más alto de todos — y el más alto es
-       `.hero-ajustes-reset-group` (Ajustes+Reiniciar apilados en columna en
-       mobile, ver esa regla más abajo), más alto que un solo botón de una
-       línea. Al centrarse, Higher Rate (una sola línea) quedaba a la mitad
-       de esa altura mayor, y Ajustes (arriba del todo de su propia columna)
-       terminaba por encima del top de Higher Rate. `flex-start` alinea todo
-       por arriba en vez de centrar — así el top de Ajustes coincide con el
-       top de Higher Rate. Sin cambio en escritorio: ahí el grupo es una
-       fila (no columna), misma altura que el resto, así que center vs.
-       flex-start se ven idénticos. */
+    /* v253 — REVERSIÓN EXPLÍCITA de v246 (ver comentario gemelo junto a
+       `.hero-top-row`). Aquella vez `flex-start` fue necesario porque
+       `.hero-ajustes-reset-group` apilaba Ajustes+Reiniciar en columna en
+       mobile, volviendo a `.hero-top-actions` mucho más alto que "Higher
+       Rate" solo — centrar contra esa altura inflada descuadraba todo.
+       Ahora Reiniciar ya no cuenta para la altura de este contenedor en
+       mobile (sale del flujo flex vía `position: absolute`, ver
+       `.hero-ajustes-reset-group`/`#resetHeaderBtn` más abajo) — con eso,
+       Oscuro/Higher Rate/Ajustes vuelven a medir todos lo mismo entre sí
+       (un solo botón de una línea, sin ninguno "más alto" por cargar un
+       segundo botón apilado debajo), así que `center` los alinea
+       limpiamente sin descuadrar nada — y de paso los centra correctamente
+       contra el ☰ de 38px al subir un nivel (`.hero-top-row`, ver ahí). */
     .hero-top-actions {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: flex-end;
       flex-wrap: nowrap;
       gap: 8px;
@@ -1578,11 +1567,17 @@
        cambio de fila→columna solo afecta a este par de botones, sin tocar
        el nowrap+scroll del resto del grupo (Oscuro/Higher Rate). Mismo
        breakpoint (760px) que ya usa el resto de la app para mobile. */
+    /* v253 — `position: relative` agregado: es el contexto de posicionamiento
+       que necesita `#resetHeaderBtn` para el `position: absolute` que se le
+       agrega en mobile (ver el @media de abajo) — sin efecto visual en
+       escritorio, donde Reiniciar se queda en flujo normal (fila) como
+       siempre. */
     .hero-ajustes-reset-group {
       display: flex;
       align-items: center;
       gap: 8px;
       flex-shrink: 0;
+      position: relative;
     }
 
     /* v249 — Ver comentario junto al @media de abajo (stretch): con ambos
@@ -1597,24 +1592,41 @@
     }
 
     @media (max-width: 760px) {
-      /* v249 — Pedido del usuario (con captura, 3ra vez que se reporta este
-         mismo grupo): "Reiniciar" no se veía bien debajo de "Ajustes" pese
-         a los fixes de v246/v247 (esos arreglaron la ALTURA — que el grupo
-         quedara a la misma altura que la marca/Higher Rate — pero nunca
-         tocaron esto). Causa real, sin tocar hasta ahora: `align-items:
-         flex-end` solo alinea el BORDE DERECHO de los 2 botones — como
-         "♻️ Reiniciar" es más ancho que "⚙️ Ajustes", el ancho de cada
-         botón queda distinto, y Reiniciar se extendía más hacia la
-         izquierda que Ajustes (mismo borde derecho, pero Ajustes con hueco
-         vacío a su izquierda) — se veía descuadrado en vez de una columna
-         limpia. `stretch` iguala el ancho de AMBOS botones al del más ancho
-         (Reiniciar) — con el mismo ancho, los 2 bordes (izquierdo y
-         derecho) coinciden entre sí, Reiniciar queda de verdad debajo de
-         Ajustes, no solo alineado por un lado. */
-      .hero-ajustes-reset-group {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 6px;
+      /* v253 — REVERSIÓN EXPLÍCITA de v249. El enfoque de v249 (columna +
+         stretch, ambos botones dentro del flujo flex normal) funcionaba
+         para que Reiniciar quedara bien alineado debajo de Ajustes, pero
+         tenía un efecto secundario que motivó v246/v247 y que el usuario
+         volvió a reportar en v252/v253: al vivir DENTRO del flujo flex de
+         `.hero-top-actions`, la columna apilada (Ajustes+Reiniciar, ~2x la
+         altura de un botón normal) inflaba la altura de TODA
+         `.hero-top-actions` muy por encima de los 38px del botón ☰ — y
+         cualquier intento de centrar esta fila contra esa altura inflada
+         terminaba empujando algo (la marca, o el resto de los botones)
+         fuera de su lugar. Se saca a Reiniciar del flujo flex por completo
+         con `position: absolute`, flotando debajo de Ajustes (que se queda
+         como el único hijo "real" en flujo de `.hero-ajustes-reset-group`)
+         — así la altura de `.hero-top-actions` vuelve a ser la de un botón
+         de una sola línea, igual que Oscuro/Higher Rate, y `align-items:
+         center` en los 3 niveles (`.hero-top-row`/`.hero-top-actions`/
+         `.hero-brand-row`, ver esas reglas) puede centrar TODO limpiamente
+         contra el ☰ sin que Reiniciar lo arruine. `left:0; right:0` iguala
+         el ancho de Reiniciar al de Ajustes automáticamente (mismo
+         resultado visual que el `stretch` de v249, pero sin que Reiniciar
+         cuente para la altura del contenedor) — el ancho de
+         `.hero-ajustes-reset-group` en mobile ahora lo define solo Ajustes
+         (su único hijo en flujo), y Reiniciar hereda ese mismo ancho por
+         quedar posicionado respecto a ese mismo contenedor
+         (`position: relative` en `.hero-ajustes-reset-group`, ver arriba).
+         Como Reiniciar ya no ocupa espacio real en el documento, se
+         compensa el hueco que deja con más `margin-bottom` en
+         `.hero-top-row` (ver esa regla, dentro de este mismo @media más
+         abajo) — si no, se vería flotando encima del saludo ("Buen día"). */
+      .hero-ajustes-reset-group #resetHeaderBtn {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        margin-top: 6px;
       }
     }
 
@@ -4866,7 +4878,18 @@
       .hero, .card, .table-card, .list-card, .mini { padding: 14px; }
       .hero { margin-bottom: 10px; }
       .brand { padding: 6px 10px; font-size: 10.5px; }
-      .hero-top-row { margin-bottom: 10px; }
+      /* v253 — Ver comentario junto a `.hero-ajustes-reset-group
+         #resetHeaderBtn` (arriba, mismo @media): "♻️ Reiniciar" ahora es
+         `position: absolute` en mobile — ya NO ocupa espacio real en el
+         documento, así que sin este ajuste quedaría flotando encima del
+         saludo ("Buen día...") que viene justo debajo. Se sube el margen de
+         10px (el mismo valor de siempre) a 46px — suficiente para el alto
+         de un botón chico (~24-26px con el padding/tipografía de esta misma
+         sección) + los 6px de separación que ya trae `margin-top` en
+         `#resetHeaderBtn` + un pequeño colchón. Sin cambio en escritorio
+         (>760px): ahí Reiniciar sigue en flujo normal, al lado de Ajustes,
+         sin necesitar espacio extra. */
+      .hero-top-row { margin-bottom: 46px; }
       .hero-actions { gap: 5px; margin-bottom: 18px; }
       .hero-action-btn { padding: 5px 8px; font-size: 10.5px; gap: 4px; }
       .title-row { flex-direction: column; align-items: flex-start; gap: 2px; }
