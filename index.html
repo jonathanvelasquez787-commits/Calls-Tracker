@@ -552,10 +552,19 @@
          HOVER real: `.day-tab.active` (pestaña ya seleccionada) y
          `.rate-tile.selected` (nivel ya elegido) son estados persistentes,
          no hover, y se quedan en blanco tal como estaban — buscar "v224". */
+      /* v232 — Pedido del usuario: mismo azul "aero" ya confirmado para
+         Resumen semanal/Ganancias del ciclo (v230/v231) se extiende a TODOS
+         los botones de modo claro que hasta ahora se ponían negro
+         (var(--text)) al hacer hover — continuación de la decisión ya
+         tomada, no un mockup nuevo. background/border-color pasan de
+         var(--text) a #4a90e2 y el texto a blanco sólido (antes
+         var(--hover-flip), que en este tema es azul — texto azul sobre
+         fondo ahora también azul perdía todo el contraste). */
       :root:not(.theme-dark) .hero-action-btn:not(.danger):hover,
       :root:not(.theme-dark) .hero-action-btn:not(.danger):focus-visible {
-        background: var(--text);
-        color: var(--hover-flip); /* v227 */
+        background: #4a90e2;
+        border-color: #4a90e2;
+        color: #fff;
       }
       /* Pedido del usuario (v217): "Reiniciar" pasa de rosa/magenta
          (--pink-rgb, heredado de --primary en este tema) a un rojo de
@@ -582,18 +591,29 @@
          bloque, v208 — fondo oscuro sólido + texto blanco), que es
          EXACTAMENTE el mismo criterio que ya usa `.gap-edit-btn:hover`
          (regla justo debajo) — mismo resultado visual sin duplicar CSS. */
+      /* v232 — Ver comentario junto a .hero-action-btn arriba (mismo
+         cambio: negro→azul aero, texto a blanco sólido). */
       :root:not(.theme-dark) .gap-edit-btn:hover {
-        background: var(--text);
-        color: var(--hover-flip); /* v224 */
+        background: #4a90e2;
+        border-color: #4a90e2;
+        color: #fff;
       }
+      /* v232 — Ver comentario junto a .hero-action-btn arriba. */
       :root:not(.theme-dark) .day-nav-btn:hover,
       :root:not(.theme-dark) .day-nav-btn:focus-visible {
-        background: var(--text);
-        color: var(--hover-flip); /* v224 */
+        background: #4a90e2;
+        border-color: #4a90e2;
+        color: #fff;
       }
+      /* v232 — Ver comentario junto a .hero-action-btn arriba. Cubre
+         también "Semana específica" en Horario (#scheduleWeekNav), el único
+         .week-nav que no tenía ya el override aero de v230/v231 — con este
+         cambio en la regla base, los 3 lugares que usan .week-nav quedan
+         consistentes. */
       :root:not(.theme-dark) .week-nav button:hover {
-        background: var(--text);
-        color: var(--hover-flip); /* v224 */
+        background: #4a90e2;
+        border-color: #4a90e2;
+        color: #fff;
       }
       /* Pedido del usuario (v230, corregido v231): SOLO estos 2 grupos de
          botones (Resumen semanal / Ganancias del ciclo) pasan, en modo
@@ -622,16 +642,23 @@
         border-color: var(--text);
         color: #fff;
       }
+      /* v232 — Ver comentario junto a .hero-action-btn arriba. */
       :root:not(.theme-dark) .modal-close:hover {
-        background: var(--text);
-        color: var(--hover-flip); /* v224 */
+        background: #4a90e2;
+        border-color: #4a90e2;
+        color: #fff;
       }
+      /* v232 — Ver comentario junto a .hero-action-btn arriba. Botones
+         neutros de modales (ej. "Listo", "Cancelar" sin color propio —
+         los que ya son .primary/.warn/.bad no entran aquí, tienen su
+         propio hover de color, sin tocar). */
       :root:not(.theme-dark) .button-row button:hover,
       :root:not(.theme-dark) .import-actions button:hover,
       :root:not(.theme-dark) .footer-tools button:hover,
       :root:not(.theme-dark) .modal-actions button:hover {
-        background: var(--text);
-        color: var(--hover-flip); /* v224 */
+        background: #4a90e2;
+        border-color: #4a90e2;
+        color: #fff;
       }
       :root:not(.theme-dark) .modal-actions button.warn:hover,
       :root:not(.theme-dark) .button-row button.warn:hover {
@@ -643,24 +670,26 @@
         background: rgb(var(--pink-rgb));
         color: #fff;
       }
+      /* v232 — Ver comentario junto a .hero-action-btn arriba. */
       :root:not(.theme-dark) .rate-tile:hover,
       :root:not(.theme-dark) .rate-tile:focus-visible,
       :root:not(.theme-dark) .rate-tile.selected {
-        background: var(--text);
-        border-color: var(--text);
+        background: #4a90e2;
+        border-color: #4a90e2;
       }
       :root:not(.theme-dark) .rate-tile:hover .rate-tile-amount,
       :root:not(.theme-dark) .rate-tile:hover .rate-tile-label {
-        color: var(--hover-flip); /* v224 */
+        color: #fff;
       }
       :root:not(.theme-dark) .rate-tile.selected .rate-tile-amount,
       :root:not(.theme-dark) .rate-tile.selected .rate-tile-label {
         color: #fff;
       }
+      /* v232 — Ver comentario junto a .hero-action-btn arriba. */
       :root:not(.theme-dark) .emoji-option:hover,
       :root:not(.theme-dark) .emoji-option.selected {
-        background: var(--text);
-        border-color: var(--text);
+        background: #4a90e2;
+        border-color: #4a90e2;
       }
       :root:not(.theme-dark) .emoji-option.emoji-clear:hover {
         color: #fff;
@@ -870,10 +899,12 @@
     }
     /* Ver comentario gemelo en la rama @media de arriba (v224) — mismo
        criterio, mismas reglas. */
+    /* v232 — Ver comentario gemelo en la rama @media de arriba. */
     html.theme-light .hero-action-btn:not(.danger):hover,
     html.theme-light .hero-action-btn:not(.danger):focus-visible {
-      background: var(--text);
-      color: var(--hover-flip); /* v227 */
+      background: #4a90e2;
+      border-color: #4a90e2;
+      color: #fff;
     }
     /* Ver comentarios gemelos en la rama @media de arriba (v217) — mismo
        criterio, mismas reglas. */
@@ -891,18 +922,24 @@
        botones vuelven a heredar `.hero-action-btn:not(.danger):hover`
        (fondo oscuro sólido + texto blanco), igual que `.gap-edit-btn:hover`
        justo debajo. */
+    /* v232 — Ver comentario gemelo en la rama @media de arriba. */
     html.theme-light .gap-edit-btn:hover {
-      background: var(--text);
-      color: var(--hover-flip); /* v224 */
+      background: #4a90e2;
+      border-color: #4a90e2;
+      color: #fff;
     }
+    /* v232 — Ver comentario gemelo en la rama @media de arriba. */
     html.theme-light .day-nav-btn:hover,
     html.theme-light .day-nav-btn:focus-visible {
-      background: var(--text);
-      color: var(--hover-flip); /* v224 */
+      background: #4a90e2;
+      border-color: #4a90e2;
+      color: #fff;
     }
+    /* v232 — Ver comentario gemelo en la rama @media de arriba. */
     html.theme-light .week-nav button:hover {
-      background: var(--text);
-      color: var(--hover-flip); /* v224 */
+      background: #4a90e2;
+      border-color: #4a90e2;
+      color: #fff;
     }
     /* Ver comentario gemelo en la rama @media de arriba (v230/v231) — mismo
        criterio, mismas reglas. */
@@ -917,16 +954,20 @@
       border-color: var(--text);
       color: #fff;
     }
+    /* v232 — Ver comentario gemelo en la rama @media de arriba. */
     html.theme-light .modal-close:hover {
-      background: var(--text);
-      color: var(--hover-flip); /* v224 */
+      background: #4a90e2;
+      border-color: #4a90e2;
+      color: #fff;
     }
+    /* v232 — Ver comentario gemelo en la rama @media de arriba. */
     html.theme-light .button-row button:hover,
     html.theme-light .import-actions button:hover,
     html.theme-light .footer-tools button:hover,
     html.theme-light .modal-actions button:hover {
-      background: var(--text);
-      color: var(--hover-flip); /* v224 */
+      background: #4a90e2;
+      border-color: #4a90e2;
+      color: #fff;
     }
     html.theme-light .modal-actions button.warn:hover,
     html.theme-light .button-row button.warn:hover {
@@ -938,24 +979,26 @@
       background: rgb(var(--pink-rgb));
       color: #fff;
     }
+    /* v232 — Ver comentario gemelo en la rama @media de arriba. */
     html.theme-light .rate-tile:hover,
     html.theme-light .rate-tile:focus-visible,
     html.theme-light .rate-tile.selected {
-      background: var(--text);
-      border-color: var(--text);
+      background: #4a90e2;
+      border-color: #4a90e2;
     }
     html.theme-light .rate-tile:hover .rate-tile-amount,
     html.theme-light .rate-tile:hover .rate-tile-label {
-      color: var(--hover-flip); /* v224 */
+      color: #fff;
     }
     html.theme-light .rate-tile.selected .rate-tile-amount,
     html.theme-light .rate-tile.selected .rate-tile-label {
       color: #fff;
     }
+    /* v232 — Ver comentario gemelo en la rama @media de arriba. */
     html.theme-light .emoji-option:hover,
     html.theme-light .emoji-option.selected {
-      background: var(--text);
-      border-color: var(--text);
+      background: #4a90e2;
+      border-color: #4a90e2;
     }
     html.theme-light .emoji-option.emoji-clear:hover {
       color: #fff;
