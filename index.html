@@ -1145,6 +1145,227 @@
     * { box-sizing: border-box; }
     html, body { min-height: 100%; }
     html { -webkit-tap-highlight-color: transparent; }
+
+    /* v238 — Pedido del usuario: menú lateral tipo hamburguesa para dividir
+       la app en 4 páginas (Inicio/Horario/Reportes/Ajustes). Confirmado con
+       el usuario antes de escribir código:
+       - Mobile: overlay que cubre el contenido (position:fixed, con un
+         fondo semitransparente detrás que cierra el menú al tocarlo).
+       - Escritorio: colapsado por default (mismo overlay que mobile), pero
+         con un botón "📌 Fijar" que lo deja fijo/visible (empuja el
+         contenido en vez de taparlo, ver body.sidebar-pinned más abajo).
+       El botón ☰ vive junto a la marca en el header (.hero-top-row),
+       visible en TODAS las páginas — no se toca nada de lo que ya existe
+       ahí, solo se agrega al lado.
+       Un solo <nav id="sidebarNav"> para ambos anchos (mobile/desktop) —
+       la diferencia de comportamiento (overlay vs. fijo) es puramente CSS,
+       activada por las clases `.sidebar-open`/`.sidebar-pinned` en <body>. */
+    .menu-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      font-size: 17px;
+      cursor: pointer;
+      flex: 0 0 auto;
+    }
+    .menu-toggle-btn:hover,
+    .menu-toggle-btn:focus-visible {
+      background: rgba(255,255,255,.09);
+      outline: none;
+    }
+
+    .hero-brand-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Fondo semitransparente detrás del menú — solo se ve/es clickeable
+       mientras el menú está abierto Y no está fijado (ver
+       body.sidebar-pinned, que lo oculta por completo ya que el sidebar
+       fijo no necesita "cerrarse" tocando afuera). */
+    .sidebar-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 10, 20, .55);
+      backdrop-filter: blur(2px);
+      z-index: 90;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease;
+      border: 0;
+      padding: 0;
+      cursor: default;
+    }
+    body.sidebar-open:not(.sidebar-pinned) .sidebar-overlay {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .sidebar-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: min(280px, 84vw);
+      background: var(--panel-2);
+      border-right: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      z-index: 95;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 16px 12px;
+      transform: translateX(-100%);
+      transition: transform .2s ease;
+      overflow-y: auto;
+    }
+    body.sidebar-open .sidebar-nav {
+      transform: translateX(0);
+    }
+
+    .sidebar-nav-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 4px 6px 12px;
+      margin-bottom: 6px;
+      border-bottom: 1px solid var(--line);
+    }
+    .sidebar-nav-title {
+      font-weight: 900;
+      font-size: 13px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .sidebar-nav-head-actions {
+      display: flex;
+      gap: 6px;
+    }
+    .sidebar-icon-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sidebar-icon-btn:hover { background: rgba(255,255,255,.09); color: var(--text); }
+    /* El botón de fijar (📌) se resalta con el acento cian mientras el
+       sidebar está fijado, para que quede claro que ese es el estado
+       activo — mismo criterio visual que ya usa `.day-tab.active` u otros
+       toggles de la app. */
+    .sidebar-icon-btn[aria-pressed="true"] {
+      color: var(--cyan);
+      border-color: rgba(var(--cyan-rgb), .5);
+      background: rgba(var(--cyan-rgb), .12);
+    }
+    /* En mobile no tiene sentido "fijar" el sidebar (no hay espacio de
+       sobra que empujar) — se oculta el botón, dejando solo "cerrar". */
+    @media (max-width: 900px) {
+      #sidebarPinBtn { display: none; }
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text);
+      font-weight: 700;
+      font-size: 14px;
+      text-align: left;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .sidebar-link:hover {
+      background: rgba(255,255,255,.06);
+    }
+    .sidebar-link.active {
+      background: rgba(var(--cyan-rgb), .14);
+      border-color: rgba(var(--cyan-rgb), .35);
+      color: var(--text);
+    }
+
+    /* Escritorio con el sidebar FIJADO (pedido del usuario: "colapsado
+       pero con opción de fijar abierto"): el sidebar deja de flotar sobre
+       el contenido y en vez empuja `.app` hacia la derecha — mismo ancho
+       fijo (280px) reservado con `margin-left` en el contenido. Sin
+       fijar, el comportamiento es idéntico al de mobile (overlay que
+       flota encima, se cierra tocando afuera o con "✕"). */
+    @media (min-width: 901px) {
+      body.sidebar-pinned .sidebar-nav {
+        transform: translateX(0);
+      }
+      body.sidebar-pinned .app,
+      body.sidebar-pinned .live-activity-bar {
+        margin-left: min(280px, 84vw);
+      }
+    }
+
+    /* Páginas: cada `.app-page` agrupa las secciones de una de las 4
+       páginas del menú (Inicio/Horario/Reportes/Ajustes) — se oculta con
+       el atributo `hidden` nativo (ver navigateToPage() en el JS) en vez
+       de un toggle de clase, para no pelear con ningún `display` ya
+       declarado en otras reglas. #heroSection vive FUERA de `.app-page`
+       (es persistente entre las 4 páginas, ver HTML) — sin cambios ahí. */
+    .app-page[hidden] { display: none; }
+
+    /* Página de Ajustes: 3 botones grandes (Ajustes/Avisos/Reiniciar, cada
+       uno abre su propio modal de siempre — ningún modal cambió) en vez de
+       los botones chicos que antes vivían sueltos en el header. Mismo
+       lenguaje visual que `.rate-tile`/`.hero-action-btn` (borde sutil,
+       fondo tenue, hover con más presencia) pero en formato de fila ancha
+       con subtítulo, más apropiado para una página completa que para una
+       barra de botones chicos. */
+    .settings-menu-card {
+      display: grid;
+      gap: 10px;
+    }
+    .settings-menu-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      padding: 16px 18px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      font-weight: 900;
+      font-size: 15px;
+      text-align: left;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+    .settings-menu-btn:hover {
+      background: rgba(255,255,255,.06);
+    }
+    .settings-menu-btn.danger {
+      color: var(--pale-bad);
+      border-color: rgba(251, 113, 133, .35);
+    }
+    .settings-menu-sub {
+      font-weight: 600;
+      font-size: 12.5px;
+      color: var(--muted);
+    }
     /* Bug reportado por el usuario: "Ganancias de hoy" (y en general la
        parte de arriba de la página) se ponía cada vez más verde/turquesa
        según más secciones expandibles se abrían (Bloques del día, Tabla de
@@ -2546,29 +2767,29 @@
          se queda estirada a los 1500px de `.app` en vez de los 1200px del
          resto (bug real de v181, reportado por el usuario con captura). Ver
          nota de metodología en el .md sobre esta checklist. */
-      #earningsAccordion,
-      #todayShiftAccordion,
-      #cycleAccordion,
-      #callsSection,
-      #scheduleConfigAccordion,
-      #scheduleAccordion,
+      /* v238 — Pedido del usuario: menú lateral con 4 páginas (Inicio/
+         Horario/Reportes/Ajustes) — cada sección top-level ahora vive
+         dentro de un contenedor `.app-page` (ver más abajo, junto a
+         #heroSection en el HTML) en vez de ser hija DIRECTA de `.app`. Se
+         reemplaza la lista de IDs sueltos (que había que recordar
+         actualizar cada vez que se agregaba una sección nueva — ver nota
+         de v181 arriba, la razón de ser de esta checklist) por un selector
+         de CLASE (`.app-page > .accordion-card`, `.app-page >
+         section.card`) que cubre automáticamente cualquier sección
+         presente o futura dentro de una página, sin volver a tocar esta
+         regla. #heroSection se queda aparte (vive fuera de `.app-page`,
+         es el único elemento persistente entre las 4 páginas) y
+         #callTableAccordion/#weekSummaryAccordion ya no son hijas de
+         `.grid` (se movieron a Inicio/Reportes respectivamente, ver HTML)
+         así que ya no hace falta `justify-self` — el mismo margin:auto de
+         siempre las centra igual que al resto. */
+      .app-page > .accordion-card,
+      .app-page > section.card,
+      .app-page > .day-stats-grid,
       #heroSection {
         max-width: 1200px;
         margin-left: auto;
         margin-right: auto;
-      }
-
-      #callTableAccordion,
-      #weekSummaryAccordion {
-        max-width: 1200px;
-        /* Estas 2 secciones son hijas de .grid (display:grid) — ahí
-           margin:auto NO centra un ítem (los ítems de grid se estiran por
-           default con justify-self:stretch, que es distinto al width:auto
-           de flujo normal que sí dispara el centrado con margin:auto). Se
-           usa justify-self:center, la forma correcta de centrar un ítem
-           dentro de su celda de grid. */
-        justify-self: center;
-        width: 100%;
       }
 
       /* Pedido del usuario: en v163 estas 2 tablas quedaron con scroll
@@ -3952,13 +4173,20 @@
        dentro de `.grid`) siguen sin necesitarlo — esos reciben su
        espaciado del `gap`/margen de su propio contenedor padre.
        v189: `#callsSection` (Llamadas) es otra sección top-level nueva,
-       directa de `.app` — se suma aquí por el mismo motivo. */
-    #earningsAccordion,
-    #todayShiftAccordion,
-    #cycleAccordion,
-    #callsSection,
-    #scheduleConfigAccordion,
-    #scheduleAccordion {
+       directa de `.app` — se suma aquí por el mismo motivo.
+       v238 — Pedido del usuario: menú lateral con 4 páginas. Todas las
+       secciones top-level ahora son hijas directas de un `.app-page` (una
+       por página, ver HTML) en vez de `.app` — mismo problema de fondo
+       (`.accordion-card`/`section.card` sin margen propio), así que se
+       reemplaza la lista de IDs por un selector de clase que cubre
+       cualquier sección presente o futura sin tener que volver a esta
+       regla (misma idea que el fix del bloque de max-width de arriba).
+       `#callTableAccordion`/`#weekSummaryAccordion` (antes anidados en
+       `.grid`, con su espaciado heredado del padre) ahora también son
+       hijos directos de su `.app-page` — se suman al mismo selector de
+       clase automáticamente, sin necesitar su propia excepción. */
+    .app-page > .accordion-card,
+    .app-page > section.card {
       margin-bottom: 14px;
     }
 
@@ -4745,18 +4973,34 @@
     <button aria-label="Descartar sin guardar" class="live-bar-btn live-bar-discard" id="liveBarDiscardBtn" type="button">✕</button>
   </div>
 </div>
+<!-- v238 — Pedido del usuario: menú lateral tipo hamburguesa con 4 páginas
+     (Inicio/Horario/Reportes/Ajustes). Overlay + <nav> viven FUERA de
+     `.app` (hermanos, mismo nivel que `.live-activity-bar`) para poder
+     quedar `position:fixed` sin heredar ningún padding/max-width del
+     contenido. El botón ☰ que los abre vive DENTRO del header (ver
+     `.hero-brand-row` más abajo), visible en las 4 páginas. -->
+<button aria-hidden="true" class="sidebar-overlay" id="sidebarOverlay" tabindex="-1" type="button"></button>
+<nav aria-label="Navegación principal" class="sidebar-nav" id="sidebarNav">
+<div class="sidebar-nav-head">
+<span class="sidebar-nav-title">Menú</span>
+<div class="sidebar-nav-head-actions">
+<button aria-label="Fijar menú abierto" aria-pressed="false" class="sidebar-icon-btn" id="sidebarPinBtn" title="Fijar menú abierto" type="button">📌</button>
+<button aria-label="Cerrar menú" class="sidebar-icon-btn" id="sidebarCloseBtn" type="button">✕</button>
+</div>
+</div>
+<button class="sidebar-link active" data-page="home" type="button">🏠 Inicio</button>
+<button class="sidebar-link" data-page="schedule" type="button">🗓️ Horario</button>
+<button class="sidebar-link" data-page="reports" type="button">📊 Reportes</button>
+<button class="sidebar-link" data-page="settings" type="button">⚙️ Ajustes</button>
+</nav>
 <div class="app"><section class="hero" id="heroSection">
 <div>
 <div class="hero-top-row">
+<div class="hero-brand-row">
+<button aria-expanded="false" aria-label="Abrir menú" class="menu-toggle-btn" id="menuToggleBtn" type="button">☰</button>
 <div class="brand"><span class="dot-state"></span>Propio Shift Tracker</div>
-<button class="hero-action-btn danger" id="resetDayMiniBtn" type="button">♻️ Reiniciar</button>
 </div>
-<div class="hero-actions">
 <button class="hero-action-btn" id="themeToggleBtn" type="button" title="Auto = sigue el modo de tu sistema. Toca para forzar Claro/Oscuro.">🌓 Auto</button>
-<button class="hero-action-btn" id="scheduleMiniBtn" type="button">🗓️ Horario</button>
-<button class="hero-action-btn" id="higherRateMiniBtn" type="button">🔥 Higher Rate</button>
-<button class="hero-action-btn" id="notificationsMiniBtn" type="button">🔔 Avisos</button>
-<button class="hero-action-btn" id="goalsMiniBtn" type="button">⚙️ Ajustes</button>
 </div>
 <div class="title-row">
 <div>
@@ -4801,6 +5045,13 @@
 </div>
 </section>
 
+<!-- v238 — Pedido del usuario: página "🏠 Inicio" del menú lateral —
+     Ganancias de hoy, Llamadas, Turno de Hoy (sin cambios de contenido) +
+     Tabla de llamadas (movida aquí desde el final de la página, ver
+     comentario junto a #callTableAccordion más abajo). El header
+     (#heroSection, arriba) queda FUERA de esta página a propósito — es
+     persistente entre las 4 páginas del menú, no exclusivo de Inicio. -->
+<div class="app-page" data-page="home" id="pageHome">
 <!-- Pedido del usuario (v199): "Ganancias de hoy" sube arriba de "Llamadas"
      — es lo primero que el usuario quiere ver al entrar (cuánto llevo),
      mientras que Llamadas son botones de acción que se usan varias veces
@@ -4890,103 +5141,38 @@
 </div>
 </details>
 
-<div class="day-stats-grid" id="dayStatsGrid">
-<details class="accordion-card" id="resumenDiaAccordion" open>
-<summary>
-<div class="accordion-head">
-<h2>📈 Resumen del día</h2>
-</div>
-<div class="accordion-chevron">⌄</div>
-</summary>
-<div class="accordion-body">
-<div class="stats-row">
-<div class="stat-cell"><span class="stat-label">Llamadas</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaLlamadas">0</span><span class="stat-sub">Total</span></div></div>
-<div class="stat-cell"><span class="stat-label">Productivo</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaProductivo">00:00:00</span><span class="stat-sub">Tiempo real</span></div></div>
-<div class="stat-cell"><span class="stat-label">ACW</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaACW">00:00:00</span><span class="stat-sub">Tiempo extra</span></div></div>
-<div class="stat-cell"><span class="stat-label">Adherencia</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaAdherencia">—</span><span class="stat-sub" id="resumenDiaAdherenciaGoal">Objetivo ≥ 95%</span></div></div>
-</div>
-<!-- Pedido del usuario (v199): desglose de tiempo no-llamada (Break/Lunch/
-     Otro, ya calculados por importedCallStats() para los tags de "Ganancias
-     de hoy"/Tabla de llamadas, pero sin lugar propio en "Resumen del día")
-     + el bono de Higher Rate ganado hoy (antes solo visible mezclado dentro
-     del monto total de Ganancias). Segunda fila del mismo componente
-     .stats-row — mismo estilo/responsive que la fila de arriba, sin CSS
-     nuevo. -->
-<div class="stats-row" style="margin-top:10px;">
-<div class="stat-cell"><span class="stat-label">Break</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaBreak">00:00:00</span><span class="stat-sub">Tiempo tomado</span></div></div>
-<div class="stat-cell"><span class="stat-label">Lunch</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaLunch">00:00:00</span><span class="stat-sub">Tiempo tomado</span></div></div>
-<div class="stat-cell"><span class="stat-label">Otro</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaOtro">00:00:00</span><span class="stat-sub">Sin clasificar</span></div></div>
-<div class="stat-cell"><span class="stat-label">Higher Rate</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaHigherRate">$0.00</span><span class="stat-sub">Bono ganado hoy</span></div></div>
-</div>
-</div>
-</details>
-<details class="accordion-card" id="statsAccordion" open>
-<summary>
-<div class="accordion-head">
-<h2>📊 Estadísticas del día</h2>
-</div>
-<div class="accordion-chevron">⌄</div>
-</summary>
-<div class="accordion-body">
-<div style="margin-top:4px;">
-<!-- Pedido del usuario (v202): "Más corta" mostraba el mínimo real (a veces
-     0 min, si Propio exportó una llamada rarísima con inicio=fin) sin
-     ninguna aclaración — se veía como si la app hubiera calculado mal. Se
-     agrega una nota debajo (statsShortestNote, oculta por default) que
-     aclara cuántas llamadas de 0 min hubo y cuál es la siguiente más corta
-     por encima de 0 — el número principal NO cambia, sigue siendo el
-     mínimo real. */-->
-<div class="stats-list-row-wrap">
-<div class="stats-list-row"><span>Más corta:</span><strong id="statsShortest">—</strong></div>
-<div class="gap-note" id="statsShortestNote" style="display:none;"></div>
-</div>
-<div class="stats-list-row"><span>Más larga:</span><strong id="statsLongest">—</strong></div>
-<div class="stats-list-row"><span>Promedio:</span><strong id="statsAvg">—</strong></div>
-<!-- Pedido del usuario (v199): hueco más largo/promedio del día (ya
-     calculados por importedCallStats() como gapLongest/gapAvg, sin lugar
-     propio hasta ahora) + pago promedio por llamada (Ganancias ÷ Total de
-     llamadas, cálculo nuevo y chico). Mismo componente .stats-list-row que
-     ya usa esta tarjeta, sin CSS nuevo. -->
-<div class="stats-list-row"><span>Hueco más largo:</span><strong id="statsGapLongest">—</strong></div>
-<div class="stats-list-row"><span>Hueco promedio:</span><strong id="statsGapAvg">—</strong></div>
-<div class="stats-list-row"><span>Pago promedio/llamada:</span><strong id="statsAvgPay">—</strong></div>
-</div>
-</div>
-</details>
-</div>
-
-<details class="accordion-card" id="cycleAccordion">
+<!-- v238 — Pedido del usuario: "Tabla de llamadas" se mueve aquí (antes
+     vivía al final de la página, dentro de `.grid` junto a "Resumen
+     semanal") para poder editar llamadas rápido sin salir de Inicio.
+     Ningún id cambió (callTableWrap/clearDayCallsBtn/etc.) — renderTable()
+     sigue funcionando exactamente igual, solo cambió dónde vive en el
+     HTML. */-->
+<details class="accordion-card" id="callTableAccordion">
 <summary>
   <div class="accordion-head">
-    <h2>Ganancias del ciclo</h2>
-    <p>Total del ciclo de pago actual (14 días) y la próxima fecha de pago.</p>
+    <h2>Tabla de llamadas</h2>
+    <p>Detalle de cada fila importada con su gap.</p>
   </div>
   <div class="accordion-chevron">⌄</div>
 </summary>
 <div class="accordion-body">
-<div class="week-nav">
-<button id="cyclePrevBtn" type="button">‹ Anterior</button>
-<button id="cycleCurrentBtn" type="button">Ciclo actual</button>
-<button id="cycleNextBtn" type="button">Siguiente ›</button>
-</div>
-<div class="earn-row">
-<div>
-<div class="earnings-big earnings-value-accent" style="font-size: clamp(24px, 3.2vw, 36px);" id="cycleEarningsValue">$0.00</div>
-<div class="helper" id="cycleEarningsConvertedText"></div>
-</div>
-<div class="goal-stack">
-<div class="goal-badge goal-soft" id="cycleRangeBadge">Ciclo: — – —</div>
-<div class="goal-badge goal-soft" id="cyclePayDateBadge">Pago: —</div>
-</div>
-</div>
-<div class="table-tags" style="margin-top:4px;">
-<span class="tag" id="cycleWeek1ProductiveTag">Semana 1: 00:00:00</span>
-<span class="tag" id="cycleWeek2ProductiveTag">Semana 2: 00:00:00</span>
-<span class="tag good" id="cycleTotalProductiveTag">Total: 00:00:00</span>
-</div>
+  <div class="note">Detalle de cada fila importada con su gap.</div>
+  <div class="table-wrap" id="callTableWrap"></div>
+  <div class="modal-actions" style="margin-top:0;">
+    <button class="bad" id="clearDayCallsBtn" type="button">🗑️ Vaciar llamadas del día</button>
+  </div>
+  <p class="alert-hint">Borra TODAS las llamadas de <strong id="clearDayCallsDayLabel">—</strong> (el día activo). No toca tu turno, pausas ni horario de ese día — para eso usa "Reiniciar día" en el botón ♻️ Reiniciar del header.</p>
 </div>
 </details>
 
+</div><!-- /pageHome -->
+
+<!-- v238 — Pedido del usuario: página "🗓️ Horario" del menú lateral —
+     Horario + Bloques del día (sin cambios de contenido) + Higher Rate
+     (antes un modal aparte via higherRateMiniBtn, ver comentario junto a
+     #higherRateAccordion más abajo — se integra aquí como sección
+     inline, misma clase .accordion-card que el resto). -->
+<div class="app-page" data-page="schedule" hidden id="pageSchedule">
 <!-- v236 — Pedido del usuario: "Horario" (antes un modal, #shiftModal) pasa
      a ser una sección expandible más de la página, mismo patrón que "Tabla
      de llamadas"/"Resumen semanal" (<details class="accordion-card">) —
@@ -5004,8 +5190,11 @@
      campos. Se quita el botón "Listo" (ya no hay modal que cerrar) y la
      "×" de cerrar (mismo motivo). Cerrado por defecto (como "Ganancias del
      ciclo") — es configuración, no algo que se necesite ver todo el
-     tiempo; el botón "🗓️ Horario" del header lo abre y hace scroll hasta
-     aquí (ver el listener de scheduleMiniBtn, más abajo). -->
+     tiempo.
+     v238 — El botón "🗓️ Horario" del header (que abría/scrolleaba hasta
+     aquí) se quita — esta sección ahora vive en su propia página del menú
+     lateral ("🗓️ Horario"), a la que se llega directo desde el sidebar sin
+     necesitar scroll ni forzar el open. -->
 <details class="accordion-card" id="scheduleConfigAccordion">
 <summary>
   <div class="accordion-head">
@@ -5118,24 +5307,156 @@
 </div>
 </details>
 
-<div class="grid">
-<details class="accordion-card" id="callTableAccordion">
+<!-- v238 — Pedido del usuario: "Higher Rate" pasa de modal (higherRateModal,
+     abierto antes desde un botón del header) a sección expandible más de
+     "Horario", mismo patrón que ya usa "Horario" en sí desde v236 (modal →
+     <details class="accordion-card">). Se quita el botón "×" de cerrar y
+     el "Listo" del final (ya no hay modal que cerrar). Ningún ID de campo
+     cambió (higherRateWindowsList/addHigherRateWindowBtn/
+     higherRateHistoryAccordion/higherRateHistoryList/
+     purgeHigherRateWindowsBtn) — el JS que ya los usa
+     (renderHigherRateWindowsEditor/addHigherRateWindowRow/
+     removeHigherRateWindowRowAt/purgePastHigherRateWindows) sigue
+     funcionando sin tocarse, solo cambió el HTML que los envuelve.
+     Cerrado por defecto (mismo criterio que "Ganancias del ciclo"/
+     "Horario"). -->
+<details class="accordion-card" id="higherRateAccordion">
 <summary>
   <div class="accordion-head">
-    <h2>Tabla de llamadas</h2>
-    <p>Detalle de cada fila importada con su gap.</p>
+    <h2>🔥 Higher Rate</h2>
+    <p>Fecha específica + hora de inicio/fin donde aplica un bono sobre la tasa por minuto — Propio lo avisa por correo, no lo expone en los datos que la app importa, así que se configura a mano.</p>
   </div>
   <div class="accordion-chevron">⌄</div>
 </summary>
 <div class="accordion-body">
-  <div class="note">Detalle de cada fila importada con su gap.</div>
-  <div class="table-wrap" id="callTableWrap"></div>
-  <div class="modal-actions" style="margin-top:0;">
-    <button class="bad" id="clearDayCallsBtn" type="button">🗑️ Vaciar llamadas del día</button>
+<div class="gap-editor-list" id="higherRateWindowsList"></div>
+<div class="modal-actions" style="margin-top:0;">
+<button class="warn" id="addHigherRateWindowBtn" type="button">+ Agregar ventana</button>
+</div>
+<p class="alert-hint">Una llamada cuenta COMPLETA (no solo la parte dentro de la ventana) si empieza hasta 5 minutos antes de que la ventana comience, o en cualquier momento antes de que termine, aunque se extienda después.</p>
+<details class="accordion-card" id="higherRateHistoryAccordion" style="margin-top:10px;">
+<summary>
+  <div class="accordion-head">
+    <h2 id="higherRateHistoryTitle">📜 Ventanas pasadas (0)</h2>
+    <p>Se mueven aquí solas apenas su fecha ya pasó — la lista de arriba se queda limpia con solo hoy y lo que viene. Siguen editables o eliminables cuando quieras, no se borran solas.</p>
   </div>
-  <p class="alert-hint">Borra TODAS las llamadas de <strong id="clearDayCallsDayLabel">—</strong> (el día activo). No toca tu turno, pausas ni horario de ese día — para eso usa "Reiniciar día" en el botón ♻️ Reiniciar del header.</p>
+  <div class="accordion-chevron">⌄</div>
+</summary>
+<div class="accordion-body">
+  <div class="gap-editor-list" id="higherRateHistoryList"></div>
+  <div class="modal-actions" style="margin-top:0;">
+    <button class="bad" id="purgeHigherRateWindowsBtn" type="button">🗑️ Vaciar historial</button>
+  </div>
+  <p class="alert-hint">Borra TODAS las ventanas pasadas de un click. El bono ya ganado por llamadas reales se conserva siempre, aunque borres la ventana que lo generó.</p>
 </div>
 </details>
+</div>
+</details>
+
+</div><!-- /pageSchedule -->
+
+<!-- v238 — Pedido del usuario: página "📊 Reportes" del menú lateral —
+     Resumen del día/Estadísticas del día, Ganancias del ciclo y Resumen
+     semanal (sin #callTableAccordion, movida a Inicio — ver comentario
+     junto a esa sección). Sin cambios de contenido en ninguna. -->
+<div class="app-page" data-page="reports" hidden id="pageReports">
+<div class="day-stats-grid" id="dayStatsGrid">
+<details class="accordion-card" id="resumenDiaAccordion" open>
+<summary>
+<div class="accordion-head">
+<h2>📈 Resumen del día</h2>
+</div>
+<div class="accordion-chevron">⌄</div>
+</summary>
+<div class="accordion-body">
+<div class="stats-row">
+<div class="stat-cell"><span class="stat-label">Llamadas</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaLlamadas">0</span><span class="stat-sub">Total</span></div></div>
+<div class="stat-cell"><span class="stat-label">Productivo</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaProductivo">00:00:00</span><span class="stat-sub">Tiempo real</span></div></div>
+<div class="stat-cell"><span class="stat-label">ACW</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaACW">00:00:00</span><span class="stat-sub">Tiempo extra</span></div></div>
+<div class="stat-cell"><span class="stat-label">Adherencia</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaAdherencia">—</span><span class="stat-sub" id="resumenDiaAdherenciaGoal">Objetivo ≥ 95%</span></div></div>
+</div>
+<!-- Pedido del usuario (v199): desglose de tiempo no-llamada (Break/Lunch/
+     Otro, ya calculados por importedCallStats() para los tags de "Ganancias
+     de hoy"/Tabla de llamadas, pero sin lugar propio en "Resumen del día")
+     + el bono de Higher Rate ganado hoy (antes solo visible mezclado dentro
+     del monto total de Ganancias). Segunda fila del mismo componente
+     .stats-row — mismo estilo/responsive que la fila de arriba, sin CSS
+     nuevo. -->
+<div class="stats-row" style="margin-top:10px;">
+<div class="stat-cell"><span class="stat-label">Break</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaBreak">00:00:00</span><span class="stat-sub">Tiempo tomado</span></div></div>
+<div class="stat-cell"><span class="stat-label">Lunch</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaLunch">00:00:00</span><span class="stat-sub">Tiempo tomado</span></div></div>
+<div class="stat-cell"><span class="stat-label">Otro</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaOtro">00:00:00</span><span class="stat-sub">Sin clasificar</span></div></div>
+<div class="stat-cell"><span class="stat-label">Higher Rate</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaHigherRate">$0.00</span><span class="stat-sub">Bono ganado hoy</span></div></div>
+</div>
+</div>
+</details>
+<details class="accordion-card" id="statsAccordion" open>
+<summary>
+<div class="accordion-head">
+<h2>📊 Estadísticas del día</h2>
+</div>
+<div class="accordion-chevron">⌄</div>
+</summary>
+<div class="accordion-body">
+<div style="margin-top:4px;">
+<!-- Pedido del usuario (v202): "Más corta" mostraba el mínimo real (a veces
+     0 min, si Propio exportó una llamada rarísima con inicio=fin) sin
+     ninguna aclaración — se veía como si la app hubiera calculado mal. Se
+     agrega una nota debajo (statsShortestNote, oculta por default) que
+     aclara cuántas llamadas de 0 min hubo y cuál es la siguiente más corta
+     por encima de 0 — el número principal NO cambia, sigue siendo el
+     mínimo real. */-->
+<div class="stats-list-row-wrap">
+<div class="stats-list-row"><span>Más corta:</span><strong id="statsShortest">—</strong></div>
+<div class="gap-note" id="statsShortestNote" style="display:none;"></div>
+</div>
+<div class="stats-list-row"><span>Más larga:</span><strong id="statsLongest">—</strong></div>
+<div class="stats-list-row"><span>Promedio:</span><strong id="statsAvg">—</strong></div>
+<!-- Pedido del usuario (v199): hueco más largo/promedio del día (ya
+     calculados por importedCallStats() como gapLongest/gapAvg, sin lugar
+     propio hasta ahora) + pago promedio por llamada (Ganancias ÷ Total de
+     llamadas, cálculo nuevo y chico). Mismo componente .stats-list-row que
+     ya usa esta tarjeta, sin CSS nuevo. -->
+<div class="stats-list-row"><span>Hueco más largo:</span><strong id="statsGapLongest">—</strong></div>
+<div class="stats-list-row"><span>Hueco promedio:</span><strong id="statsGapAvg">—</strong></div>
+<div class="stats-list-row"><span>Pago promedio/llamada:</span><strong id="statsAvgPay">—</strong></div>
+</div>
+</div>
+</details>
+</div>
+
+<details class="accordion-card" id="cycleAccordion">
+<summary>
+  <div class="accordion-head">
+    <h2>Ganancias del ciclo</h2>
+    <p>Total del ciclo de pago actual (14 días) y la próxima fecha de pago.</p>
+  </div>
+  <div class="accordion-chevron">⌄</div>
+</summary>
+<div class="accordion-body">
+<div class="week-nav">
+<button id="cyclePrevBtn" type="button">‹ Anterior</button>
+<button id="cycleCurrentBtn" type="button">Ciclo actual</button>
+<button id="cycleNextBtn" type="button">Siguiente ›</button>
+</div>
+<div class="earn-row">
+<div>
+<div class="earnings-big earnings-value-accent" style="font-size: clamp(24px, 3.2vw, 36px);" id="cycleEarningsValue">$0.00</div>
+<div class="helper" id="cycleEarningsConvertedText"></div>
+</div>
+<div class="goal-stack">
+<div class="goal-badge goal-soft" id="cycleRangeBadge">Ciclo: — – —</div>
+<div class="goal-badge goal-soft" id="cyclePayDateBadge">Pago: —</div>
+</div>
+</div>
+<div class="table-tags" style="margin-top:4px;">
+<span class="tag" id="cycleWeek1ProductiveTag">Semana 1: 00:00:00</span>
+<span class="tag" id="cycleWeek2ProductiveTag">Semana 2: 00:00:00</span>
+<span class="tag good" id="cycleTotalProductiveTag">Total: 00:00:00</span>
+</div>
+</div>
+</details>
+
 <details class="accordion-card" id="weekSummaryAccordion" open>
 <summary>
   <div class="accordion-head">
@@ -5153,8 +5474,21 @@
   <div class="table-wrap" id="weekSummaryWrap"></div>
 </div>
 </details>
+</div><!-- /pageReports -->
 
-</div><div class="footer">Todo queda local en el navegador hasta que exportes o descargues el archivo.</div></div>
+<div class="app-page" data-page="settings" hidden id="pageSettings">
+<!-- v238 — Pedido del usuario: página "⚙️ Ajustes" del menú lateral — 3
+     botones que abren los mismos modales de siempre (goalsModal/
+     notificationsModal/resetModal, sin ningún cambio dentro de ellos, ver
+     más abajo) — antes vivían sueltos como botones chicos en el header. */-->
+<div class="settings-menu-card">
+<button class="settings-menu-btn" id="goalsMiniBtn" type="button">⚙️ Ajustes<span class="settings-menu-sub">Meta, tasa, moneda, tu perfil, ciclo de pago y backup (exportar/importar JSON)</span></button>
+<button class="settings-menu-btn" id="notificationsMiniBtn" type="button">🔔 Avisos<span class="settings-menu-sub">Volumen, avisos con sonido de turno/Break/Lunch y descanso por productividad</span></button>
+<button class="settings-menu-btn danger" id="resetDayMiniBtn" type="button">♻️ Reiniciar<span class="settings-menu-sub">Reiniciar el día activo, o borrar todos los datos guardados</span></button>
+</div>
+</div><!-- /pageSettings -->
+
+<div class="footer">Todo queda local en el navegador hasta que exportes o descargues el archivo.</div></div>
 <div aria-hidden="true" class="modal-overlay" id="goalsModal">
 <div aria-labelledby="goalsModalTitle" aria-modal="true" class="modal-card" role="dialog">
 <div class="modal-head">
@@ -5436,41 +5770,6 @@
 </div>
 <div class="modal-actions">
 <button data-close-modal="notificationsModal" type="button">Listo</button>
-</div>
-</div>
-</div>
-<div aria-hidden="true" class="modal-overlay" id="higherRateModal">
-<div aria-labelledby="higherRateModalTitle" aria-modal="true" class="modal-card" role="dialog">
-<div class="modal-head">
-<div>
-<h3 id="higherRateModalTitle">🔥 Higher Rate Opportunity</h3>
-<p>Fecha específica + hora de inicio/fin donde aplica un bono sobre la tasa por minuto — Propio lo avisa por correo, no lo expone en los datos que la app importa, así que se configura a mano.</p>
-</div>
-<button aria-label="Cerrar" class="modal-close" data-close-modal="higherRateModal" type="button">×</button>
-</div>
-<div class="gap-editor-list" id="higherRateWindowsList"></div>
-<div class="modal-actions" style="margin-top:0;">
-<button class="warn" id="addHigherRateWindowBtn" type="button">+ Agregar ventana</button>
-</div>
-<p class="alert-hint">Una llamada cuenta COMPLETA (no solo la parte dentro de la ventana) si empieza hasta 5 minutos antes de que la ventana comience, o en cualquier momento antes de que termine, aunque se extienda después.</p>
-<details class="accordion-card" id="higherRateHistoryAccordion" style="margin-top:10px;">
-<summary>
-  <div class="accordion-head">
-    <h2 id="higherRateHistoryTitle">📜 Ventanas pasadas (0)</h2>
-    <p>Se mueven aquí solas apenas su fecha ya pasó — la lista de arriba se queda limpia con solo hoy y lo que viene. Siguen editables o eliminables cuando quieras, no se borran solas.</p>
-  </div>
-  <div class="accordion-chevron">⌄</div>
-</summary>
-<div class="accordion-body">
-  <div class="gap-editor-list" id="higherRateHistoryList"></div>
-  <div class="modal-actions" style="margin-top:0;">
-    <button class="bad" id="purgeHigherRateWindowsBtn" type="button">🗑️ Vaciar historial</button>
-  </div>
-  <p class="alert-hint">Borra TODAS las ventanas pasadas de un click. El bono ya ganado por llamadas reales se conserva siempre, aunque borres la ventana que lo generó.</p>
-</div>
-</details>
-<div class="modal-actions">
-<button data-close-modal="higherRateModal" type="button">Listo</button>
 </div>
 </div>
 </div>
@@ -11499,9 +11798,10 @@ function renderWeekSummary() {
 
     // Bug reportado por el usuario: "agrego una ventana y luego no la
     // encuentro". Causa: este editor es "auto-guardado en cada cambio" (no
-    // hay botón "Guardar", solo "Listo" para cerrar) — el guardado se
-    // dispara con el evento 'change' de algún campo (ver el listener
-    // delegado en #higherRateModal). Antes, "+ Agregar ventana" SOLO pintaba
+    // hay botón "Guardar") — el guardado se dispara con el evento 'change'
+    // de algún campo (ver el listener delegado en #higherRateAccordion,
+    // v238 — antes en #higherRateModal, cuando esto era un modal con botón
+    // "Listo" para cerrar). Antes, "+ Agregar ventana" SOLO pintaba
     // la fila nueva en el DOM (con valores por default: hoy, 07:00-08:00,
     // Bronce) sin persistirla — si el usuario no llegaba a tocar ningún
     // campo antes de cerrar el modal (los defaults ya le servían, o
@@ -13279,7 +13579,6 @@ function render() {
     function closeAllModals() {
       closeModal('goalsModal');
       closeModal('callsModal');
-      closeModal('higherRateModal');
       closeModal('notificationsModal');
       closeModal('resetModal');
       closeModal('gapModal');
@@ -13287,6 +13586,90 @@ function render() {
       closeModal('callEditModal');
       closeModal('manualCallModal');
       closeModal('confirmModal');
+    }
+
+    // ---- v238 — Menú lateral / ruteo entre páginas ----
+    // Pedido del usuario: la app se divide en 4 páginas (Inicio/Horario/
+    // Reportes/Ajustes), cada una envuelta en su propio `.app-page[data-
+    // page="..."]` (ver HTML). No hay hash routing ni historial de
+    // navegador — es un simple show/hide de la página activa, con la
+    // página actual guardada solo en memoria (arranca siempre en "home" al
+    // cargar, no se persiste entre sesiones — nada en el pedido original
+    // sugería que hiciera falta recordar la última página vista).
+    let currentPage = 'home';
+
+    function navigateToPage(page) {
+      const pages = ['home', 'schedule', 'reports', 'settings'];
+      if (!pages.includes(page)) page = 'home';
+      currentPage = page;
+      document.querySelectorAll('.app-page').forEach(el => {
+        el.hidden = el.getAttribute('data-page') !== page;
+      });
+      document.querySelectorAll('.sidebar-link').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-page') === page);
+      });
+      // Pedido del usuario: en escritorio, si el sidebar está FIJADO, se
+      // queda abierto al navegar (es justo el punto de fijarlo). En
+      // cualquier otro caso (mobile, o escritorio sin fijar) se cierra
+      // solo tras elegir una página — mismo comportamiento esperado de
+      // cualquier menú lateral tipo overlay.
+      if (!document.body.classList.contains('sidebar-pinned')) closeSidebar();
+      // Volver arriba de la página nueva — sin esto, si se navega estando
+      // scrolleado hacia abajo en la página anterior, la nueva se ve "a la
+      // mitad" hasta que el usuario suba a mano.
+      window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+    }
+
+    function openSidebar() {
+      document.body.classList.add('sidebar-open');
+      const btn = document.getElementById('menuToggleBtn');
+      if (btn) btn.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeSidebar() {
+      document.body.classList.remove('sidebar-open');
+      const btn = document.getElementById('menuToggleBtn');
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleSidebar() {
+      if (document.body.classList.contains('sidebar-open')) closeSidebar();
+      else openSidebar();
+    }
+
+    // Pedido del usuario ("colapsado pero con opción de fijar abierto" en
+    // escritorio): 📌 deja el sidebar SIEMPRE visible, empujando el
+    // contenido (ver `body.sidebar-pinned` en el CSS) en vez de flotar
+    // encima — independiente de sidebar-open/closeSidebar(), que dejan de
+    // tener efecto visual mientras está fijado (el CSS de `.sidebar-
+    // pinned` gana por especificidad). No se persiste entre sesiones a
+    // propósito — mismo criterio que currentPage, arranca sin fijar cada
+    // vez que se abre la app.
+    function toggleSidebarPin() {
+      const pinned = document.body.classList.toggle('sidebar-pinned');
+      const btn = document.getElementById('sidebarPinBtn');
+      if (btn) btn.setAttribute('aria-pressed', pinned ? 'true' : 'false');
+      if (pinned) openSidebar();
+    }
+
+    function initSidebarNav() {
+      const menuToggleBtn = document.getElementById('menuToggleBtn');
+      const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
+      const sidebarPinBtn = document.getElementById('sidebarPinBtn');
+      const sidebarOverlay = document.getElementById('sidebarOverlay');
+      const sidebarNav = document.getElementById('sidebarNav');
+      if (menuToggleBtn) menuToggleBtn.addEventListener('click', toggleSidebar);
+      if (sidebarCloseBtn) sidebarCloseBtn.addEventListener('click', closeSidebar);
+      if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
+      if (sidebarPinBtn) sidebarPinBtn.addEventListener('click', toggleSidebarPin);
+      if (sidebarNav) {
+        sidebarNav.addEventListener('click', (e) => {
+          const btn = e.target instanceof Element ? e.target.closest('.sidebar-link') : null;
+          if (!btn) return;
+          navigateToPage(btn.getAttribute('data-page'));
+        });
+      }
+      navigateToPage('home');
     }
 
     // Reemplaza window.confirm(), que muchos webviews/PWA en el teléfono ignoran
@@ -13379,7 +13762,15 @@ function render() {
     });
 
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeAllModals();
+      if (e.key === 'Escape') {
+        closeAllModals();
+        // v238 — Escape también cierra el sidebar cuando está abierto en
+        // modo overlay (mobile, o escritorio sin fijar) — mismo criterio
+        // que el resto de la app usa para cerrar cualquier overlay con
+        // teclado. Si está FIJADO no se toca — fijar es justo pedirle a
+        // la app que se quede abierto sin depender de este tipo de cierres.
+        if (!document.body.classList.contains('sidebar-pinned')) closeSidebar();
+      }
     });
 
     let resizeTimer = null;
@@ -13392,26 +13783,6 @@ function render() {
     document.getElementById('clockNow').addEventListener('click', () => {
       clockTimeVisible = !clockTimeVisible;
       renderHeader();
-    });
-    // v236 — "Horario" dejó de ser un modal (ver #scheduleConfigAccordion,
-    // más abajo en el HTML) y pasó a ser una sección expandible más de la
-    // página, como "Tabla de llamadas"/"Resumen semanal". Este botón ya no
-    // abre un popup: reinicia el mismo estado de edición de siempre
-    // (scheduleEditDay/scheduleViewMode/scheduleWeekOffset), sincroniza los
-    // campos (syncShiftModalFields(), sin cambios), y en vez de openModal()
-    // abre el <details> de esa sección y hace scroll suave hasta ahí —
-    // mismo patrón que ya usa la app al saltar a una fecha de "Resumen
-    // semanal" (ver el listener de [data-week-day], más abajo).
-    document.getElementById('scheduleMiniBtn').addEventListener('click', () => {
-      scheduleEditDay = weekdayKeyForDayKey(getActiveDayKey());
-      scheduleViewMode = 'template';
-      scheduleWeekOffset = 0;
-      syncShiftModalFields();
-      const section = document.getElementById('scheduleConfigAccordion');
-      if (section) {
-        section.open = true;
-        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
     });
     // Pedido del usuario: horario por semana específica — tabs de modo
     // (Plantilla / Semana específica) + navegación entre semanas + checkbox
@@ -13460,7 +13831,6 @@ function render() {
       }
       syncShiftModalFields();
     });
-    document.getElementById('higherRateMiniBtn').addEventListener('click', () => { syncHigherRateModalFields(); openModal('higherRateModal'); });
     document.getElementById('notificationsMiniBtn').addEventListener('click', () => { syncNotificationsModalFields(); openModal('notificationsModal'); });
     document.getElementById('copyDayToAllBtn').addEventListener('click', copyDayToAll);
     document.getElementById('copyWeekendBtn').addEventListener('click', copyDayToWeekend);
@@ -13617,21 +13987,25 @@ function render() {
     });
     document.getElementById('addHigherRateWindowBtn').addEventListener('click', addHigherRateWindowRow);
     document.getElementById('purgeHigherRateWindowsBtn').addEventListener('click', purgePastHigherRateWindows);
-    // Delegado en el modal completo (no en un solo contenedor): desde v156
-    // las filas viven en DOS listas distintas (#higherRateWindowsList para
-    // hoy/futuro, #higherRateHistoryList para pasadas, ver
+    // Delegado en la sección completa (no en un solo contenedor): desde
+    // v156 las filas viven en DOS listas distintas (#higherRateWindowsList
+    // para hoy/futuro, #higherRateHistoryList para pasadas, ver
     // renderHigherRateWindowsEditor()) que se reconstruyen por completo en
-    // cada render — delegar en el modal cubre ambas con un solo listener,
-    // sin duplicar wiring por lista. Mismo patrón que ya usa #blocksEditorList
-    // para su propio caso (una sola lista).
-    document.getElementById('higherRateModal').addEventListener('click', (e) => {
+    // cada render — delegar en la sección cubre ambas con un solo
+    // listener, sin duplicar wiring por lista. Mismo patrón que ya usa
+    // #blocksEditorList para su propio caso (una sola lista).
+    // v238 — Antes delegado en #higherRateModal (el modal completo); ahora
+    // que Higher Rate es una sección inline dentro de "Horario" (ver
+    // #higherRateAccordion en el HTML), se delega ahí — mismo criterio,
+    // solo cambió el contenedor.
+    document.getElementById('higherRateAccordion').addEventListener('click', (e) => {
       const btn = e.target instanceof Element ? e.target.closest('[data-remove-hr-window]') : null;
       if (!btn) return;
       const row = btn.closest('.block-row');
       const id = row ? row.getAttribute('data-hr-window-id') : null;
       if (id) removeHigherRateWindowRowAt(id);
     });
-    document.getElementById('higherRateModal').addEventListener('change', (e) => {
+    document.getElementById('higherRateAccordion').addEventListener('change', (e) => {
       if (!(e.target instanceof Element)) return;
       if (!e.target.closest('.block-row')) return;
       saveHigherRateWindowsFromEditor();
@@ -13694,9 +14068,15 @@ function render() {
     }
     resetActiveDayIfStale();
     syncShiftModalFields();
+    // v238 — Higher Rate ya no es un modal que se sincroniza al abrirlo
+    // (ver higherRateMiniBtn, eliminado) — ahora es una sección siempre
+    // presente en la página "Horario", así que se sincroniza una sola vez
+    // aquí al cargar, junto al resto de la sincronización inicial.
+    syncHigherRateModalFields();
     applyAccordionState();
     wireAccordionPersistence();
     wireActionButtonPress();
+    initSidebarNav();
 
     // Pedido del usuario ("sigue sin verse nada, ni un poco"): el enfoque
     // anterior (agregar la clase `.is-pressed` y dejar que la transición
