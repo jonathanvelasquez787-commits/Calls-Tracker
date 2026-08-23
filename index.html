@@ -1278,22 +1278,29 @@
       min-width: 0;
     }
 
-    /* Pedido del usuario: relleno tipo "líquido" que crece de izquierda a
-       derecha según el % de cada tarjeta (Shift/Break/Lunch/ACW), con el
-       mismo color sólido que ya usan los botones de Controles al hacer
-       hover (rgb(var(--bsc-rgb)), el acento saturado de cada tarjeta, no la
-       versión pálida de fondo en reposo). Opacidad .38 en vez de 100% para
-       que el texto (ícono/nombre/rango/%) se siga leyendo con claridad
-       tanto donde el relleno ya pasó como donde todavía no llega. `width`
-       se pinta inline en el JS con el mismo `pct` que ya calcula cada
-       tarjeta — mismo dato que ya alimenta la barra fina de abajo
-       (bsc-progress-track), ahora también como fondo de toda la tarjeta. */
+    /* Pedido del usuario (v210, con mockup de 3 opciones — eligió "Opción
+       B: líquido sólido de verdad"): relleno tipo "líquido" que crece de
+       izquierda a derecha según el % de cada tarjeta (Shift/Break/Lunch/
+       ACW). Antes tenía opacity:.38 sobre el acento — se veía "lavado"/
+       transparente, sobre todo en modo claro donde --bsc-rgb suele mapear
+       a un rosa pálido. Ahora es prácticamente sólido (opacity:.94, no
+       100% para que un pixel de textura del fondo no se pierda del todo)
+       — el mismo color saturado que ya usan los botones de Controles al
+       hacer hover, no una versión aguada. Con el fondo ya sólido, el texto
+       encima (nombre/rango/%) pasa a blanco SOLO en la franja ya cubierta
+       por el relleno — ver bsc-name/bsc-range/bsc-pct más abajo, mismo
+       truco de degradado+recorte de texto que ya usa `.slot .meta/.range`
+       (v186) — así el texto se sigue leyendo tanto sobre el relleno sólido
+       como sobre la parte aún sin llenar. `width` se pinta inline en el JS
+       con el mismo `pct` que ya calcula cada tarjeta — mismo dato que ya
+       alimenta la barra fina de abajo (bsc-progress-track), ahora también
+       como fondo de toda la tarjeta. */
     .block-summary-card .bsc-fill {
       position: absolute;
       inset: 0;
       width: 0%;
       background: rgb(var(--bsc-rgb));
-      opacity: .38;
+      opacity: .94;
       transition: width .5s cubic-bezier(.22, .85, .4, 1);
       z-index: 0;
     }
@@ -1318,18 +1325,36 @@
       flex: 0 0 auto;
     }
 
+    /* v210: con el relleno ahora casi sólido (ver .bsc-fill arriba), el
+       texto necesita pasar a blanco en la franja YA cubierta por el
+       líquido — mismo truco de degradado de 2 colores con corte duro +
+       recorte de texto (background-clip:text) que ya usa `.slot .meta/
+       .range` (v186): blanco hasta `--bsc-pct` (seteado inline en el JS
+       con el mismo `pct` que ya alimenta el ancho de `.bsc-fill` — un solo
+       dato, dos usos), color normal (var(--text)/var(--muted), el mismo de
+       siempre) después de ese punto. Así el nombre/rango se leen sobre
+       AMBAS superficies (relleno sólido y fondo sin llenar), sin necesitar
+       2 capas de texto superpuestas. */
     .block-summary-card .bsc-name {
       font-weight: 900;
       font-size: 11.5px;
       letter-spacing: -.01em;
-      color: var(--text);
+      background-image: linear-gradient(to right, #fff 0%, #fff var(--bsc-pct, 0%), var(--text) var(--bsc-pct, 0%), var(--text) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
     .block-summary-card .bsc-range {
-      color: var(--muted);
+      background-image: linear-gradient(to right, #fff 0%, #fff var(--bsc-pct, 0%), var(--muted) var(--bsc-pct, 0%), var(--muted) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
       font-size: 10.5px;
       line-height: 1.3;
       white-space: nowrap;
@@ -1361,7 +1386,11 @@
       flex: 0 0 auto;
       font-size: 10.5px;
       font-weight: 900;
-      color: var(--text);
+      background-image: linear-gradient(to right, #fff 0%, #fff var(--bsc-pct, 0%), var(--text) var(--bsc-pct, 0%), var(--text) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
       font-variant-numeric: tabular-nums;
     }
 
@@ -11602,7 +11631,7 @@ function renderBlockSummaryStrip(cards) {
   const cardHtml = (c, extraClass = '') => {
     const pct = Math.max(0, Math.min(100, Number(c.pct) || 0));
     return `
-      <div class="block-summary-card ${extraClass}" data-accent="${escapeHtml(c.accent)}">
+      <div class="block-summary-card ${extraClass}" data-accent="${escapeHtml(c.accent)}" style="--bsc-pct:${pct}%">
         <div class="bsc-fill" style="width:${pct}%"></div>
         <div class="bsc-top">
           <span class="bsc-icon">${c.icon}</span>
