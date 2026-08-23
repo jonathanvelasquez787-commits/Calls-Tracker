@@ -225,6 +225,20 @@
         --accent-decorative: #00F0FF;
         --accent-decorative-rgb: 0, 240, 255;
         --accent-decorative-pale: #046C7A;
+        /* Pedido del usuario (v217): --bad/--pink en este tema apuntan a
+           --primary (rosa/magenta, #EC1E7A) — el mismo problema de fondo que
+           ya motivó --accent-decorative (v209): "cian" prestado que en
+           realidad se ve rosa. Aquí el caso es al revés: el usuario SÍ quiere
+           que ciertos elementos de peligro/malo (Reiniciar, Dropped/Sin datos/
+           Adherencia baja en Tabla de llamadas y Resumen semanal, el box de
+           Shift en Turno de Hoy) se vean claramente ROJOS, no rosa/magenta —
+           se crea esta variable APARTE en vez de tocar --bad/--pink porque
+           esas dos siguen usándose para el resto del theming (botones warn/
+           bad de otros modales, chips, etc., no tocados en este pedido). Solo
+           se aplica en los lugares puntuales que el usuario señaló, vía
+           reglas scoped (mismo patrón :where() que ya usa v216). */
+        --danger-red: #DC2626;
+        --danger-red-rgb: 220, 38, 38;
       }
     }
 
@@ -290,6 +304,10 @@
       --accent-decorative: #00F0FF;
       --accent-decorative-rgb: 0, 240, 255;
       --accent-decorative-pale: #046C7A;
+      /* Ver comentario gemelo en la rama @media de arriba (v217) — misma
+         variable, mismo criterio. */
+      --danger-red: #DC2626;
+      --danger-red-rgb: 220, 38, 38;
     }
 
     /* ---- Rediseño del tema claro (pedido del usuario) ----
@@ -437,6 +455,18 @@
       :root:not(.theme-dark) .slot[data-accent="cyan"] {
         --slot-rgb: 100, 116, 139;
       }
+      /* Pedido del usuario (v217): la tarjeta de Shift en "Turno de Hoy"
+         también usa data-accent="cyan" — mismo problema (--cyan-rgb es en
+         realidad rosa/magenta en este tema) pero ahí el usuario pidió
+         específicamente un ROJO fuerte, no el tono slate que usan los
+         bloques de Trabajo arriba ni el cian #00F0FF que sí aplica en otros
+         lugares decorativos. Scoped a `.block-summary-card-shift` (la clase
+         extra que solo lleva la tarjeta de Shift, ver
+         renderBlockSummaryStrip) — el resto de usos de data-accent="cyan"
+         (Pegar Llamadas, Iniciar shift, etc.) quedan intactos. */
+      :root:not(.theme-dark) .block-summary-card-shift[data-accent="cyan"] {
+        --bsc-rgb: var(--danger-red-rgb);
+      }
       /* Pedido del usuario: la insignia de tipo (Work/Break/Lunch, extremo
          derecho de cada bloque) y los badges de estado (Completo/Tarde/
          Hecho/etc., .slot-status) pasan de "pastilla pálida" a sólida con
@@ -486,9 +516,42 @@
         background: var(--text);
         color: #fff;
       }
+      /* Pedido del usuario (v217): "Reiniciar" pasa de rosa/magenta
+         (--pink-rgb, heredado de --primary en este tema) a un rojo de
+         verdad (--danger-red-rgb) — tanto en reposo como en hover. Base
+         (reposo) no tenía override propio en modo claro hasta ahora, solo
+         heredaba el rgba(251,113,133,...) hardcodeado de la regla
+         compartida entre temas — se agrega aquí explícito. */
+      :root:not(.theme-dark) .hero-action-btn.danger {
+        color: var(--danger-red);
+        border-color: rgba(var(--danger-red-rgb), .4);
+        background: rgba(var(--danger-red-rgb), .1);
+      }
       :root:not(.theme-dark) .hero-action-btn.danger:hover {
-        background: rgb(var(--pink-rgb));
+        background: rgb(var(--danger-red-rgb));
         color: #fff;
+      }
+      /* Pedido del usuario (v217): Auto/Horario/Higher Rate/Avisos/Ajustes
+         pasan de "fondo oscuro + texto blanco" (v208) a un acento cian
+         #00F0FF en hover/foco — reutiliza --accent-decorative, la misma
+         variable ya usada para lo puramente decorativo/informativo (v209),
+         ya que estos botones no son "seleccionables" en el sentido de
+         .action-btn (no quedan en un estado persistente .is-active). Por
+         ID en vez de por clase para no depender de la especificidad exacta
+         de la regla de arriba — gana sin ambigüedad. */
+      :root:not(.theme-dark) #themeToggleBtn:hover,
+      :root:not(.theme-dark) #themeToggleBtn:focus-visible,
+      :root:not(.theme-dark) #scheduleMiniBtn:hover,
+      :root:not(.theme-dark) #scheduleMiniBtn:focus-visible,
+      :root:not(.theme-dark) #higherRateMiniBtn:hover,
+      :root:not(.theme-dark) #higherRateMiniBtn:focus-visible,
+      :root:not(.theme-dark) #notificationsMiniBtn:hover,
+      :root:not(.theme-dark) #notificationsMiniBtn:focus-visible,
+      :root:not(.theme-dark) #goalsMiniBtn:hover,
+      :root:not(.theme-dark) #goalsMiniBtn:focus-visible {
+        background: rgba(var(--accent-decorative-rgb), .16);
+        border-color: rgba(var(--accent-decorative-rgb), .5);
+        color: var(--accent-decorative-pale);
       }
       :root:not(.theme-dark) .gap-edit-btn:hover {
         background: var(--text);
@@ -592,6 +655,53 @@
         border-color: rgba(var(--accent-decorative-rgb), .48);
         box-shadow: 0 0 0 3px rgba(var(--accent-decorative-rgb), .14);
       }
+      /* Pedido del usuario (v217): dentro de Tabla de llamadas y Resumen
+         semanal, los indicadores de "malo" (Dropped: Yes, Sin datos,
+         Adherencia baja, notas de día tipo "Corte de luz", "Importado
+         tarde", el botón "Eliminar" y "🗑️ Vaciar llamadas del día") usaban
+         --pink-rgb/--bad-rgb — en este tema, el mismo rosa/magenta de
+         --primary. El usuario confirmó que estos se quedan en la familia
+         ROJA (como Reiniciar), no pasan a cian — se scoped con :where() a
+         estas 2 secciones para no tocar el resto de usos de .tag.bad/
+         .imported-late en la app (fuera de este pedido). */
+      :root:not(.theme-dark) :where(#callTableAccordion) .tag.bad,
+      :root:not(.theme-dark) :where(#weekSummaryAccordion) .tag.bad {
+        color: var(--danger-red);
+        background: rgba(var(--danger-red-rgb), .1);
+      }
+      :root:not(.theme-dark) :where(#callTableAccordion) .imported-late {
+        background: rgba(var(--danger-red-rgb), .12);
+        border-color: rgba(var(--danger-red-rgb), .3);
+        color: var(--danger-red);
+      }
+      :root:not(.theme-dark) :where(#callTableAccordion) .gap-edit-btn.call-delete-btn {
+        background: rgba(var(--danger-red-rgb), .12);
+        border-color: rgba(var(--danger-red-rgb), .3);
+        color: var(--danger-red);
+      }
+      :root:not(.theme-dark) :where(#callTableAccordion) .gap-edit-btn.call-delete-btn:hover {
+        background: rgb(var(--danger-red-rgb));
+        border-color: rgb(var(--danger-red-rgb));
+        color: #fff;
+      }
+      :root:not(.theme-dark) :where(#callTableAccordion) .modal-actions button.bad {
+        background: rgba(var(--danger-red-rgb), .13);
+        border-color: rgba(var(--danger-red-rgb), .32);
+        color: var(--danger-red);
+      }
+      :root:not(.theme-dark) :where(#callTableAccordion) .modal-actions button.bad:hover {
+        background: rgb(var(--danger-red-rgb));
+        color: #fff;
+      }
+      /* Pedido del usuario: el resaltado de "hoy" en las tarjetas mobile de
+         Resumen semanal (semana angosta, sin tabla) usaba --cyan-rgb crudo,
+         sin el fix de v209 — mismo rosa prestado, ahora corregido al mismo
+         cian #00F0FF que ya usa la fila "hoy" de la versión de escritorio
+         (tr.week-row-today, ya en accent-decorative desde v209). */
+      :root:not(.theme-dark) .week-mobile-card.week-mobile-today {
+        border-color: rgba(var(--accent-decorative-rgb), .4);
+        background: rgba(var(--accent-decorative-rgb), .07);
+      }
     }
     html.theme-light .action-btn:not(.is-active) {
       border-color: var(--line-2);
@@ -661,6 +771,11 @@
     html.theme-light .slot[data-accent="cyan"] {
       --slot-rgb: 100, 116, 139;
     }
+    /* Ver comentario gemelo en la rama @media de arriba (v217) — mismo
+       criterio, misma regla. */
+    html.theme-light .block-summary-card-shift[data-accent="cyan"] {
+      --bsc-rgb: var(--danger-red-rgb);
+    }
     html.theme-light .slot .type {
       background: rgb(var(--slot-rgb, var(--cyan-rgb)));
       border-color: rgb(var(--slot-rgb, var(--cyan-rgb)));
@@ -683,9 +798,30 @@
       background: var(--text);
       color: #fff;
     }
+    /* Ver comentarios gemelos en la rama @media de arriba (v217) — mismo
+       criterio, mismas reglas. */
+    html.theme-light .hero-action-btn.danger {
+      color: var(--danger-red);
+      border-color: rgba(var(--danger-red-rgb), .4);
+      background: rgba(var(--danger-red-rgb), .1);
+    }
     html.theme-light .hero-action-btn.danger:hover {
-      background: rgb(var(--pink-rgb));
+      background: rgb(var(--danger-red-rgb));
       color: #fff;
+    }
+    html.theme-light #themeToggleBtn:hover,
+    html.theme-light #themeToggleBtn:focus-visible,
+    html.theme-light #scheduleMiniBtn:hover,
+    html.theme-light #scheduleMiniBtn:focus-visible,
+    html.theme-light #higherRateMiniBtn:hover,
+    html.theme-light #higherRateMiniBtn:focus-visible,
+    html.theme-light #notificationsMiniBtn:hover,
+    html.theme-light #notificationsMiniBtn:focus-visible,
+    html.theme-light #goalsMiniBtn:hover,
+    html.theme-light #goalsMiniBtn:focus-visible {
+      background: rgba(var(--accent-decorative-rgb), .16);
+      border-color: rgba(var(--accent-decorative-rgb), .5);
+      color: var(--accent-decorative-pale);
     }
     html.theme-light .gap-edit-btn:hover {
       background: var(--text);
@@ -784,6 +920,41 @@
     html.theme-light input:focus {
       border-color: rgba(var(--accent-decorative-rgb), .48);
       box-shadow: 0 0 0 3px rgba(var(--accent-decorative-rgb), .14);
+    }
+    /* Ver comentarios gemelos en la rama @media de arriba (v217) — mismo
+       criterio, mismas reglas. */
+    html.theme-light :where(#callTableAccordion) .tag.bad,
+    html.theme-light :where(#weekSummaryAccordion) .tag.bad {
+      color: var(--danger-red);
+      background: rgba(var(--danger-red-rgb), .1);
+    }
+    html.theme-light :where(#callTableAccordion) .imported-late {
+      background: rgba(var(--danger-red-rgb), .12);
+      border-color: rgba(var(--danger-red-rgb), .3);
+      color: var(--danger-red);
+    }
+    html.theme-light :where(#callTableAccordion) .gap-edit-btn.call-delete-btn {
+      background: rgba(var(--danger-red-rgb), .12);
+      border-color: rgba(var(--danger-red-rgb), .3);
+      color: var(--danger-red);
+    }
+    html.theme-light :where(#callTableAccordion) .gap-edit-btn.call-delete-btn:hover {
+      background: rgb(var(--danger-red-rgb));
+      border-color: rgb(var(--danger-red-rgb));
+      color: #fff;
+    }
+    html.theme-light :where(#callTableAccordion) .modal-actions button.bad {
+      background: rgba(var(--danger-red-rgb), .13);
+      border-color: rgba(var(--danger-red-rgb), .32);
+      color: var(--danger-red);
+    }
+    html.theme-light :where(#callTableAccordion) .modal-actions button.bad:hover {
+      background: rgb(var(--danger-red-rgb));
+      color: #fff;
+    }
+    html.theme-light .week-mobile-card.week-mobile-today {
+      border-color: rgba(var(--accent-decorative-rgb), .4);
+      background: rgba(var(--accent-decorative-rgb), .07);
     }
 
     * { box-sizing: border-box; }
@@ -3184,6 +3355,19 @@
 
     .gap-edit-btn:hover {
       filter: brightness(1.04);
+    }
+
+    /* Pedido del usuario (v217): el botón "Eliminar" de Tabla de llamadas
+       (data-call-delete) llevaba su color pintado INLINE en el JS
+       (rgba(255,111,143,...), el rosa de --pink en modo oscuro, hardcodeado
+       — nunca cambiaba de tono por tema). Se saca ese inline y se mueve a
+       esta clase, para poder scoped-overrides por tema (ver v217 dentro de
+       Tabla de llamadas — pasa a rojo en modo claro) sin pelear contra la
+       especificidad de un `style=""` inline. Mismo valor exacto que ya
+       tenía en modo oscuro — cero cambio visual ahí. */
+    .gap-edit-btn.call-delete-btn {
+      background: rgba(255,111,143,.12);
+      border-color: rgba(255,111,143,.3);
     }
 
     @media (max-width: 760px) {
@@ -11101,7 +11285,13 @@ function renderHeader() {
   document.getElementById('earningsTagsRow').innerHTML = earningsTagsHtml;
   const earnBar = document.getElementById('earningsBar');
   earnBar.style.width = `${goalPct}%`;
-  earnBar.style.background = 'linear-gradient(90deg, var(--teal), var(--cyan))';
+  // Pedido del usuario (v217): esta barra (relleno de "Ganancias de hoy")
+  // usaba var(--cyan) — en modo claro --cyan es en realidad el rosa/magenta
+  // de --primary. var(--accent-decorative, var(--cyan)) usa el cian real
+  // #00F0FF cuando existe (solo definida en modo claro, ver :root), y cae de
+  // vuelta a --cyan en modo oscuro (donde --accent-decorative no existe) —
+  // cero cambio de render ahí.
+  earnBar.style.background = 'linear-gradient(90deg, var(--teal), var(--accent-decorative, var(--cyan)))';
 
   const thresholds = [0, 25, 50, 75, 100];
   thresholds.forEach((threshold) => {
@@ -12301,7 +12491,7 @@ function renderTable() {
             <td>
               <div style="display:flex; gap:6px; flex-wrap:wrap;">
                 <button class="gap-edit-btn" type="button" data-call-edit="${escapeHtml(c.id || '')}">Editar</button>
-                <button class="gap-edit-btn" type="button" data-call-delete="${escapeHtml(c.id || '')}" style="background: rgba(255,111,143,.12); border-color: rgba(255,111,143,.3);">Eliminar</button>
+                <button class="gap-edit-btn call-delete-btn" type="button" data-call-delete="${escapeHtml(c.id || '')}">Eliminar</button>
               </div>
             </td>
           </tr>
@@ -12318,7 +12508,7 @@ function renderTable() {
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
               ${effectivePrev && gapKey ? `<button class="gap-edit-btn" type="button" data-gap-edit="${escapeHtml(gapKey)}" data-gap-day="${escapeHtml(dayKey)}">Editar gap</button>` : ''}
               <button class="gap-edit-btn" type="button" data-call-edit="${escapeHtml(c.id || '')}">Editar llamada</button>
-              <button class="gap-edit-btn" type="button" data-call-delete="${escapeHtml(c.id || '')}" style="background: rgba(255,111,143,.12); border-color: rgba(255,111,143,.3);">Eliminar</button>
+              <button class="gap-edit-btn call-delete-btn" type="button" data-call-delete="${escapeHtml(c.id || '')}">Eliminar</button>
             </div>
           </div>
         `);
