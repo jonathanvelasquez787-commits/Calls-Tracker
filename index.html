@@ -24,8 +24,18 @@
          `html.theme-light`), mismo patrón de 3 lugares que ya usa el resto
          del theming. */
       color-scheme: dark;
-      --bg: #09101e;
-      --bg-2: #07101f;
+      /* v268 — Pedido del usuario: con las tarjetas/secciones ahora en el
+         mismo azul marino que --panel-navy (v267), el fondo de la página
+         (detrás/entre las tarjetas) se seguía viendo negro casi puro —
+         de ahí el "borde negro" alrededor de cada tarjeta que reportó el
+         usuario. Se cambia --bg/--bg-2 (SOLO rama oscura, default — igual
+         que --panel-navy, no se toca ninguna de las 2 ramas de modo claro)
+         a un navy de la MISMA familia que --panel-navy, pero más oscuro que
+         su extremo más oscuro (#0a0e26) — así el fondo se distingue de las
+         tarjetas por contraste sutil, en vez de mezclarse (muy claro) o
+         verse negro/desconectado (como antes). */
+      --bg: #0a0e22;
+      --bg-2: #070a1a;
       --panel: rgba(16, 24, 40, 0.88);
       --panel-2: rgba(13, 20, 36, 0.97);
       /* v267 — Pedido del usuario: el fondo azul marino con resplandor cian
