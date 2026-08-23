@@ -955,7 +955,7 @@
       font-weight: 800;
       cursor: pointer;
       white-space: nowrap;
-      transition: transform .14s ease, filter .14s ease, background .14s ease;
+      transition: transform .14s ease, filter .14s ease, background .14s ease, color .14s ease;
     }
 
     .hero-action-btn:hover,
@@ -963,6 +963,20 @@
       transform: translateY(-1px);
       background: rgba(255,255,255,.09);
       outline: none;
+    }
+
+    /* Pedido del usuario (v215): mismo cian que ya usa el hover de "Día
+       activo" (ver .day-active-label-btn, v214) — aplicado ahora a los
+       botones del header (Auto/Horario/Higher Rate/Avisos/Ajustes).
+       Scoped a :not(.danger) para que "Reiniciar" (el único de peligro del
+       grupo) se quede con su propio hover rosado de siempre — buscar
+       "v215". Solo esta regla base (modo oscuro/default); en modo claro
+       "Auto"/"Horario"/etc. ya tienen su propio hover más específico desde
+       v208 (fondo oscuro sólido + texto blanco, decisión ya tomada) que
+       sigue ganando por especificidad — sin cambios ahí. */
+    .hero-action-btn:not(.danger):hover,
+    .hero-action-btn:not(.danger):focus-visible {
+      color: var(--cyan);
     }
 
     .hero-action-btn.danger {
