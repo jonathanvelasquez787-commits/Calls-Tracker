@@ -187,6 +187,16 @@
       --sblk-fill-cyan-rgb: 42, 82, 140;
       --sblk-fill-warn-rgb: 36, 120, 158;
       --sblk-fill-blue-rgb: 45, 168, 186;
+      /* v290 — Pedido del usuario: TODOS los íconos de la app (antes emoji
+         nativos, glifos de color fijo del sistema que no responden a
+         `color`/theming) pasan a SVG inline en estilo Lucide/outline (ver
+         `.ic-svg` más abajo) y se fuerzan a un color monocromo — blanco
+         sólido en oscuro (aquí, default), negro sólido en modo claro (ver
+         "v290" en las 2 ramas de modo claro más abajo). Es un color FIJO
+         (no derivado de --text/--muted) porque el pedido fue explícito:
+         blanco/negro sólido, no "casi blanco" — --text en oscuro ya es
+         #edf4ff (no #fff puro). */
+      --icon-mono: #fff;
     }
 
     /* Modo claro automático: se activa solo si el sistema operativo pide
@@ -334,6 +344,9 @@
         /* v234 — Ver comentario junto a --hover-flip-rgb en :root — mismo
            azul de arriba (#2563EB), como triplete "r,g,b". */
         --hover-flip-rgb: 37, 99, 235;
+        /* v290 — Ver comentario junto a --icon-mono en :root: mismo criterio,
+           aquí (modo claro automático) negro sólido en vez de blanco. */
+        --icon-mono: #000;
       }
     }
 
@@ -408,6 +421,8 @@
       --hover-flip: #2563EB;
       /* v234 — Ver comentario gemelo en la rama @media de arriba. */
       --hover-flip-rgb: 37, 99, 235;
+      /* v290 — Ver comentario gemelo en la rama @media de arriba. */
+      --icon-mono: #000;
     }
 
     /* ---- Rediseño del tema claro (pedido del usuario) ----
@@ -6653,14 +6668,29 @@
       color: #fff;
       min-width: 0;
     }
+    /* v290 — Excepción puntual al monocromo global (--icon-mono): esta
+       etiqueta ya forzaba texto blanco SIEMPRE (v281, sin importar el
+       tema — la tarjeta detrás es azul en los 2 temas) antes de que
+       existiera este ícono. Si el ícono heredara --icon-mono como el
+       resto de la app, en modo claro saldría NEGRO junto a texto blanco
+       sobre una tarjeta azul — un choque de color que --icon-mono nunca
+       tuvo intención de crear. Se scoped aquí (gana por especificidad a
+       `.ic-svg`) para que el ícono siga el mismo blanco fijo que ya usa
+       el texto de al lado, en vez del blanco/negro por tema. */
+    .sched-blocks-summary-label .ic-svg { color: #fff; stroke: #fff; }
     .sched-blocks-summary-label::before {
       flex: 0 0 auto;
       font-size: 11px;
       line-height: 1;
     }
-    .sched-blocks-summary-card[data-metric="adherence"] .sched-blocks-summary-label::before { content: '🎯'; }
-    .sched-blocks-summary-card[data-metric="goal"] .sched-blocks-summary-label::before { content: '🏁'; }
-    .sched-blocks-summary-card[data-metric="productivity"] .sched-blocks-summary-label::before { content: '⚡'; }
+    /* v290 — Los íconos de estas 3 etiquetas (Adherencia/Meta/Productividad)
+       se movieron de `content` en `::before` (con emoji embebido, ver
+       historial) a un `<svg class="ic-svg">` real dentro del HTML — mismo
+       motivo que el resto de este cambio (los emoji no pueden forzarse a
+       blanco/negro sólido). Sin `content` declarado aquí, el pseudo-
+       elemento ya no genera ninguna caja — se deja la regla base
+       (`.sched-blocks-summary-label::before`) sin uso real por si alguna
+       otra variante la necesita en el futuro, sin borrarla por completo. */
     /* Los badges reales (#adherenceBadge/#adherenceGoalBadge/
        #productivityGoalBadge) siguen siendo el mismo <span class="slot-status">
        de siempre — aquí, dentro de su propia mini-tarjeta, se leen como un
@@ -7158,6 +7188,52 @@
     .sblk-card.is-collapsed .sblk-range {
       display: none;
     }
+
+    /* ==========================================================
+       v290 — Pedido del usuario: reemplazo de TODOS los íconos-emoji de la
+       UI por SVG inline estilo Lucide/outline (ver el objeto ICON en el JS, y
+       cada `<svg class="ic-svg">` pegado literal en el HTML estático).
+       Motivo: los emoji son glifos bitmap/de color fijo del sistema — no
+       responden a `color`/`currentColor`, así que nunca se pueden volver
+       "blanco sólido en oscuro / negro sólido en claro" con CSS puro (un
+       filter: grayscale+brightness es la alternativa barata, mostrada al
+       usuario y descartada por él — no da un blanco/negro confiable entre
+       navegadores/SO). Con SVG + `stroke="currentColor"` (heredado de
+       `color: var(--icon-mono)`, ver esa variable en :root/@media light/
+       html.theme-light) el ícono cambia de blanco a negro solo, igual que
+       cualquier texto de la app.
+       Tamaño: `width/height: 1em` — cada ícono hereda el `font-size` del
+       elemento que lo contiene (botón, header, chip...), mismo tamaño
+       visual que ya tenía el emoji que reemplaza, sin tener que fijar un
+       px por cada lugar distinto donde se usa.
+       Íconos EXCLUIDOS de este cambio (a propósito, ver resumen_v290.md):
+       los emoji que viven dentro de texto plano no-HTML (mensajes de
+       toast(), que usan `textContent`, no `innerHTML`) — convertir esos
+       requeriría cambiar toast() a aceptar HTML (con el riesgo de XSS que
+       eso abre si algún día ese texto incluye datos del usuario) y quedó
+       fuera de este pedido, confirmar aparte si se quiere. */
+    .ic-svg {
+      width: 1em;
+      height: 1em;
+      display: inline-block;
+      vertical-align: -0.15em;
+      flex: 0 0 auto;
+      fill: none;
+      stroke: var(--icon-mono);
+      color: var(--icon-mono);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    /* Dentro de botones/badges que YA centran su contenido con flex, el
+       ícono no debe agregar un gap propio (el `gap` del contenedor ya
+       separa ícono de texto) — solo se resetea cualquier margen que el
+       navegador pudiera darle a un <svg> por default. */
+    .ic-svg { margin: 0; }
+    /* v290 — Variante SÓLIDA (relleno, no contorno) para los pocos íconos
+       que ya eran un glifo sólido antes de este cambio (▶ de "Iniciar
+       shift") — mismo color monocromo forzado, solo cambia fill vs stroke. */
+    .ic-svg.ic-fill { fill: currentColor; stroke: none; }
   </style>
 </head>
 <body>
@@ -7168,8 +7244,8 @@
     <span class="live-bar-timer" id="liveBarTimer">00:00:00</span>
   </div>
   <div class="live-bar-actions">
-    <button class="live-bar-btn live-bar-save" id="liveBarSaveBtn" type="button">✅ Guardar</button>
-    <button aria-label="Descartar sin guardar" class="live-bar-btn live-bar-discard" id="liveBarDiscardBtn" type="button">✕</button>
+    <button class="live-bar-btn live-bar-save" id="liveBarSaveBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="8 12.5 11 15.5 16 9"/></svg> Guardar</button>
+    <button aria-label="Descartar sin guardar" class="live-bar-btn live-bar-discard" id="liveBarDiscardBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   </div>
 </div>
 <!-- v238 — Pedido del usuario: menú lateral tipo hamburguesa con 4 páginas
@@ -7187,20 +7263,20 @@
      id/clase/listener de siempre. -->
 <div class="sidebar-brand-block">
 <div class="sidebar-brand-row">
-<span class="sidebar-brand-icon" aria-hidden="true">📊</span>
+<span class="sidebar-brand-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="20" x2="4" y2="10"/><line x1="10" y1="20" x2="10" y2="4"/><line x1="16" y1="20" x2="16" y2="14"/><line x1="21" y1="20" x2="3" y2="20"/></svg></span>
 <div>
 <div class="sidebar-brand-name">TRKR</div>
 <div class="sidebar-brand-tagline">Enfócate y hazlo contar.</div>
 </div>
 </div>
 <div class="sidebar-nav-head-actions">
-<button aria-label="Fijar menú abierto" aria-pressed="true" class="sidebar-icon-btn" id="sidebarPinBtn" title="Fijar menú abierto" type="button">📌</button>
-<button aria-label="Cerrar menú" class="sidebar-icon-btn" id="sidebarCloseBtn" type="button">✕</button>
+<button aria-label="Fijar menú abierto" aria-pressed="true" class="sidebar-icon-btn" id="sidebarPinBtn" title="Fijar menú abierto" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="4"/><line x1="12" y1="13" x2="12" y2="21"/></svg></button>
+<button aria-label="Cerrar menú" class="sidebar-icon-btn" id="sidebarCloseBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
 </div>
 </div>
 <div class="sidebar-section-label">Navegación</div>
 <div class="sidebar-links">
-<button class="sidebar-link active" data-page="home" type="button"><span class="sidebar-link-icon sidebar-link-icon-home">🏠</span><span class="sidebar-link-label">Inicio</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
+<button class="sidebar-link active" data-page="home" type="button"><span class="sidebar-link-icon sidebar-link-icon-home"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg></span><span class="sidebar-link-label">Inicio</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
 <!-- v270 — Pedido del usuario: orden del menú lateral — Inicio, Bloques del
      día, Horario, Reportes, Avisos (antes: Inicio, Horario, Bloques del
      día, Reportes, Avisos). Solo se reordenan estos 2 botones entre sí —
@@ -7213,9 +7289,9 @@
      el CONFIGURAR (Horario, sigue en su propia página) de VER CÓMO VA EL
      DÍA (Bloques del día, ahora acá) — mismo criterio de "una página, un
      propósito" que ya separa Horario de Reportes. -->
-<button class="sidebar-link" data-page="blocks" type="button"><span class="sidebar-link-icon sidebar-link-icon-blocks">📋</span><span class="sidebar-link-label">Bloques del día</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
-<button class="sidebar-link" data-page="schedule" type="button"><span class="sidebar-link-icon sidebar-link-icon-schedule">🗓️</span><span class="sidebar-link-label">Horario</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
-<button class="sidebar-link" data-page="reports" type="button"><span class="sidebar-link-icon sidebar-link-icon-reports">📊</span><span class="sidebar-link-label">Reportes</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
+<button class="sidebar-link" data-page="blocks" type="button"><span class="sidebar-link-icon sidebar-link-icon-blocks"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg></span><span class="sidebar-link-label">Bloques del día</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
+<button class="sidebar-link" data-page="schedule" type="button"><span class="sidebar-link-icon sidebar-link-icon-schedule"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span class="sidebar-link-label">Horario</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
+<button class="sidebar-link" data-page="reports" type="button"><span class="sidebar-link-icon sidebar-link-icon-reports"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="20" x2="4" y2="10"/><line x1="10" y1="20" x2="10" y2="4"/><line x1="16" y1="20" x2="16" y2="14"/><line x1="21" y1="20" x2="3" y2="20"/></svg></span><span class="sidebar-link-label">Reportes</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
 <!-- v251 — Pedido del usuario: el botón/página del menú lateral se
      renombra de "⚙️ Ajustes" a "🔔 Avisos" — desde v242, Ajustes y
      Reiniciar viven como accesos rápidos en el header (junto a "Oscuro"),
@@ -7225,7 +7301,7 @@
      link (texto del botón) — el id de la página (`data-page="settings"`,
      `id="pageSettings"`) y el resto de ids/lógica (notificationsMiniBtn,
      navigateToPage(), settings.accordionState, etc.) no se tocan. -->
-<button class="sidebar-link" data-page="settings" type="button"><span class="sidebar-link-icon sidebar-link-icon-alerts">🔔</span><span class="sidebar-link-label">Avisos</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
+<button class="sidebar-link" data-page="settings" type="button"><span class="sidebar-link-icon sidebar-link-icon-alerts"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span><span class="sidebar-link-label">Avisos</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
 </div>
 <!-- Pedido del usuario: tarjeta "Mi progreso" con anillo de % — dato
      derivado (productivo de la semana actual vs. tu meta diaria × 7, ver
@@ -7241,7 +7317,7 @@
 </button>
 <div class="sidebar-footer">
 <div class="sidebar-darkmode-row">
-<span class="sidebar-darkmode-icon">🌙</span>
+<span class="sidebar-darkmode-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/></svg></span>
 <span>Modo oscuro</span>
 <label class="sidebar-switch">
 <input aria-label="Modo oscuro" id="sidebarDarkModeInput" type="checkbox"/>
@@ -7254,7 +7330,7 @@
 <div>
 <div class="hero-top-row">
 <div class="hero-brand-row">
-<button aria-expanded="false" aria-label="Abrir menú" class="menu-toggle-btn" id="menuToggleBtn" type="button">☰</button>
+<button aria-expanded="false" aria-label="Abrir menú" class="menu-toggle-btn" id="menuToggleBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
 <div class="brand"><span class="dot-state"></span>Propio Shift Tracker</div>
 </div>
 <!-- v242 — Pedido del usuario (con captura): Ajustes/Higher Rate/Reiniciar
@@ -7314,10 +7390,10 @@
      Si en el futuro se necesita volver a exponer "Auto" en algún lado, la
      lógica ya existe intacta, solo faltaría un control que la dispare. */-->
 <div class="hero-top-actions">
-<button class="hero-action-btn hero-action-btn-icon" id="higherRateHeaderBtn" type="button" title="Higher Rate"><span aria-hidden="true">🔥</span><span class="hero-action-btn-label">Higher Rate</span></button>
+<button class="hero-action-btn hero-action-btn-icon" id="higherRateHeaderBtn" type="button" title="Higher Rate"><span aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c2 3-1 4-1 7a3 3 0 1 0 6 0c0-1-.5-2-.5-2 2 1 3 3.5 3 6a7 7 0 1 1-14 0c0-4 2-6 3.5-8 .5 2 1 2.5 3-3Z"/></svg></span><span class="hero-action-btn-label">Higher Rate</span></button>
 <div class="hero-ajustes-reset-group">
-<button class="hero-action-btn hero-action-btn-icon" id="ajustesHeaderBtn" type="button" title="Ajustes"><span aria-hidden="true">⚙️</span><span class="hero-action-btn-label">Ajustes</span></button>
-<button class="hero-action-btn hero-action-btn-icon danger" id="resetHeaderBtn" type="button" title="Reiniciar"><span aria-hidden="true">♻️</span><span class="hero-action-btn-label">Reiniciar</span></button>
+<button class="hero-action-btn hero-action-btn-icon" id="ajustesHeaderBtn" type="button" title="Ajustes"><span aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg></span><span class="hero-action-btn-label">Ajustes</span></button>
+<button class="hero-action-btn hero-action-btn-icon danger" id="resetHeaderBtn" type="button" title="Reiniciar"><span aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg></span><span class="hero-action-btn-label">Reiniciar</span></button>
 </div>
 </div>
 </div>
@@ -7343,19 +7419,19 @@
 <div class="hero-shift-actions">
 <button class="action-btn" id="shiftControlBtn" type="button" data-accent="cyan">
 <span class="action-ripple"></span>
-<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">▶</span></span>
+<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon"><svg class="ic-svg ic-fill" viewBox="0 0 24 24" aria-hidden="true"><polygon points="6 3 20 12 6 21" fill="currentColor" stroke="none"/></svg></span></span>
 <span class="action-label" id="shiftControlLabel">Iniciar shift</span>
 <span class="action-sub" id="shiftControlSub">07:00 AM – 04:00 PM</span>
 </button>
 <button class="action-btn" id="breakControlBtn" type="button" data-accent="warn">
 <span class="action-ripple"></span>
-<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">☕</span></span>
+<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg></span></span>
 <span class="action-label" id="breakControlLabel">Iniciar Break</span>
 <span class="action-sub" id="breakControlTimer">00:00:00</span>
 </button>
 <button class="action-btn" id="lunchControlBtn" type="button" data-accent="blue">
 <span class="action-ripple"></span>
-<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">🍽️</span></span>
+<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2v6a2 2 0 0 0 4 0V2"/><path d="M9 8v14"/><path d="M17 2c-1.5 0-3 1.5-3 4s1.5 4 3 5v11"/></svg></span></span>
 <span class="action-label" id="lunchControlLabel">Iniciar Lunch</span>
 <span class="action-sub" id="lunchControlTimer">00:00:00</span>
 </button>
@@ -7401,7 +7477,7 @@
 </div>
 <div style="display:flex; align-items:center; gap:10px;">
 <div class="goal-badge" id="goalPctBadge">0%</div>
-<div class="accordion-chevron">⌄</div>
+<div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
 </div>
 </summary>
 <div class="accordion-body">
@@ -7441,7 +7517,7 @@
     <h2>Turno de Hoy</h2>
     <p>Shift, Break, Lunch y ACW — resumen rápido contra lo planeado.</p>
   </div>
-  <div class="accordion-chevron">⌄</div>
+  <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
 </summary>
 <div class="accordion-body">
   <div id="blockSummaryStrip"></div>
@@ -7480,12 +7556,12 @@
 <div class="controls-grid">
 <button class="action-btn" id="callControlBtn" type="button" data-accent="pink">
 <span class="action-ripple"></span>
-<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📞</span></span>
+<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.05 5A5 5 0 0 1 19 8.95M15.05 1A9 9 0 0 1 23 8.94m-1 7.98v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.68 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.32 1.85.55 2.81.68A2 2 0 0 1 22 16.92Z"/></svg></span></span>
 <span class="action-label" id="callControlLabel">Iniciar llamada</span>
 <span class="action-sub" id="callControlTimer">00:00:00</span>
 </button>
-<button class="action-btn" id="pasteCallsBtn" type="button" data-accent="cyan"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">📋</span></span><span class="action-label">Pegar Llamadas</span><span class="action-sub">Importar data</span></button>
-<button class="action-btn" id="addCallManualBtn" type="button" data-accent="good"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon">➕</span></span><span class="action-label">Agregar llamada</span><span class="action-sub">Manual</span></button>
+<button class="action-btn" id="pasteCallsBtn" type="button" data-accent="cyan"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg></span></span><span class="action-label">Pegar Llamadas</span><span class="action-sub">Importar data</span></button>
+<button class="action-btn" id="addCallManualBtn" type="button" data-accent="good"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></span><span class="action-label">Agregar llamada</span><span class="action-sub">Manual</span></button>
 </div>
 </section>
 
@@ -7504,7 +7580,7 @@
     <h2>Ganancias del ciclo</h2>
     <p>Total del ciclo de pago actual (14 días) y la próxima fecha de pago.</p>
   </div>
-  <div class="accordion-chevron">⌄</div>
+  <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
 </summary>
 <div class="accordion-body">
 <div class="week-nav">
@@ -7552,7 +7628,7 @@
     <h2>Tabla de llamadas</h2>
     <p>Detalle de cada fila importada con su gap.</p>
   </div>
-  <div class="accordion-chevron">⌄</div>
+  <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
 </summary>
 <div class="accordion-body">
   <!-- v247 — Pedido del usuario (con captura): este `.note` repetía
@@ -7573,7 +7649,7 @@
        ambos temas. Sin `data-call-delete` (a propósito — ese atributo es
        lo que activa el listener de borrar UNA fila; este botón sigue
        wireado por su `id`, sin tocar esa lógica). -->
-  <button class="gap-edit-btn call-delete-btn" id="clearDayCallsBtn" type="button">🗑️ Vaciar llamadas del día</button>
+  <button class="gap-edit-btn call-delete-btn" id="clearDayCallsBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><path d="M6 7V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v3"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> Vaciar llamadas del día</button>
   <p class="alert-hint">Borra TODAS las llamadas de <strong id="clearDayCallsDayLabel">—</strong> (el día activo). No toca tu turno, pausas ni horario de ese día — para eso usa "Reiniciar día" en el botón ♻️ Reiniciar del header.</p>
   <div class="table-wrap" id="callTableWrap"></div>
 </div>
@@ -7621,7 +7697,7 @@
 <details class="accordion-card sched-v271" id="scheduleConfigAccordion">
 <summary>
   <div class="accordion-head">
-    <h2><span class="sched-header-icon" aria-hidden="true">📅</span>Horario</h2>
+    <h2><span class="sched-header-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>Horario</h2>
     <p>Cuándo empiezas, cuándo terminas, y tus breaks/lunch de cada día. "Bloques del día" (su propia página, en el menú ☰) se dibuja sobre este plan.</p>
   </div>
   <!-- v273 — Pedido del usuario: "¿Cómo funciona?" pasa de click→toast a
@@ -7635,17 +7711,17 @@
        toast(). -->
   <div class="sched-header-actions">
     <div class="sched-help-wrap">
-      <button class="sched-header-help-btn" id="scheduleHelpBtn" type="button" aria-describedby="scheduleHelpTooltip">❓ <span class="sched-header-help-label">¿Cómo funciona?</span></button>
+      <button class="sched-header-help-btn" id="scheduleHelpBtn" type="button" aria-describedby="scheduleHelpTooltip"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1.5 1-1.5 2.2"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg> <span class="sched-header-help-label">¿Cómo funciona?</span></button>
       <div class="sched-help-tooltip" id="scheduleHelpTooltip" role="tooltip">🗓️ Configura Inicio/Fin del turno y agrega bloques de Trabajo/Break/Lunch con su hora — el resto del turno sin bloque queda sin plan. "Bloques del día" compara esto contra lo que hiciste de verdad.</div>
     </div>
-    <div class="accordion-chevron">⌄</div>
+    <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
   </div>
 </summary>
 <div class="accordion-body">
   <div class="sched-block sched-segblock">
     <div class="day-tabs sched-segmented" id="scheduleModeTabs">
-      <button class="day-tab active" data-mode="template" type="button">🔁 Plantilla</button>
-      <button class="day-tab" data-mode="week" type="button">📅 Semana específica</button>
+      <button class="day-tab active" data-mode="template" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2 21 6 17 10"/><path d="M3 12v-2a4 4 0 0 1 4-4h14"/><path d="M7 22 3 18 7 14"/><path d="M21 12v2a4 4 0 0 1-4 4H3"/></svg> Plantilla</button>
+      <button class="day-tab" data-mode="week" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Semana específica</button>
     </div>
     <p class="sched-hint">"Plantilla" es tu horario de siempre — se repite igual cada semana. Usa "Semana específica" solo cuando UNA semana en particular va a ser distinta de tu plantilla (ej. cambiaste de turno por una semana nada más) — se guarda aparte, sin tocar tu plantilla de siempre.</p>
     <div class="sched-mode-banner tone-template" id="scheduleModeBanner"><span class="sched-mode-banner-icon" aria-hidden="true">🔁</span><span id="scheduleModeBannerText">Editando tu horario de siempre — se repite cada semana.</span></div>
@@ -7659,7 +7735,7 @@
     </div>
     <p class="sched-hint" id="scheduleWeekRangeLabel" style="margin:0 0 10px;">—</p>
     <label class="sched-checkbox-row"><input id="scheduleWeekCustomInput" type="checkbox"/> Personalizar el horario de esta semana (distinto a la plantilla)</label>
-    <p class="sched-hint" id="scheduleWeekLockedNote" style="display:none; color: var(--warn);">🔒 Esta semana ya pasó — queda protegida, solo lectura.</p>
+    <p class="sched-hint" id="scheduleWeekLockedNote" style="display:none; color: var(--warn);"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Esta semana ya pasó — queda protegida, solo lectura.</p>
   </div>
 
   <!-- v271 — Pedido del usuario (rediseño 100% visual de "Horario"): la
@@ -7685,7 +7761,7 @@
   <div class="sched-day-card">
     <div class="sched-day-card-top">
       <div class="sched-day-card-title">
-        <span class="sched-day-card-icon" aria-hidden="true">📅</span>
+        <span class="sched-day-card-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
         <span id="schedDayCardTitle">Lunes</span>
       </div>
       <label class="sched-checkbox-row sched-dayoff-toggle"><input id="dayOffInput" type="checkbox"/> Día libre (sin turno)</label>
@@ -7696,14 +7772,14 @@
         <label for="dayStartInput">Inicio del turno</label>
         <div class="sched-time-field-wrap">
           <input id="dayStartInput" inputmode="numeric" type="time"/>
-          <span class="sched-time-field-clock" aria-hidden="true">🕐</span>
+          <span class="sched-time-field-clock" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg></span>
         </div>
       </div>
       <div class="sched-field sched-time-field">
         <label for="dayEndInput">Fin del turno</label>
         <div class="sched-time-field-wrap">
           <input id="dayEndInput" inputmode="numeric" type="time"/>
-          <span class="sched-time-field-clock" aria-hidden="true">🕐</span>
+          <span class="sched-time-field-clock" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg></span>
         </div>
       </div>
     </div>
@@ -7729,9 +7805,9 @@
          puramente decorativa/informativa — no depende de los bloques
          configurados, no se re-renderiza junto con #blocksEditorList. -->
     <div class="sched-legend-row" aria-hidden="true">
-      <span class="sched-legend-chip" data-legend="work">💼 <strong>Trabajo:</strong>&nbsp;Bloques de enfoque productivo</span>
-      <span class="sched-legend-chip" data-legend="break">☕ <strong>Break:</strong>&nbsp;Descansos cortos</span>
-      <span class="sched-legend-chip" data-legend="lunch">🍽️ <strong>Lunch:</strong>&nbsp;Almuerzo / Descanso largo</span>
+      <span class="sched-legend-chip" data-legend="work"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="2" y1="12" x2="22" y2="12"/></svg> <strong>Trabajo:</strong>&nbsp;Bloques de enfoque productivo</span>
+      <span class="sched-legend-chip" data-legend="break"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg> <strong>Break:</strong>&nbsp;Descansos cortos</span>
+      <span class="sched-legend-chip" data-legend="lunch"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2v6a2 2 0 0 0 4 0V2"/><path d="M9 8v14"/><path d="M17 2c-1.5 0-3 1.5-3 4s1.5 4 3 5v11"/></svg> <strong>Lunch:</strong>&nbsp;Almuerzo / Descanso largo</span>
     </div>
   </div>
 
@@ -7806,7 +7882,7 @@
     <p id="scheduleSubtitle">Horario fijo que la app ya conoce.</p>
     <p class="schedule-off-worked-note" id="scheduleOffWorkedNote" style="display:none;">Trabajaste en tu día libre — no aparece marcado como libre, se ve igual que un día laboral normal.</p>
   </div>
-  <div class="accordion-chevron">⌄</div>
+  <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
 </summary>
 <div class="accordion-body">
   <div class="day-metrics-row sched-blocks-summary-row" id="dayMetricsRow">
@@ -7814,7 +7890,7 @@
       <details class="mini-accordion" id="adherenceAccordion">
         <summary class="mini-accordion-summary sched-blocks-summary-summary">
           <div style="min-width:0;">
-            <div class="sched-blocks-summary-label">Adherencia</div>
+            <div class="sched-blocks-summary-label"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg> Adherencia</div>
             <span class="slot-status" id="adherenceBadge">Adherencia: —</span>
           </div>
           <span class="mini-accordion-toggle">Detalle ⌄</span>
@@ -7823,14 +7899,14 @@
       </details>
     </div>
     <div class="sched-blocks-summary-card" data-metric="goal">
-      <div class="sched-blocks-summary-label">Meta</div>
+      <div class="sched-blocks-summary-label"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v18"/><path d="M5 4h9l-1 3 1 3H5"/></svg> Meta</div>
       <span class="slot-status" id="adherenceGoalBadge" style="display:none;"></span>
     </div>
     <div class="sched-blocks-summary-card" data-metric="productivity">
-      <div class="sched-blocks-summary-label">Productividad</div>
+      <div class="sched-blocks-summary-label"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Productividad</div>
       <span class="slot-status" id="productivityGoalBadge" title="Minutos productivos logrados hoy vs. la suma de las metas configuradas en cada bloque de Trabajo (Horario → Bloques). Un bloque sin meta configurada no cuenta para este total.">Meta productiva: —</span>
     </div>
-    <span class="slot-status bad live-exception" id="adherenceLiveBadge" style="display:none;">⚠️ Fuera de adherencia ahora</span>
+    <span class="slot-status bad live-exception" id="adherenceLiveBadge" style="display:none;"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg> Fuera de adherencia ahora</span>
   </div>
   <!-- v278 — Pedido del usuario: toggle "Contraer bloques al terminar",
        persistido en settings.collapseCompletedBlocks (ver
@@ -7855,9 +7931,9 @@
 <details class="accordion-card" id="resumenDiaAccordion" open>
 <summary>
 <div class="accordion-head">
-<h2>📈 Resumen del día</h2>
+<h2><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="20" x2="4" y2="10"/><line x1="10" y1="20" x2="10" y2="4"/><line x1="16" y1="20" x2="16" y2="14"/><line x1="21" y1="20" x2="3" y2="20"/></svg> Resumen del día</h2>
 </div>
-<div class="accordion-chevron">⌄</div>
+<div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
 </summary>
 <div class="accordion-body">
 <div class="stats-row">
@@ -7899,7 +7975,7 @@
 <div class="accordion-head">
 <h2>📊 Estadísticas del día</h2>
 </div>
-<div class="accordion-chevron">⌄</div>
+<div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
 </summary>
 <div class="accordion-body">
 <div style="margin-top:4px;">
@@ -7935,7 +8011,7 @@
     <h2>Resumen semanal</h2>
     <p id="weekSummarySubtitle">Semana actual</p>
   </div>
-  <div class="accordion-chevron">⌄</div>
+  <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
 </summary>
 <div class="accordion-body">
   <div class="week-nav">
@@ -7970,24 +8046,24 @@
     <h2>🔔 Avisos</h2>
     <p>Volumen, avisos con sonido y Descanso por productividad — configuración global, no depende del día.</p>
   </div>
-  <div class="accordion-chevron">⌄</div>
+  <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
 </summary>
 <div class="accordion-body">
 <div class="alert-group">
 <div class="alert-group-head">
-<span class="alert-group-icon">🔊</span>
+<span class="alert-group-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="4 9 8 9 12 5 12 19 8 15 4 15"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg></span>
 <span class="alert-group-title">Volumen</span>
 </div>
 <div class="volume-row">
 <input id="masterVolumeInput" max="100" min="0" step="1" type="range" value="100"/>
 <span class="volume-value" id="masterVolumeValue">100%</span>
-<button class="gap-edit-btn" id="testMasterVolumeBtn" type="button">🔊 Probar</button>
+<button class="gap-edit-btn" id="testMasterVolumeBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="4 9 8 9 12 5 12 19 8 15 4 15"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg> Probar</button>
 </div>
 <p class="alert-hint">Un solo control para TODOS los sonidos del programa: avisos de turno/Break/Lunch y descanso por productividad (incluye tu sonido personalizado, si subiste uno). 0% = silencioso, los avisos siguen mostrándose igual como toast, solo sin sonido.</p>
 </div>
 <div class="alert-group">
 <div class="alert-group-head">
-<span class="alert-group-icon">⏱️</span>
+<span class="alert-group-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="10" y1="2" x2="14" y2="2"/><line x1="12" y1="6" x2="12" y2="2.5"/><circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 15 15"/></svg></span>
 <span class="alert-group-title">Antes de mi turno</span>
 </div>
 <div class="alert-fields-row" style="grid-template-columns: 1fr;">
@@ -8009,7 +8085,7 @@
 <option value="chime">Campanita</option>
 <option value="custom">Sonido personalizado</option>
 </select>
-<button class="gap-edit-btn" id="testShiftAlarmSoundBtn" type="button" style="white-space:nowrap;">🔊 Probar</button>
+<button class="gap-edit-btn" id="testShiftAlarmSoundBtn" type="button" style="white-space:nowrap;"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="4 9 8 9 12 5 12 19 8 15 4 15"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg> Probar</button>
 </div>
 </div>
 <div id="shiftAlarmCustomSoundSection" style="display:none;">
@@ -8023,7 +8099,7 @@
 </div>
 <div class="alert-group">
 <div class="alert-group-head">
-<span class="alert-group-icon">☕</span>
+<span class="alert-group-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg></span>
 <span class="alert-group-title">Antes de que empiece tu Break/Lunch</span>
 </div>
 <div class="alert-fields-row" style="grid-template-columns: 1fr;">
@@ -8045,7 +8121,7 @@
 <option value="chime">Campanita</option>
 <option value="custom">Sonido personalizado</option>
 </select>
-<button class="gap-edit-btn" id="testBreakStartAlarmSoundBtn" type="button" style="white-space:nowrap;">🔊 Probar</button>
+<button class="gap-edit-btn" id="testBreakStartAlarmSoundBtn" type="button" style="white-space:nowrap;"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="4 9 8 9 12 5 12 19 8 15 4 15"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg> Probar</button>
 </div>
 </div>
 <div id="breakStartAlarmCustomSoundSection" style="display:none;">
@@ -8059,7 +8135,7 @@
 </div>
 <div class="alert-group">
 <div class="alert-group-head">
-<span class="alert-group-icon">⏰</span>
+<span class="alert-group-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 14.5 14.5"/><path d="M5 3 2 6"/><path d="M22 6 19 3"/></svg></span>
 <span class="alert-group-title">Antes de que termine tu Break/Lunch</span>
 </div>
 <div class="alert-fields-row" style="grid-template-columns: 1fr;">
@@ -8081,7 +8157,7 @@
 <option value="chime">Campanita</option>
 <option value="custom">Sonido personalizado</option>
 </select>
-<button class="gap-edit-btn" id="testBreakEndAlarmSoundBtn" type="button" style="white-space:nowrap;">🔊 Probar</button>
+<button class="gap-edit-btn" id="testBreakEndAlarmSoundBtn" type="button" style="white-space:nowrap;"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="4 9 8 9 12 5 12 19 8 15 4 15"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg> Probar</button>
 </div>
 </div>
 <div id="breakEndAlarmCustomSoundSection" style="display:none;">
@@ -8095,7 +8171,7 @@
 </div>
 <div class="alert-group">
 <div class="alert-group-head">
-<span class="alert-group-icon">🎯</span>
+<span class="alert-group-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></span>
 <span class="alert-group-title">Descanso por productividad</span>
 </div>
 <div class="alert-fields-row">
@@ -8125,7 +8201,7 @@
 <option value="chime">Campanita</option>
 <option value="custom">Sonido personalizado</option>
 </select>
-<button class="gap-edit-btn" id="testProductiveBreakSoundBtn" type="button" style="white-space:nowrap;">🔊 Probar</button>
+<button class="gap-edit-btn" id="testProductiveBreakSoundBtn" type="button" style="white-space:nowrap;"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="4 9 8 9 12 5 12 19 8 15 4 15"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg> Probar</button>
 </div>
 </div>
 <div id="productiveBreakCustomSoundSection" style="display:none;">
@@ -8286,7 +8362,7 @@
 <div aria-labelledby="higherRateModalTitle" aria-modal="true" class="modal-card" role="dialog">
 <div class="modal-head">
 <div>
-<h3 id="higherRateModalTitle">🔥 Higher Rate</h3>
+<h3 id="higherRateModalTitle"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c2 3-1 4-1 7a3 3 0 1 0 6 0c0-1-.5-2-.5-2 2 1 3 3.5 3 6a7 7 0 1 1-14 0c0-4 2-6 3.5-8 .5 2 1 2.5 3-3Z"/></svg> Higher Rate</h3>
 <p>Fecha específica + hora de inicio/fin donde aplica un bono sobre la tasa por minuto — Propio lo avisa por correo, no lo expone en los datos que la app importa, así que se configura a mano.</p>
 </div>
 <button aria-label="Cerrar" class="modal-close" data-close-modal="higherRateModal" type="button">×</button>
@@ -8299,15 +8375,15 @@
 <details class="accordion-card" id="higherRateHistoryAccordion" style="margin-top:10px;">
 <summary>
   <div class="accordion-head">
-    <h2 id="higherRateHistoryTitle">📜 Ventanas pasadas (0)</h2>
+    <h2 id="higherRateHistoryTitle"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"/><line x1="10" y1="13" x2="14" y2="13"/></svg> Ventanas pasadas (0)</h2>
     <p>Se mueven aquí solas apenas su fecha ya pasó — la lista de arriba se queda limpia con solo hoy y lo que viene. Siguen editables o eliminables cuando quieras, no se borran solas.</p>
   </div>
-  <div class="accordion-chevron">⌄</div>
+  <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
 </summary>
 <div class="accordion-body">
   <div class="gap-editor-list" id="higherRateHistoryList"></div>
   <div class="modal-actions" style="margin-top:0;">
-    <button class="bad" id="purgeHigherRateWindowsBtn" type="button">🗑️ Vaciar historial</button>
+    <button class="bad" id="purgeHigherRateWindowsBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><path d="M6 7V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v3"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> Vaciar historial</button>
   </div>
   <p class="alert-hint">Borra TODAS las ventanas pasadas de un click. El bono ya ganado por llamadas reales se conserva siempre, aunque borres la ventana que lo generó.</p>
 </div>
@@ -8356,7 +8432,7 @@ $0.72"></textarea>
 <div aria-labelledby="acwGoalModalTitle" aria-modal="true" class="modal-card" role="dialog">
 <div class="modal-head">
 <div>
-<h3 id="acwGoalModalTitle">⏱️ Meta máxima de ACW</h3>
+<h3 id="acwGoalModalTitle"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="10" y1="2" x2="14" y2="2"/><line x1="12" y1="6" x2="12" y2="2.5"/><circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 15 15"/></svg> Meta máxima de ACW</h3>
 <p>La tarjeta de ACW en "Turno de Hoy" se llena contra este número — no contra la duración de tu turno. Al llegar al máximo se ve al 100%, aunque sigas acumulando ACW después.</p>
 </div>
 <button aria-label="Cerrar" class="modal-close" data-close-modal="acwGoalModal" type="button">×</button>
@@ -8550,7 +8626,7 @@ $0.72"></textarea>
 <div aria-labelledby="onboardingModalTitle" aria-modal="true" class="modal-card" role="dialog">
 <div class="modal-head">
 <div>
-<h3 id="onboardingModalTitle">¡Bienvenido! 👋</h3>
+<h3 id="onboardingModalTitle">¡Bienvenido! <svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg></h3>
 <p>Antes de empezar, ¿cómo te llamas? Puedes elegir un emoji para tu saludo también. Esto solo se pregunta esta vez — luego lo puedes cambiar cuando quieras desde "Ajustes".</p>
 </div>
 </div>
@@ -8591,6 +8667,60 @@ $0.72"></textarea>
     const CALLS_KEY = 'propio_shift_tracker_calls_es_v4';
     const SETTINGS_KEY = 'propio_shift_tracker_settings_es_v1';
     const RATE = 0.12;
+    // v290 — Pedido del usuario: reemplazo de TODOS los íconos-emoji de la UI
+    // por SVG inline (estilo Lucide/outline) — ver el comentario extenso junto a
+    // `.ic-svg` en el CSS para el motivo completo. Este objeto es la fuente para
+    // cualquier ícono armado por JS (template strings) — el HTML ya escrito a mano
+    // en el documento pega el mismo `<svg class="ic-svg">` literal (mismos paths,
+    // sin depender de este objeto, ya que esa parte del documento no corre JS para
+    // pintarse). `iconHtml(name, extraClass)` es el único punto de entrada — agrega
+    // clases extra (ej. tamaños puntuales) sin duplicar el viewBox/atributos base.
+    const ICON = {
+      menu: '<line x1=\"3\" y1=\"6\" x2=\"21\" y2=\"6\"/><line x1=\"3\" y1=\"12\" x2=\"21\" y2=\"12\"/><line x1=\"3\" y1=\"18\" x2=\"21\" y2=\"18\"/>',
+      close: '<line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"/><line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"/>',
+      pin: '<circle cx=\"12\" cy=\"9\" r=\"4\"/><line x1=\"12\" y1=\"13\" x2=\"12\" y2=\"21\"/>',
+      bell: '<path d=\"M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6\"/><path d=\"M10 20a2 2 0 0 0 4 0\"/>',
+      flame: '<path d=\"M12 2c2 3-1 4-1 7a3 3 0 1 0 6 0c0-1-.5-2-.5-2 2 1 3 3.5 3 6a7 7 0 1 1-14 0c0-4 2-6 3.5-8 .5 2 1 2.5 3-3Z\"/>',
+      settings: '<circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z\"/>',
+      reset: '<path d=\"M21 12a9 9 0 1 1-3-6.7\"/><polyline points=\"21 3 21 9 15 9\"/>',
+      coffee: '<path d=\"M17 8h1a4 4 0 1 1 0 8h-1\"/><path d=\"M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z\"/><line x1=\"6\" y1=\"2\" x2=\"6\" y2=\"4\"/><line x1=\"10\" y1=\"2\" x2=\"10\" y2=\"4\"/><line x1=\"14\" y1=\"2\" x2=\"14\" y2=\"4\"/>',
+      utensils: '<path d=\"M7 2v6a2 2 0 0 0 4 0V2\"/><path d=\"M9 8v14\"/><path d=\"M17 2c-1.5 0-3 1.5-3 4s1.5 4 3 5v11\"/>',
+      briefcase: '<rect x=\"2\" y=\"7\" width=\"20\" height=\"14\" rx=\"2\"/><path d=\"M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2\"/><line x1=\"2\" y1=\"12\" x2=\"22\" y2=\"12\"/>',
+      phone: '<path d=\"M15.05 5A5 5 0 0 1 19 8.95M15.05 1A9 9 0 0 1 23 8.94m-1 7.98v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.68 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.32 1.85.55 2.81.68A2 2 0 0 1 22 16.92Z\"/>',
+      clipboard: '<rect x=\"8\" y=\"2\" width=\"8\" height=\"4\" rx=\"1\"/><path d=\"M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3\"/><line x1=\"9\" y1=\"12\" x2=\"15\" y2=\"12\"/><line x1=\"9\" y1=\"16\" x2=\"15\" y2=\"16\"/>',
+      plus: '<line x1=\"12\" y1=\"5\" x2=\"12\" y2=\"19\"/><line x1=\"5\" y1=\"12\" x2=\"19\" y2=\"12\"/>',
+      home: '<path d=\"M3 10.5 12 3l9 7.5\"/><path d=\"M5 9.5V21h14V9.5\"/>',
+      calendar: '<rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\"/><line x1=\"16\" y1=\"2\" x2=\"16\" y2=\"6\"/><line x1=\"8\" y1=\"2\" x2=\"8\" y2=\"6\"/><line x1=\"3\" y1=\"10\" x2=\"21\" y2=\"10\"/>',
+      clock: '<circle cx=\"12\" cy=\"12\" r=\"9\"/><polyline points=\"12 7 12 12 15.5 14\"/>',
+      chevronDown: '<polyline points=\"6 9 12 15 18 9\"/>',
+      help: '<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1.5 1-1.5 2.2\"/><line x1=\"12\" y1=\"17\" x2=\"12\" y2=\"17.01\"/>',
+      target: '<circle cx=\"12\" cy=\"12\" r=\"9\"/><circle cx=\"12\" cy=\"12\" r=\"5\"/><circle cx=\"12\" cy=\"12\" r=\"1\"/>',
+      timer: '<line x1=\"10\" y1=\"2\" x2=\"14\" y2=\"2\"/><line x1=\"12\" y1=\"6\" x2=\"12\" y2=\"2.5\"/><circle cx=\"12\" cy=\"13\" r=\"8\"/><polyline points=\"12 9 12 13 15 15\"/>',
+      volume: '<polygon points=\"4 9 8 9 12 5 12 19 8 15 4 15\"/><path d=\"M17 8a5 5 0 0 1 0 8\"/><path d=\"M19.5 5.5a9 9 0 0 1 0 13\"/>',
+      alarmClock: '<circle cx=\"12\" cy=\"13\" r=\"8\"/><polyline points=\"12 9 12 13 14.5 14.5\"/><path d=\"M5 3 2 6\"/><path d=\"M22 6 19 3\"/>',
+      checkCircle: '<circle cx=\"12\" cy=\"12\" r=\"9\"/><polyline points=\"8 12.5 11 15.5 16 9\"/>',
+      alertTriangle: '<path d=\"M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z\"/><line x1=\"12\" y1=\"9\" x2=\"12\" y2=\"13\"/><line x1=\"12\" y1=\"17\" x2=\"12\" y2=\"17.01\"/>',
+      moon: '<path d=\"M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z\"/>',
+      lock: '<rect x=\"4\" y=\"11\" width=\"16\" height=\"10\" rx=\"2\"/><path d=\"M8 11V7a4 4 0 0 1 8 0v4\"/>',
+      eye: '<path d=\"M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>',
+      repeat: '<path d=\"M17 2 21 6 17 10\"/><path d=\"M3 12v-2a4 4 0 0 1 4-4h14\"/><path d=\"M7 22 3 18 7 14\"/><path d=\"M21 12v2a4 4 0 0 1-4 4H3\"/>',
+      trash: '<line x1=\"4\" y1=\"7\" x2=\"20\" y2=\"7\"/><path d=\"M6 7V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v3\"/><path d=\"M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13\"/><line x1=\"10\" y1=\"11\" x2=\"10\" y2=\"17\"/><line x1=\"14\" y1=\"11\" x2=\"14\" y2=\"17\"/>',
+      history: '<rect x=\"3\" y=\"4\" width=\"18\" height=\"4\" rx=\"1\"/><path d=\"M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8\"/><line x1=\"10\" y1=\"13\" x2=\"14\" y2=\"13\"/>',
+      edit: '<path d=\"M12 20h9\"/><path d=\"M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z\"/>',
+      check: '<polyline points=\"5 12 10 17 19 6\"/>',
+      medal: '<circle cx=\"12\" cy=\"15\" r=\"5\"/><path d=\"M9 9 6 3h2l4 6 4-6h2l-3 6\"/>',
+      chart: '<line x1=\"4\" y1=\"20\" x2=\"4\" y2=\"10\"/><line x1=\"10\" y1=\"20\" x2=\"10\" y2=\"4\"/><line x1=\"16\" y1=\"20\" x2=\"16\" y2=\"14\"/><line x1=\"21\" y1=\"20\" x2=\"3\" y2=\"20\"/>',
+      sparkles: '<path d=\"M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8\"/>',
+      flag: '<path d=\"M5 3v18\"/><path d=\"M5 4h9l-1 3 1 3H5\"/>',
+      zap: '<polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/>',
+      circle: '<circle cx=\"12\" cy=\"12\" r=\"8\"/>',
+      play: '<polygon points=\"6 3 20 12 6 21\" fill=\"currentColor\" stroke=\"none\"/>',
+    };
+    function iconHtml(name, extraClass) {
+      const inner = ICON[name] || '';
+      const cls = extraClass ? `ic-svg ${extraClass}` : 'ic-svg';
+      return `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${inner}</svg>`;
+    }
     // Emoji que acompaña el nombre en el saludo (ver greetingText()). Es el
     // valor con el que se prellena el campo del popup de bienvenida y el
     // fallback si settings.userEmoji queda vacío/inválido.
@@ -8645,10 +8775,10 @@ $0.72"></textarea>
     // openCallEditor(), el aviso que evita que el usuario sume el bono dos
     // veces si la llamada YA cae dentro de una ventana configurada).
     const RATE_TILE_DEFS = [
-      { key: 'normal', label: 'Normal', icon: '⚪', bonus: 0 },
-      { key: 'bronze', label: 'Bronce', icon: '🥉', bonus: HIGHER_RATE_TIERS.bronze.bonusPerMin },
-      { key: 'silver', label: 'Silver', icon: '🥈', bonus: HIGHER_RATE_TIERS.silver.bonusPerMin },
-      { key: 'gold', label: 'Gold', icon: '🥇', bonus: HIGHER_RATE_TIERS.gold.bonusPerMin },
+      { key: 'normal', label: 'Normal', icon: iconHtml('circle'), bonus: 0 },
+      { key: 'bronze', label: 'Bronce', icon: iconHtml('medal'), bonus: HIGHER_RATE_TIERS.bronze.bonusPerMin },
+      { key: 'silver', label: 'Silver', icon: iconHtml('medal'), bonus: HIGHER_RATE_TIERS.silver.bonusPerMin },
+      { key: 'gold', label: 'Gold', icon: iconHtml('medal'), bonus: HIGHER_RATE_TIERS.gold.bonusPerMin },
     ];
 
     // $/min de un tile — tasa base del usuario (settings.rate, la misma que
@@ -9732,7 +9862,7 @@ $0.72"></textarea>
       const colorVar = meta?.colorVar || '--warn';
       const rgb = meta?.colorRgb || '255,209,92';
       const label = meta?.label || tier;
-      return `<span class="imported-late" style="background: rgba(${rgb},.16); border-color: rgba(${rgb},.4); color: var(${colorVar});" title="Higher Rate Opportunity · ${escapeHtml(label)}">🔥 ${escapeHtml(label)} +${money(amount)}</span>`;
+      return `<span class="imported-late" style="background: rgba(${rgb},.16); border-color: rgba(${rgb},.4); color: var(${colorVar});" title="Higher Rate Opportunity · ${escapeHtml(label)}">${iconHtml('flame')} ${escapeHtml(label)} +${money(amount)}</span>`;
     }
 
     // Versión compacta sin pill (solo texto coloreado) — para la línea de
@@ -9742,7 +9872,7 @@ $0.72"></textarea>
       const meta = HIGHER_RATE_TIERS[tier];
       const colorVar = meta?.colorVar || '--warn';
       const label = meta?.label || tier;
-      return `<span style="color: var(${colorVar}); font-size:11px; font-weight:800;">🔥 ${escapeHtml(label)} +${money(amount)}</span>`;
+      return `<span style="color: var(${colorVar}); font-size:11px; font-weight:800;">${iconHtml('flame')} ${escapeHtml(label)} +${money(amount)}</span>`;
     }
 
     // Fila de tags agregados (uno por cada nivel presente ese día, ordenados
@@ -9760,7 +9890,7 @@ $0.72"></textarea>
         const colorVar = meta?.colorVar || '--warn';
         const rgb = meta?.colorRgb || '255,209,92';
         const label = meta?.label || tier;
-        return `<span class="${tagClass}" style="background: rgba(${rgb},.16); border-color: rgba(${rgb},.4); color: var(${colorVar});">🔥 ${escapeHtml(label)}: +${money(amount)}</span>`;
+        return `<span class="${tagClass}" style="background: rgba(${rgb},.16); border-color: rgba(${rgb},.4); color: var(${colorVar});">${iconHtml('flame')} ${escapeHtml(label)}: +${money(amount)}</span>`;
       }).join('');
     }
 
@@ -12223,11 +12353,11 @@ function renderWeekSummary() {
       : `<span class="tag ${r.adherencePct >= 90 ? 'good' : r.adherencePct >= 70 ? 'warn' : 'bad'}">${r.adherencePct}%</span>`;
 
     const noteCommentHtml = r.note && r.note.comment
-      ? `<div class="gap-note" title="${escapeHtml(r.note.comment)}">📝 ${escapeHtml(r.note.comment.length > 36 ? r.note.comment.slice(0, 36) + '…' : r.note.comment)}</div>`
+      ? `<div class="gap-note" title="${escapeHtml(r.note.comment)}"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> ${escapeHtml(r.note.comment.length > 36 ? r.note.comment.slice(0, 36) + '…' : r.note.comment)}</div>`
       : '';
     const noteCell = `
       <div class="gap-cell">
-        <button class="gap-edit-btn" type="button" data-day-note-edit="${escapeHtml(r.dayKey)}">✎ Editar</button>
+        <button class="gap-edit-btn" type="button" data-day-note-edit="${escapeHtml(r.dayKey)}"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Editar</button>
         ${noteCommentHtml}
       </div>
     `;
@@ -12291,7 +12421,7 @@ function renderWeekSummary() {
           ${noteCommentMobileHtml}
         </div>
         <div style="margin-top:8px; display:flex; justify-content:flex-end;">
-          <button class="gap-edit-btn" type="button" data-day-note-edit="${escapeHtml(r.dayKey)}">✎ Editar día</button>
+          <button class="gap-edit-btn" type="button" data-day-note-edit="${escapeHtml(r.dayKey)}"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Editar día</button>
         </div>
       </div>
     `;
@@ -13555,9 +13685,9 @@ function renderWeekSummary() {
     // usa ▶ para Shift — pero Trabajo como BLOQUE individual no tenía ícono
     // propio hasta ahora).
     const BLOCK_TIMELINE_META = {
-      work: { icon: '💼', subtitle: 'Enfoque y productividad' },
-      break: { icon: '☕', subtitle: 'Descanso corto' },
-      lunch: { icon: '🍽️', subtitle: 'Almuerzo / Descanso largo' },
+      work: { icon: iconHtml('briefcase'), subtitle: 'Enfoque y productividad' },
+      break: { icon: iconHtml('coffee'), subtitle: 'Descanso corto' },
+      lunch: { icon: iconHtml('utensils'), subtitle: 'Almuerzo / Descanso largo' },
     };
 
     // Duración legible ("2h 10m" / "45 min" / "1h") para la píldora de la
@@ -13632,7 +13762,7 @@ function renderWeekSummary() {
               </div>
               <span class="sched-tl-duration">${durationLabel}</span>
               <span class="sched-tl-handle" aria-hidden="true" title="Orden (informativo)">⋮⋮</span>
-              <button type="button" class="gap-edit-btn block-remove-btn sched-tl-remove" data-remove-block="${i}" aria-label="Eliminar bloque ${i + 1}">✕</button>
+              <button type="button" class="gap-edit-btn block-remove-btn sched-tl-remove" data-remove-block="${i}" aria-label="Eliminar bloque ${i + 1}"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
             </div>
             <div class="field block-goal-field sched-tl-goal" style="${type === 'work' ? '' : 'display:none;'}">
               <label>Meta productiva (min)</label>
@@ -13827,17 +13957,17 @@ function renderWeekSummary() {
       if (!banner || !bannerText || !bannerIcon) return;
       if (!isWeekMode) {
         banner.className = 'sched-mode-banner tone-template';
-        bannerIcon.textContent = '🔁';
+        bannerIcon.innerHTML = iconHtml('repeat');
         bannerText.textContent = 'Editando tu horario de siempre — se repite cada semana.';
       } else if (!hasCustom) {
         banner.className = 'sched-mode-banner tone-template';
-        bannerIcon.textContent = '👁️';
+        bannerIcon.innerHTML = iconHtml('eye');
         bannerText.textContent = 'Viendo tu plantilla como referencia — activa "Personalizar esta semana" para editar solo esta semana.';
       } else {
         const weekStart = scheduleWeekStartDate(scheduleWeekOffset);
         const weekEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6);
         banner.className = 'sched-mode-banner tone-week';
-        bannerIcon.textContent = '📅';
+        bannerIcon.innerHTML = iconHtml('calendar');
         bannerText.textContent = `Editando SOLO ${formatWeekRangeLabel(weekStart, weekEnd)} — tu plantilla no se toca.`;
       }
     }
@@ -14534,7 +14664,7 @@ function renderWeekSummary() {
               <option value="gold" ${tier === 'gold' ? 'selected' : ''}>Gold (+$0.03)</option>
             </select>
           </div>
-          <button type="button" class="gap-edit-btn block-remove-btn" data-remove-hr-window style="background: rgba(255,111,143,.12); border-color: rgba(255,111,143,.3);" aria-label="Eliminar ventana">✕</button>
+          <button type="button" class="gap-edit-btn block-remove-btn" data-remove-hr-window style="background: rgba(255,111,143,.12); border-color: rgba(255,111,143,.3);" aria-label="Eliminar ventana"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
         </div>
       `;
     }
@@ -14563,7 +14693,7 @@ function renderWeekSummary() {
 
       historyList.innerHTML = sortedPast.map(renderHigherRateWindowRow).join('')
         || '<div class="note" style="margin:0;">Sin ventanas pasadas todavía.</div>';
-      if (historyTitle) historyTitle.textContent = `📜 Ventanas pasadas (${sortedPast.length})`;
+      if (historyTitle) historyTitle.innerHTML = `${iconHtml('history')} Ventanas pasadas (${sortedPast.length})`;
     }
 
     // Lee todas las filas del editor tal como están en el DOM — AMBAS listas
@@ -15687,7 +15817,7 @@ function renderBlockSummaryStrip(cards) {
     // también necesita su propio editor, aunque hoy solo ACW lo declara
     // (`c.editable`, ver el push de ACW en renderSchedule()).
     const editBtnHtml = c.editable
-      ? `<button class="bsc-edit-btn" type="button" data-edit-card="${escapeHtml(c.editable)}" aria-label="Editar meta de ${escapeHtml(c.name)}" title="Editar meta">✎</button>`
+      ? `<button class="bsc-edit-btn" type="button" data-edit-card="${escapeHtml(c.editable)}" aria-label="Editar meta de ${escapeHtml(c.name)}" title="Editar meta"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>`
       : '';
     return `
       <div class="block-summary-card ${extraClass}" data-accent="${escapeHtml(c.accent)}" style="--bsc-pct:${pct}%">
@@ -15899,14 +16029,15 @@ function renderSchedule() {
           dayGoalTargetMin += stats.productivityGoal.goalMin;
           dayGoalAchievedMin += stats.productivityGoal.achievedMin;
           const g = stats.productivityGoal;
+          const goalIconHtml = g.met ? `${iconHtml('checkCircle')} ` : '';
           const goalText = g.met
-            ? `✅ Meta productiva alcanzada: ${formatMinutes(g.achievedMin)}/${formatMinutes(g.goalMin)} min`
+            ? `Meta productiva alcanzada: ${formatMinutes(g.achievedMin)}/${formatMinutes(g.goalMin)} min`
             : `Meta productiva: ${formatMinutes(g.achievedMin)}/${formatMinutes(g.goalMin)} min`;
           const goalLabelColor = g.met ? `color: var(--good); font-weight: 800;` : '';
           const goalFill = g.met ? 'linear-gradient(90deg, var(--good), var(--teal))' : 'linear-gradient(90deg, var(--teal), var(--blue))';
           goalBarHtml = `
             <div class="sblk-bar-row tight" title="Minutos productivos meta de este bloque, configurable en Horario → Bloques.">
-              <div class="sblk-bar-label-row" style="${goalLabelColor}"><span>${escapeHtml(goalText)}</span></div>
+              <div class="sblk-bar-label-row" style="${goalLabelColor}"><span>${goalIconHtml}${escapeHtml(goalText)}</span></div>
               <div class="sblk-bar-track" aria-label="${escapeHtml(slot.name)} meta productiva"><div style="width:${g.pct}%; background:${goalFill};"></div></div>
             </div>
           `;
@@ -15933,7 +16064,7 @@ function renderSchedule() {
           const dominant = dominantExceptionReason(slotAdherence.reasons);
           const reasonSuffix = dominant ? ` · ${dominant.label} (${formatMinutes(dominant.minutes)}m)` : '';
           const text = `Adherencia del bloque: ${slotAdherence.pct}% (${slotAdherence.adherentMinutes}/${slotAdherence.total} min)${reasonSuffix}`;
-          const diagnosticIcon = tone === 'good' ? '✅' : '⚠️';
+          const diagnosticIcon = tone === 'good' ? iconHtml('checkCircle') : iconHtml('alertTriangle');
           const diagnosticFill = tone === 'good' ? 'linear-gradient(90deg, var(--good), var(--teal))' : tone === 'warn' ? 'linear-gradient(90deg, var(--warn), #ffcf7d)' : 'linear-gradient(90deg, var(--bad), #ff8a95)';
           adherenceBarHtml = `
             <div class="sblk-diagnostic tone-${tone}">
@@ -15987,7 +16118,7 @@ function renderSchedule() {
         // se muestra como su propia línea, coloreada con el mismo
         // `statusClass`/`stats.statusTone` de siempre.
         const badgeToneClass = statusText === 'Hecho' ? 'good' : statusText === 'Omitido' ? 'bad' : (statusText === 'Incompleto' || statusText === 'Actual') ? 'warn' : '';
-        const icon = slot.type === 'Work' ? '💼' : slot.type === 'Break' ? '☕' : '🍽️';
+        const icon = slot.type === 'Work' ? iconHtml('briefcase') : slot.type === 'Break' ? iconHtml('coffee') : iconHtml('utensils');
         const statusDetailLine = stats.status
           ? `<div class="sblk-meta-line" style="${statusClass ? `color: var(--${statusClass}); font-weight: 700;` : ''}">${escapeHtml(stats.status)}</div>`
           : '';
@@ -16085,7 +16216,7 @@ function renderSchedule() {
       const shiftPct = plannedShiftMin > 0 ? Math.min(100, (shiftConnectedMin / plannedShiftMin) * 100) : 0;
       summaryCards.push({
         name: 'Shift',
-        icon: '▶',
+        icon: iconHtml('play', 'ic-fill'),
         accent: 'cyan',
         range: `${timeLabel(shiftWindowForCard.start)} – ${timeLabel(shiftWindowForCard.end)}`,
         pct: shiftPct,
@@ -16135,7 +16266,7 @@ function renderSchedule() {
         const { range, rangeExtra } = rangeWithNext(breakBlockTimes);
         summaryCards.push({
           name: 'Break',
-          icon: '☕',
+          icon: iconHtml('coffee'),
           accent: 'warn',
           range,
           rangeExtra,
@@ -16144,7 +16275,7 @@ function renderSchedule() {
       } else {
         summaryCards.push({
           name: 'Break',
-          icon: '☕',
+          icon: iconHtml('coffee'),
           accent: 'warn',
           range: 'Sin Break planeado hoy',
           rangeExtra: 'Puedes tomarlo cuando quieras',
@@ -16156,7 +16287,7 @@ function renderSchedule() {
         const { range, rangeExtra } = rangeWithNext(lunchBlockTimes);
         summaryCards.push({
           name: 'Lunch',
-          icon: '🍽️',
+          icon: iconHtml('utensils'),
           accent: 'blue',
           range,
           rangeExtra,
@@ -16165,7 +16296,7 @@ function renderSchedule() {
       } else {
         summaryCards.push({
           name: 'Lunch',
-          icon: '🍽️',
+          icon: iconHtml('utensils'),
           accent: 'blue',
           range: 'Sin Lunch planeado hoy',
           rangeExtra: 'Puedes tomarlo cuando quieras',
@@ -16189,7 +16320,7 @@ function renderSchedule() {
       const acwPct = Math.min(100, (dayCallStatsForCard.gapTotal / acwGoalMin) * 100);
       summaryCards.push({
         name: 'ACW',
-        icon: '⏱️',
+        icon: iconHtml('timer'),
         accent: 'good',
         range: `Total: ${formatDuration(dayCallStatsForCard.gapTotal * 60000)} de meta ${formatMinutes(acwGoalMin)} min`,
         pct: acwPct,
@@ -16204,12 +16335,12 @@ function renderSchedule() {
         if (dayGoalTargetMin <= 0.05) {
           // Ningún bloque de Trabajo de hoy tiene una meta configurada (o
           // aún no hay ninguno con actividad) — nada que comparar todavía.
-          productivityGoalBadge.textContent = 'Meta productiva: sin meta configurada';
+          productivityGoalBadge.innerHTML = 'Meta productiva: sin meta configurada';
           productivityGoalBadge.className = 'slot-status';
         } else {
           const dayGoalMet = dayGoalAchievedMin >= dayGoalTargetMin - 0.05;
-          productivityGoalBadge.textContent = dayGoalMet
-            ? `✅ Meta productiva: ${formatMinutes(dayGoalAchievedMin)}/${formatMinutes(dayGoalTargetMin)} min`
+          productivityGoalBadge.innerHTML = dayGoalMet
+            ? `${iconHtml('checkCircle')} Meta productiva: ${formatMinutes(dayGoalAchievedMin)}/${formatMinutes(dayGoalTargetMin)} min`
             : `Meta productiva: ${formatMinutes(dayGoalAchievedMin)}/${formatMinutes(dayGoalTargetMin)} min`;
           productivityGoalBadge.className = `slot-status ${dayGoalMet ? 'good' : 'warn'}`;
         }
@@ -16242,10 +16373,10 @@ function renderSchedule() {
           const diff = adherence.scorePct - goalPct;
           adherenceGoalBadge.style.display = '';
           if (diff >= 0) {
-            adherenceGoalBadge.textContent = `✅ Meta alcanzada (${goalPct}%)`;
+            adherenceGoalBadge.innerHTML = `${iconHtml('checkCircle')} Meta alcanzada (${goalPct}%)`;
             adherenceGoalBadge.className = 'slot-status good';
           } else {
-            adherenceGoalBadge.textContent = `Meta ${goalPct}% — te faltan ${Math.abs(diff)}pts`;
+            adherenceGoalBadge.innerHTML = `Meta ${goalPct}% — te faltan ${Math.abs(diff)}pts`;
             adherenceGoalBadge.className = 'slot-status warn';
           }
         }
