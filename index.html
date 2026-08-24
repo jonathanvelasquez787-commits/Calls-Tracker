@@ -1898,13 +1898,45 @@
        `center` ya no arrastra nada hacia abajo de forma desproporcionada
        — simplemente centra la marca y el grupo de botones contra el más
        alto de los dos (el ☰), que es justo lo pedido. */
+    /* v282 — Bug reportado por el usuario (con captura, mobile angosto):
+       ☰ + "Propio Shift Tracker" + Higher Rate/Ajustes/Reiniciar SÍ se veían
+       en una sola fila en la captura, pero en anchos aún más angostos toda
+       la fila de botones (.hero-top-actions) se caía a una SEGUNDA línea
+       completa, debajo de la marca — no se deslizaba. Causa: aunque
+       `.hero-top-actions` (el contenedor de esos 3 botones) ya tiene su
+       propio scroll horizontal interno desde v243 (nowrap + overflow-x:auto
+       + max-width:62%, ver esa regla más abajo, sin tocar), su padre
+       `.hero-top-row` tenía `flex-wrap: wrap` — con flex-wrap, el navegador
+       decide si un hijo cabe en la línea actual ANTES de dejarlo encogerse
+       por su propio overflow interno; si el ancho combinado de `.hero-
+       brand-row` + `.hero-top-actions` no alcanza, el hijo completo
+       (`.hero-top-actions`) salta entero a una nueva línea en vez de
+       quedarse y desplazarse. Se cambia a `flex-wrap: nowrap` (mismo
+       patrón que ya usan `.hero-actions`/`.chips`/`.week-nav` para este
+       mismo problema) + scroll horizontal propio con la barra oculta, como
+       red de seguridad si algún día ni siquiera cabe el grupo completo de
+       marca+botones en una sola línea — nunca se parte a una segunda fila,
+       como mucho se desliza. `.hero-brand-row` se fija con `flex-shrink:0`
+       para que, al quitar el wrap, el navegador no intente comprimir el
+       ícono ☰/el texto del logo en vez de dejar que sea `.hero-top-actions`
+       (que ya está pensado para encogerse/deslizar) quien absorba el
+       espacio faltante. */
     .hero-top-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       gap: 8px;
       margin-bottom: 10px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .hero-top-row::-webkit-scrollbar { display: none; }
+
+    .hero-brand-row {
+      flex-shrink: 0;
     }
 
     /* v242 — Pedido del usuario: Ajustes/Higher Rate/Reiniciar se agrupan
