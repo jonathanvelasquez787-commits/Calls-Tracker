@@ -2015,25 +2015,41 @@
        angostos que son el objetivo de este cambio. El selector combinado
        tiene MÁS especificidad, así que gana siempre, sin importar el
        orden. */
-    .hero-action-btn.hero-action-btn-icon {
-      width: 36px;
-      height: 36px;
-      padding: 0;
-      border-radius: 50%;
-      justify-content: center;
-      gap: 0;
-      font-size: 15px;
-    }
-    .hero-action-btn-icon .hero-action-btn-label {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
+    /* v284 — Pedido del usuario (corrección de alcance de v283): el círculo
+       solo-ícono debía aplicar SOLO en mobile — en escritorio los 3 botones
+       (Higher Rate/Ajustes/Reiniciar) deben verse exactamente como antes de
+       v283 (pastilla con emoji + texto completo). v283 lo dejó aplicando en
+       TODOS los anchos por error. Se envuelve la regla en el mismo
+       `@media (max-width: 760px)` que ya usa el resto de la app para sus
+       ajustes mobile — mismo criterio de especificidad ya explicado antes
+       (selector de 2 clases, gana sin importar el orden dentro del mismo
+       media query), ahora simplemente acotado a ese ancho. Sin esta regla
+       (fuera del media query, es decir en escritorio), `.hero-action-btn`
+       vuelve a su estilo base de pastilla con texto visible — el texto
+       NUNCA se quitó del HTML (sigue siendo `.hero-action-btn-label`, ver
+       comentario de v283), así que no hace falta ningún otro cambio para
+       que reaparezca en escritorio. */
+    @media (max-width: 760px) {
+      .hero-action-btn.hero-action-btn-icon {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border-radius: 50%;
+        justify-content: center;
+        gap: 0;
+        font-size: 15px;
+      }
+      .hero-action-btn-icon .hero-action-btn-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
     }
 
     /* v245 — Pedido del usuario: "Reiniciar" (antes en su propia fila hasta
