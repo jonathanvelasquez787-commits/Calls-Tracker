@@ -3509,25 +3509,68 @@
        mismas variables --cyan/--warn/--blue/--line/--muted/etc. que
        ya existen, automáticas por tema). ========================== */
 
-    /* Fase 1 — el reloj del header como "pill" oscura, igual que la
-       referencia. Solo cambia apariencia (fondo sólido oscuro +
-       texto blanco) — el contenido (#clockNow/#clockDate) y su lógica
-       (clockTimeVisible, el toggle al tocarlo) no se tocan en nada.
-       --black-badge solo existe en el tema claro (v174); en oscuro se
-       usa el fallback de var() (segundo argumento), ya casi negro de
-       por sí, así que el look es consistente en ambos temas. */
+    /* Fase 1 — el reloj del header como "pill" oscura en escritorio, SOLO
+       en modo claro (v285, pedido del usuario). Historial: v174-v284 esta
+       regla usaba `var(--black-badge, #0c1220)` — con ese fallback, en modo
+       oscuro (donde --black-badge nunca se define) el reloj igual quedaba
+       con un fondo casi negro sólido, formando una "caja negra" separada
+       encima del propio fondo ya oscuro del header (`.hero`, que desde v267
+       usa el degradado navy `--panel-navy`) — un negro sobre otro negro, el
+       "fondo negro" que el usuario pidió quitar. Se retira el fallback: sin
+       él, `var(--black-badge)` en modo oscuro (variable no definida) hace
+       que el navegador trate la propiedad como no declarada — el reloj
+       queda transparente ahí, mostrando directamente el degradado navy del
+       header por debajo, sin caja aparte. En modo claro, --black-badge SÍ
+       está definida (ver `@media (prefers-color-scheme: light)`/
+       `html.theme-light`, #1A1A1A) — la pastilla oscura con texto blanco se
+       mantiene exactamente igual que antes ahí, sin cambios. El contenido
+       (#clockNow/#clockDate) y su lógica (clockTimeVisible, el toggle al
+       tocarlo) no se tocan en nada. */
     @media (min-width: 1201px) {
       .clockbox {
-        background: var(--black-badge, #0c1220);
+        background: var(--black-badge);
         padding: 14px 22px;
         border-radius: 18px;
         min-width: 0;
       }
-      .clockbox .clock,
-      .clockbox .date {
-        color: #fff;
+      /* v285 — Antes esto era `color: #fff` incondicional (pensado para
+         contrastar contra el fondo negro sólido de arriba). Con ese fondo
+         ahora transparente en modo oscuro (sin --black-badge, ver arriba),
+         un blanco fijo se veía "duro"/desconectado sobre el degradado navy
+         del header en vez del negro sólido de antes. Se cambia al color
+         normal del reloj en cualquier otro ancho (var(--text)/var(--muted))
+         — en modo oscuro esto no cambia casi nada (--text ya es casi blanco
+         ahí), y es lo correcto sin fondo propio. En modo claro (donde SÍ
+         sigue existiendo el fondo negro, ver --black-badge) se revierte a
+         blanco explícito más abajo, en sus 2 bloques de tema — ese sí
+         necesita contraste real contra un fondo oscuro sólido. */
+      .clockbox .clock {
+        color: var(--text);
       }
       .clockbox .date {
+        color: var(--muted);
+      }
+    }
+    /* v285 — Reversión a blanco SOLO donde --black-badge (el fondo negro
+       sólido de la pastilla) de verdad se pinta: modo claro automático y
+       modo claro forzado — mismo patrón dual que usa el resto del theming
+       de la app. Modo oscuro (ninguno de los 2 bloques de abajo) se queda
+       con var(--text)/var(--muted) de la regla base, sin fondo propio. */
+    @media (min-width: 1201px) and (prefers-color-scheme: light) {
+      :root:not(.theme-dark) .clockbox .clock,
+      :root:not(.theme-dark) .clockbox .date {
+        color: #fff;
+      }
+      :root:not(.theme-dark) .clockbox .date {
+        opacity: .68;
+      }
+    }
+    @media (min-width: 1201px) {
+      html.theme-light .clockbox .clock,
+      html.theme-light .clockbox .date {
+        color: #fff;
+      }
+      html.theme-light .clockbox .date {
         opacity: .68;
       }
     }
