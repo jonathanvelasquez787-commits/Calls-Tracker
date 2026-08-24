@@ -13649,11 +13649,25 @@ function renderWeekSummary() {
 
     // "+ Agregar bloque": toma lo que ya está en el formulario (para no
     // perder ediciones a medio hacer en filas existentes) y le agrega una
-    // fila nueva al final — default Break/09:00-09:15 (el usuario cambia el
-    // Tipo y ajusta a su gusto antes de "Guardar día").
+    // fila nueva al final.
+    // Pedido del usuario: la hora de Inicio del bloque nuevo ya no arranca
+    // siempre en un 09:00 fijo — se encadena al FIN del último bloque ya
+    // configurado (ej. si el último bloque es "Trabajo 07:00–09:10", el
+    // nuevo arranca en 09:10). Se toma el fin MÁS TARDÍO entre TODOS los
+    // bloques actuales (Math.max sobre start+dur de cada uno), no solo el
+    // último de la lista visual — si el usuario reordenó filas a mano o el
+    // último bloque agregado no es el cronológicamente más tardío, seguir
+    // encadenando desde ahí en vez del más tardío real dejaría un hueco o
+    // un cruce sin que el usuario lo pidiera. Sin ningún bloque todavía, se
+    // mantiene el default de siempre (09:00) — no hay nada de qué
+    // encadenar. Duración (15 min) y Tipo (Break) por default no cambian —
+    // el usuario los ajusta a su gusto antes de "Guardar día".
     function addBlockRow() {
       const current = readBlocksFromEditor();
-      current.push({ type: 'break', start: '09:00', dur: 15 });
+      const newStart = current.length
+        ? minutesToHHMM(Math.max(...current.map(b => toMinutes(b.start) + b.dur)))
+        : '09:00';
+      current.push({ type: 'break', start: newStart, dur: 15 });
       renderBlocksEditor(current);
     }
 
