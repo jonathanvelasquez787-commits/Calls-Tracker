@@ -3180,10 +3180,37 @@
       gap: 6px;
     }
 
+    /* v291 — Pedido del usuario (reversión parcial de v290): "mejor que
+       tengan su distinción" — v290 había vuelto los 3 íconos de nivel
+       (Bronce/Silver/Gold) al mismo glifo "medalla" monocromo (blanco/
+       negro, como el resto de la app), y solo el texto de la etiqueta
+       distinguía un nivel de otro. Se recupera la distinción SIN romper
+       la regla "todos los íconos blancos/negros" del ícono en sí (ver
+       --icon-mono/.ic-svg, v290): el glifo de la medalla se queda
+       monocromo, pero ahora vive dentro de un anillo — un círculo con
+       borde de color, reutilizando las mismas variables --tier-bronze/
+       --tier-silver/--tier-gold que YA usa el resto de la app para
+       identificar estos 3 niveles (Tabla de llamadas, tags de "Ganancias
+       de hoy"...), automáticas por tema sin ningún color nuevo. "Normal"
+       (sin nivel) se queda con un borde neutro (--line-2), sin anillo de
+       color — nada que distinguir ahí. */
     .rate-tile-icon {
-      font-size: 15px;
-      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      border: 1.5px solid var(--line-2);
     }
+    .rate-tile-icon .ic-svg {
+      width: 12px;
+      height: 12px;
+    }
+    .rate-tile-icon[data-tier="bronze"] { border-color: var(--tier-bronze); }
+    .rate-tile-icon[data-tier="silver"] { border-color: var(--tier-silver); }
+    .rate-tile-icon[data-tier="gold"] { border-color: var(--tier-gold); }
 
     .rate-tile-amount {
       font-weight: 900;
@@ -8799,7 +8826,7 @@ $0.72"></textarea>
         const rate = rateTilePerMin(t.key);
         return `
           <button type="button" class="rate-tile ${t.key === selectedKey ? 'selected' : ''}" data-rate-tile="${t.key}">
-            <span class="rate-tile-top"><span class="rate-tile-icon">${t.icon}</span><span class="rate-tile-amount">$${rate.toFixed(2)}/min</span></span>
+            <span class="rate-tile-top"><span class="rate-tile-icon" data-tier="${t.key}">${t.icon}</span><span class="rate-tile-amount">$${rate.toFixed(2)}/min</span></span>
             <span class="rate-tile-label">${t.label}</span>
           </button>
         `;
