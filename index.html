@@ -6514,10 +6514,27 @@
        círculo "+" ahora vive en la columna de la línea de tiempo (ver
        `.sched-timeline-add-rail` arriba). Se conserva el nombre de clase
        en el `<span>` del rail para no duplicar reglas nuevas. */
+    /* v288 — Bug reportado por el usuario (con captura, mobile): el botón
+       "+ Agregar bloque" se veía aplastado a un ancho mínimo, con su texto
+       partido en 2 líneas ("Agregar" / "bloque") y una bolita morada
+       flotando encima, cortada por el borde de la pantalla. Causa: este
+       @media ya ocultaba `.sched-timeline-add-hour`/`.sched-timeline-add-
+       rail` con `display: none` (arriba), pero dejaba
+       `.sched-timeline-add-row` con 2 columnas de grid (`20px 1fr`) — con
+       esos 2 hijos fuera del flujo, `.sched-add-block-btn` queda como el
+       ÚNICO hijo del grid, y sin un `grid-column` explícito el navegador lo
+       auto-coloca en la PRIMERA celda disponible (la de 20px), no en la
+       segunda (`1fr`, la que sí mide el ancho completo) — de ahí que se
+       viera aplastado a esos 20px. Se agrega `grid-column: 1 / -1` para que
+       el botón ocupe TODAS las columnas del grid, sin importar cuántas
+       tenga ni cuáles estén ocultas — mismo criterio que ya usa
+       `.sched-tl-card-top` en su propio @media de abajo para casos
+       similares de grid con hijos condicionales. */
     @media (max-width: 760px) {
       .sched-timeline-add-row { grid-template-columns: 20px 1fr; }
       .sched-timeline-add-hour,
       .sched-timeline-add-rail { display: none; }
+      .sched-add-block-btn { grid-column: 1 / -1; }
     }
 
     /* ---- Leyenda al final del editor de bloques ----
