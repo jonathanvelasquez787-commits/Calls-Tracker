@@ -13674,25 +13674,113 @@ function renderWeekSummary() {
     // "+ Agregar bloque": toma lo que ya está en el formulario (para no
     // perder ediciones a medio hacer en filas existentes) y le agrega una
     // fila nueva al final.
-    // Pedido del usuario: la hora de Inicio del bloque nuevo ya no arranca
-    // siempre en un 09:00 fijo — se encadena al FIN del último bloque ya
-    // configurado (ej. si el último bloque es "Trabajo 07:00–09:10", el
-    // nuevo arranca en 09:10). Se toma el fin MÁS TARDÍO entre TODOS los
-    // bloques actuales (Math.max sobre start+dur de cada uno), no solo el
-    // último de la lista visual — si el usuario reordenó filas a mano o el
-    // último bloque agregado no es el cronológicamente más tardío, seguir
-    // encadenando desde ahí en vez del más tardío real dejaría un hueco o
-    // un cruce sin que el usuario lo pidiera. Sin ningún bloque todavía, se
-    // mantiene el default de siempre (09:00) — no hay nada de qué
-    // encadenar. Duración (15 min) y Tipo (Break) por default no cambian —
-    // el usuario los ajusta a su gusto antes de "Guardar día".
+    // Pedido del usuario (v286): la hora de Inicio del bloque nuevo ya no
+    // arranca siempre en un 09:00 fijo — se encadena al FIN del último
+    // bloque ya configurado (ej. si el último bloque es "Trabajo
+    // 07:00–09:10", el nuevo arranca en 09:10). Se toma el fin MÁS TARDÍO
+    // entre TODOS los bloques actuales (Math.max sobre start+dur de cada
+    // uno), no solo el último de la lista visual — si el usuario reordenó
+    // filas a mano o el bloque agregado más reciente no es el
+    // cronológicamente más tardío, seguir encadenando desde ahí en vez del
+    // más tardío real dejaría un hueco o un cruce sin que el usuario lo
+    // pidiera. Sin ningún bloque todavía, se mantiene el default de
+    // siempre (09:00) — no hay nada de qué encadenar.
+
+    // v289 — Pedido del usuario ("qué más sería buena idea que se hiciera
+    // automático al agregar un bloque"): antes Tipo/Duración del bloque
+    // nuevo eran SIEMPRE fijos (Break, 15 min), sin importar qué venía
+    // antes ni cuánto turno quedaba — el usuario los tenía que corregir a
+    // mano casi siempre. Se sugieren ahora según contexto real:
+    // - Tipo: si el último bloque (por fin más tardío, mismo criterio que
+    //   ya usa el encadenado de hora) fue Break/Lunch, se sugiere Trabajo
+    //   (volver a trabajar después de una pausa es lo normal); si fue
+    //   Trabajo, se sugiere Break — salvo que todavía no haya ningún
+    //   bloque de Lunch ese día Y el nuevo bloque arrancaría ya pasado el
+    //   punto medio del turno (Inicio+Fin del día, ver dayStartInput/
+    //   dayEndInput) — ahí se sugiere Lunch en su lugar, para no tener que
+    //   cambiar el tipo a mano cerca de la hora en que casi siempre toca
+    //   almorzar. Sin ningún bloque todavía, se sugiere Trabajo (un día
+    //   normalmente arranca trabajando, no en pausa).
+    // - Duración: Break 15 min y Lunch 50 min (los mismos defaults de
+    //   siempre, ahora aplicados solo cuando el tipo sugerido es ESE, no
+    //   siempre); Trabajo usa el tiempo que queda hasta el fin del turno,
+    //   con un tope de 130 min (mismo tamaño de bloque que ya usa la
+    //   plantilla default de la app, defaultDaySchedule()) — así no se
+    //   sugiere un solo bloque gigante de trabajo si queda mucho turno por
+    //   delante. En cualquier caso, si el tiempo restante hasta el fin del
+    //   turno es menor a la duración sugerida, se recorta a ese restante —
+    //   el bloque nuevo ya no sugiere pasarse del fin del turno por
+    //   default (el usuario lo sigue pudiendo estirar a mano si quiere).
+    // - Meta productiva: cuando el tipo sugerido es Trabajo, ya sale
+    //   prellenada igual a la duración del bloque sin código extra —
+    //   renderBlocksEditor() ya usaba ese mismo criterio para cualquier
+    //   bloque de Trabajo sin goalMin explícito (ver el comentario junto a
+    //   `goalVal` ahí), así que basta con que este bloque nazca sin
+    //   `goalMin` propio para heredarlo automáticamente.
+    // Nada de esto es definitivo — son solo puntos de partida razonables;
+    // el usuario ajusta Tipo/Inicio/Fin/Meta a su gusto antes de "Guardar
+    // día", exactamente igual que antes.
+
+    // Tipo sugerido para el próximo bloque — ver comentario de v289 arriba
+    // para el criterio completo.
+    function suggestNextBlockType(current, lastEndingBlock, newStart) {
+      if (!current.length || !lastEndingBlock) return 'work';
+      if (lastEndingBlock.type !== 'work') return 'work';
+      const hasLunch = current.some(b => b.type === 'lunch');
+      if (!hasLunch) {
+        const dayStartVal = document.getElementById('dayStartInput')?.value;
+        const dayEndVal = document.getElementById('dayEndInput')?.value;
+        if (dayStartVal && dayEndVal) {
+          const startMin = toMinutes(formatHHMM(dayStartVal));
+          const endMin = toMinutes(formatHHMM(dayEndVal));
+          if (endMin > startMin) {
+            const midpointMin = startMin + (endMin - startMin) / 2;
+            if (toMinutes(newStart) >= midpointMin) return 'lunch';
+          }
+        }
+      }
+      return 'break';
+    }
+
+    // Duración sugerida para el próximo bloque — ver comentario de v289
+    // arriba para el criterio completo (tope de 130 min en Trabajo, y
+    // recorte para no sugerir pasarse del fin del turno).
+    function suggestNextBlockDuration(type, newStart) {
+      const dayEndVal = document.getElementById('dayEndInput')?.value;
+      const dayEndMin = dayEndVal ? toMinutes(formatHHMM(dayEndVal)) : null;
+      const remainingMin = dayEndMin !== null ? dayEndMin - toMinutes(newStart) : null;
+      let dur = type === 'lunch' ? 50 : type === 'break' ? 15 : 130;
+      if (remainingMin !== null && remainingMin > 0) dur = Math.min(dur, remainingMin);
+      return dur;
+    }
+
     function addBlockRow() {
       const current = readBlocksFromEditor();
-      const newStart = current.length
-        ? minutesToHHMM(Math.max(...current.map(b => toMinutes(b.start) + b.dur)))
-        : '09:00';
-      current.push({ type: 'break', start: newStart, dur: 15 });
+      let newStart = '09:00';
+      let lastEndingBlock = null;
+      if (current.length) {
+        let maxEnd = -Infinity;
+        current.forEach(b => {
+          const end = toMinutes(b.start) + b.dur;
+          if (end > maxEnd) { maxEnd = end; lastEndingBlock = b; }
+        });
+        newStart = minutesToHHMM(maxEnd);
+      }
+      const type = suggestNextBlockType(current, lastEndingBlock, newStart);
+      const dur = suggestNextBlockDuration(type, newStart);
+      current.push({ type, start: newStart, dur });
       renderBlocksEditor(current);
+
+      // v289 — Pedido del usuario: si la lista de bloques ya es larga, el
+      // bloque recién agregado (siempre al final) puede caer fuera de la
+      // vista — se desliza la pantalla hasta él. `block: 'nearest'` hace
+      // que esto sea inofensivo si el bloque YA estaba visible (no mueve
+      // nada en ese caso), así no hace falta calcular a mano si la lista
+      // "ya es larga" o no.
+      const newRow = document.querySelector(`#blocksEditorList .block-row[data-block-row="${current.length - 1}"]`);
+      if (newRow && newRow.scrollIntoView) {
+        newRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     }
 
     // Eliminar una fila: se relee el estado actual del formulario (para no
