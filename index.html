@@ -171,15 +171,22 @@
          saturados como fondo SÓLIDO de toda la tarjeta, bajando el
          contraste del texto encima. Se crean estas 2 variables APARTE,
          exclusivas del relleno líquido de esta sección — una paleta más
-         oscura/apagada (morado para Trabajo, azul para Break y Lunch,
-         mockup de referencia aprobado por el usuario). Solo aplican en
-         modo oscuro (aquí, default) — en las 2 ramas de modo claro se
-         revierte `--sblk-rgb` a los mismos --cyan-rgb/--warn-rgb/
-         --blue-rgb de siempre (buscar "v280" en esas 2 ramas), sin cambio
-         de aspecto ahí. */
-      --sblk-fill-cyan-rgb: 123, 78, 160;
-      --sblk-fill-warn-rgb: 30, 117, 163;
-      --sblk-fill-blue-rgb: 30, 117, 163;
+         oscura/apagada. Solo aplican en modo oscuro (aquí, default) — en
+         las 2 ramas de modo claro se revierte `--sblk-rgb` a los mismos
+         --cyan-rgb/--warn-rgb/--blue-rgb de siempre (buscar "v280" en esas
+         2 ramas), sin cambio de aspecto ahí.
+         v287 — Pedido del usuario: el morado de Trabajo (v280 original,
+         123,78,160) desentonaba con el resto de la app, ya toda en azules —
+         se mostraron 3 mockups en familia de azul (A: escala de intensidad,
+         B: acero→cian, C: monocromático por opacidad) y el usuario eligió
+         explícitamente "Opción B". Se reemplazan los 3 valores por los de
+         esa opción — mismo criterio de "tono más oscuro/apagado que sirva
+         de fondo sólido sin saturar", solo que ahora los 3 (Trabajo/Break/
+         Lunch) quedan dentro de la misma familia azul, con Trabajo más
+         acerado/oscuro y Lunch acercándose a un cian más claro. */
+      --sblk-fill-cyan-rgb: 42, 82, 140;
+      --sblk-fill-warn-rgb: 36, 120, 158;
+      --sblk-fill-blue-rgb: 45, 168, 186;
     }
 
     /* Modo claro automático: se activa solo si el sistema operativo pide
