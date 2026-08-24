@@ -15742,13 +15742,22 @@ function renderSchedule() {
         // cerró (`state.shiftEndedAt`) — no sigue "llenando" bloques
         // después de que el usuario ya terminó su día, tal como se pidió
         // ("hasta que finalice el día o shift"). Para un día que no es hoy
-        // (pasado/futuro, navegado con el selector), se usa el mismo `done`
-        // que ya calcula el resto del loop para el badge de estado — 100%
-        // si ese bloque ya quedó cubierto por un turno cerrado ese día, 0%
-        // si no. IMPORTANTE: `stats.pct` (actividad real) NO se toca en
-        // ningún lado — la barra fina "Usado" y su texto (más abajo, en
-        // `.sblk-bar-track`/`.sblk-bar-label-row`) siguen midiendo
-        // exactamente lo mismo que antes de este cambio.
+        // (pasado/futuro, navegado con el selector): --- v282, bug
+        // reportado por el usuario (con captura, un jueves sin actividad
+        // ni turno) --- antes esta rama usaba `done` (100% "si ese bloque
+        // ya quedó cubierto por un turno cerrado ese día", 0% si no) — eso
+        // ataba el líquido a que hubiera HABIDO un turno/actividad real
+        // ese día, contradiciendo el pedido original ("no importa si
+        // inicié shift o no", "se llena automáticamente con solo que pase
+        // el tiempo"). Un día ya pasado ya transcurrió por completo en el
+        // calendario, hubieras trabajado o no — así que se llena 100%
+        // siempre; un día futuro (`isFutureDay`, ya calculado más arriba
+        // en este mismo loop, reutilizado aquí sin duplicar el cálculo)
+        // se queda en 0%, todavía no le toca. "Hoy" sigue exactamente
+        // igual que antes (tiempo real transcurrido, congelado al cerrar
+        // el turno). IMPORTANTE: `stats.pct` (actividad real, para "Usado")
+        // NO se toca en ningún lado — sigue midiendo exactamente lo mismo
+        // que antes de este cambio.
         let sblkPct;
         if (dayKey === todayCallDateKey()) {
           const shiftEndedToday = state.shiftEndedAt && sameCallDay(state.shiftEndedAt, dayKey) ? new Date(state.shiftEndedAt) : null;
@@ -15757,7 +15766,7 @@ function renderSchedule() {
           const elapsedMs = clock.getTime() - stats.slotStart.getTime();
           sblkPct = totalMs > 0 ? Math.max(0, Math.min(100, (elapsedMs / totalMs) * 100)) : 0;
         } else {
-          sblkPct = done ? 100 : 0;
+          sblkPct = isFutureDay ? 0 : 100;
         }
         const isCollapsed = !!settings.collapseCompletedBlocks && done;
 
