@@ -6446,18 +6446,36 @@
       gap: 8px;
       margin-bottom: 4px;
     }
+    /* v281 — Pedido del usuario (con captura): las 3 mini-tarjetas del
+       resumen de "Bloques del día" (Adherencia/Meta/Productividad) tenían
+       3 problemas: (1) cada una llevaba su propio acento de color (cyan/
+       warn/blue, heredado de v277) — se pidió que las 3 usen el MISMO
+       fondo azul; (2) el label y el valor usaban --muted/el color del
+       propio acento (o good/warn/bad según el estado) — se pidió texto
+       blanco fijo, igual en las 3, sin importar el estado; (3) no medían
+       lo mismo entre sí — con texto que cabe en 1 línea (Adherencia/Meta)
+       al lado de texto que se pasaba a 2 líneas (ej. "Meta productiva:
+       228/300 min"), la tarjeta de Productividad se veía más alta que las
+       otras 2. Se fija un alto mínimo igual para las 3 (min-height, con el
+       contenido centrado verticalmente vía `align-content: center` — sigue
+       siendo el mismo grid de 1 columna, sin tocar el layout) y el valor
+       pasa a una sola línea con "…" si no cabe (ver `.slot-status` más
+       abajo) — cada badge ya trae su propio `title` en el HTML, así que el
+       texto completo se sigue pudiendo leer al mantener el cursor/dedo
+       encima. El grid de 3 columnas iguales (`repeat(3, 1fr)`) ya era
+       responsive desde v277 — se conserva sin cambios, solo se ajusta el
+       alto mínimo también en el breakpoint mobile de abajo. */
     .sched-blocks-summary-card {
       border-radius: 14px;
       padding: 9px 10px;
-      border: 1px solid rgba(var(--sbc-rgb), .26);
-      background: rgba(var(--sbc-rgb), .07);
+      border: 1px solid rgba(var(--blue-rgb), .4);
+      background: rgba(var(--blue-rgb), .18);
       display: grid;
+      align-content: center;
       gap: 4px;
       min-width: 0;
+      min-height: 62px;
     }
-    .sched-blocks-summary-card[data-metric="adherence"] { --sbc-rgb: var(--cyan-rgb); }
-    .sched-blocks-summary-card[data-metric="goal"] { --sbc-rgb: var(--warn-rgb); }
-    .sched-blocks-summary-card[data-metric="productivity"] { --sbc-rgb: var(--blue-rgb); }
     .sched-blocks-summary-label {
       display: flex;
       align-items: center;
@@ -6466,7 +6484,7 @@
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: .04em;
-      color: var(--muted);
+      color: #fff;
       min-width: 0;
     }
     .sched-blocks-summary-label::before {
@@ -6496,12 +6514,23 @@
       line-height: 1.25;
       font-weight: 900;
       letter-spacing: -.01em;
-      color: rgb(var(--sbc-rgb));
-      white-space: normal;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
     }
-    .sched-blocks-summary-card .slot-status.good { color: var(--good); }
-    .sched-blocks-summary-card .slot-status.warn { color: var(--warn); }
-    .sched-blocks-summary-card .slot-status.bad { color: var(--bad); }
+    /* v281 — Ver comentario junto a `.sched-blocks-summary-card` arriba: el
+       valor se queda blanco SIEMPRE, incluso cuando renderSchedule() le
+       agrega la clase good/warn/bad (adherencia baja, meta no alcanzada,
+       etc.) — antes esos 3 estados pintaban el texto de otro color (verde/
+       ámbar/rojo), rompiendo la uniformidad pedida. El dato en sí no
+       cambia, solo el color del texto. */
+    .sched-blocks-summary-card .slot-status.good,
+    .sched-blocks-summary-card .slot-status.warn,
+    .sched-blocks-summary-card .slot-status.bad {
+      color: #fff;
+    }
     .sched-blocks-summary-summary {
       display: flex;
       align-items: flex-start;
@@ -6511,11 +6540,14 @@
       list-style: none;
     }
     .sched-blocks-summary-summary::-webkit-details-marker { display: none; }
+    /* v281 — Ver comentario junto a `.sched-blocks-summary-card` arriba:
+       mismo criterio de "letras blancas" aplicado al toggle "Detalle ⌄"
+       de la tarjeta de Adherencia (antes var(--muted), gris apagado). */
     .sched-blocks-summary-card .mini-accordion-toggle {
       flex: 0 0 auto;
       margin-top: 1px;
       font-size: 10px;
-      color: var(--muted);
+      color: #fff;
     }
     .sched-blocks-summary-card .mini-accordion-body {
       margin-top: 8px;
@@ -6524,7 +6556,7 @@
     }
     @media (max-width: 620px) {
       .sched-blocks-summary-row { gap: 5px; }
-      .sched-blocks-summary-card { padding: 7px 6px; border-radius: 11px; gap: 3px; }
+      .sched-blocks-summary-card { padding: 7px 6px; border-radius: 11px; gap: 3px; min-height: 54px; }
       .sched-blocks-summary-label { font-size: 8.5px; gap: 3px; }
       .sched-blocks-summary-label::before { font-size: 9.5px; }
       .sched-blocks-summary-card .slot-status { font-size: 11px; }
