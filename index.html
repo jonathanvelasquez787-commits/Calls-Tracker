@@ -197,6 +197,29 @@
          blanco/negro sólido, no "casi blanco" — --text en oscuro ya es
          #edf4ff (no #fff puro). */
       --icon-mono: #fff;
+      /* v292 — Pedido del usuario: 2 acentos nuevos, tomados de su mock de
+         referencia ("Panel de Llamadas & Reportes") — --purple (círculo del
+         estado "en curso"/ícono de inicio) y --rpt-blue (usado en Reportes:
+         gráfica de productividad, botón "Guardar" de la llamada en vivo).
+         Mismo patrón que el resto de la paleta: valor fijo aquí (oscuro,
+         default) + triplete "r,g,b" hermano para poder usarse en
+         `rgba(var(--purple-rgb), .XX)`; se redefinen en las 2 ramas de modo
+         claro más abajo (el mock del usuario es solo oscuro, así que el
+         valor de modo claro se afina aparte, no viene dado). No se
+         reutilizó --blue existente porque --blue ya tiene un rol propio
+         (Lunch, en toda la app) — mezclar los dos roles en la misma
+         variable habría heredado cambios de Lunch a estos usos nuevos sin
+         querer, o viceversa. */
+      --purple: #8b7bff;
+      --purple-rgb: 139, 123, 255;
+      --rpt-blue: #4d8dff;
+      --rpt-blue-rgb: 77, 141, 255;
+      /* v294 — Pedido del usuario: acento adicional para el panel de
+         Reportes (dona "Calidad del tiempo"/gráfica de 14 días/tags de
+         nivel) — mismo patrón que --purple/--rpt-blue (v292), otro tono
+         de morado tomado tal cual del mock ("Reportes"). */
+      --rpt-purple: #9b7bff;
+      --rpt-purple-rgb: 155, 123, 255;
     }
 
     /* Modo claro automático: se activa solo si el sistema operativo pide
@@ -347,6 +370,17 @@
         /* v290 — Ver comentario junto a --icon-mono en :root: mismo criterio,
            aquí (modo claro automático) negro sólido en vez de blanco. */
         --icon-mono: #000;
+        /* v292 — Ver comentario junto a --purple/--rpt-blue en :root: en
+           modo claro se oscurecen/saturan un poco (el tono oscuro de
+           --root se ve lavado sobre un fondo casi blanco) — mismo criterio
+           que ya usa el resto de la paleta clara (ej. --hover-flip). */
+        --purple: #6D4FE0;
+        --purple-rgb: 109, 79, 224;
+        --rpt-blue: #2F6FEB;
+        --rpt-blue-rgb: 47, 111, 235;
+        /* v294 — Ver comentario junto a --rpt-purple en :root. */
+        --rpt-purple: #7C5CE0;
+        --rpt-purple-rgb: 124, 92, 224;
       }
     }
 
@@ -423,6 +457,14 @@
       --hover-flip-rgb: 37, 99, 235;
       /* v290 — Ver comentario gemelo en la rama @media de arriba. */
       --icon-mono: #000;
+      /* v292 — Ver comentario gemelo en la rama @media de arriba. */
+      --purple: #6D4FE0;
+      --purple-rgb: 109, 79, 224;
+      --rpt-blue: #2F6FEB;
+      --rpt-blue-rgb: 47, 111, 235;
+      /* v294 — Ver comentario gemelo en la rama @media de arriba. */
+      --rpt-purple: #7C5CE0;
+      --rpt-purple-rgb: 124, 92, 224;
     }
 
     /* ---- Rediseño del tema claro (pedido del usuario) ----
@@ -3408,6 +3450,238 @@
       gap: 8px;
     }
 
+    /* v292 — Pedido del usuario: reskin de "Llamadas" (Iniciar llamada/
+       Pegar Llamadas/Agregar llamada) al estilo "action tile" de su mock
+       de referencia (ícono en círculo de acento + título + subtítulo, en
+       fila, en vez de apilados y centrados) — CERO cambio de HTML/JS: el
+       mismo `.action-btn` de siempre (ripple/anillo/pulso/is-active/
+       data-accent, todo el sistema de Controles desde v189-v235) sigue
+       intacto, esto es solo una reacomodación de layout con CSS, scoped a
+       `.controls-grid .action-btn` — los botones de Iniciar shift/Break/
+       Lunch/Higher Rate (que reutilizan el mismo componente en otras
+       secciones) no forman parte del mock del usuario y se quedan con su
+       estilo "tarjeta grande centrada" de siempre, sin tocar. El círculo
+       de acento reutiliza `--accent-rgb` (ya lo define cada
+       `[data-accent="..."]`, ver esas reglas más abajo) — mismo color que
+       ya tenía el ícono, ahora con un fondo/anillo propio en vez de flotar
+       "fantasma" sobre el botón. */
+    .controls-grid .action-btn {
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+      text-align: left;
+      gap: 12px;
+      padding: 14px;
+      min-height: unset;
+    }
+    .controls-grid .action-btn .action-icon-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(var(--accent-rgb), .14);
+      border: 1px solid rgba(var(--accent-rgb), .3);
+    }
+    .controls-grid .action-btn .action-icon .ic-svg {
+      width: 19px;
+      height: 19px;
+    }
+    .controls-grid .action-btn .action-label {
+      font-size: 14.5px;
+      font-weight: 700;
+      letter-spacing: -.01em;
+      line-height: 1.25;
+    }
+    .controls-grid .action-btn .action-sub {
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 2px;
+      line-height: 1.3;
+    }
+
+    /* v293 — Pedido del usuario: tarjeta de estado de "Llamadas" (encabezado
+       "LISTO PARA LLAMAR" / "LLAMADA EN CURSO" + punto pulsante + timer +
+       ícono grande + waveform en vivo), tomada de la Vista 1/Vista 2 de su
+       mock de referencia. Vive DENTRO de la sección "Llamadas" (arriba de
+       los 3 action-tiles) — a propósito NO reemplaza `.live-activity-bar`
+       (la franja fija que ya avisa en las 4 páginas cuando hay algo en
+       curso, desde el pedido "como el de Mochi") — esta tarjeta es
+       adicional, solo visible mientras se está viendo la sección Llamadas,
+       y complementa (no sustituye) esa visibilidad global. Los 2 botones
+       de acción de la tarjeta en vivo reutilizan las MISMAS 2 funciones que
+       ya usa la barra fija: "Guardar" -> endCall() (termina y guarda,
+       igual que el botón ✅ de la barra), "Terminar" -> discardActiveCall()
+       (termina SIN guardar — se usó el tono rojo/--bad del mock para esta,
+       ya que ahí es donde el mock ya pintaba el botón de peligro/fin,
+       coherente con que descartar es la acción más "destructiva" de las
+       dos, igual que ya lo es en la barra fija). */
+    .calls-status-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .calls-status-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .calls-status-head-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .calls-status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--muted);
+      flex: 0 0 auto;
+    }
+    .calls-status-dot.live {
+      background: var(--good);
+      box-shadow: 0 0 0 4px rgba(var(--good-rgb), .18);
+      animation: calls-status-pulse 1.6s infinite;
+    }
+    @keyframes calls-status-pulse {
+      0%, 100% { box-shadow: 0 0 0 4px rgba(var(--good-rgb), .18); }
+      50% { box-shadow: 0 0 0 7px rgba(var(--good-rgb), .06); }
+    }
+    .calls-status-title {
+      font-size: 12.5px;
+      font-weight: 800;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+    .calls-status-timer {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--good);
+      font-variant-numeric: tabular-nums;
+    }
+    .calls-status-body {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 18px 16px;
+    }
+    .calls-status-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(var(--purple-rgb), .14);
+      border: 1px solid rgba(var(--purple-rgb), .3);
+      color: var(--purple);
+      flex: 0 0 auto;
+    }
+    .calls-status-icon .ic-svg {
+      width: 21px;
+      height: 21px;
+      stroke: var(--purple);
+      color: var(--purple);
+    }
+    .calls-status-icon.live {
+      background: rgba(var(--good-rgb), .14);
+      border-color: rgba(var(--good-rgb), .35);
+      animation: calls-status-pulse 1.6s infinite;
+    }
+    .calls-status-icon.live .ic-svg {
+      stroke: var(--good);
+      color: var(--good);
+    }
+    .calls-status-text {
+      flex: 1 1 180px;
+      min-width: 180px;
+    }
+    .calls-status-text-title {
+      font-size: 15.5px;
+      font-weight: 800;
+    }
+    .calls-status-live-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(var(--good-rgb), .14);
+      color: var(--good);
+      border: 1px solid rgba(var(--good-rgb), .3);
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      margin-top: 8px;
+    }
+    .calls-status-live-tag .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--good);
+    }
+    .calls-status-waveform {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 24px;
+      margin-top: 6px;
+    }
+    .calls-status-waveform span {
+      width: 3px;
+      border-radius: 2px;
+      background: var(--good);
+      opacity: .85;
+      animation: calls-status-wave 1.1s ease-in-out infinite;
+    }
+    .calls-status-waveform span:nth-child(1) { height: 40%; animation-delay: 0s; }
+    .calls-status-waveform span:nth-child(2) { height: 70%; animation-delay: .1s; }
+    .calls-status-waveform span:nth-child(3) { height: 100%; animation-delay: .2s; }
+    .calls-status-waveform span:nth-child(4) { height: 55%; animation-delay: .3s; }
+    .calls-status-waveform span:nth-child(5) { height: 85%; animation-delay: .4s; }
+    .calls-status-waveform span:nth-child(6) { height: 35%; animation-delay: .5s; }
+    .calls-status-waveform span:nth-child(7) { height: 65%; animation-delay: .6s; }
+    @keyframes calls-status-wave {
+      0%, 100% { transform: scaleY(.5); }
+      50% { transform: scaleY(1); }
+    }
+    .calls-status-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      flex: 0 0 auto;
+    }
+    .calls-status-btn-save,
+    .calls-status-btn-end {
+      padding: 9px 16px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      font-weight: 800;
+      border: 1px solid transparent;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .calls-status-btn-save {
+      background: rgba(var(--rpt-blue-rgb), .16);
+      color: var(--rpt-blue);
+      border-color: rgba(var(--rpt-blue-rgb), .35);
+    }
+    .calls-status-btn-end {
+      background: rgba(var(--bad-rgb), .16);
+      color: var(--bad);
+      border-color: rgba(var(--bad-rgb), .35);
+    }
+    @media (max-width: 640px) {
+      .calls-status-body { padding: 16px 14px; }
+      .calls-status-actions { width: 100%; }
+      .calls-status-actions button { flex: 1 1 0; }
+    }
+
     /* Pedido del usuario (v189, reordenamiento de secciones — con boceto
        visual acordado antes de tocar código): Llamadas (Iniciar llamada/
        Pegar Llamadas/Agregar llamada) sube a su PROPIA sección arriba de
@@ -5228,6 +5502,51 @@
       gap: 8px;
     }
 
+    /* v293 — Pedido del usuario: reskin de la tarjeta de llamada (mobile)
+       al estilo "call-row" del mock de referencia — círculo de estado a la
+       izquierda (✓ verde si la llamada cuenta como productiva, ⚠ rojo si
+       quedó marcada Dropped — mismo criterio que ya usan los tags Billable/
+       Dropped de abajo, ahora también reflejado en el ícono) + el resto de
+       la tarjeta (customer id/pay/fecha/hora/duración/hueco/nota/Billable/
+       Dropped/botones Editar-Eliminar) exactamente igual que antes, sin
+       quitar NINGÚN dato — el mock no mostraba billable/dropped/hueco/pago
+       en su tarjeta, pero esta app ya los tenía y el usuario pidió no
+       borrar nada, así que se conservan debajo del nuevo encabezado. */
+    .mobile-call-row-flex {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .mobile-call-check {
+      width: 30px;
+      height: 30px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(var(--good-rgb), .14);
+    }
+    .mobile-call-check .ic-svg {
+      width: 15px;
+      height: 15px;
+      stroke: var(--good);
+      color: var(--good);
+    }
+    .mobile-call-check.bad {
+      background: rgba(var(--pink-rgb), .14);
+    }
+    .mobile-call-check.bad .ic-svg {
+      stroke: var(--pink);
+      color: var(--pink);
+    }
+    .mobile-call-main {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: grid;
+      gap: 6px;
+    }
+
     .mobile-call-top {
       display: flex;
       justify-content: space-between;
@@ -5662,24 +5981,31 @@
       .controls-grid {
         gap: 6px;
       }
+      /* v292 — Ver comentario junto a `.controls-grid .action-btn` (regla
+         base, más arriba): el layout en FILA (ícono en círculo a la
+         izquierda, texto a la derecha) se mantiene también en mobile — solo
+         se reduce tamaño/padding para que los 3 quepan sin apretarse.
+         Antes de v292 esta regla revertía a un layout distinto (columna,
+         centrado) SOLO en este breakpoint; ya no hace falta, el layout de
+         fila del mock del usuario funciona igual de bien angosto. */
       .controls-grid .action-btn {
-        min-height: 52px;
-        padding: 11px 6px 9px;
-        gap: 4px;
+        padding: 9px 8px;
+        gap: 8px;
       }
       .controls-grid .action-btn .action-icon-wrap {
-        width: 24px;
-        height: 24px;
+        width: 30px;
+        height: 30px;
       }
-      .controls-grid .action-btn .action-icon {
-        font-size: 14px;
+      .controls-grid .action-btn .action-icon .ic-svg {
+        width: 14px;
+        height: 14px;
       }
       .controls-grid .action-btn .action-label {
         font-size: 11px;
         line-height: 1.2;
       }
       .controls-grid .action-btn .action-sub {
-        font-size: 9.5px;
+        font-size: 9px;
         line-height: 1.25;
       }
       .goal-stack { justify-items: start; }
@@ -7261,6 +7587,262 @@
        que ya eran un glifo sólido antes de este cambio (▶ de "Iniciar
        shift") — mismo color monocromo forzado, solo cambia fill vs stroke. */
     .ic-svg.ic-fill { fill: currentColor; stroke: none; }
+
+    /* ==========================================================
+       v294 — Pedido del usuario: panel de analíticas de "Reportes" (Vista 3
+       de su mock "Panel de Llamadas & Reportes") — KPIs del día, Objetivos,
+       gráfica de productividad de 14 días, "Calidad del tiempo" (dona),
+       Adherencia (arco), Ganancias del ciclo + mejor/peor día, y Tendencias
+       vs la semana anterior. Es contenido 100% NUEVO (antes "Reportes" solo
+       tenía Resumen del día/Estadísticas del día en texto y Resumen semanal
+       en tabla, ver más abajo) — se agrega COMO SECCIÓN PROPIA arriba de
+       esas 2, sin tocar ni una sola de sus reglas/ids: nada se quita.
+       Prefijo `rpt-` en todas las clases nuevas para no chocar con clases
+       ya existentes de otras partes de la app (ej. `.section-title` ya
+       significa algo distinto en el resto del archivo). */
+    .rpt-dashboard {
+      margin-bottom: 14px;
+    }
+    .rpt-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .rpt-title {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: -.02em;
+    }
+    .rpt-sub {
+      font-size: 12.5px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .rpt-date-pill {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      padding: 8px 13px;
+      border-radius: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .rpt-date-pill .ic-svg { width: 13px; height: 13px; }
+
+    .rpt-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .rpt-kpi-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .rpt-kpi-icon {
+      width: 26px;
+      height: 26px;
+      margin-bottom: 8px;
+    }
+    .rpt-kpi-icon .ic-svg { width: 16px; height: 16px; }
+    .rpt-kpi-label {
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: .06em;
+      color: var(--muted);
+    }
+    .rpt-kpi-val {
+      font-size: 20px;
+      font-weight: 900;
+      margin-top: 6px;
+      letter-spacing: -.02em;
+    }
+    .rpt-kpi-delta {
+      font-size: 11px;
+      margin-top: 5px;
+      font-weight: 800;
+    }
+    .rpt-kpi-delta.up { color: var(--good); }
+    .rpt-kpi-delta.down { color: var(--bad); }
+    .rpt-kpi-delta.flat { color: var(--muted); }
+    @media (max-width: 760px) {
+      .rpt-kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .rpt-kpi-val { font-size: 17px; }
+    }
+
+    .rpt-section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 20px 0 12px;
+    }
+    .rpt-section-title {
+      font-size: 12.5px;
+      font-weight: 800;
+      letter-spacing: .03em;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .rpt-section-title .ic-svg { width: 15px; height: 15px; }
+    .rpt-sel-pill {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 11px;
+      padding: 6px 11px;
+      border-radius: 8px;
+      font-weight: 700;
+    }
+
+    .rpt-goals-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .rpt-goal-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .rpt-goal-top {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 9px;
+    }
+    .rpt-goal-bar {
+      height: 8px;
+      border-radius: 6px;
+      background: rgba(255,255,255,.06);
+      overflow: hidden;
+      margin-bottom: 7px;
+    }
+    .rpt-goal-bar > div { height: 100%; border-radius: 6px; }
+    .rpt-goal-bar.blue > div { background: linear-gradient(90deg, var(--rpt-blue), #7db4ff); }
+    .rpt-goal-bar.good > div { background: linear-gradient(90deg, var(--good), #a4f5cd); }
+    .rpt-goal-bar.purple > div { background: linear-gradient(90deg, var(--rpt-purple), #c3b3ff); }
+    .rpt-goal-foot { font-size: 11px; color: var(--muted); }
+    @media (max-width: 760px) {
+      .rpt-goals-grid { grid-template-columns: 1fr; }
+    }
+
+    .rpt-chart-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .rpt-legend {
+      display: flex;
+      gap: 16px;
+      font-size: 11.5px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .rpt-legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .rpt-legend i { width: 14px; height: 2px; display: inline-block; }
+    .rpt-legend i.solid { background: var(--rpt-blue); }
+    .rpt-legend i.dashed { background: repeating-linear-gradient(90deg, var(--rpt-purple) 0 4px, transparent 4px 8px); }
+
+    .rpt-tri-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1fr;
+      gap: 10px;
+    }
+    .rpt-mini-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .rpt-mini-title {
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: .05em;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .rpt-act-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .rpt-act-row:last-child { border-bottom: none; }
+    .rpt-act-left { display: flex; align-items: center; gap: 7px; color: var(--muted); }
+    .rpt-act-left .ic-svg { width: 13px; height: 13px; }
+    .rpt-act-val { font-weight: 800; color: var(--text); }
+    .rpt-act-delta { font-size: 10.5px; margin-left: 5px; }
+    .rpt-act-delta.up { color: var(--good); }
+    .rpt-act-delta.down { color: var(--bad); }
+
+    .rpt-donut-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .rpt-donut-legend { display: flex; flex-direction: column; gap: 5px; font-size: 11.5px; color: var(--muted); width: 100%; }
+    .rpt-donut-legend span { display: flex; align-items: center; gap: 7px; }
+    .rpt-donut-legend i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+
+    .rpt-arc-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .rpt-arc-val { font-size: 22px; font-weight: 900; color: var(--good); margin-top: -42px; }
+    .rpt-arc-label { font-size: 11.5px; color: var(--muted); }
+    .rpt-arc-stats { width: 100%; margin-top: 8px; font-size: 11px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; text-align: center; }
+    @media (max-width: 960px) {
+      .rpt-tri-grid { grid-template-columns: 1fr; }
+    }
+
+    .rpt-cycle-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr 1fr;
+      gap: 10px;
+    }
+    .rpt-cycle-card .rpt-cycle-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 9px; }
+    .rpt-cycle-amt { font-size: 21px; font-weight: 900; }
+    .rpt-cycle-pct { font-size: 12px; color: var(--rpt-purple); font-weight: 800; }
+    .rpt-mini-stats { display: flex; gap: 12px; margin-top: 11px; font-size: 11px; color: var(--muted); flex-wrap: wrap; }
+    .rpt-mini-stats b { display: block; color: var(--text); font-size: 12.5px; }
+    .rpt-best-card { border-color: rgba(var(--good-rgb), .35); background: rgba(var(--good-rgb), .06); }
+    .rpt-worst-card { border-color: rgba(var(--pink-rgb), .35); background: rgba(var(--pink-rgb), .06); }
+    .rpt-bw-title { font-size: 11.5px; font-weight: 800; display: flex; align-items: center; gap: 6px; margin-bottom: 9px; }
+    .rpt-bw-title .ic-svg { width: 14px; height: 14px; }
+    .rpt-bw-title.good { color: var(--good); }
+    .rpt-bw-title.bad { color: var(--pink); }
+    .rpt-bw-metric { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--muted); padding: 4px 0; }
+    .rpt-bw-metric b { color: var(--text); }
+    @media (max-width: 960px) {
+      .rpt-cycle-grid { grid-template-columns: 1fr; }
+    }
+
+    .rpt-trend-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+    .rpt-trend-chip {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 7px 13px;
+      font-size: 11.5px;
+      font-weight: 700;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .rpt-trend-chip .up { color: var(--good); }
+    .rpt-trend-chip .down { color: var(--pink); }
+    .rpt-trend-chip .flat { color: var(--warn); }
   </style>
 </head>
 <body>
@@ -7577,6 +8159,33 @@
 <div>
 <h2>Llamadas</h2>
 <p>Inicia una llamada, pega tu exportación de Propio o agrega una manual.</p>
+</div>
+</div>
+
+<!-- v293 — Ver comentario extenso junto a `.calls-status-card` en el CSS.
+     Contenido dinámico (dot/título/timer/ícono/texto/tag en vivo/waveform/
+     botones) lo llena updateCallsStatusCard(), llamada desde el mismo tick
+     de 1s que ya actualiza `.live-activity-bar` — nunca se re-renderiza
+     desde cero, solo se hace toggle de estilos/texto sobre estos ids. -->
+<div class="calls-status-card" id="callsStatusCard">
+<div class="calls-status-head">
+<div class="calls-status-head-left">
+<span class="calls-status-dot" id="callsStatusDot"></span>
+<span class="calls-status-title" id="callsStatusTitle">Listo para llamar</span>
+</div>
+<span class="calls-status-timer" id="callsStatusTimer" style="display:none;">00:00:00</span>
+</div>
+<div class="calls-status-body">
+<span class="calls-status-icon" id="callsStatusIcon" aria-hidden="true"></span>
+<div class="calls-status-text">
+<div class="calls-status-text-title" id="callsStatusTextTitle">Comienza una nueva llamada</div>
+<span class="calls-status-live-tag" id="callsStatusLiveTag" style="display:none;"><span class="dot"></span>En vivo</span>
+<div class="calls-status-waveform" id="callsStatusWaveform" style="display:none;"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+</div>
+<div class="calls-status-actions" id="callsStatusActions" style="display:none;">
+<button class="calls-status-btn-save" id="callsStatusSaveBtn" type="button">Guardar</button>
+<button class="calls-status-btn-end" id="callsStatusEndBtn" type="button">Terminar</button>
+</div>
 </div>
 </div>
 
@@ -7954,6 +8563,50 @@
      semanal (sin #callTableAccordion, movida a Inicio — ver comentario
      junto a esa sección). Sin cambios de contenido en ninguna. -->
 <div class="app-page" data-page="reports" hidden id="pageReports">
+<!-- v294 — Pedido del usuario: panel de analíticas nuevo (Vista 3 de su
+     mock "Panel de Llamadas & Reportes") — se agrega COMO SECCIÓN PROPIA,
+     arriba de todo lo que ya existía en esta página (Resumen del día/
+     Estadísticas/Resumen semanal, sin tocar). Contenido dinámico lo llena
+     renderReportsDashboard(), llamada desde render(). -->
+<div class="rpt-dashboard" id="rptDashboard">
+<div class="rpt-topbar">
+<div>
+<div class="rpt-title">Reportes</div>
+<div class="rpt-sub">Resumen completo de tu rendimiento</div>
+</div>
+<div class="rpt-date-pill" id="rptDatePill"></div>
+</div>
+
+<div class="rpt-kpi-grid" id="rptKpiGrid"></div>
+
+<div class="rpt-section-head">
+<div class="rpt-section-title"></div>
+</div>
+<div class="rpt-goals-grid" id="rptGoalsGrid"></div>
+
+<div class="rpt-section-head">
+<div class="rpt-section-title"></div>
+<div class="rpt-sel-pill">14 días</div>
+</div>
+<div class="rpt-chart-card">
+<div class="rpt-legend"><span><i class="solid"></i>Real</span><span><i class="dashed"></i>Meta</span></div>
+<svg id="rptChartSvg" viewBox="0 0 600 140" width="100%" height="140" preserveAspectRatio="none"></svg>
+</div>
+
+<div class="rpt-tri-grid" id="rptTriGrid"></div>
+
+<div class="rpt-section-head">
+<div class="rpt-section-title"></div>
+<div class="rpt-sel-pill">Ciclo actual</div>
+</div>
+<div class="rpt-cycle-grid" id="rptCycleGrid"></div>
+
+<div class="rpt-section-head" style="margin-bottom:8px;">
+<div class="rpt-section-title" style="text-transform:uppercase;">Tendencias (vs 7 días anteriores)</div>
+</div>
+<div class="rpt-trend-row" id="rptTrendRow"></div>
+</div>
+
 <div class="day-stats-grid" id="dayStatsGrid">
 <details class="accordion-card" id="resumenDiaAccordion" open>
 <summary>
@@ -12350,6 +13003,399 @@ function weekSummaryForOffset(offset = weekViewOffset) {
   return { days: rows, totals, weekStart: days[0], weekEnd: days[6] };
 }
 
+// ==========================================================
+// v294 — Pedido del usuario: funciones de datos para el panel de
+// analíticas de "Reportes" (Vista 3 de su mock). Todas reutilizan los
+// mismos helpers que ya alimentan el resto de la app (dayConfigFor/
+// dayIsEffectivelyOff/dayShiftBounds/connectedMinutesForDay/
+// productiveMinutesForDay/importedCallStats/dayAdherence/
+// weekSummaryForOffset/cycleEarningsForOffset) — ningún cálculo nuevo de
+// "fuente de verdad", solo nuevas combinaciones/comparaciones de datos que
+// ya existían.
+
+// Serie diaria para los últimos `days` días (hoy inclusive) — a diferencia
+// de weekSummaryForOffset() (bloques fijos de 7 días alineados al ciclo de
+// pago), esta es una ventana móvil de CALENDARIO que siempre termina hoy,
+// para la gráfica de 14 días y las comparaciones de Reportes.
+function reportsDailySeries(days = 14) {
+  const today = todayRange();
+  const rows = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
+    const dayKey = todayCallDateKey(d);
+    const cfg = dayConfigFor(dayKey);
+    const isOff = !!(cfg && cfg.off) && dayIsEffectivelyOff(dayKey);
+    const dayCalls = callsForDay(dayKey);
+    const bounds = dayShiftBounds(dayKey);
+    const hasShift = !!bounds.start;
+    const connected = hasShift ? connectedMinutesForDay(dayKey) : 0;
+    const productive = productiveMinutesForDay(dayKey);
+    const stats = importedCallStats(dayCalls, dayKey);
+    const isFuture = d > today;
+    const adherence = (!isOff && !isFuture) ? dayAdherence(dayKey) : null;
+    rows.push({
+      dayKey, date: d, isToday: dayKey === todayCallDateKey(), isOff, isFuture,
+      hasShift, calls: dayCalls.length, connected, productive,
+      earnings: stats.earnings, gapTotal: stats.gapTotal, callMin: stats.total,
+      adherencePct: adherence ? adherence.scorePct : null,
+    });
+  }
+  return rows;
+}
+
+// KPIs del día activo vs el día calendario anterior (mismo criterio que el
+// mock: "Hoy" con un delta chico junto a cada número).
+function reportsKpiData(dayKey = getActiveDayKey()) {
+  const base = callDateToDate(dayKey) || new Date();
+  const prevKey = todayCallDateKey(new Date(base.getTime() - 86400000));
+  const dayCalls = callsForDay(dayKey);
+  const prevCalls = callsForDay(prevKey);
+  const stats = importedCallStats(dayCalls, dayKey);
+  const prevStats = importedCallStats(prevCalls, prevKey);
+  const productive = productiveMinutesForDay(dayKey);
+  const prevProductive = productiveMinutesForDay(prevKey);
+  const adherence = dayAdherence(dayKey);
+  const prevAdherence = dayAdherence(prevKey);
+  return {
+    productiveMin: productive,
+    productiveDeltaMin: productive - prevProductive,
+    adherencePct: adherence ? adherence.scorePct : null,
+    adherenceDeltaPts: (adherence && prevAdherence) ? adherence.scorePct - prevAdherence.scorePct : null,
+    callCount: dayCalls.length,
+    callCountDelta: dayCalls.length - prevCalls.length,
+    earnings: stats.earnings,
+    earningsDelta: stats.earnings - prevStats.earnings,
+  };
+}
+
+// "Calidad del tiempo" (dona): qué % del tiempo CONECTADO del día fue
+// llamada real / ACW / "Improductivo" (el bucket "Otro" de huecos sin
+// clasificar, mismo dato que ya usa la píldora "Otro" en Ganancias de hoy
+// — ver dayGapTotals()). Sin turno ese día, todo en 0.
+function reportsQualityOfTime(dayKey = getActiveDayKey()) {
+  const dayCalls = callsForDay(dayKey);
+  const stats = importedCallStats(dayCalls, dayKey);
+  const connected = connectedMinutesForDay(dayKey);
+  if (connected <= 0) return { callPct: 0, acwPct: 0, otherPct: 0, connected: 0 };
+  const callPct = Math.min(100, (stats.total / connected) * 100);
+  const acwPct = Math.min(100 - callPct, (stats.gapTotal / connected) * 100);
+  const otherPct = Math.max(0, 100 - callPct - acwPct);
+  return { callPct, acwPct, otherPct, connected };
+}
+
+// Adherencia: hoy + mejor/peor/promedio de los últimos 7 días con dato
+// calculable (mismo criterio de exclusión que dayAdherence(): días libres
+// y futuros no cuentan).
+function reportsAdherenceStats() {
+  const series = reportsDailySeries(7).filter(r => r.adherencePct !== null);
+  const today = dayAdherence(getActiveDayKey());
+  if (!series.length) return { todayPct: today ? today.scorePct : null, bestPct: null, worstPct: null, avgPct: null };
+  const pcts = series.map(r => r.adherencePct);
+  return {
+    todayPct: today ? today.scorePct : null,
+    bestPct: Math.max(...pcts),
+    worstPct: Math.min(...pcts),
+    avgPct: Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length),
+  };
+}
+
+// Ganancias del ciclo: reutiliza cycleEarningsForOffset(0) tal cual (mismo
+// dato que ya pinta "Ganancias del ciclo" en Inicio). "Meta del ciclo" es
+// nueva aquí: suma de tu meta diaria en $ (settings.earningsGoal) por cada
+// día NO libre del ciclo — mismo criterio que "Objetivos del día" usa para
+// un solo día, extendido a los 14 días del ciclo completo.
+function reportsCycleBreakdown() {
+  const cycle = cycleEarningsForOffset(0);
+  let workDays = 0;
+  for (let i = 0; i < CYCLE_LENGTH_DAYS; i++) {
+    const d = new Date(cycle.start.getFullYear(), cycle.start.getMonth(), cycle.start.getDate() + i);
+    const cfg = dayConfigFor(todayCallDateKey(d));
+    if (!(cfg && cfg.off)) workDays++;
+  }
+  const goal = Number(settings.earningsGoal || 0) * workDays;
+  const trabajo = cycle.earnings - (cycle.higherRateBonus || 0);
+  return {
+    amount: cycle.earnings,
+    goal,
+    pctOfGoal: goal > 0 ? Math.min(100, (cycle.earnings / goal) * 100) : 0,
+    trabajo,
+    higherRate: cycle.higherRateBonus || 0,
+  };
+}
+
+// Mejor/peor día de los últimos 7 días CON adherencia calculable — score =
+// Adherencia del día (mismo criterio "más alto es mejor" que ya usa el
+// resto de la app). "vs promedio" compara contra el promedio de esa misma
+// serie de 7 días.
+function reportsBestWorstDay() {
+  const series = reportsDailySeries(7).filter(r => r.adherencePct !== null);
+  if (series.length < 2) return { best: null, worst: null };
+  const avg = series.reduce((a, r) => a + r.adherencePct, 0) / series.length;
+  const sorted = [...series].sort((a, b) => b.adherencePct - a.adherencePct);
+  const pctVsAvg = (r) => avg > 0 ? Math.round(((r.adherencePct - avg) / avg) * 100) : 0;
+  const best = sorted[0];
+  const worst = sorted[sorted.length - 1];
+  return {
+    best: { dayKey: best.dayKey, adherencePct: best.adherencePct, calls: best.calls, vsAvgPct: pctVsAvg(best) },
+    worst: { dayKey: worst.dayKey, adherencePct: worst.adherencePct, calls: worst.calls, vsAvgPct: pctVsAvg(worst) },
+  };
+}
+
+// Tendencias: semana actual (weekSummaryForOffset(0)) vs semana anterior
+// (weekSummaryForOffset(-1)) — mismos totales que ya calcula Resumen
+// semanal, solo comparados entre sí. ACW no vive en esos totales, se suma
+// aparte sobre la misma ventana de 7 días.
+function reportsTrends() {
+  const cur = weekSummaryForOffset(0).totals;
+  const prev = weekSummaryForOffset(-1).totals;
+  const pctChange = (curVal, prevVal) => {
+    if (!Number.isFinite(prevVal) || prevVal === 0) return curVal > 0 ? null : 0;
+    return Math.round(((curVal - prevVal) / prevVal) * 100);
+  };
+  const acwForWeek = (offset) => weekDaysForOffset(offset).reduce((a, d) => {
+    const dayKey = todayCallDateKey(d);
+    return a + importedCallStats(callsForDay(dayKey), dayKey).gapTotal;
+  }, 0);
+  return {
+    productivePct: pctChange(cur.productive, prev.productive),
+    adherencePct: pctChange(cur.avgAdherence, prev.avgAdherence),
+    earningsPct: pctChange(cur.earnings, prev.earnings),
+    callsPct: pctChange(cur.calls, prev.calls),
+    acwPct: pctChange(acwForWeek(0), acwForWeek(-1)),
+  };
+}
+
+// ---- Render del panel completo ----
+function trendChipHtml(label, pct, opts = {}) {
+  const invertGood = !!opts.invertGood; // ACW: bajar es bueno, subir es malo
+  if (pct === null) return `<div class="rpt-trend-chip"><span class="flat">${iconHtml('circle')}</span> ${escapeHtml(label)} sin datos</div>`;
+  if (pct === 0) return `<div class="rpt-trend-chip"><span class="flat">→</span> ${escapeHtml(label)} estable</div>`;
+  const isUp = pct > 0;
+  const isGood = invertGood ? !isUp : isUp;
+  const arrow = isUp ? '↑' : '↓';
+  return `<div class="rpt-trend-chip"><span class="${isGood ? 'up' : 'down'}">${arrow}</span> ${escapeHtml(label)} ${isUp ? '+' : ''}${pct}%</div>`;
+}
+
+function renderReportsDashboard() {
+  const dashboard = document.getElementById('rptDashboard');
+  if (!dashboard) return;
+  const dayKey = getActiveDayKey();
+
+  const datePill = document.getElementById('rptDatePill');
+  if (datePill) datePill.innerHTML = `${iconHtml('calendar')} ${escapeHtml(dayKey === todayCallDateKey() ? 'Hoy, ' : '')}${escapeHtml(formatCallDayLabel(dayKey))}`;
+
+  // KPIs
+  const kpi = reportsKpiData(dayKey);
+  const kpiGrid = document.getElementById('rptKpiGrid');
+  if (kpiGrid) {
+    const kpiDeltaHtml = (val, unit, tone) => {
+      if (val === null || !Number.isFinite(val)) return '';
+      if (val === 0) return `<div class="rpt-kpi-delta flat">Sin cambio</div>`;
+      const up = val > 0;
+      return `<div class="rpt-kpi-delta ${up ? 'up' : 'down'}">${up ? '↑ +' : '↓ '}${unit === '$' ? money(Math.abs(val)) : Math.abs(val) + unit}</div>`;
+    };
+    kpiGrid.innerHTML = `
+      <div class="rpt-kpi-card">
+        <div class="rpt-kpi-icon" style="color:var(--rpt-blue);">${iconHtml('timer')}</div>
+        <div class="rpt-kpi-label">PRODUCTIVO</div>
+        <div class="rpt-kpi-val">${formatDuration(kpi.productiveMin * 60000)}</div>
+        ${kpiDeltaHtml(kpi.productiveDeltaMin, 'min')}
+      </div>
+      <div class="rpt-kpi-card">
+        <div class="rpt-kpi-icon" style="color:var(--good);">${iconHtml('target')}</div>
+        <div class="rpt-kpi-label">ADHERENCIA</div>
+        <div class="rpt-kpi-val">${kpi.adherencePct === null ? '—' : kpi.adherencePct + '%'}</div>
+        ${kpiDeltaHtml(kpi.adherenceDeltaPts, '%')}
+      </div>
+      <div class="rpt-kpi-card">
+        <div class="rpt-kpi-icon" style="color:var(--rpt-purple);">${iconHtml('phone')}</div>
+        <div class="rpt-kpi-label">LLAMADAS</div>
+        <div class="rpt-kpi-val">${kpi.callCount}</div>
+        ${kpiDeltaHtml(kpi.callCountDelta, '')}
+      </div>
+      <div class="rpt-kpi-card">
+        <div class="rpt-kpi-icon" style="color:var(--warn);">${iconHtml('flag')}</div>
+        <div class="rpt-kpi-label">GANANCIAS</div>
+        <div class="rpt-kpi-val">${money(kpi.earnings)}</div>
+        ${kpiDeltaHtml(kpi.earningsDelta, '$')}
+      </div>
+    `;
+  }
+
+  // Section titles (con ícono, ver .rpt-section-title)
+  const sectionTitles = document.querySelectorAll('.rpt-section-title');
+  if (sectionTitles[0]) sectionTitles[0].innerHTML = `${iconHtml('target')} Objetivos del día`;
+  if (sectionTitles[1]) sectionTitles[1].innerHTML = `${iconHtml('chart')} Productividad — últimos 14 días`;
+  if (sectionTitles[2]) sectionTitles[2].innerHTML = `${iconHtml('zap')} Calidad y adherencia`;
+  if (sectionTitles[3]) sectionTitles[3].innerHTML = `${iconHtml('flag')} Ganancias del ciclo`;
+
+  // Objetivos del día (reutiliza las mismas metas de Ajustes)
+  const goalsGrid = document.getElementById('rptGoalsGrid');
+  if (goalsGrid) {
+    const goalMin = Number(settings.productiveGoalMin || 0);
+    const goalUsd = Number(settings.earningsGoal || 0);
+    const goalAdherence = Number(settings.adherenceGoalPct || 95);
+    const productivePct = goalMin > 0 ? Math.min(100, (kpi.productiveMin / goalMin) * 100) : 0;
+    const earningsPct = goalUsd > 0 ? Math.min(100, (kpi.earnings / goalUsd) * 100) : 0;
+    const adherencePct = kpi.adherencePct === null ? 0 : Math.min(100, (kpi.adherencePct / goalAdherence) * 100);
+    goalsGrid.innerHTML = `
+      <div class="rpt-goal-card">
+        <div class="rpt-goal-top"><span>Productividad</span><span>${formatMinutes(kpi.productiveMin)}/${formatMinutes(goalMin)} min</span></div>
+        <div class="rpt-goal-bar blue"><div style="width:${productivePct}%;"></div></div>
+        <div class="rpt-goal-foot">${kpi.productiveMin >= goalMin ? '¡Meta alcanzada!' : `Faltan ${formatMinutes(Math.max(0, goalMin - kpi.productiveMin))} min`}</div>
+      </div>
+      <div class="rpt-goal-card">
+        <div class="rpt-goal-top"><span>Adherencia</span><span>${kpi.adherencePct === null ? '—' : kpi.adherencePct}/${goalAdherence}%</span></div>
+        <div class="rpt-goal-bar good"><div style="width:${adherencePct}%;"></div></div>
+        <div class="rpt-goal-foot">${kpi.adherencePct !== null && kpi.adherencePct >= goalAdherence ? '¡Meta alcanzada!' : `Faltan ${kpi.adherencePct === null ? goalAdherence : Math.max(0, goalAdherence - kpi.adherencePct)}%`}</div>
+      </div>
+      <div class="rpt-goal-card">
+        <div class="rpt-goal-top"><span>Ganancias</span><span>${money(kpi.earnings)}/${money(goalUsd)}</span></div>
+        <div class="rpt-goal-bar purple"><div style="width:${earningsPct}%;"></div></div>
+        <div class="rpt-goal-foot">${kpi.earnings >= goalUsd ? '¡Meta alcanzada!' : `Faltan ${money(Math.max(0, goalUsd - kpi.earnings))}`}</div>
+      </div>
+    `;
+  }
+
+  // Gráfica de 14 días (productivo real vs meta diaria constante)
+  const chartSvg = document.getElementById('rptChartSvg');
+  if (chartSvg) {
+    const series = reportsDailySeries(14);
+    const goalMin = Number(settings.productiveGoalMin || 0);
+    const maxVal = Math.max(goalMin, ...series.map(r => r.productive), 1);
+    const w = 600, h = 140, pad = 6;
+    const stepX = series.length > 1 ? (w / (series.length - 1)) : w;
+    const yFor = (val) => h - pad - (Math.min(val, maxVal) / maxVal) * (h - pad * 2);
+    const points = series.map((r, i) => `${Math.round(i * stepX)},${Math.round(yFor(r.productive))}`).join(' ');
+    const goalY = Math.round(yFor(goalMin));
+    chartSvg.innerHTML = `
+      <polyline points="${points}" fill="none" stroke="var(--rpt-blue)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <polyline points="0,${goalY} ${w},${goalY}" fill="none" stroke="var(--rpt-purple)" stroke-width="2" stroke-dasharray="6 5"/>
+    `;
+  }
+
+  // Tri-grid: Actividad de hoy / Calidad del tiempo (dona) / Adherencia (arco)
+  const triGrid = document.getElementById('rptTriGrid');
+  if (triGrid) {
+    const stats = importedCallStats(callsForDay(dayKey), dayKey);
+    const prevKey = todayCallDateKey(new Date((callDateToDate(dayKey) || new Date()).getTime() - 86400000));
+    const prevStats = importedCallStats(callsForDay(prevKey), prevKey);
+    const connectedMin = connectedMinutesForDay(dayKey);
+    const prevConnectedMin = connectedMinutesForDay(prevKey);
+    const deltaChip = (val, unit) => {
+      if (!val) return '';
+      const up = val > 0;
+      return `<span class="rpt-act-delta ${up ? 'up' : 'down'}">${up ? '+' : ''}${unit === 'min' ? formatMinutes(val) : val}${unit === 'min' ? 'm' : ''}</span>`;
+    };
+    const q = reportsQualityOfTime(dayKey);
+    // Dona: 3 arcos apilados sobre la circunferencia (r=48, circunf.≈301.6)
+    const R = 48, CIRC = 2 * Math.PI * R;
+    const callLen = (q.callPct / 100) * CIRC;
+    const acwLen = (q.acwPct / 100) * CIRC;
+    const otherLen = (q.otherPct / 100) * CIRC;
+    const adh = reportsAdherenceStats();
+    const arcTotal = 171; // longitud del path del arco en el SVG del mock (M10,80 A60,60 0 0 1 130,80)
+    const arcPct = adh.todayPct === null ? 0 : adh.todayPct;
+    const arcOffset = arcTotal - (arcPct / 100) * arcTotal;
+    const arcLabel = arcPct >= 95 ? 'Excelente' : arcPct >= 85 ? 'Muy buena' : arcPct >= 70 ? 'Aceptable' : arcPct > 0 ? 'Baja' : 'Sin datos';
+    triGrid.innerHTML = `
+      <div class="rpt-mini-card">
+        <div class="rpt-mini-title">ACTIVIDAD DE HOY</div>
+        <div class="rpt-act-row"><span class="rpt-act-left">${iconHtml('phone')} Llamadas</span><span class="rpt-act-val">${stats.billable + stats.dropped >= 0 ? callsForDay(dayKey).length : 0}${deltaChip(callsForDay(dayKey).length - callsForDay(prevKey).length, '')}</span></div>
+        <div class="rpt-act-row"><span class="rpt-act-left">${iconHtml('timer')} Tiempo conectado</span><span class="rpt-act-val">${formatDuration(connectedMin * 60000)}${deltaChip(Math.round(connectedMin - prevConnectedMin), 'min')}</span></div>
+        <div class="rpt-act-row"><span class="rpt-act-left">${iconHtml('coffee')} Break</span><span class="rpt-act-val">${formatDuration(stats.breakGapTotal * 60000)}${deltaChip(Math.round(stats.breakGapTotal - prevStats.breakGapTotal), 'min')}</span></div>
+        <div class="rpt-act-row"><span class="rpt-act-left">${iconHtml('utensils')} Lunch</span><span class="rpt-act-val">${formatDuration(stats.lunchGapTotal * 60000)}</span></div>
+      </div>
+      <div class="rpt-mini-card">
+        <div class="rpt-mini-title">CALIDAD DEL TIEMPO</div>
+        <div class="rpt-donut-wrap">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="${R}" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="14"/>
+            ${connectedMin > 0 ? `
+            <circle cx="60" cy="60" r="${R}" fill="none" stroke="var(--rpt-blue)" stroke-width="14" stroke-dasharray="${callLen} ${CIRC - callLen}" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+            <circle cx="60" cy="60" r="${R}" fill="none" stroke="var(--rpt-purple)" stroke-width="14" stroke-dasharray="${acwLen} ${CIRC - acwLen}" stroke-dashoffset="${-callLen}" transform="rotate(-90 60 60)"/>
+            <circle cx="60" cy="60" r="${R}" fill="none" stroke="var(--pink)" stroke-width="14" stroke-dasharray="${otherLen} ${CIRC - otherLen}" stroke-dashoffset="${-(callLen + acwLen)}" transform="rotate(-90 60 60)"/>
+            ` : ''}
+            <text x="60" y="66" text-anchor="middle" font-size="20" font-weight="800" fill="var(--text)">${connectedMin > 0 ? Math.round(q.callPct + q.acwPct) + '%' : '—'}</text>
+          </svg>
+          <div class="rpt-donut-legend">
+            <span><i style="background:var(--rpt-blue);"></i> Llamadas ${Math.round(q.callPct)}%</span>
+            <span><i style="background:var(--rpt-purple);"></i> ACW ${Math.round(q.acwPct)}%</span>
+            <span><i style="background:var(--pink);"></i> Improductivo ${Math.round(q.otherPct)}%</span>
+          </div>
+        </div>
+      </div>
+      <div class="rpt-mini-card">
+        <div class="rpt-mini-title">ADHERENCIA</div>
+        <div class="rpt-arc-wrap">
+          <svg width="140" height="90" viewBox="0 0 140 90">
+            <path d="M10,80 A60,60 0 0 1 130,80" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="12"/>
+            <path d="M10,80 A60,60 0 0 1 130,80" fill="none" stroke="var(--good)" stroke-width="12" stroke-dasharray="${arcTotal}" stroke-dashoffset="${arcOffset}"/>
+          </svg>
+          <div class="rpt-arc-val">${adh.todayPct === null ? '—' : adh.todayPct + '%'}</div>
+          <div class="rpt-arc-label">${escapeHtml(arcLabel)}</div>
+          <div class="rpt-arc-stats">
+            <span>Mejor: ${adh.bestPct === null ? '—' : adh.bestPct + '%'} · Peor: ${adh.worstPct === null ? '—' : adh.worstPct + '%'}</span>
+            <span>Promedio 7d: ${adh.avgPct === null ? '—' : adh.avgPct + '%'}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Ganancias del ciclo + mejor/peor día
+  const cycleGrid = document.getElementById('rptCycleGrid');
+  if (cycleGrid) {
+    const c = reportsCycleBreakdown();
+    const bw = reportsBestWorstDay();
+    const bestHtml = bw.best ? `
+      <div class="rpt-mini-card rpt-best-card">
+        <div class="rpt-bw-title good">${iconHtml('checkCircle')} MEJOR DÍA</div>
+        <div class="rpt-bw-metric"><span>Fecha</span><b>${escapeHtml(formatCallDayLabel(bw.best.dayKey))}</b></div>
+        <div class="rpt-bw-metric"><span>Adherencia</span><b>${bw.best.adherencePct}%</b></div>
+        <div class="rpt-bw-metric"><span>Llamadas</span><b>${bw.best.calls}</b></div>
+        <div class="rpt-bw-metric"><span>vs promedio</span><b style="color:var(--good);">${bw.best.vsAvgPct >= 0 ? '+' : ''}${bw.best.vsAvgPct}%</b></div>
+      </div>` : `<div class="rpt-mini-card"><div class="rpt-mini-title">MEJOR DÍA</div><div class="note" style="margin:0;">Sin suficientes datos todavía.</div></div>`;
+    const worstHtml = bw.worst ? `
+      <div class="rpt-mini-card rpt-worst-card">
+        <div class="rpt-bw-title bad">${iconHtml('alertTriangle')} PEOR DÍA</div>
+        <div class="rpt-bw-metric"><span>Fecha</span><b>${escapeHtml(formatCallDayLabel(bw.worst.dayKey))}</b></div>
+        <div class="rpt-bw-metric"><span>Adherencia</span><b>${bw.worst.adherencePct}%</b></div>
+        <div class="rpt-bw-metric"><span>Llamadas</span><b>${bw.worst.calls}</b></div>
+        <div class="rpt-bw-metric"><span>vs promedio</span><b style="color:var(--pink);">${bw.worst.vsAvgPct}%</b></div>
+      </div>` : `<div class="rpt-mini-card"><div class="rpt-mini-title">PEOR DÍA</div><div class="note" style="margin:0;">Sin suficientes datos todavía.</div></div>`;
+    cycleGrid.innerHTML = `
+      <div class="rpt-mini-card rpt-cycle-card">
+        <div class="rpt-cycle-top">
+          <div class="rpt-cycle-amt">${money(c.amount)}</div>
+          <div class="rpt-cycle-pct">${Math.round(c.pctOfGoal)}%</div>
+        </div>
+        <div class="rpt-goal-bar purple"><div style="width:${c.pctOfGoal}%;"></div></div>
+        <div class="rpt-mini-stats">
+          <div>Trabajo<b>${money(c.trabajo)}</b></div>
+          <div>Higher Rate<b>${money(c.higherRate)}</b></div>
+          <div>Meta<b>${money(c.goal)}</b></div>
+        </div>
+      </div>
+      ${bestHtml}
+      ${worstHtml}
+    `;
+  }
+
+  // Tendencias vs 7 días anteriores
+  const trendRow = document.getElementById('rptTrendRow');
+  if (trendRow) {
+    const t = reportsTrends();
+    trendRow.innerHTML = [
+      trendChipHtml('Productividad', t.productivePct),
+      trendChipHtml('Adherencia', t.adherencePct),
+      trendChipHtml('Ganancias', t.earningsPct),
+      trendChipHtml('Llamadas', t.callsPct),
+      trendChipHtml('ACW', t.acwPct, { invertGood: true }),
+    ].join('');
+  }
+}
+
 function renderWeekSummary() {
   const wrap = document.getElementById('weekSummaryWrap');
   const subtitle = document.getElementById('weekSummarySubtitle');
@@ -13112,6 +14158,41 @@ function renderWeekSummary() {
       if (labelEl) labelEl.textContent = info.label;
       const timerEl = document.getElementById('liveBarTimer');
       if (timerEl) timerEl.textContent = formatDuration(Date.now() - new Date(info.startedAt).getTime());
+    }
+
+    // v293 — Pedido del usuario: tarjeta de estado dentro de "Llamadas" (ver
+    // comentario junto a `.calls-status-card` en el CSS) — SOLO refleja
+    // `state.activeCall` (no Break/Lunch, a diferencia de
+    // `.live-activity-bar` que sí los cubre) porque esta tarjeta vive
+    // dentro de la sección de Llamadas específicamente, igual que las 2
+    // vistas del mock del usuario (Vista 1 = sin llamada, Vista 2 = en
+    // curso) — nunca se pintó una 3ra vista para Break/Lunch en el mock.
+    // Mismo patrón que updateLiveActivityBar(): toggles de clase/texto
+    // sobre nodos ya existentes, sin reconstruir HTML en cada tick.
+    function updateCallsStatusCard() {
+      const dot = document.getElementById('callsStatusDot');
+      const title = document.getElementById('callsStatusTitle');
+      const timerEl = document.getElementById('callsStatusTimer');
+      const icon = document.getElementById('callsStatusIcon');
+      const textTitle = document.getElementById('callsStatusTextTitle');
+      const liveTag = document.getElementById('callsStatusLiveTag');
+      const waveform = document.getElementById('callsStatusWaveform');
+      const actions = document.getElementById('callsStatusActions');
+      if (!dot || !title || !icon || !textTitle) return;
+
+      const isLive = !!state.activeCall;
+      icon.innerHTML = iconHtml('phone');
+      dot.classList.toggle('live', isLive);
+      icon.classList.toggle('live', isLive);
+      title.textContent = isLive ? 'Llamada en curso' : 'Listo para llamar';
+      textTitle.textContent = isLive ? 'En llamada' : 'Comienza una nueva llamada';
+      if (timerEl) {
+        timerEl.style.display = isLive ? '' : 'none';
+        if (isLive) timerEl.textContent = formatDuration(Date.now() - new Date(state.activeCall.startedAt).getTime());
+      }
+      if (liveTag) liveTag.style.display = isLive ? '' : 'none';
+      if (waveform) waveform.style.display = isLive ? '' : 'none';
+      if (actions) actions.style.display = isLive ? '' : 'none';
     }
 
     // A diferencia de resetDay() (borra SOLO el día activo), esto borra TODO
@@ -16548,11 +17629,16 @@ function renderTable() {
 
         cards.push(`
           <div class="mobile-call-card">
-            <div class="mobile-call-top">
-              <div class="mobile-call-title">#${escapeHtml(c.customerId)}</div>
-              <div class="mobile-call-pay">${money(parseMoney(c.pay))}${higherRateBonus ? ` ${higherRateTierInlineHtml(higherRateBonus.tier, higherRateBonus.amount)}` : ''}</div>
+            <div class="mobile-call-row-flex">
+              <span class="mobile-call-check ${String(c.dropped).toLowerCase() === 'yes' ? 'bad' : ''}" aria-hidden="true">${String(c.dropped).toLowerCase() === 'yes' ? iconHtml('alertTriangle') : iconHtml('checkCircle')}</span>
+              <div class="mobile-call-main">
+                <div class="mobile-call-top">
+                  <div class="mobile-call-title">#${escapeHtml(c.customerId)}</div>
+                  <div class="mobile-call-pay">${money(parseMoney(c.pay))}${higherRateBonus ? ` ${higherRateTierInlineHtml(higherRateBonus.tier, higherRateBonus.amount)}` : ''}</div>
+                </div>
+                <div class="mobile-call-meta">${escapeHtml(c.callDate)} · ${escapeHtml(c.callStart)} · ${c.durationMin} min${effectivePrev ? ` · ${escapeHtml(gapText)}` : ''}${annotation?.note ? ` · Nota: ${escapeHtml(annotation.note)}` : ''}</div>
+              </div>
             </div>
-            <div class="mobile-call-meta">${escapeHtml(c.callDate)} · ${escapeHtml(c.callStart)} · ${c.durationMin} min${effectivePrev ? ` · ${escapeHtml(gapText)}` : ''}${annotation?.note ? ` · Nota: ${escapeHtml(annotation.note)}` : ''}</div>
             <div class="mobile-call-meta">Billable: ${escapeHtml(c.billable)} · Dropped: ${escapeHtml(c.dropped)}</div>
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
               ${effectivePrev && gapKey ? `<button class="gap-edit-btn" type="button" data-gap-edit="${escapeHtml(gapKey)}" data-gap-day="${escapeHtml(dayKey)}">Editar gap</button>` : ''}
@@ -16682,9 +17768,11 @@ function render() {
       renderHeader();
       renderSchedule();
       renderWeekSummary();
+      renderReportsDashboard();
       renderTable();
       renderDayStatsCards();
       updateLiveActivityBar();
+      updateCallsStatusCard();
       updateSidebarProgressWidget();
     }
 
@@ -17144,6 +18232,16 @@ function render() {
     document.getElementById('liveBarDiscardBtn').addEventListener('click', () => {
       if (currentLiveActivity) currentLiveActivity.onDiscard();
     });
+    // v293 — Pedido del usuario: botones "Guardar"/"Terminar" de la nueva
+    // tarjeta de estado dentro de "Llamadas" (ver `.calls-status-card`) —
+    // mismas 2 funciones que ya usa la barra fija para una llamada activa:
+    // "Guardar" termina y guarda (endCall), "Terminar" termina SIN guardar
+    // (discardActiveCall, con confirmación — ver esa función). Un solo
+    // listener fijo (no dependen de `currentLiveActivity`, a diferencia de
+    // la barra fija, porque esta tarjeta es exclusiva de llamadas — nunca
+    // necesita resolver entre llamada/Break/Lunch como sí hace la barra).
+    document.getElementById('callsStatusSaveBtn').addEventListener('click', endCall);
+    document.getElementById('callsStatusEndBtn').addEventListener('click', discardActiveCall);
     // v242 — Pedido del usuario: mismo listener que antes tenía
     // resetDayMiniBtn (Settings page, ya quitado) — se reasigna al nuevo
     // botón de header, sin cambiar la lógica (mismo label del día activo
@@ -17570,6 +18668,7 @@ function render() {
       renderSchedule();
       renderDayStatsCards();
       updateLiveActivityBar();
+      updateCallsStatusCard();
       checkShiftAlarm();
       checkBreakStartAlarm();
       checkBreakEndAlarm();
