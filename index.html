@@ -7520,19 +7520,27 @@
       right: 0;
       top: 0;
       height: 0%;
-      background: rgb(var(--sblk-rgb, var(--blue-rgb)));
-      opacity: .92;
+      background: rgb(var(--sblk-rgb, var(--rpt-purple-rgb)));
+      opacity: .30;
       transition: height .5s cubic-bezier(.22, .85, .4, 1);
       z-index: 0;
     }
     /* v292 — Pedido del usuario: el relleno líquido (.sblk-fill) pasa a ser
-       SIEMPRE azul, sin importar el tipo de bloque — se quitan los 3
-       overrides por `data-accent` que antes le daban a cada tipo su propio
-       color de líquido (Trabajo=cyan, Break=warn, Lunch=blue, más los 2
-       overrides gemelos de modo claro, ver "v292" ahí). Sin ningún override
-       de `--sblk-rgb`, `.sblk-fill` cae solo en `var(--blue-rgb)` (el
-       fallback que ya trae `background: rgb(var(--sblk-rgb, var(--blue-rgb)))`
-       arriba), automático en ambos temas. */
+       SIEMPRE de un solo color, sin importar el tipo de bloque — se quitan
+       los 3 overrides por `data-accent` que antes le daban a cada tipo su
+       propio color de líquido (Trabajo=cyan, Break=warn, Lunch=blue, más
+       los 2 overrides gemelos de modo claro, ver "v292" ahí). Sin ningún
+       override de `--sblk-rgb`, `.sblk-fill` cae solo en el fallback del
+       `background: rgb(var(--sblk-rgb, ...))` de arriba, automático en
+       ambos temas.
+       v308 — Pedido del usuario: el azul (--blue-rgb) que dejó v292 se
+       reemplaza por morado (--rpt-purple-rgb, 155,123,255 — el mismo morado
+       que ya usa "Reportes", reutilizado en vez de un color nuevo) a
+       opacidad muy tenue (.30, antes .92 — "pared de color" reportada por
+       el usuario en un mockup). Mockup de 3 opacidades mostrado (A=.92
+       idéntica a antes, B=.30, C=.14 igual al botón de referencia del
+       usuario) — el usuario eligió explícitamente "Opción B" como punto
+       medio entre visible y no saturado. */
 
     /* Punto del riel: pasa de vivir en el flujo normal (margin-top fijo)
        a `position:absolute` con `top` en % — controlado por JS con el
