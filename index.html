@@ -5775,6 +5775,80 @@
       margin-top: 10px;
     }
 
+    /* v315 — Pedido del usuario: filtro Todo/Llamadas/Acciones sobre la
+       tabla fusionada (ver comentario junto a #tableFilterRow en el HTML)
+       — mismo lenguaje "segmented pill" que ya usa `.sched-segmented`, en
+       una versión chica propia (esa clase trae de fábrica cosas pensadas
+       para tabs de día que no aplican aquí, como flex:1 en los hijos). */
+    .table-filter-row {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 2px;
+      padding: 3px;
+      margin: 10px 0 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--line);
+    }
+    .table-filter-btn {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 11px;
+      padding: 7px 14px;
+      font-weight: 800;
+      font-size: 12.5px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .16s ease, color .16s ease;
+    }
+    .table-filter-btn:hover {
+      color: var(--text);
+    }
+    .table-filter-btn.active {
+      background: var(--cyan);
+      color: #07101f;
+    }
+
+    /* Badge de tipo por fila (Llamada/Shift/Break/Lunch/ACW/Otro/
+       Importación) — mismo criterio de acento por tipo que ya usa el
+       resto de la app (Shift=cyan, Break=warn, Lunch=blue), con ACW en el
+       morado de Reportes (--rpt-purple, ya reutilizado en "Bloques del
+       día" desde v292/v308) para no inventar un color nuevo. */
+    .tbl-type-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 10px;
+      white-space: nowrap;
+    }
+    .tbl-type-badge.type-call { background: rgba(var(--pink-rgb), .14); color: var(--pink); }
+    .tbl-type-badge.type-shift { background: rgba(var(--cyan-rgb), .16); color: var(--cyan); }
+    .tbl-type-badge.type-break { background: rgba(var(--warn-rgb), .14); color: var(--warn); }
+    .tbl-type-badge.type-lunch { background: rgba(var(--blue-rgb), .16); color: var(--blue); }
+    .tbl-type-badge.type-acw { background: rgba(var(--rpt-purple-rgb), .16); color: var(--rpt-purple); }
+    .tbl-type-badge.type-other { background: rgba(255,255,255,.06); color: var(--muted); }
+    .tbl-type-badge.type-import { background: rgba(var(--good-rgb), .14); color: var(--good); }
+
+    /* Fila de acción (Shift/Break/Lunch/ACW/Otro/Importación) dentro de la
+       tabla desktop — de solo lectura (sin Editar/Eliminar, ver comentario
+       junto a #tableFilterRow en el HTML), así que su columna "Acciones"
+       queda vacía; se atenúa levemente para distinguirla de un vistazo de
+       una fila de llamada (que sí es accionable). */
+    tr.tbl-row-action td {
+      opacity: .82;
+    }
+    .mobile-tbl-action-card {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      border-radius: 18px;
+      padding: 10px 14px;
+      display: grid;
+      gap: 6px;
+    }
+
     .divider {
       height: 1px;
       background: var(--line);
@@ -9017,17 +9091,17 @@
 <details class="accordion-card" id="callTableAccordion">
 <summary>
   <div class="accordion-head">
-    <h2>Tabla de llamadas</h2>
-    <p>Detalle de cada fila importada con su gap.</p>
+    <h2>Tabla de llamadas y acciones de hoy</h2>
+    <p>Cada llamada importada + cada acción de tu turno, en una sola línea de tiempo.</p>
   </div>
   <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
 </summary>
 <div class="accordion-body">
   <!-- v247 — Pedido del usuario (con captura): este `.note` repetía
        exactamente el mismo texto que ya se ve en el subtítulo del
-       <summary> de arriba ("Detalle de cada fila importada con su gap."),
-       duplicado en pantalla. Se quita sin reemplazo — el subtítulo del
-       acordeón ya cumple ese rol. -->
+       <summary> de arriba ("Detalle de cada fila importada con su gap.",
+       texto viejo — ver v315 más abajo, ya cambió), duplicado en pantalla.
+       Se quita sin reemplazo — el subtítulo del acordeón ya cumple ese rol. -->
   <!-- v244 — Pedido del usuario (con captura): "Vaciar llamadas del día"
        pasa de botón grande (clase `.bad` de `.modal-actions`, ocupando
        ancho completo, hasta abajo de la sección) a un botón CHICO, pegado
@@ -9042,7 +9116,26 @@
        lo que activa el listener de borrar UNA fila; este botón sigue
        wireado por su `id`, sin tocar esa lógica). -->
   <button class="gap-edit-btn call-delete-btn" id="clearDayCallsBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><path d="M6 7V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v3"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> Vaciar llamadas del día</button>
-  <p class="alert-hint">Borra TODAS las llamadas de <strong id="clearDayCallsDayLabel">—</strong> (el día activo). No toca tu turno, pausas ni horario de ese día — para eso usa "Reiniciar día" en el botón ♻️ Reiniciar del header.</p>
+  <p class="alert-hint">Borra TODAS las llamadas de <strong id="clearDayCallsDayLabel">—</strong> (el día activo). Las acciones de la tabla (Shift/Break/Lunch/ACW) no se tocan — son un registro, no se borran desde aquí. Para reiniciar también turno/pausas/horario de ese día, usa "Reiniciar día" en el botón ♻️ Reiniciar del header.</p>
+  <!-- v315 — Pedido del usuario: fusión de "Turno de Hoy" (el registro de
+       Shift/Break/Lunch/ACW, hasta ahora solo visible como resumen en
+       "Bloques del día") dentro de esta tabla — mockup completo (escritorio
+       + celular) aprobado en el chat antes de tocar código. Filtro
+       Todo/Llamadas/Acciones para no perder la vista rápida de solo pagos
+       que ya usaba esta sección — ver dayActionRows()/renderTable() en el
+       JS. Reutiliza 100% los sistemas de edición ya existentes: llamadas
+       siguen con data-call-edit/data-call-delete (openCallEditor/
+       deleteCallRecord, sin tocar), los huecos ACW/Otro siguen con
+       data-gap-edit (openGapEditor, sin tocar) — las filas de Shift/Break/
+       Lunch/Importación son de solo lectura (vienen de state.events, el
+       mismo registro que ya alimenta dayShiftBounds() y el resto de la
+       app) porque editar esos timestamps a mano podría desincronizar
+       Adherencia/ACW; eso quedaría para un pedido aparte, no de oficio. -->
+  <div class="table-filter-row" id="tableFilterRow">
+    <button class="table-filter-btn active" data-table-filter="all" type="button">Todo</button>
+    <button class="table-filter-btn" data-table-filter="calls" type="button">Llamadas</button>
+    <button class="table-filter-btn" data-table-filter="actions" type="button">Acciones</button>
+  </div>
   <div class="table-wrap" id="callTableWrap"></div>
 </div>
 </details>
@@ -17567,6 +17660,13 @@ function clearDayNoteFromModal() {
 
 let editingCallId = null;
 
+// v315 — Pedido del usuario: filtro Todo/Llamadas/Acciones sobre la tabla
+// fusionada "Tabla de llamadas y acciones de hoy" (ver #tableFilterRow en
+// el HTML y dayActionRows()/renderTable() más abajo). Vive en memoria, no
+// en localStorage — mismo criterio que weekViewOffset/scheduleEditDay: es
+// una vista temporal de la sesión, no una preferencia a recordar.
+let tableFilterMode = 'all'; // 'all' | 'calls' | 'actions'
+
 // Abre el editor de una llamada ya importada. Antes la única forma de
 // corregir un dato mal exportado por Propio (duración, pago, billable,
 // dropped) era borrar la fila entera y volver a pegarla.
@@ -18770,153 +18870,206 @@ function renderSchedule() {
     }
 
     
+// v315 — Pedido del usuario: fusión de "Turno de Hoy" dentro de la tabla
+// de llamadas (mockup completo aprobado en el chat). Arma las filas de
+// "acción" del día — reutiliza 100% datos que la app ya calculaba, sin
+// ningún registro nuevo:
+// - Shift/Break/Lunch/Importación: vienen de dayEvents() (el mismo log
+//   que ya alimenta dayShiftBounds() y demás — ver setEvent()). Se excluye
+//   el tipo 'system' (el placeholder inicial "Listo para empezar", nunca
+//   es una acción real).
+// - ACW/Otro: vienen de dayGapRows() (el mismo cálculo que ya usa "Editar
+//   hueco" y los badges agregados de "Ganancias de hoy") — filtrado a
+//   SOLO 'acw'/'other'. Un hueco reclasificado a mano como Break/Lunch NO
+//   se duplica aquí como una 2da fila con el mismo tiempo — ya queda
+//   representado por su pausa real (o por "Bloques del día"); es una
+//   limitación conocida y aceptada, no un pedido de mostrar ambas cosas.
+// Son de solo lectura salvo ACW/Otro (que reutilizan el mismo Editar hueco
+// de siempre, vía gapKey) — ver el comentario junto a #tableFilterRow en
+// el HTML sobre por qué Shift/Break/Lunch no se editan aquí.
+function dayActionRows(dayKey) {
+  const normalized = callDateKeyFromValue(dayKey);
+  const rows = [];
+
+  dayEvents(normalized).forEach(e => {
+    if (!['shift', 'break', 'lunch', 'import'].includes(e.type)) return;
+    let durationMin = null;
+    // Para "Break/Lunch terminado" se busca la pausa real más cercana en
+    // el tiempo (mismo tipo, mismo día) para mostrar cuánto duró — mismo
+    // dato que ya se ve en "Bloques del día", aquí como referencia rápida.
+    // Tolerancia de 5s: setEvent() calcula su propio timestamp fresco,
+    // unos milisegundos después del `endedAt` que ya se guardó en
+    // pauseHistory para esa misma pausa (ver endPause()).
+    if (/terminado/i.test(e.title) && (e.type === 'break' || e.type === 'lunch')) {
+      const closeTime = new Date(e.ts).getTime();
+      let best = null, bestDiff = Infinity;
+      state.pauseHistory.forEach(p => {
+        if (p.type !== e.type || !sameCallDay(p.endedAt, normalized)) return;
+        const diff = Math.abs(new Date(p.endedAt).getTime() - closeTime);
+        if (diff < bestDiff) { bestDiff = diff; best = p; }
+      });
+      if (best && bestDiff < 5000) {
+        durationMin = Math.max(0, (new Date(best.endedAt).getTime() - new Date(best.startedAt).getTime()) / 60000);
+      }
+    }
+    rows.push({
+      ts: e.ts,
+      badgeLabel: e.type === 'shift' ? 'Shift' : e.type === 'break' ? 'Break' : e.type === 'lunch' ? 'Lunch' : 'Importación',
+      badgeClass: `type-${e.type}`,
+      detail: e.title,
+      note: '',
+      durationMin,
+      editable: false,
+      gapKey: null,
+    });
+  });
+
+  dayGapRows(normalized).forEach(g => {
+    if ((g.label !== 'acw' && g.label !== 'other') || g.raw <= 0) return;
+    rows.push({
+      ts: g.prev.endISO,
+      badgeLabel: g.label === 'acw' ? 'ACW' : 'Otro',
+      badgeClass: `type-${g.label}`,
+      detail: g.isShiftStartGap ? 'Inicio de turno → primera llamada' : 'Entre llamadas',
+      note: g.note || '',
+      durationMin: g.displayAmount,
+      editable: true,
+      gapKey: g.gapKey,
+    });
+  });
+
+  return rows;
+}
+
 function renderTable() {
       const wrap = document.getElementById('callTableWrap');
       const dayKey = getActiveDayKey();
       const clearDayCallsDayLabel = document.getElementById('clearDayCallsDayLabel');
       if (clearDayCallsDayLabel) clearDayCallsDayLabel.textContent = formatCallDayLabel(dayKey);
-      // "sorted" se mantiene en orden cronológico ASCENDENTE (más vieja
-      // primero) porque el cálculo de "hueco" de cada fila depende de
-      // comparar contra la llamada REALMENTE anterior en el tiempo
-      // (sorted[i-1]) — invertir este array rompería gapClassification()
-      // (el "hueco" de cada fila terminaría comparando contra la llamada
-      // siguiente, no la anterior). Pedido del usuario: mostrar la tabla
-      // con las más recientes primero — eso se resuelve invirtiendo solo
-      // el ORDEN DE DESPLIEGUE al final (rows/cards), después de que el
-      // cálculo de huecos ya corrió sobre el orden cronológico correcto.
-      const sorted = [...callsForDay(dayKey)].sort((a, b) => new Date(a.startISO) - new Date(b.startISO));
-      const shiftBounds = dayShiftBounds(dayKey);
-      const hasShift = !!shiftBounds.start;
 
-      if (!sorted.length) {
-        wrap.innerHTML = '<div class="note" style="padding:14px;">No hay filas para el día activo. La vista se alimenta de las llamadas importadas y del día seleccionado.</div>';
+      const sortedCalls = [...callsForDay(dayKey)].sort((a, b) => new Date(a.startISO) - new Date(b.startISO));
+      const actionRows = dayActionRows(dayKey);
+
+      // Entradas combinadas — cada una con un `ts` común para poder
+      // ordenar todo junto cronológicamente, sin importar si es llamada o
+      // acción. `kind` decide qué plantilla de fila usar más abajo.
+      const entries = [];
+      sortedCalls.forEach(c => entries.push({ kind: 'call', ts: c.startISO, call: c }));
+      actionRows.forEach(a => entries.push({ kind: 'action', ts: a.ts, action: a }));
+
+      if (!entries.length) {
+        wrap.innerHTML = '<div class="note" style="padding:14px;">No hay filas para el día activo. La vista se alimenta de las llamadas importadas, tus acciones del turno (Shift/Break/Lunch/ACW) y del día seleccionado.</div>';
         return;
       }
 
-      const rows = [];
-      const cards = [];
-      for (let i = 0; i < sorted.length; i++) {
-        const c = sorted[i];
-        const prev = i > 0 ? sorted[i - 1] : null;
-        let prevEnd = prev ? new Date(prev.endISO) : null;
-        // Bug reportado por el usuario: la primera fila del día siempre
-        // mostraba "—" en Hueco, sin importar si el turno había empezado
-        // varios minutos antes de esta llamada — ese lapso (ACW real, ver
-        // dayGapRows()) no se veía ni se podía editar desde Tabla completa.
-        // Se arma un `virtualPrev` — MISMO criterio y MISMO gapKeyFor() que
-        // ya usa dayGapRows() para este mismo hueco — para que la anotación
-        // manual ("Editar hueco") sea una sola fuente de verdad entre el
-        // agregado (badges ACW del header) y esta fila; si el gapKey no
-        // coincidiera, reclasificar aquí no afectaría los totales.
-        let virtualPrev = null;
-        if (!prev) {
-          const shiftStart = dayShiftBounds(dayKey).start;
-          const firstCallStart = new Date(c.startISO);
-          if (shiftStart && shiftStart.getTime() < firstCallStart.getTime()) {
-            virtualPrev = { customerId: 'shift-start', startISO: shiftStart.toISOString(), endISO: shiftStart.toISOString() };
-            prevEnd = shiftStart;
-          }
-        }
-        const effectivePrev = prev || virtualPrev;
-        const start = new Date(c.startISO);
-        const gapKey = effectivePrev ? gapKeyFor(effectivePrev, c) : null;
-        const gapInfo = effectivePrev ? gapClassification(prevEnd, start, dayKey, gapKey) : { raw: 0, residual: 0, displayAmount: 0, acw: 0, possiblePause: 0, label: 'acw', note: '', suggested: 'acw', manual: false };
-        const annotation = gapKey ? getGapAnnotation(dayKey, gapKey) : null;
-        const gapLabel = effectivePrev ? gapLabelText((annotation && annotation.label) || gapInfo.label || 'acw') : '—';
-        const gapText = effectivePrev ? `${virtualPrev ? 'Inicio turno → ' : ''}${gapLabel} ${gapInfo.displayAmount.toFixed(1)}m` : '—';
-        const gapNote = annotation?.note
-          ? `<div class="gap-note">Nota: ${escapeHtml(annotation.note)}</div>`
-          : gapInfo.possiblePause > 0
-            ? `<div class="gap-note">Posible pausa ${gapInfo.possiblePause.toFixed(1)}m</div>`
-            : '';
-        const gapButton = effectivePrev && gapKey
-          ? `<button class="gap-edit-btn" type="button" data-gap-edit="${escapeHtml(gapKey)}" data-gap-day="${escapeHtml(dayKey)}">Editar</button>`
-          : '';
+      // v315 — Pedido del usuario: filtro Todo/Llamadas/Acciones (ver
+      // #tableFilterRow en el HTML) sobre la tabla fusionada.
+      const filtered = entries.filter(e => {
+        if (tableFilterMode === 'calls') return e.kind === 'call';
+        if (tableFilterMode === 'actions') return e.kind === 'action';
+        return true;
+      });
 
-        // Pedido del usuario: indicador por llamada de si calificó para un
-        // bono de Higher Rate Opportunity — mismo criterio que el tag
-        // agregado del header/Tabla completa (ver higherRateBonusForCall()),
-        // aquí desglosado fila por fila para que quede claro CUÁL llamada
-        // lo generó.
-        const higherRateBonus = higherRateBonusForCall(c);
-        const higherRateBadge = higherRateBonus
-          ? higherRateTierBadgeHtml(higherRateBonus.tier, higherRateBonus.amount)
-          : '';
-
-        rows.push(`
-          <tr>
-            <td>${escapeHtml(c.customerId)}</td>
-            <td>${escapeHtml(c.callDate)}</td>
-            <td>${escapeHtml(c.callStart)}</td>
-            <td>${c.durationMin}</td>
-            <td>
-              <div class="gap-cell">
-                <div>${escapeHtml(gapText)}</div>
-                ${gapNote}
-                ${gapButton}
-              </div>
-            </td>
-            <td><span class="tag ${String(c.billable).toLowerCase() === 'yes' ? 'good' : 'warn'}">${escapeHtml(c.billable)}</span></td>
-            <td><span class="tag ${String(c.dropped).toLowerCase() === 'yes' ? 'bad' : 'good'}">${escapeHtml(c.dropped)}</span></td>
-            <td>${money(parseMoney(c.pay))}${higherRateBadge}</td>
-            <td>
-              <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                <button class="gap-edit-btn" type="button" data-call-edit="${escapeHtml(c.id || '')}">Editar</button>
-                <button class="gap-edit-btn call-delete-btn" type="button" data-call-delete="${escapeHtml(c.id || '')}">Eliminar</button>
-              </div>
-            </td>
-          </tr>
-        `);
-
-        cards.push(`
-          <div class="mobile-call-card">
-            <div class="mobile-call-row-flex">
-              <span class="mobile-call-check ${String(c.dropped).toLowerCase() === 'yes' ? 'bad' : ''}" aria-hidden="true">${String(c.dropped).toLowerCase() === 'yes' ? iconHtml('alertTriangle') : iconHtml('checkCircle')}</span>
-              <div class="mobile-call-main">
-                <div class="mobile-call-top">
-                  <div class="mobile-call-title">#${escapeHtml(c.customerId)}</div>
-                  <div class="mobile-call-pay">${money(parseMoney(c.pay))}${higherRateBonus ? ` ${higherRateTierInlineHtml(higherRateBonus.tier, higherRateBonus.amount)}` : ''}</div>
-                </div>
-                <div class="mobile-call-meta">${escapeHtml(c.callDate)} · ${escapeHtml(c.callStart)} · ${c.durationMin} min${effectivePrev ? ` · ${escapeHtml(gapText)}` : ''}${annotation?.note ? ` · Nota: ${escapeHtml(annotation.note)}` : ''}</div>
-              </div>
-            </div>
-            <div class="mobile-call-meta">Billable: ${escapeHtml(c.billable)} · Dropped: ${escapeHtml(c.dropped)}</div>
-            <div style="display:flex; gap:8px; flex-wrap:wrap;">
-              ${effectivePrev && gapKey ? `<button class="gap-edit-btn" type="button" data-gap-edit="${escapeHtml(gapKey)}" data-gap-day="${escapeHtml(dayKey)}">Editar gap</button>` : ''}
-              <button class="gap-edit-btn" type="button" data-call-edit="${escapeHtml(c.id || '')}">Editar llamada</button>
-              <button class="gap-edit-btn call-delete-btn" type="button" data-call-delete="${escapeHtml(c.id || '')}">Eliminar</button>
-            </div>
-          </div>
-        `);
+      if (!filtered.length) {
+        wrap.innerHTML = '<div class="note" style="padding:14px;">No hay filas de este tipo para el día activo — cambia el filtro de arriba para ver el resto.</div>';
+        return;
       }
 
-      // Se invierte SOLO aquí, después de que el loop de arriba ya calculó
-      // cada gap correctamente contra la llamada cronológicamente anterior.
-      // Pedido del usuario: más recientes primero, más viejas hasta abajo.
-      rows.reverse();
-      cards.reverse();
+      // Más recientes primero, mismo criterio de siempre.
+      filtered.sort((a, b) => new Date(b.ts) - new Date(a.ts));
 
-      // v239 — Pedido del usuario: la fila de píldoras que vivía aquí
-      // (Tiempo llamadas/Total/Billable/Dropped/ACW/Break/Lunch/Otro/
-      // Higher Rate) se mueve a "Ganancias de hoy" (ver earningsTagsHtml
-      // en renderHeader()) — con Tabla de llamadas viviendo justo debajo
-      // de esa sección en la página Inicio (desde v238), tener 2 filas de
-      // tags casi idénticas una encima de la otra no aportaba nada. Se
-      // quita `stats`/`tagsHtml`/`.table-tags-top` de aquí sin reemplazo
-      // — el dato no se pierde, solo se ve en un solo lugar.
+      const rows = [];
+      const cards = [];
+
+      filtered.forEach(entry => {
+        if (entry.kind === 'call') {
+          const c = entry.call;
+          const billableText = String(c.billable).toLowerCase() === 'yes' ? 'Billable' : 'No billable';
+          const droppedText = String(c.dropped).toLowerCase() === 'yes' ? 'Dropped' : 'No dropped';
+          const higherRateBonus = higherRateBonusForCall(c);
+          const higherRateBadge = higherRateBonus ? higherRateTierBadgeHtml(higherRateBonus.tier, higherRateBonus.amount) : '';
+
+          rows.push(`
+            <tr>
+              <td>${escapeHtml(c.callStart)}</td>
+              <td><span class="tbl-type-badge type-call">Llamada</span></td>
+              <td>#${escapeHtml(c.customerId)} <span style="color:var(--muted);">· ${escapeHtml(billableText)} · ${escapeHtml(droppedText)}</span></td>
+              <td>${c.durationMin} min</td>
+              <td>${money(parseMoney(c.pay))}${higherRateBadge}</td>
+              <td>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                  <button class="gap-edit-btn" type="button" data-call-edit="${escapeHtml(c.id || '')}">Editar</button>
+                  <button class="gap-edit-btn call-delete-btn" type="button" data-call-delete="${escapeHtml(c.id || '')}">Eliminar</button>
+                </div>
+              </td>
+            </tr>
+          `);
+
+          cards.push(`
+            <div class="mobile-call-card">
+              <div class="mobile-call-row-flex">
+                <span class="mobile-call-check ${String(c.dropped).toLowerCase() === 'yes' ? 'bad' : ''}" aria-hidden="true">${String(c.dropped).toLowerCase() === 'yes' ? iconHtml('alertTriangle') : iconHtml('checkCircle')}</span>
+                <div class="mobile-call-main">
+                  <div class="mobile-call-top">
+                    <div class="mobile-call-title"><span class="tbl-type-badge type-call" style="margin-right:6px;">Llamada</span>#${escapeHtml(c.customerId)}</div>
+                    <div class="mobile-call-pay">${money(parseMoney(c.pay))}${higherRateBonus ? ` ${higherRateTierInlineHtml(higherRateBonus.tier, higherRateBonus.amount)}` : ''}</div>
+                  </div>
+                  <div class="mobile-call-meta">${escapeHtml(c.callDate)} · ${escapeHtml(c.callStart)} · ${c.durationMin} min</div>
+                </div>
+              </div>
+              <div class="mobile-call-meta">Billable: ${escapeHtml(c.billable)} · Dropped: ${escapeHtml(c.dropped)}</div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="gap-edit-btn" type="button" data-call-edit="${escapeHtml(c.id || '')}">Editar llamada</button>
+                <button class="gap-edit-btn call-delete-btn" type="button" data-call-delete="${escapeHtml(c.id || '')}">Eliminar</button>
+              </div>
+            </div>
+          `);
+        } else {
+          const a = entry.action;
+          const hora = timeLabelFromDate(new Date(a.ts));
+          const detailText = a.note ? `${a.detail} · ${a.note}` : a.detail;
+          const hasDuration = a.durationMin !== null && a.durationMin !== undefined;
+          const durationText = hasDuration ? `${formatMinutes(a.durationMin)} min` : '—';
+          const editBtn = a.editable && a.gapKey
+            ? `<button class="gap-edit-btn" type="button" data-gap-edit="${escapeHtml(a.gapKey)}" data-gap-day="${escapeHtml(dayKey)}">Editar</button>`
+            : '';
+
+          rows.push(`
+            <tr class="tbl-row-action">
+              <td>${escapeHtml(hora)}</td>
+              <td><span class="tbl-type-badge ${a.badgeClass}">${escapeHtml(a.badgeLabel)}</span></td>
+              <td>${escapeHtml(detailText)}</td>
+              <td>${escapeHtml(durationText)}</td>
+              <td>—</td>
+              <td>${editBtn || '—'}</td>
+            </tr>
+          `);
+
+          cards.push(`
+            <div class="mobile-tbl-action-card">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+                <div>
+                  <span class="tbl-type-badge ${a.badgeClass}">${escapeHtml(a.badgeLabel)}</span>
+                  <div style="font-weight:800; font-size:13px; margin-top:5px;">${escapeHtml(detailText)}</div>
+                </div>
+                <div style="text-align:right; font-size:11px; color:var(--muted); white-space:nowrap;">${escapeHtml(hora)}${hasDuration ? ` · ${escapeHtml(durationText)}` : ''}</div>
+              </div>
+              ${editBtn ? `<div style="margin-top:8px;">${editBtn}</div>` : ''}
+            </div>
+          `);
+        }
+      });
+
       wrap.innerHTML = `
         <div class="table-desktop">
           <table>
             <thead>
               <tr>
-                <th>Customer ID</th>
-                <th>Fecha</th>
-                <th>Inicio</th>
-                <th>Min</th>
-                <th>Hueco</th>
-                <th>Billable</th>
-                <th>Dropped</th>
-                <th>Pay</th>
+                <th>Hora</th>
+                <th>Tipo</th>
+                <th>Detalle</th>
+                <th>Duración</th>
+                <th>Billable/Pay</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -19333,6 +19486,20 @@ function render() {
       if (!call) return;
       appConfirm(`¿Eliminar la llamada #${call.customerId} (${call.callDate} · ${call.callStart})? Esta acción no se puede deshacer.`, () => deleteCallRecord(callId));
     });
+
+    // v315 — Pedido del usuario: filtro Todo/Llamadas/Acciones sobre la
+    // tabla fusionada — solo cambia `tableFilterMode` y vuelve a pintar
+    // #callTableWrap (renderTable() ya sabe filtrar por ese valor).
+    const tableFilterRow = document.getElementById('tableFilterRow');
+    if (tableFilterRow) {
+      tableFilterRow.addEventListener('click', (e) => {
+        const btn = e.target instanceof Element ? e.target.closest('[data-table-filter]') : null;
+        if (!btn) return;
+        tableFilterMode = btn.getAttribute('data-table-filter') || 'all';
+        tableFilterRow.querySelectorAll('[data-table-filter]').forEach(b => b.classList.toggle('active', b === btn));
+        renderTable();
+      });
+    }
 
     // v239 — Pedido del usuario: botón ✎ dentro de la tarjeta de ACW (Turno
     // de Hoy) — abre #acwGoalModal para editar la meta máxima de ACW.
