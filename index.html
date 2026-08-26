@@ -8334,6 +8334,17 @@
     .mc-btn-primary:focus-visible { filter: brightness(1.06); transform: translateY(-1px); outline: none; }
     .mc-btn-primary.cyan { background: var(--cyan); }
     .mc-btn-primary.good { background: var(--good); }
+    /* v302 — Pedido del usuario: la fila de acciones de Horario (Copiar a
+       Lunes-Viernes / Copiar a Sábado-Domingo / Guardar día) seguía en el
+       patrón viejo (`.modal-actions button` plano, los 3 con el mismo peso
+       visual) pese a vivir dentro de una sección ya rediseñada (v271-275) —
+       se detectaba a simple vista por el contraste. Se reutilizan las
+       mismas `.mc-btn-primary`/`.mc-btn-warn-pill` de v301 (mismo criterio:
+       un primario sólido + secundarios en pill tenue) — azul, el acento
+       propio de esta sección (--blue, ya usado en `.sched-header-icon`/
+       `.sched-add-block-btn`/etc.), en vez de reusar cyan/good de los
+       modales de llamadas. */
+    .mc-btn-primary.blue { background: var(--blue); }
     .mc-btn-primary .ic-svg { width: 16px; height: 16px; }
     .mc-btn-warn-pill {
       flex: 0 0 auto;
@@ -9037,10 +9048,21 @@
     </div>
   </div>
 
-  <div class="modal-actions">
-    <button class="warn" id="copyDayToAllBtn" type="button">Copiar a Lunes-Viernes</button>
-    <button class="warn" id="copyWeekendBtn" type="button">Copiar a Sábado-Domingo</button>
-    <button class="primary" id="saveShiftWindowBtn" type="button">Guardar día</button>
+  <!-- v302 — Pedido del usuario (con captura): estos 3 botones no encajaban
+       en el layout ya rediseñado de "Horario" (v271-275) — seguían siendo
+       `.modal-actions button` planos, los 3 con el mismo peso visual (caja
+       oscura), sin distinguir la acción principal (Guardar día) de las
+       secundarias (Copiar a...). Mismo patrón que ya usan #callsModal/
+       #manualCallModal (v301): un botón primario sólido de acento (azul,
+       el propio de esta sección) + 2 pills tenues de warn para las 2
+       acciones de copiar. Ningún id/listener cambia — mismos
+       copyDayToAllBtn/copyWeekendBtn/saveShiftWindowBtn de siempre, mismo
+       JS que ya los lee (copyDayToAll()/copyDayToWeekend()/
+       saveShiftWindow()), solo cambia el HTML/CSS que los envuelve. -->
+  <div class="modal-actions mc-action-row">
+    <button class="mc-btn-primary blue" id="saveShiftWindowBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="8 12.5 11 15.5 16 9"/></svg> Guardar día</button>
+    <button class="mc-btn-warn-pill" id="copyDayToAllBtn" type="button" title="Copiar este horario a Lunes-Viernes"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Lunes-Viernes</button>
+    <button class="mc-btn-warn-pill" id="copyWeekendBtn" type="button" title="Copiar este horario a Sábado-Domingo"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Sábado-Domingo</button>
   </div>
 </div>
 </details>
