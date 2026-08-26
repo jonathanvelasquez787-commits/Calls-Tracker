@@ -7474,6 +7474,61 @@
       background-image: none !important;
     }
 
+    /* v293 — Pedido del usuario: interrupciones accidentales de Shift/
+       Break/Lunch (cierre por error, reabierto dentro de la ventana de
+       gracia — ver ACCIDENTAL_TOGGLE_GRACE_MIN/registerDayInterruption()
+       en el JS) — chips informativos, tono ámbar (mismo lenguaje visual
+       que `.imported-late`: fondo/borde/texto derivados de --warn-rgb).
+       Vive arriba del timeline de bloques, debajo de las 3 mini-tarjetas
+       de `#dayMetricsRow`. Contenedor oculto por completo (display:none,
+       ver HTML) cuando no hay ninguna interrupción ese día — nunca una
+       caja vacía. */
+    .day-interruptions-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .day-interruption-chip {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(var(--warn-rgb), .34);
+      background: rgba(var(--warn-rgb), .10);
+      padding: 9px 12px;
+    }
+    .day-interruption-chip .ic-svg {
+      flex: 0 0 auto;
+      margin-top: 1px;
+      color: var(--warn);
+      stroke: var(--warn);
+    }
+    .day-interruption-chip-title {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--pale-warn);
+    }
+    .day-interruption-chip-detail {
+      font-size: 11.5px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    /* Nota secundaria dentro de la tarjeta de bloque afectada — mismo
+       lenguaje que `.sblk-meta-line`, con el ícono "refresh" (↺) y el
+       texto en tono ámbar en vez del gris de siempre. */
+    .sblk-interruption-note {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--pale-warn);
+      font-weight: 700;
+    }
+    .sblk-interruption-note .ic-svg {
+      color: var(--warn);
+      stroke: var(--warn);
+    }
+
     /* "Contraer bloques al terminar": toggle chico tipo checkbox, mismo
        lenguaje visual que ya usa `.sidebar-icon-btn[aria-pressed="true"]`
        (píldora con borde/fondo/texto en cian cuando está activo). Vive
@@ -8565,6 +8620,11 @@
     </div>
     <span class="slot-status bad live-exception" id="adherenceLiveBadge" style="display:none;"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg> Fuera de adherencia ahora</span>
   </div>
+  <!-- v293 — Pedido del usuario: interrupciones accidentales de Shift/
+       Break/Lunch (ver state.dayInterruptions/registerDayInterruption() en
+       el JS) — chips ámbar informativos, llenados por renderSchedule().
+       Vacío = display:none, sin caja colgando. -->
+  <div class="day-interruptions-row" id="dayInterruptionsRow" style="display:none;"></div>
   <!-- v278 — Pedido del usuario: toggle "Contraer bloques al terminar",
        persistido en settings.collapseCompletedBlocks (ver
        defaultSettings()/toggleCollapseCompletedBlocks() en el JS). -->
@@ -9776,6 +9836,17 @@ $0.72"></textarea>
         // / weekSummaryForOffset). Mismo patrón que gapAnnotations: objeto
         // { [dayKey]: { category, comment } }.
         dayNotes: {},
+        // v293 — Pedido del usuario: interrupciones ACCIDENTALES de un
+        // turno/Break/Lunch — cuando el usuario presiona "Finalizar shift"/
+        // "Terminar Break"/"Terminar Lunch" por error y vuelve a abrir el
+        // MISMO tipo dentro de una ventana corta (ver
+        // ACCIDENTAL_TOGGLE_GRACE_MIN), el cierre no cuenta como un fin de
+        // verdad — se registra aquí el hueco (gapStart/gapEnd) para
+        // mostrarlo informativamente en "Bloques del día" (ver
+        // renderSchedule()), sin resetear el progreso original de
+        // startShift()/startPause(). Objeto { [dayKey]: [{ id, type, gapStart,
+        // gapEnd }] } — mismo patrón que dayNotes/gapAnnotations arriba.
+        dayInterruptions: {},
         productiveGoalMin: 59,
         earningsGoal: 7.08,
         // Qué día de calendario real ("hoy") conocía la app la última vez
@@ -9814,6 +9885,8 @@ $0.72"></textarea>
         events: Array.isArray(src.events) ? src.events : [],
         gapAnnotations: src.gapAnnotations && typeof src.gapAnnotations === 'object' ? src.gapAnnotations : {},
         dayNotes: src.dayNotes && typeof src.dayNotes === 'object' && !Array.isArray(src.dayNotes) ? src.dayNotes : {},
+        // v293 — Ver comentario junto a `dayInterruptions` en defaultState().
+        dayInterruptions: src.dayInterruptions && typeof src.dayInterruptions === 'object' && !Array.isArray(src.dayInterruptions) ? src.dayInterruptions : {},
         activeDayKey: src.activeDayKey ? String(src.activeDayKey) : null,
       };
       merged.events = merged.events.map(e => (e && !e.id) ? { ...e, id: makeLocalId() } : e);
@@ -13907,6 +13980,33 @@ function renderWeekSummary() {
       return true;
     }
 
+    // v293 — Pedido del usuario: si el usuario presiona "Finalizar shift"/
+    // "Terminar Break"/"Terminar Lunch" por accidente y vuelve a abrir el
+    // MISMO tipo dentro de esta ventana, se trata como CONTINUACIÓN del
+    // mismo período (el progreso sigue desde el inicio original) en vez de
+    // un inicio nuevo — ver startShift()/startPause() más abajo. Mismo
+    // patrón que SHIFT_START_EARLY_GRACE_MIN/ADHERENCE_TOLERANCE_MIN.
+    const ACCIDENTAL_TOGGLE_GRACE_MIN = 5;
+
+    // Registra un hueco de interrupción accidental para mostrarse
+    // informativamente en "Bloques del día" (ver renderSchedule()) — no
+    // afecta ningún cálculo (Conectado ya es tiempo real transcurrido de
+    // inicio a fin, sin restar nada; el hueco simplemente queda incluido
+    // ahí, comportamiento ya esperado). Mismo patrón que dayNotes/
+    // gapAnnotations: objeto { [dayKey]: [{ id, type, gapStart, gapEnd }] }.
+    function registerDayInterruption(dayKey, type, gapStartISO, gapEndISO) {
+      if (!state.dayInterruptions || typeof state.dayInterruptions !== 'object') state.dayInterruptions = {};
+      const normalized = callDateKeyFromValue(dayKey) || dayKey;
+      if (!Array.isArray(state.dayInterruptions[normalized])) state.dayInterruptions[normalized] = [];
+      state.dayInterruptions[normalized].push({ id: makeLocalId(), type, gapStart: gapStartISO, gapEnd: gapEndISO });
+    }
+
+    function dayInterruptions(dayKey = getActiveDayKey()) {
+      const normalized = callDateKeyFromValue(dayKey);
+      const arr = state.dayInterruptions && state.dayInterruptions[normalized];
+      return Array.isArray(arr) ? arr : [];
+    }
+
     function togglePause(type) {
       // Misma defensa que toggleShift(): estos botones solo aplican al turno
       // de hoy, nunca al día seleccionado en "Día activo".
@@ -13938,6 +14038,29 @@ function renderWeekSummary() {
     function startShift() {
       const now = new Date();
       const nowISO = now.toISOString();
+
+      // v293 — Pedido del usuario (bug): si "Finalizar shift" se presionó
+      // por accidente (el turno no había terminado de verdad) y se vuelve a
+      // dar "Iniciar shift" dentro de la ventana de gracia, esto es una
+      // CONTINUACIÓN del mismo turno — shiftStartedAt original se conserva
+      // tal cual (la barra/% de "Shift" en Turno de Hoy sigue contando
+      // desde ahí, sin reiniciarse), y el hueco queda registrado como
+      // interrupción visible en "Bloques del día". Pasada la ventana de
+      // gracia (o sin shiftEndedAt de hoy), el flujo de abajo no cambia en
+      // nada — turno nuevo, como siempre (ver "2 turnos el mismo día").
+      if (state.shiftStartedAt && state.shiftEndedAt && sameCallDay(state.shiftEndedAt, todayCallDateKey())) {
+        const gapMin = (now.getTime() - new Date(state.shiftEndedAt).getTime()) / 60000;
+        if (gapMin >= 0 && gapMin <= ACCIDENTAL_TOGGLE_GRACE_MIN) {
+          registerDayInterruption(todayCallDateKey(), 'shift', state.shiftEndedAt, nowISO);
+          state.shiftEndedAt = null;
+          setEvent('shift', 'Shift continuado (interrupción accidental)', fmtTime(now), 'manual');
+          saveAll();
+          stopShiftAlarm();
+          toast(`Turno continuado — interrupción de ${formatMinutes(gapMin)} min registrada`);
+          return;
+        }
+      }
+
       // Bug reportado por el usuario: "trabajé ayer, hoy entro 5 min antes,
       // aprieto Iniciar shift, y el botón muestra 'Activo +23horas'".
       // Causa: `endShift()` nunca limpia `shiftStartedAt` — solo pone
@@ -13995,13 +14118,44 @@ function renderWeekSummary() {
 
     function startPause(type) {
       if (!state.shiftStartedAt || state.shiftEndedAt || state.activePause) return;
-      state.activePause = { type, startedAt: new Date().toISOString() };
-      setEvent(type, `${type === 'lunch' ? 'Lunch' : 'Break'} iniciado`, fmtTime(new Date()), 'manual');
+      const now = new Date();
+      const dayKey = todayCallDateKey();
+      const pretty = type === 'lunch' ? 'Lunch' : 'Break';
+
+      // v293 — Pedido del usuario (bug): mismo criterio que startShift() —
+      // si "Terminar Break"/"Terminar Lunch" se presionó por accidente y se
+      // vuelve a dar "Iniciar" del MISMO tipo dentro de la ventana de
+      // gracia, se reabre como CONTINUACIÓN del mismo período (el
+      // cronómetro sigue desde el inicio original) en vez de empezar de
+      // cero. Se busca la entrada más reciente de pauseHistory de ese tipo
+      // cerrada HOY; fuera de la ventana de gracia (o sin ninguna entrada
+      // así), sigue el flujo de siempre sin cambios.
+      const sameDayOfType = state.pauseHistory.filter(p => p.type === type && sameCallDay(p.endedAt, dayKey));
+      let lastClosed = null;
+      sameDayOfType.forEach(p => {
+        if (!lastClosed || new Date(p.endedAt).getTime() > new Date(lastClosed.endedAt).getTime()) lastClosed = p;
+      });
+      if (lastClosed) {
+        const gapMin = (now.getTime() - new Date(lastClosed.endedAt).getTime()) / 60000;
+        if (gapMin >= 0 && gapMin <= ACCIDENTAL_TOGGLE_GRACE_MIN) {
+          state.pauseHistory = state.pauseHistory.filter(p => p.id !== lastClosed.id);
+          state.activePause = { type, startedAt: lastClosed.startedAt };
+          registerDayInterruption(dayKey, type, lastClosed.endedAt, now.toISOString());
+          setEvent(type, `${pretty} continuado (interrupción accidental)`, fmtTime(now), 'manual');
+          saveAll();
+          stopBreakStartAlarm();
+          toast(`${pretty} continuado — interrupción de ${formatMinutes(gapMin)} min registrada`);
+          return;
+        }
+      }
+
+      state.activePause = { type, startedAt: now.toISOString() };
+      setEvent(type, `${pretty} iniciado`, fmtTime(now), 'manual');
       saveAll();
       // El aviso de "va a empezar" ya no aplica una vez que la pausa arrancó
       // de verdad — se apaga de inmediato en vez de esperar al próximo tick.
       stopBreakStartAlarm();
-      toast(`${type === 'lunch' ? 'Lunch' : 'Break'} iniciado`);
+      toast(`${pretty} iniciado`);
     }
 
     function endPause(options = {}) {
@@ -16974,6 +17128,40 @@ function renderBlockSummaryStrip(cards) {
   `;
 }
 
+// v293 — Pedido del usuario: fila de chips ámbar con las interrupciones
+// accidentales de HOY (o del día activo) — ver state.dayInterruptions/
+// registerDayInterruption(). Se oculta por completo (display:none, sin
+// caja colgando) cuando no hay ninguna. Llamada desde renderSchedule(), una
+// sola vez por render — antes del `return` temprano de "sin horario
+// configurado", para que también se vea en ese caso.
+function renderDayInterruptionsRow(dayKey) {
+  const row = document.getElementById('dayInterruptionsRow');
+  if (!row) return;
+  const list = dayInterruptions(dayKey);
+  if (!list.length) {
+    row.style.display = 'none';
+    row.innerHTML = '';
+    return;
+  }
+  const typeLabel = { shift: 'Turno', break: 'Break', lunch: 'Lunch' };
+  row.innerHTML = list.map(item => {
+    const gapStart = new Date(item.gapStart);
+    const gapEnd = new Date(item.gapEnd);
+    const mins = Math.max(0, (gapEnd.getTime() - gapStart.getTime()) / 60000);
+    const label = typeLabel[item.type] || 'Turno';
+    return `
+      <div class="day-interruption-chip">
+        ${iconHtml('alertTriangle')}
+        <div style="min-width:0;">
+          <div class="day-interruption-chip-title">${escapeHtml(label)} continuado — interrupción accidental</div>
+          <div class="day-interruption-chip-detail">${timeLabelFromDate(gapStart)} – ${timeLabelFromDate(gapEnd)} · ${formatMinutes(mins)} min · no se reinició el progreso</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  row.style.display = '';
+}
+
 function renderSchedule() {
       const dayKey = getActiveDayKey();
       const dayCalls = callsForDay(dayKey);
@@ -17029,6 +17217,8 @@ function renderSchedule() {
         const workedOnDayOff = !!(dayCfg && dayCfg.off) && !dayIsEffectivelyOff(dayKey);
         offWorkedNote.style.display = workedOnDayOff ? 'block' : 'none';
       }
+
+      renderDayInterruptionsRow(dayKey);
 
       if (!plannedSlots.length) {
         wrap.innerHTML = '<div class="note">No hay horario configurado para este día. Edítalo en “Horario”.</div>';
@@ -17086,6 +17276,12 @@ function renderSchedule() {
       // tarjeta de Shift para su propio rango.
       const breakBlockTimes = [];
       const lunchBlockTimes = [];
+
+      // v293 — Pedido del usuario: lista de interrupciones accidentales de
+      // este día (ver registerDayInterruption()) — se usa tanto para el
+      // chip resumen (ver renderDayInterruptionsRow) como para la nota
+      // secundaria dentro de la tarjeta de bloque afectada, más abajo.
+      const dayInterruptionsList = dayInterruptions(dayKey);
 
       const slotRows = plannedSlots.map((slot, slotIdx) => {
         const s = toMinutes(slot.start), e = toMinutes(slot.end);
@@ -17252,6 +17448,23 @@ function renderSchedule() {
           ? `<div class="sblk-meta-line" style="${statusClass ? `color: var(--${statusClass}); font-weight: 700;` : ''}">${escapeHtml(stats.status)}</div>`
           : '';
 
+        // v293 — Pedido del usuario: nota secundaria "Continuado tras
+        // interrupción accidental de X min (HH:MM–HH:MM)" dentro del bloque
+        // cuya ventana contiene el hueco registrado — 'shift' se asocia a
+        // bloques de Trabajo (la interrupción es del turno completo, no de
+        // un tipo de bloque puntual); Break/Lunch se asocian a su propio
+        // tipo. Solo se muestra si el hueco cae dentro de [slotStart,
+        // slotEnd) de ESTE bloque — sin match, no se agrega nada.
+        const slotInterruptionType = slot.type === 'Work' ? 'shift' : slot.type.toLowerCase();
+        const matchedInterruption = dayInterruptionsList.find(item => {
+          if (item.type !== slotInterruptionType) return false;
+          const gapStartTime = new Date(item.gapStart).getTime();
+          return gapStartTime >= stats.slotStart.getTime() && gapStartTime < stats.slotEnd.getTime();
+        });
+        const interruptionNoteHtml = matchedInterruption
+          ? `<div class="sblk-meta-line sblk-interruption-note">${iconHtml('repeat')} Continuado tras interrupción accidental de ${formatMinutes(Math.max(0, (new Date(matchedInterruption.gapEnd).getTime() - new Date(matchedInterruption.gapStart).getTime()) / 60000))} min (${timeLabelFromDate(new Date(matchedInterruption.gapStart))}–${timeLabelFromDate(new Date(matchedInterruption.gapEnd))})</div>`
+          : '';
+
         // v278 — Pedido del usuario: relleno líquido vertical + punto del
         // riel sincronizado + texto legible sobre el líquido. Un solo
         // número, 3 usos: el alto de `.sblk-fill`, el `top` de `.sblk-dot`,
@@ -17321,6 +17534,7 @@ function renderSchedule() {
                 ${goalBarHtml}
                 <div class="sblk-meta-line">${escapeHtml(progressLabel)}</div>
                 ${statusDetailLine}
+                ${interruptionNoteHtml}
                 ${adherenceBarHtml}
               </div>
             </div>
