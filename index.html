@@ -8245,6 +8245,144 @@
     .goals-backup-row { display: flex; gap: 8px; flex-wrap: wrap; }
     .goals-backup-row button { display: inline-flex; align-items: center; gap: 6px; }
     .goals-backup-row .ic-svg { width: 14px; height: 14px; }
+
+    /* ==========================================================
+       v301 — Pedido del usuario: rediseño 100% VISUAL de "Pegar Llamadas"
+       (#callsModal) y "Agregar llamada manual" (#manualCallModal) — mismo
+       criterio que Horario/Bloques del día/Ajustes (v271-300): secciones
+       de texto plano con línea divisoria, ícono+título de color, sin cajas
+       anidadas. CERO cambio funcional: ningún id se tocó en ninguno de los
+       2 modales (callInput/importBtn/clearCallsBtn/manualCallDateInput/
+       manualCallStartInput/manualCallDurationInput/manualCallPayInput/
+       manualCallRateTiles/manualCallBillableInput/manualCallDroppedInput/
+       manualCallCustomerIdInput/manualCallPreviewText/saveManualCallBtn) —
+       importCalls()/clearCallInputBox()/saveManualCall()/
+       updateManualCallPreview()/applyRateTileToManualCall()/
+       renderRateTiles() siguen funcionando exactamente igual, solo cambia
+       el HTML/CSS que los envuelve. Reutiliza `.goals-field`/
+       `.goals-field-row` (v300 — label chico uppercase muted + valor con
+       borde inferior, ya con su propio breakpoint 760px→1 columna) y
+       `.goals-section-title`/`.goals-section-icon` (v300) para las
+       secciones — sin duplicar ese patrón, solo se agregan las piezas que
+       todavía no existían (cabecera 44px reutilizable en cyan/good, fila
+       de acciones flexible, pills de Sí/No para Billable/Dropped). */
+    .mc-header-icon {
+      flex: 0 0 auto;
+      width: 44px;
+      height: 44px;
+      border-radius: 13px;
+      background: var(--cyan);
+      color: #07101f;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .mc-header-icon.good { background: var(--good); }
+    .mc-header-icon .ic-svg { width: 20px; height: 20px; color: #07101f; stroke: #07101f; }
+
+    .mc-modal-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    /* #callsModal: el textarea real se mantiene tal cual (mismo id/
+       placeholder/comportamiento) — solo se le sube el radius/padding y se
+       tiñe con el mismo acento cian que ya usa `.rate-tile` para su propio
+       color, en vez del monospace neutro de siempre. */
+    .mc-textarea-cyan {
+      background: rgba(var(--cyan-rgb), .05);
+      border-radius: 16px;
+      padding: 14px;
+    }
+    .mc-hint-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11.5px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .mc-hint-row .ic-svg { width: 14px; height: 14px; flex: 0 0 auto; }
+
+    /* Fila de acciones (Importar/Limpiar, + Agregar/Cancelar): botón
+       primario sólido de ancho flexible + pill de warn al lado — mismo
+       lenguaje visual que ya usan `.primary-btn`/`.gap-edit-btn.call-
+       delete-btn` en el resto de la app, solo recombinados en una sola
+       fila en vez de un botón ancho completo + fila de acciones aparte. */
+    .mc-action-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .mc-btn-primary {
+      flex: 1 1 auto;
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-weight: 900;
+      font-size: 14px;
+      color: #07101f;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: filter .14s ease, transform .14s ease;
+    }
+    .mc-btn-primary:hover,
+    .mc-btn-primary:focus-visible { filter: brightness(1.06); transform: translateY(-1px); outline: none; }
+    .mc-btn-primary.cyan { background: var(--cyan); }
+    .mc-btn-primary.good { background: var(--good); }
+    .mc-btn-primary .ic-svg { width: 16px; height: 16px; }
+    .mc-btn-warn-pill {
+      flex: 0 0 auto;
+      border: 1px solid rgba(var(--warn-rgb), .35);
+      background: rgba(var(--warn-rgb), .12);
+      color: var(--warn);
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .mc-btn-warn-pill:hover,
+    .mc-btn-warn-pill:focus-visible { filter: brightness(1.08); outline: none; }
+    .mc-btn-warn-pill .ic-svg { width: 15px; height: 15px; }
+
+    /* #manualCallModal: Billable/Dropped pasan de <select> nativo a
+       segmented-pill de 2 opciones (mismo lenguaje visual que
+       `.sched-segmented .day-tab`) — el `<select>` real de siempre se
+       queda en el DOM (oculto con `display:none` inline en el HTML, ver
+       ese bloque) para que `saveManualCall()` lo siga leyendo por `.value`
+       exactamente igual, sin escuchar ningún evento nuevo. */
+    .mc-pill-row {
+      display: inline-flex;
+      gap: 2px;
+      padding: 3px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--line);
+    }
+    .mc-pill-btn {
+      border: 0;
+      background: transparent;
+      border-radius: 9px;
+      padding: 7px 15px;
+      font-weight: 800;
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: background .14s ease, color .14s ease;
+    }
+    .mc-pill-btn[aria-pressed="true"] {
+      background: var(--good);
+      color: #07101f;
+      font-weight: 900;
+    }
   </style>
 </head>
 <body>
@@ -9538,14 +9676,19 @@
 </div>
 <div aria-hidden="true" class="modal-overlay" id="callsModal">
 <div aria-labelledby="callsModalTitle" aria-modal="true" class="modal-card" role="dialog">
-<div class="modal-head">
+<!-- v301 — Pedido del usuario: rediseño 100% visual de este modal (ver
+     comentario extenso junto a ".mc-*" en el CSS) — mismo criterio que
+     Horario/Bloques del día/Ajustes: texto plano agrupado, cabecera con
+     ícono cuadrito, sin cambio funcional. Ningún id se toca. -->
+<div class="modal-head mc-modal-head">
+<div class="mc-header-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg></div>
 <div>
 <h3 id="callsModalTitle">Pegar Llamadas</h3>
 <p>Pega la exportación de Propio tal como sale en columnas o una fila por bloque. El importador detecta ambas formas.</p>
 </div>
 <button aria-label="Cerrar" class="modal-close" data-close-modal="callsModal" type="button">×</button>
 </div>
-<textarea id="callInput" placeholder="Pega aquí la data de Propio...
+<textarea class="mc-textarea-cyan" id="callInput" placeholder="Pega aquí la data de Propio...
 
 Ejemplo:
 4576
@@ -9555,9 +9698,10 @@ Ejemplo:
 Yes
 No
 $0.72"></textarea>
-<div class="modal-actions">
-<button class="primary" id="importBtn" type="button">Importar</button>
-<button class="warn" id="clearCallsBtn" type="button">Limpiar</button>
+<p class="mc-hint-row"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1.5 1-1.5 2.2"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg> Detecta filas en columnas o una por bloque, sin importar el formato.</p>
+<div class="modal-actions mc-action-row">
+<button class="mc-btn-primary cyan" id="importBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M4 19h16"/></svg> Importar</button>
+<button class="mc-btn-warn-pill" id="clearCallsBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><path d="M6 7V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v3"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/></svg> Limpiar</button>
 </div>
 <div class="note">Después de importar, el campo se vacía y las filas se guardan localmente en el navegador.</div>
 
@@ -9707,61 +9851,100 @@ $0.72"></textarea>
 </div>
 <div aria-hidden="true" class="modal-overlay" id="manualCallModal">
 <div aria-labelledby="manualCallModalTitle" aria-modal="true" class="modal-card" role="dialog">
-<div class="modal-head">
+<!-- v301 — Pedido del usuario: rediseño 100% visual de este modal (ver
+     comentario extenso junto a ".mc-*" en el CSS), mismo criterio que
+     Horario/Bloques del día/Ajustes — secciones de texto plano con
+     línea divisoria, ícono+título de color, reutilizando ".goals-field"/
+     ".goals-field-row"/".goals-section-title"/".goals-section-icon" (v300)
+     para no duplicar ese patrón. CERO cambio funcional: ningún id se
+     toca — saveManualCall()/updateManualCallPreview()/
+     applyRateTileToManualCall()/renderRateTiles() siguen leyendo/
+     escribiendo los mismos elementos por id, solo cambia el HTML/CSS que
+     los envuelve. El grid de tiles (#manualCallRateTiles) NO se toca. -->
+<div class="modal-head mc-modal-head">
+<div class="mc-header-icon good" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
 <div>
 <h3 id="manualCallModalTitle">Agregar llamada manual</h3>
 <p id="manualCallModalSubtitle">Para una llamada que no vino en la exportación de Propio. Se guarda igual que cualquier otra fila — mismo cálculo de huecos, ACW y ganancias.</p>
 </div>
 <button aria-label="Cerrar" class="modal-close" data-close-modal="manualCallModal" type="button">×</button>
 </div>
-<div class="goal-fields">
-<div class="field">
+
+<div class="goals-section">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg cyan" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Cuándo</div>
+<div class="goals-field-row">
+<div class="goals-field">
 <label for="manualCallDateInput">Fecha</label>
 <input id="manualCallDateInput" type="date"/>
 </div>
-<div class="field">
+<div class="goals-field">
 <label for="manualCallStartInput">Hora de inicio</label>
 <input id="manualCallStartInput" type="time"/>
 </div>
 </div>
-<div class="goal-fields">
-<div class="field">
+</div>
+
+<div class="divider"></div>
+
+<div class="goals-section">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg good" viewBox="0 0 24 24" aria-hidden="true"><line x1="10" y1="2" x2="14" y2="2"/><line x1="12" y1="6" x2="12" y2="2.5"/><circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 15 15"/></svg>Duración y pago</div>
+<div class="goals-field-row">
+<div class="goals-field">
 <label for="manualCallDurationInput">Duración (min)</label>
 <input id="manualCallDurationInput" inputmode="numeric" min="1" step="1" type="number"/>
 </div>
-<div class="field">
+<div class="goals-field">
 <label for="manualCallPayInput">Pago ($)</label>
 <input id="manualCallPayInput" inputmode="decimal" min="0" step="0.01" type="number"/>
 </div>
 </div>
-<div class="field" style="margin-top:8px; margin-bottom:0;">
-<label style="font-weight:900;">Nivel</label>
 </div>
+
+<div class="divider"></div>
+
+<div class="goals-section">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg warn" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c2 3-1 4-1 7a3 3 0 1 0 6 0c0-1-.5-2-.5-2 2 1 3 3.5 3 6a7 7 0 1 1-14 0c0-4 2-6 3.5-8 .5 2 1 2.5 3-3Z"/></svg>Nivel</div>
 <div class="rate-tile-grid" id="manualCallRateTiles"></div>
-<div class="goal-fields" style="margin-top:10px;">
-<div class="field">
-<label for="manualCallBillableInput">Billable</label>
-<select id="manualCallBillableInput">
+</div>
+
+<div class="divider"></div>
+
+<div class="goals-section">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg pink" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="9" y1="14" x2="15" y2="14"/></svg>Detalles</div>
+<div style="display:flex; gap:12px; flex-wrap:wrap;">
+<div>
+<div style="font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; font-weight:700; margin-bottom:5px;">Billable</div>
+<div class="mc-pill-row" role="group" aria-label="Billable">
+<button aria-pressed="true" class="mc-pill-btn" data-mc-pill-for="manualCallBillableInput" data-mc-pill-value="Yes" type="button">Sí</button>
+<button aria-pressed="false" class="mc-pill-btn" data-mc-pill-for="manualCallBillableInput" data-mc-pill-value="No" type="button">No</button>
+</div>
+<select id="manualCallBillableInput" style="display:none;">
 <option value="Yes">Yes</option>
 <option value="No">No</option>
 </select>
 </div>
-<div class="field">
-<label for="manualCallDroppedInput">Dropped</label>
-<select id="manualCallDroppedInput">
+<div>
+<div style="font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; font-weight:700; margin-bottom:5px;">Dropped</div>
+<div class="mc-pill-row" role="group" aria-label="Dropped">
+<button aria-pressed="false" class="mc-pill-btn" data-mc-pill-for="manualCallDroppedInput" data-mc-pill-value="Yes" type="button">Sí</button>
+<button aria-pressed="true" class="mc-pill-btn" data-mc-pill-for="manualCallDroppedInput" data-mc-pill-value="No" type="button">No</button>
+</div>
+<select id="manualCallDroppedInput" style="display:none;">
 <option value="No">No</option>
 <option value="Yes">Yes</option>
 </select>
 </div>
 </div>
-<div class="field" style="margin-top:10px;">
+<div class="goals-field" style="max-width:260px;">
 <label for="manualCallCustomerIdInput">Customer ID (opcional)</label>
 <input id="manualCallCustomerIdInput" maxlength="30" placeholder="Vacío = se guarda como Manual" type="text"/>
 </div>
-<div class="note" id="manualCallPreviewText" style="margin-top:10px;">Completa los campos para agregar la llamada.</div>
-<div class="modal-actions">
-<button class="primary" id="saveManualCallBtn" type="button">+ Agregar</button>
-<button class="warn" data-close-modal="manualCallModal" type="button">Cancelar</button>
+</div>
+
+<p class="note" id="manualCallPreviewText" style="margin-top:14px;">Completa los campos para agregar la llamada.</p>
+<div class="modal-actions mc-action-row">
+<button class="mc-btn-primary good" id="saveManualCallBtn" type="button">+ Agregar</button>
+<button class="mc-btn-warn-pill" data-close-modal="manualCallModal" type="button">Cancelar</button>
 </div>
 </div>
 </div>
@@ -17216,7 +17399,24 @@ function prefillManualCallForm({ dayKey, startDate, durationMin }) {
   if (customerIdInput) customerIdInput.value = '';
   manualCallSelectedRateTile = 'normal';
   renderRateTiles('manualCallRateTiles', 'normal');
+  syncManualCallPillsUI();
   updateManualCallPreview();
+}
+
+// v301 — Ver comentario junto al listener delegado de "[data-mc-pill-for]"
+// en el wiring, más abajo: refleja en las pills Sí/No el valor que ya
+// quedó escrito en los <select> ocultos (manualCallBillableInput/
+// manualCallDroppedInput) tras prefillManualCallForm() — mismos defaults
+// de siempre ('Yes'/'No'), solo se sincroniza el estado visual.
+function syncManualCallPillsUI() {
+  document.querySelectorAll('#manualCallModal .mc-pill-row').forEach(row => {
+    const btns = row.querySelectorAll('.mc-pill-btn');
+    if (!btns.length) return;
+    const targetId = btns[0].getAttribute('data-mc-pill-for');
+    const select = document.getElementById(targetId);
+    const current = select ? select.value : null;
+    btns.forEach(b => b.setAttribute('aria-pressed', b.getAttribute('data-mc-pill-value') === current ? 'true' : 'false'));
+  });
 }
 
 function openManualCallModal() {
@@ -18894,6 +19094,23 @@ function render() {
     document.getElementById('saveManualCallBtn').addEventListener('click', saveManualCall);
     document.getElementById('manualCallModal').addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) saveManualCall();
+    });
+    // v301 — Pedido del usuario: Billable/Dropped pasan de <select> nativo
+    // a pills Sí/No (ver ".mc-pill-*" en el CSS) — cada botón escribe el
+    // valor en el MISMO <select id="manualCallBillableInput"/
+    // "manualCallDroppedInput"> de siempre (ahora oculto, `display:none`
+    // inline en el HTML), que saveManualCall() sigue leyendo por `.value`
+    // sin ningún cambio. Un solo listener delegado en el modal — las pills
+    // no se reconstruyen en cada render, así que no hace falta reasignarlo.
+    document.getElementById('manualCallModal').addEventListener('click', (e) => {
+      const btn = e.target instanceof Element ? e.target.closest('[data-mc-pill-for]') : null;
+      if (!btn) return;
+      const targetId = btn.getAttribute('data-mc-pill-for');
+      const value = btn.getAttribute('data-mc-pill-value');
+      const select = document.getElementById(targetId);
+      if (select) select.value = value;
+      const row = btn.closest('.mc-pill-row');
+      if (row) row.querySelectorAll('.mc-pill-btn').forEach(b => b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'));
     });
     document.getElementById('importBtn').addEventListener('click', importCalls);
     document.getElementById('clearCallsBtn').addEventListener('click', clearCallInputBox);
