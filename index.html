@@ -3648,12 +3648,23 @@
       border-radius: 50%;
       background: var(--good);
     }
+    /* v312 — Pedido del usuario (mockup visual aprobado, 2 vistas): la
+       barra de sonido sale de debajo de "En vivo" (antes vivía dentro de
+       `.calls-status-text`, apilada bajo el tag) y pasa a ser hermana de
+       `.calls-status-text` dentro de `.calls-status-body` — con eso queda
+       en la MISMA fila que el ícono y el texto, centrada verticalmente por
+       el `align-items: center` que ese contenedor ya tenía (antes no
+       importaba, porque la barra vivía apilada dentro de la columna de
+       texto). `flex: 0 0 auto` para que no se estire ni se encoja como
+       columna — mide justo lo que sus 7 barritas necesitan. Se quita el
+       `margin-top: 6px` (ya no hace falta separarla de "En vivo", ahora
+       está al lado, no debajo). */
     .calls-status-waveform {
       display: flex;
       align-items: flex-end;
       gap: 3px;
       height: 24px;
-      margin-top: 6px;
+      flex: 0 0 auto;
     }
     .calls-status-waveform span {
       width: 3px;
@@ -8903,11 +8914,11 @@
 <div class="calls-status-text">
 <div class="calls-status-text-title" id="callsStatusTextTitle">Comienza una nueva llamada</div>
 <span class="calls-status-live-tag" id="callsStatusLiveTag" style="display:none;"><span class="dot"></span>En vivo</span>
-<div class="calls-status-waveform" id="callsStatusWaveform" style="display:none;"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
 </div>
+<div class="calls-status-waveform" id="callsStatusWaveform" style="display:none;"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
 <div class="calls-status-actions" id="callsStatusActions" style="display:none;">
 <button class="calls-status-btn-save" id="callsStatusSaveBtn" type="button">Guardar</button>
-<button class="calls-status-btn-end" id="callsStatusEndBtn" type="button">Terminar</button>
+<button class="calls-status-btn-end" id="callsStatusEndBtn" type="button">Descartar</button>
 </div>
 </div>
 </div>
