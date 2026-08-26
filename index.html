@@ -8394,6 +8394,57 @@
       color: #07101f;
       font-weight: 900;
     }
+
+    /* ==========================================================
+       v303 — Pedido del usuario: rediseño 100% VISUAL de "Editar hueco"
+       (#gapModal), mismo criterio que Horario/Bloques del día/Ajustes/
+       Pegar Llamadas/Agregar llamada (v271-301) — cabecera con ícono
+       cuadrito (reutiliza .mc-header-icon/.mc-modal-head, v301, sin
+       duplicar CSS), secciones de texto plano con línea divisoria
+       (reutiliza .goals-section/.goals-section-title/.goals-section-icon,
+       v300), textarea con tinte cyan (reutiliza .mc-textarea-cyan, v301).
+       Mockup de texto aprobado por el usuario (2 vistas: escritorio y
+       celular) antes de tocar código. CERO cambio funcional: ningún id se
+       toca (gapModalTitle/gapModalSubtitle/gapLabelInput/gapPreviewText/
+       gapNoteInput/saveGapBtn) — el `<select id="gapLabelInput">` real
+       sigue siendo la única fuente que lee/escribe openGapEditor()/
+       saveGapEditor()/el listener de 'change' ya existente (que actualiza
+       gapPreviewText) — sin escuchar eventos NUEVOS en el select: los
+       pills nuevos (`.gap-tag-btn`) solo escriben `.value` y disparan un
+       'change' sintético para reutilizar ese mismo listener ya existente,
+       sin duplicar su lógica de armar el texto de vista previa. Único CSS
+       nuevo: el pill de Clasificación en sí (4 botones sueltos, no un
+       segmented-control agrupado como .mc-pill-row — así se veía en el
+       mockup aprobado) — acento cian fijo para los 4 (ACW/Break/Lunch/
+       Otro son igual de "neutros" entre sí aquí, a diferencia de otras
+       secciones donde cada tipo ya tiene su propio color de por vida). */
+    .gap-tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .gap-tag-btn {
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
+      border-radius: 10px;
+      padding: 8px 15px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background .14s ease, border-color .14s ease, color .14s ease;
+    }
+    .gap-tag-btn:hover,
+    .gap-tag-btn:focus-visible {
+      border-color: var(--line-2);
+      color: var(--text);
+      outline: none;
+    }
+    .gap-tag-btn[aria-pressed="true"] {
+      background: var(--cyan);
+      border-color: transparent;
+      color: #07101f;
+    }
   </style>
 </head>
 <body>
@@ -9758,35 +9809,51 @@ $0.72"></textarea>
 </div>
 <div aria-hidden="true" class="modal-overlay" id="gapModal">
 <div aria-labelledby="gapModalTitle" aria-modal="true" class="modal-card" role="dialog">
-<div class="modal-head">
+<!-- v303 — Pedido del usuario: rediseño 100% visual (ver comentario
+     extenso junto a ".gap-tag-*" en el CSS) — mismo criterio que el resto
+     de modales ya rediseñados (Horario/Bloques del día/Ajustes/Pegar
+     Llamadas/Agregar llamada). CERO cambio funcional: ningún id se toca. -->
+<div class="modal-head mc-modal-head">
+<div class="mc-header-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg></div>
 <div>
 <h3 id="gapModalTitle">Editar hueco</h3>
 <p id="gapModalSubtitle">Ajusta la clasificación del espacio entre dos llamadas.</p>
 </div>
 <button aria-label="Cerrar" class="modal-close" data-close-modal="gapModal" type="button">×</button>
 </div>
-<div class="goal-fields">
-<div class="field">
-<label for="gapLabelInput">Tipo</label>
-<select id="gapLabelInput">
+
+<div class="goals-section">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg cyan" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.59 2.59A2 2 0 0 0 11.17 2H4a2 2 0 0 0-2 2v7.17a2 2 0 0 0 .59 1.41l8.7 8.71a2.43 2.43 0 0 0 3.42 0l6.59-6.59a2.43 2.43 0 0 0 0-3.42Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>Clasificación</div>
+<!-- El <select> real sigue siendo la ÚNICA fuente que lee/escribe
+     openGapEditor()/saveGapEditor()/el listener de 'change' ya existente
+     — se queda oculto en el DOM, sin escuchar eventos nuevos en él (los
+     pills de abajo solo escriben su .value y disparan un 'change'
+     sintético para reutilizar ese mismo listener). -->
+<select id="gapLabelInput" style="display:none;">
 <option value="acw">ACW</option>
 <option value="break">Break</option>
 <option value="lunch">Lunch</option>
 <option value="other">Otro</option>
 </select>
+<div class="gap-tag-row" role="group" aria-label="Clasificación del hueco">
+<button class="gap-tag-btn" type="button" data-gap-tag-btn="acw" aria-pressed="true">ACW</button>
+<button class="gap-tag-btn" type="button" data-gap-tag-btn="break" aria-pressed="false">Break</button>
+<button class="gap-tag-btn" type="button" data-gap-tag-btn="lunch" aria-pressed="false">Lunch</button>
+<button class="gap-tag-btn" type="button" data-gap-tag-btn="other" aria-pressed="false">Otro</button>
 </div>
-<div class="field">
-<label>Vista previa</label>
-<div class="note" id="gapPreviewText" style="margin:0;">Selecciona un hueco para ver su detalle.</div>
+<p class="sched-hint" id="gapPreviewText">Selecciona un hueco para ver su detalle.</p>
 </div>
+
+<div class="divider"></div>
+
+<div class="goals-section">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg cyan" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Nota (opcional)</div>
+<textarea class="mc-textarea-cyan" id="gapNoteInput" placeholder="Ej. llamada larga, descanso extra, ajuste manual..." style="min-height:64px;"></textarea>
 </div>
-<div class="field" style="margin-top:10px;">
-<label for="gapNoteInput">Nota opcional</label>
-<textarea id="gapNoteInput" placeholder="Ej. llamada larga, descanso extra, ajuste manual..."></textarea>
-</div>
-<div class="modal-actions">
-<button class="primary" id="saveGapBtn" type="button">Guardar</button>
-<button class="warn" data-close-modal="gapModal" type="button">Cancelar</button>
+
+<div class="modal-actions mc-action-row">
+<button class="mc-btn-primary cyan" id="saveGapBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="5 12 10 17 19 6"/></svg> Guardar</button>
+<button class="mc-btn-warn-pill" data-close-modal="gapModal" type="button">Cancelar</button>
 </div>
 </div>
 </div>
@@ -17090,6 +17157,19 @@ function saveAcwGoalEditor() {
   toast(`Meta máxima de ACW: ${formatMinutes(mins)} min`);
 }
 
+// v303 — Sincroniza el estado visual (aria-pressed) de los pills de
+// Clasificación (#gapModal) con el valor actual del <select
+// id="gapLabelInput"> oculto — mismo patrón que syncManualCallPillsUI()
+// (v301), aquí con 4 valores en vez de 2. Se llama al abrir el modal
+// (openGapEditor) y tras cada click de pill (delegado más abajo).
+function syncGapTagButtonsUI() {
+  const select = document.getElementById('gapLabelInput');
+  const current = select ? select.value : null;
+  document.querySelectorAll('#gapModal .gap-tag-btn').forEach(btn => {
+    btn.setAttribute('aria-pressed', btn.getAttribute('data-gap-tag-btn') === current ? 'true' : 'false');
+  });
+}
+
 function openGapEditor(dayKey, gapKey) {
   const row = findGapRow(dayKey, gapKey);
   if (!row) {
@@ -17123,6 +17203,7 @@ function openGapEditor(dayKey, gapKey) {
   }
   if (labelInput) labelInput.value = label;
   if (noteInput) noteInput.value = note;
+  syncGapTagButtonsUI();
   openModal('gapModal');
 }
 
@@ -19357,6 +19438,23 @@ function render() {
       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
         saveGapEditor();
       }
+    });
+    // v303 — Pills de Clasificación (ACW/Break/Lunch/Otro): escriben su
+    // valor en el <select id="gapLabelInput"> oculto de siempre y disparan
+    // un 'change' sintético para reutilizar el listener ya existente sobre
+    // ese mismo select (el que actualiza gapPreviewText) — sin agregar
+    // ningún listener NUEVO al select en sí. Delegado en #gapModal porque
+    // los pills no se reconstruyen en cada render, pero así se mantiene el
+    // mismo patrón que el resto de pills de la app.
+    document.getElementById('gapModal').addEventListener('click', (e) => {
+      const btn = e.target instanceof Element ? e.target.closest('[data-gap-tag-btn]') : null;
+      if (!btn) return;
+      const select = document.getElementById('gapLabelInput');
+      if (select) {
+        select.value = btn.getAttribute('data-gap-tag-btn');
+        select.dispatchEvent(new Event('change'));
+      }
+      syncGapTagButtonsUI();
     });
     // v239 — Mismo patrón que #gapModal: Ctrl/Cmd+Enter guarda sin
     // necesitar tocar el botón.
