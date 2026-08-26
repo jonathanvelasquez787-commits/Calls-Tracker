@@ -8064,6 +8064,187 @@
     .rpt-trend-chip .up { color: var(--good); }
     .rpt-trend-chip .down { color: var(--pink); }
     .rpt-trend-chip .flat { color: var(--warn); }
+
+    /* ==========================================================
+       v300 — Pedido del usuario: rediseño 100% VISUAL del modal "Ajustes"
+       (#goalsModal), mismo criterio que ya se usó en Horario (v271-275) y
+       Bloques del día (v276-281): texto plano agrupado por sección (ícono
+       + título + línea divisoria), sin cajas dentro de cajas — reemplaza
+       el patrón `.field`/`.goal-fields` (cada campo con su propio
+       borde+fondo) SOLO dentro de este modal. `.field`/`.goal-fields` en
+       sí NO se tocan — siguen usándose sin cambios en el resto de la app
+       (Editar llamada, Agregar llamada manual, etc.). CERO cambio
+       funcional: ningún id cambia (userNameInput/userEmojiInput/
+       emojiPickerMetas/productiveGoalInput/earningsGoalInput/
+       goalCurrencyField/goalCurrencyLabel/goalCurrencyInput/rateInput/
+       exchangeRateInput/currencyLabelInput/cycleAnchorInput/
+       cyclePayOffsetInput/exportBtn/importJsonBtn/importJsonFile) — los
+       inputs reales siguen siendo editables directo (sin click-to-reveal),
+       así que syncGoals()/updateRate()/updateCurrencySettings()/
+       updateCycleSettings()/exportJSON()/handleImportJsonFile()/
+       wireEmojiPicker()/formatGoalFields() siguen funcionando exactamente
+       igual, solo cambia el HTML/CSS que envuelve esos mismos elementos. */
+    .goals-modal-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .goals-header-icon {
+      flex: 0 0 auto;
+      width: 44px;
+      height: 44px;
+      border-radius: 13px;
+      background: var(--cyan);
+      color: #07101f;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .goals-header-icon .ic-svg { width: 21px; height: 21px; color: #07101f; stroke: #07101f; }
+
+    .goals-section {
+      display: grid;
+      gap: 12px;
+    }
+    .goals-section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 900;
+      font-size: 14px;
+    }
+    .goals-section-icon { flex: 0 0 auto; width: 15px; height: 15px; }
+    .goals-section-icon.cyan { color: var(--cyan); stroke: var(--cyan); }
+    .goals-section-icon.good { color: var(--good); stroke: var(--good); }
+    .goals-section-icon.warn { color: var(--warn); stroke: var(--warn); }
+    .goals-section-icon.blue { color: var(--blue); stroke: var(--blue); }
+    .goals-section-icon.pink { color: var(--pink); stroke: var(--pink); }
+
+    /* Reemplaza `.field` (borde+fondo) dentro de este modal: solo un
+       label chico uppercase muted arriba + el input real abajo, con un
+       único border-bottom en vez de una caja completa — mismo patrón que
+       ya usa `.sched-time-field` en Horario. */
+    .goals-field { display: grid; gap: 3px; min-width: 0; }
+    .goals-field label {
+      font-size: 10.5px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      font-weight: 700;
+    }
+    .goals-field input,
+    .goals-field select {
+      border: 0;
+      border-bottom: 1px solid var(--line-2);
+      border-radius: 0;
+      background: transparent;
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 800;
+      padding: 0 0 6px;
+      outline: none;
+      width: 100%;
+    }
+    .goals-field input:focus,
+    .goals-field select:focus {
+      border-bottom-color: rgba(var(--cyan-rgb), .55);
+    }
+    .goals-field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .goals-field-row.cols-3 { grid-template-columns: repeat(3, 1fr); }
+    @media (max-width: 760px) {
+      .goals-field-row,
+      .goals-field-row.cols-3 { grid-template-columns: 1fr; }
+    }
+
+    /* Perfil: emoji en círculo grande a la izquierda del nombre, con un
+       botón pill "Cambiar emoji" que revela #emojiPickerMetas/
+       #userEmojiInput bajo demanda (ver toggleEmojiPickerMetas() en el
+       JS) — el picker en sí no cambia, solo empieza oculto. */
+    .goals-profile-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .goals-emoji-circle {
+      flex: 0 0 auto;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: rgba(var(--cyan-rgb), .14);
+      border: 1.5px solid rgba(var(--cyan-rgb), .4);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+    .goals-profile-name-field { flex: 1 1 auto; min-width: 0; }
+    .goals-emoji-toggle-btn {
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--muted);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .goals-emoji-toggle-btn:hover { color: var(--text); border-color: var(--line-2); }
+    .goals-emoji-picker-wrap { display: none; gap: 8px; }
+    .goals-emoji-picker-wrap.open { display: grid; }
+
+    /* Ciclo de pago: pills informativas tocables (mismo look que
+       .goal-badge.goal-soft) en vez de 2 inputs con label arriba — el
+       <input> real vive DENTRO de la pill, transparente, para seguir
+       siendo 100% editable sin duplicar el campo. */
+    .goals-pill-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .goals-pill-field {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid rgba(var(--blue-rgb), .35);
+      background: rgba(var(--blue-rgb), .1);
+      color: var(--blue);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .goals-pill-field label { white-space: nowrap; }
+    .goals-pill-field input {
+      border: 0;
+      background: transparent;
+      color: var(--blue);
+      font-weight: 800;
+      font-size: 12px;
+      padding: 0;
+      outline: none;
+      width: 118px;
+      max-width: 100%;
+    }
+    .goals-pill-field input[type="date"] { width: 128px; }
+
+    /* Tasa y moneda: moneda secundaria como su propia pill editable —
+       mismo componente que .goals-pill-field de arriba, tono neutro en
+       vez de azul (no es "ciclo de pago"). */
+    .goals-currency-pill {
+      border-color: var(--line);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+    }
+    .goals-currency-pill input { color: var(--warn); width: 90px; }
+
+    /* Backup: botones reales con ícono + texto — mismo `<button>` de
+       siempre (exportBtn/importJsonBtn), solo se agrega el ícono al lado
+       del texto ya existente. */
+    .goals-backup-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .goals-backup-row button { display: inline-flex; align-items: center; gap: 6px; }
+    .goals-backup-row .ic-svg { width: 14px; height: 14px; }
   </style>
 </head>
 <body>
@@ -9168,104 +9349,118 @@
 <div class="footer">Todo queda local en el navegador hasta que exportes o descargues el archivo.</div></div>
 <div aria-hidden="true" class="modal-overlay" id="goalsModal">
 <div aria-labelledby="goalsModalTitle" aria-modal="true" class="modal-card" role="dialog">
-<div class="modal-head">
+<!-- v300 — Pedido del usuario: rediseño 100% visual de este modal (ver
+     comentario extenso junto a ".goals-*" en el CSS) — mismo criterio que
+     Horario/Bloques del día: texto plano agrupado por sección, sin cajas
+     dentro de cajas. CERO cambio funcional: ningún id se toca. -->
+<div class="modal-head goals-modal-head">
+<div class="goals-header-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg></div>
 <div>
 <h3 id="goalsModalTitle">Ajustes</h3>
-<p>Ajusta minutos o dólares. Uno actualiza al otro usando tu tasa por minuto (editable abajo).</p>
+<p>Perfil, meta, tasa y ciclo de pago.</p>
 </div>
 <button aria-label="Cerrar" class="modal-close" data-close-modal="goalsModal" type="button">×</button>
 </div>
-<div class="field" style="margin-bottom:4px;">
-<label style="font-weight:900;">Tu perfil</label>
-</div>
-<div class="goal-fields">
-<div class="field">
+
+<div class="goals-section">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg cyan" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Tu perfil</div>
+<div class="goals-profile-row">
+<span class="goals-emoji-circle" id="goalsEmojiPreview" aria-hidden="true">🙂</span>
+<div class="goals-field goals-profile-name-field">
 <label for="userNameInput">Tu nombre</label>
 <input id="userNameInput" maxlength="40" placeholder="Ej. Jonathan" type="text"/>
 </div>
-<div class="field">
+<button class="goals-emoji-toggle-btn" id="toggleEmojiPickerMetasBtn" type="button" aria-expanded="false">Cambiar emoji</button>
+</div>
+<div class="goals-emoji-picker-wrap" id="goalsEmojiPickerWrap">
+<div class="goals-field">
 <label for="userEmojiInput">Emoji (opcional)</label>
 <input id="userEmojiInput" maxlength="8" placeholder="🙂" type="text"/>
 </div>
-</div>
 <div class="emoji-picker" id="emojiPickerMetas" aria-label="Elegir emoji para el saludo"></div>
-<div class="note" style="margin-top:-4px;">El emoji aparece junto a tu nombre en el saludo de arriba (ej. "Buenas tardes, Jonathan 🙂"). Toca uno de la lista o escribe cualquier otro en el cuadro de texto. Déjalo vacío para no mostrar ninguno.</div>
-<div class="divider"></div>
-<div class="field" style="margin-bottom:4px;">
-<label style="font-weight:900;">Tu meta</label>
+<div class="note" style="margin:0;">El emoji aparece junto a tu nombre en el saludo de arriba (ej. "Buenas tardes, Jonathan 🙂"). Toca uno de la lista o escribe cualquier otro en el cuadro de texto. Déjalo vacío para no mostrar ninguno.</div>
 </div>
-<div class="goal-fields">
-<div class="field">
+</div>
+
+<div class="divider"></div>
+
+<div class="goals-section">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg good" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v18"/><path d="M5 4h9l-1 3 1 3H5"/></svg>Tu meta</div>
+<div class="goals-field-row" id="goalsGoalFieldsRow">
+<div class="goals-field">
 <label for="productiveGoalInput">Meta en minutos</label>
 <input id="productiveGoalInput" inputmode="decimal" min="0.1" step="0.1" type="number"/>
 </div>
-<div class="field">
+<div class="goals-field">
 <label for="earningsGoalInput">Meta en dólares</label>
 <input id="earningsGoalInput" inputmode="decimal" min="0" step="0.01" type="number"/>
 </div>
-<div class="field" id="goalCurrencyField" style="display:none;">
+<div class="goals-field" id="goalCurrencyField" style="display:none;">
 <label for="goalCurrencyInput" id="goalCurrencyLabel">Meta en tu moneda</label>
 <input id="goalCurrencyInput" inputmode="decimal" min="0" step="0.01" type="number"/>
 </div>
 </div>
-<div class="divider"></div>
-<div class="field" style="margin-bottom:4px;">
-<label style="font-weight:900;">Tasa y moneda</label>
+<div class="note" style="margin:0;">Se sincronizan solas con tu tasa por minuto de abajo.</div>
 </div>
-<div class="goal-fields">
-<div class="field">
+
+<div class="divider"></div>
+
+<div class="goals-section">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg warn" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.4-1 1.9-2 2.5"/><circle cx="12" cy="12" r="4"/></svg>Tasa y moneda</div>
+<div class="goals-field-row">
+<div class="goals-field">
 <label for="rateInput">Tasa por minuto ($)</label>
 <input id="rateInput" inputmode="decimal" min="0.01" step="0.01" type="number"/>
 </div>
-<div class="field">
+<div class="goals-field">
 <label for="exchangeRateInput">Tasa de cambio (moneda por $1)</label>
 <input id="exchangeRateInput" inputmode="decimal" min="0" step="0.01" type="number"/>
 </div>
 </div>
-<div class="goal-fields">
-<!-- Bug reportado por el usuario: este campo usaba flex:1 1 100% para
-     ocupar las 2 columnas de .goal-fields, pero .goal-fields es
-     display:grid (no flex) — flex-basis/flex-grow no hacen nada en un
-     grid item, así que el campo quedaba encogido en la 1ra columna,
-     dejando la 2da vacía. grid-column: 1 / -1 es la forma correcta de
-     ocupar el ancho completo dentro de un grid. -->
-<div class="field" style="grid-column: 1 / -1;">
-<label for="currencyLabelInput">Moneda secundaria (símbolo o código)</label>
+<div class="goals-pill-row">
+<span class="goals-pill-field goals-currency-pill">
+<label for="currencyLabelInput">Moneda:</label>
 <input id="currencyLabelInput" maxlength="6" placeholder="Ej. L, HNL, MXN..." type="text"/>
+</span>
 </div>
+<div class="note" style="margin:0;">La meta de dólares usa la tasa por minuto de arriba — súbela si tu pago por minuto aumenta. La tasa de cambio y la moneda secundaria muestran un equivalente junto a tus ganancias (ej. Lempiras); déjala en 0 o vacía para ocultarlo.</div>
 </div>
-<div class="note">La meta de dólares usa la tasa por minuto de arriba — súbela si tu pago por minuto aumenta. La tasa de cambio y la moneda secundaria muestran un equivalente junto a tus ganancias (ej. Lempiras); déjala en 0 o vacía para ocultarlo.</div>
+
 <div class="divider"></div>
-<div class="field" style="margin-bottom:4px;">
-<label style="font-weight:900;">Ciclo de pago</label>
-</div>
-<div class="goal-fields">
-<div class="field">
-<label for="cycleAnchorInput">Un día conocido en que empieza un ciclo</label>
+
+<div class="goals-section">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg blue" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Ciclo de pago</div>
+<div class="goals-pill-row">
+<span class="goals-pill-field">
+<label for="cycleAnchorInput">Ancla:</label>
 <input id="cycleAnchorInput" type="date"/>
-</div>
-<div class="field">
-<label for="cyclePayOffsetInput">Días desde fin de ciclo hasta el pago</label>
+</span>
+<span class="goals-pill-field">
+<label for="cyclePayOffsetInput">Pago, días después:</label>
 <input id="cyclePayOffsetInput" inputmode="numeric" min="0" step="1" type="number"/>
+</span>
 </div>
+<div class="note" style="margin:0;">El ciclo siempre dura 14 días desde la fecha que pongas arriba. Se guarda solo. Ajusta esto si tus ciclos reales no coinciden con "Ganancias del ciclo".</div>
 </div>
-<div class="note">El ciclo siempre dura 14 días desde la fecha que pongas arriba. Se guarda solo. Ajusta esto si tus ciclos reales no coinciden con "Ganancias del ciclo".</div>
+
 <div class="divider"></div>
+
 <!-- Pedido del usuario (v229): Exportar/Importar JSON vivían dentro de
      "Pegar Llamadas", sin ninguna relación conceptual con pegar texto de
      Propio — se mudan a Ajustes, junto al resto de configuración/backup de
      la app. Mismos ids/handlers de siempre (exportBtn/importJsonBtn/
      importJsonFile/exportJSON()/handleImportJsonFile()), solo cambia dónde
      viven en el HTML — buscar "v229". -->
-<div class="field" style="margin-bottom:4px;">
-<label style="font-weight:900;">Backup de datos</label>
-</div>
-<div class="modal-actions" style="margin-top:0;">
-<button id="exportBtn" type="button">Exportar JSON</button>
-<button id="importJsonBtn" type="button">Importar JSON</button>
+<div class="goals-section">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg pink" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3"/></svg>Backup de datos</div>
+<div class="goals-backup-row">
+<button id="exportBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M4 19h16"/></svg> Exportar JSON</button>
+<button id="importJsonBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3"/><polyline points="7 8 12 3 17 8"/><path d="M4 19h16"/></svg> Importar JSON</button>
 <input accept="application/json,.json" id="importJsonFile" style="display:none;" type="file"/>
 </div>
-<div class="note">"Exportar JSON" descarga un respaldo de tus llamadas, turnos y pausas. "Importar JSON" restaura un backup ya exportado (reemplaza llamadas/turnos/pausas actuales — tu horario y metas no se tocan).</div>
+<div class="note" style="margin:0;">"Exportar JSON" descarga un respaldo de tus llamadas, turnos y pausas. "Importar JSON" restaura un backup ya exportado (reemplaza llamadas/turnos/pausas actuales — tu horario y metas no se tocan).</div>
+</div>
+
 <div class="modal-actions">
 <button class="primary" data-close-modal="goalsModal" type="button">Listo</button>
 </div>
@@ -13954,6 +14149,23 @@ function renderWeekSummary() {
       });
     }
 
+    // v300 — Pedido del usuario: rediseño visual de "Ajustes" — el picker de
+    // emojis (#emojiPickerMetas) + su input de texto (#userEmojiInput) ya
+    // no viven siempre expandidos, se revelan con este botón pill "Cambiar
+    // emoji". Puramente un toggle de visibilidad — renderEmojiPicker()/
+    // wireEmojiPicker()/syncEmojiPickerSelection() no se tocan, siguen
+    // operando sobre el mismo #emojiPickerMetas de siempre, esté visible o
+    // no en cada momento.
+    function toggleEmojiPickerMetas() {
+      const wrap = document.getElementById('goalsEmojiPickerWrap');
+      const btn = document.getElementById('toggleEmojiPickerMetasBtn');
+      if (!wrap || !btn) return;
+      const open = !wrap.classList.contains('open');
+      wrap.classList.toggle('open', open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.textContent = open ? 'Ocultar emoji' : 'Cambiar emoji';
+    }
+
     function finishOnboarding() {
       const nameInput = document.getElementById('onboardingNameInput');
       const emojiInput = document.getElementById('onboardingEmojiInput');
@@ -14923,6 +15135,13 @@ function renderWeekSummary() {
         }
       }
       syncEmojiPickerSelection('emojiPickerMetas', String(settings.userEmoji || ''));
+      // v300 — Ver comentario junto a ".goals-emoji-circle" en el CSS:
+      // círculo grande de solo lectura en la cabecera de "Tu perfil" —
+      // puramente decorativo, refleja el mismo settings.userEmoji que ya
+      // sincroniza userEmojiInput arriba (con el mismo fallback que ya usa
+      // el saludo del header, ver greetingText()).
+      const goalsEmojiPreview = document.getElementById('goalsEmojiPreview');
+      if (goalsEmojiPreview) goalsEmojiPreview.textContent = String(settings.userEmoji || '').trim() || DEFAULT_USER_EMOJI;
 
       // Pedido del usuario: Ciclo de pago se movió de Horario a Metas (es
       // dinero, no horario) — mismo criterio de sincronización que ya usaba
@@ -18711,6 +18930,8 @@ function render() {
       saveSettingsOnly();
       render();
     });
+    const toggleEmojiPickerMetasBtn = document.getElementById('toggleEmojiPickerMetasBtn');
+    if (toggleEmojiPickerMetasBtn) toggleEmojiPickerMetasBtn.addEventListener('click', toggleEmojiPickerMetas);
     wireEmojiPicker('emojiPickerOnboarding', 'onboardingEmojiInput', null);
     renderEmojiPicker('emojiPickerMetas', String(settings.userEmoji || ''));
     document.getElementById('onboardingSaveBtn').addEventListener('click', finishOnboarding);
