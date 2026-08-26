@@ -5466,7 +5466,16 @@
     /* Mini-accordion propio para el detalle de Adherencia: mismo mecanismo
        nativo <details> que .accordion-card, pero sin el padding/borde/sombra
        de tarjeta completa — aquí es solo un badge con un toggle de texto al
-       lado, no una sección de nivel superior. */
+       lado, no una sección de nivel superior.
+       v298 — Pedido del usuario: la tarjeta de Adherencia dentro de
+       "Bloques del día" (#dayMetricsRow) dejó de ser expandible — ahora es
+       una tarjeta plana de solo lectura, igual en estructura a las de
+       Meta/Productividad de al lado (ver el HTML de esa tarjeta y
+       renderSchedule() en el JS). Las 4 reglas de esta familia
+       (.mini-accordion/.mini-accordion-summary/.mini-accordion-toggle/
+       .mini-accordion-body) ya no las usa NINGÚN elemento del archivo —
+       código muerto, dejado tal cual a propósito (no se pidió borrarlo) por
+       si se necesita un mini-acordeón similar en el futuro. */
     .mini-accordion {
       border: none;
       padding: 0;
@@ -8599,16 +8608,8 @@
 <div class="accordion-body">
   <div class="day-metrics-row sched-blocks-summary-row" id="dayMetricsRow">
     <div class="sched-blocks-summary-card" data-metric="adherence">
-      <details class="mini-accordion" id="adherenceAccordion">
-        <summary class="mini-accordion-summary sched-blocks-summary-summary">
-          <div style="min-width:0;">
-            <div class="sched-blocks-summary-label"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg> Adherencia</div>
-            <span class="slot-status" id="adherenceBadge">Adherencia: —</span>
-          </div>
-          <span class="mini-accordion-toggle">Detalle ⌄</span>
-        </summary>
-        <div class="mini-accordion-body" id="adherenceCheckpointList"></div>
-      </details>
+      <div class="sched-blocks-summary-label"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg> Adherencia</div>
+      <span class="slot-status" id="adherenceBadge">Adherencia: —</span>
     </div>
     <div class="sched-blocks-summary-card" data-metric="goal">
       <div class="sched-blocks-summary-label"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v18"/><path d="M5 4h9l-1 3 1 3H5"/></svg> Meta</div>
@@ -17227,8 +17228,6 @@ function renderSchedule() {
         if (adherenceBadgeEmpty) adherenceBadgeEmpty.textContent = 'Adherencia: —';
         const productivityGoalBadgeEmpty = document.getElementById('productivityGoalBadge');
         if (productivityGoalBadgeEmpty) productivityGoalBadgeEmpty.textContent = 'Meta productiva: —';
-        const checkpointListEmpty = document.getElementById('adherenceCheckpointList');
-        if (checkpointListEmpty) checkpointListEmpty.innerHTML = '<div class="note" style="margin:0;">Sin horario configurado este día.</div>';
         return;
       }
 
@@ -17691,7 +17690,6 @@ function renderSchedule() {
 
       const adherence = dayAdherence(dayKey);
       const adherenceBadge = document.getElementById('adherenceBadge');
-      const checkpointList = document.getElementById('adherenceCheckpointList');
       if (adherenceBadge) {
         if (!adherence) {
           adherenceBadge.textContent = 'Adherencia: —';
@@ -17735,32 +17733,6 @@ function renderSchedule() {
         adherenceLiveBadge.style.display = isLiveException ? '' : 'none';
       }
 
-      if (checkpointList) {
-        // Pedido del usuario (mejora C): un resumen corto de MOTIVOS (mismo
-        // motor que ahora categoriza la adherencia por bloque, ver
-        // dominantExceptionReason) arriba del detalle fino por punto — no se
-        // reemplaza el detalle viejo (Entrada/Salida/Break/Lunch, sigue
-        // siendo información distinta y útil), solo se le agrega un "por
-        // qué" a simple vista antes de los puntos individuales.
-        let reasonSummaryHtml = '';
-        if (adherence && adherence.reasons) {
-          const entries = Object.entries(adherence.reasons).filter(([, m]) => m > 0).sort((a, b) => b[1] - a[1]);
-          if (entries.length) {
-            const rows = entries.map(([key, minutes]) => {
-              const label = EXCEPTION_REASON_LABELS[key] || key;
-              return `<div class="checkpoint-row"><strong>${escapeHtml(label)}</strong><span style="color:var(--warn);">${formatMinutes(minutes)}m</span></div>`;
-            }).join('');
-            reasonSummaryHtml = `<div class="mini-accordion-toggle" style="margin-bottom:4px;">Por qué:</div>${rows}<div class="divider" style="margin:8px 0;"></div>`;
-          }
-        }
-        checkpointList.innerHTML = !adherence
-          ? '<div class="note" style="margin:0;">Sin datos de adherencia todavía para este día.</div>'
-          : reasonSummaryHtml + adherence.checkpoints.map(cp => {
-              const cpTone = cp.ok ? 'good' : (cp.score > 0 ? 'warn' : 'bad');
-              const cpColor = cpTone === 'good' ? 'var(--good)' : cpTone === 'warn' ? 'var(--warn)' : 'var(--bad)';
-              return `<div class="checkpoint-row"><strong>${escapeHtml(cp.label)}</strong><span style="color:${cpColor};">${escapeHtml(cp.note)}</span></div>`;
-            }).join('');
-      }
     }
 
     
