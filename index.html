@@ -2627,24 +2627,32 @@
        izquierda a derecha según el % de cada tarjeta (Shift/Break/Lunch/
        ACW). Antes tenía opacity:.38 sobre el acento — se veía "lavado"/
        transparente, sobre todo en modo claro donde --bsc-rgb suele mapear
-       a un rosa pálido. Ahora es prácticamente sólido (opacity:.94, no
-       100% para que un pixel de textura del fondo no se pierda del todo)
-       — el mismo color saturado que ya usan los botones de Controles al
-       hacer hover, no una versión aguada. Con el fondo ya sólido, el texto
-       encima (nombre/rango/%) pasa a blanco SOLO en la franja ya cubierta
-       por el relleno — ver bsc-name/bsc-range/bsc-pct más abajo, mismo
-       truco de degradado+recorte de texto que ya usa `.slot .meta/.range`
-       (v186) — así el texto se sigue leyendo tanto sobre el relleno sólido
-       como sobre la parte aún sin llenar. `width` se pinta inline en el JS
-       con el mismo `pct` que ya calcula cada tarjeta — mismo dato que ya
-       alimenta la barra fina de abajo (bsc-progress-track), ahora también
-       como fondo de toda la tarjeta. */
+       a un rosa pálido.
+       v313 — Pedido del usuario ("no me gustó", con mockup de 3 opciones
+       nuevas — eligió "Opción B: un solo color morado, al 50%"): el
+       relleno casi sólido de v210 (opacity .94) volvía a sentirse como
+       "pared de color" — mismo motivo que ya llevó a bajar la opacidad en
+       "Bloques del día" (v308, .92→.30). Se baja aquí también, a .50 —
+       mockup de 3 opacidades (14/30/50%) mostrado junto con 3 esquemas de
+       color (por tipo / un solo morado / sin relleno) — el usuario eligió
+       .50 como punto medio entre visible y no saturado (más alto que el
+       .30 de Bloques del día, decisión aparte para esta sección). Con el
+       fondo ya no sólido, el texto encima (nombre/rango/%) sigue pasando a
+       blanco SOLO en la franja ya cubierta por el relleno — ver
+       bsc-name/bsc-range/bsc-pct más abajo, mismo truco de degradado+
+       recorte de texto que ya usa `.slot .meta/.range` (v186); a esta
+       opacidad más baja el contraste ahí ya no es tan crítico como con el
+       relleno casi sólido de antes, pero se deja sin tocar — sigue
+       funcionando igual de bien. `width` se pinta inline en el JS con el
+       mismo `pct` que ya calcula cada tarjeta — mismo dato que ya alimenta
+       la barra fina de abajo (bsc-progress-track), ahora también como
+       fondo de toda la tarjeta. */
     .block-summary-card .bsc-fill {
       position: absolute;
       inset: 0;
       width: 0%;
       background: rgb(var(--bsc-rgb));
-      opacity: .94;
+      opacity: .50;
       transition: width .5s cubic-bezier(.22, .85, .4, 1);
       z-index: 0;
     }
@@ -2771,11 +2779,21 @@
       font-variant-numeric: tabular-nums;
     }
 
-    .block-summary-card[data-accent="cyan"] { --bsc-rgb: var(--cyan-rgb); }
-    .block-summary-card[data-accent="warn"] { --bsc-rgb: var(--warn-rgb); }
-    .block-summary-card[data-accent="blue"] { --bsc-rgb: var(--blue-rgb); }
-    .block-summary-card[data-accent="teal"] { --bsc-rgb: var(--teal-rgb); }
-    .block-summary-card[data-accent="good"] { --bsc-rgb: var(--good-rgb); }
+    /* v313 — Pedido del usuario ("no me gustó", mockup de 3 esquemas de
+       color mostrado — eligió "Opción B: un solo color"): antes cada
+       data-accent (cyan/warn/blue/teal/good — Shift/Break/Lunch/ACW, cada
+       uno con su propio tono) pintaba un color DISTINTO de borde/fondo/
+       relleno/barra fina — se quitan esos 5 overrides y se unifica todo a
+       un solo morado (--rpt-purple-rgb, el mismo que ya usa "Reportes",
+       reutilizado en vez de un color nuevo) — mismo criterio que ya siguió
+       "Bloques del día" en v292 para su propio relleno líquido. Sin
+       ningún override por data-accent, `--bsc-rgb` cae directo en este
+       valor fijo para las 4 tarjetas de "Turno de Hoy", automático en
+       ambos temas (--rpt-purple-rgb ya se redefine solo en modo claro,
+       ver :root). Los atributos `data-accent="..."` se dejan tal cual en
+       el HTML/JS (no aportan nada visual ya, pero no hace falta tocarlos
+       para este cambio). */
+    .block-summary-card { --bsc-rgb: var(--rpt-purple-rgb); }
 
     /* Pedido del usuario (v190, con captura de referencia): Shift pasa a
        tarjeta GRANDE en su propia fila — igual que ya pasó con el botón
