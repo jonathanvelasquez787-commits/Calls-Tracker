@@ -8119,6 +8119,12 @@
     .goals-section-icon.warn { color: var(--warn); stroke: var(--warn); }
     .goals-section-icon.blue { color: var(--blue); stroke: var(--blue); }
     .goals-section-icon.pink { color: var(--pink); stroke: var(--pink); }
+    /* v307 — Pedido del usuario: variante .bad para .goals-section-icon,
+       usada por la sección "Zona de peligro" del rediseño de #resetModal
+       — las 5 variantes previas (cyan/good/warn/blue/pink) no cubrían
+       rojo/peligro, que ningún modal anterior había necesitado hasta
+       ahora. */
+    .goals-section-icon.bad { color: var(--bad); stroke: var(--bad); }
 
     /* Reemplaza `.field` (borde+fondo) dentro de este modal: solo un
        label chico uppercase muted arriba + el input real abajo, con un
@@ -8493,6 +8499,51 @@
       color: var(--warn);
       line-height: 1.4;
     }
+
+    /* ==========================================================
+       v307 — Pedido del usuario: rediseño 100% VISUAL de "Reiniciar"
+       (#resetModal), mismo criterio que Horario/Bloques del día/Ajustes/
+       Pegar Llamadas/Agregar llamada/Editar hueco/Editar día/Editar
+       llamada/Meta máxima de ACW (v271-306): cabecera con ícono cuadrito
+       (reutiliza .mc-header-icon/.mc-modal-head, v301), cada sección con
+       ícono+título propio (reutiliza .goals-section-title/.goals-section-
+       icon, v300 — se agregan las variantes .warn/.bad, que este modal es
+       el primero en usar). Mockup VISUAL de 2 vistas (escritorio y
+       celular) aprobado por el usuario antes de tocar código — sin
+       ajustes pedidos sobre el mockup.
+       CERO cambios funcionales: ningún id se tocó (resetModalTitle/
+       resetDayLabel/resetDayBtn/eraseAllDataBtn) — resetDay()/
+       eraseAllData() siguen funcionando exactamente igual, solo cambia el
+       HTML/CSS que envuelve esos mismos elementos.
+       CSS nuevo agregado: únicamente `.mc-btn-solid-full` (+ sus 2
+       variantes .warn/.bad) — un botón sólido de ANCHO COMPLETO con el
+       acento propio de cada sección, que no existía todavía en el resto
+       de la app (`.mc-btn-primary` es cian/verde/azul y de ancho
+       flexible, pensado para vivir junto a un `.mc-btn-warn-pill`, no
+       para un botón único de ancho completo por sección como pide el
+       mockup de este modal). El resto reutiliza clases ya existentes de
+       v300/v301 (`.mc-header-icon`, `.mc-modal-head`, `.goals-section-
+       title`, `.goals-section-icon`, `.divider`). */
+    .mc-btn-solid-full {
+      width: 100%;
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-weight: 900;
+      font-size: 14px;
+      color: #07101f;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: filter .14s ease, transform .14s ease;
+    }
+    .mc-btn-solid-full:hover,
+    .mc-btn-solid-full:focus-visible { filter: brightness(1.06); transform: translateY(-1px); outline: none; }
+    .mc-btn-solid-full.warn { background: var(--warn); }
+    .mc-btn-solid-full.bad { background: var(--bad); }
+    .mc-btn-solid-full .ic-svg { width: 16px; height: 16px; color: #07101f; stroke: #07101f; }
   </style>
 </head>
 <body>
@@ -9728,27 +9779,38 @@
 </div>
 <div aria-hidden="true" class="modal-overlay" id="resetModal">
 <div aria-labelledby="resetModalTitle" aria-modal="true" class="modal-card" role="dialog">
-<div class="modal-head">
+<!-- v307 — Pedido del usuario: rediseño 100% visual de este modal (mockup
+     visual de 2 vistas — escritorio y celular — aprobado antes de tocar
+     código), mismo criterio que Horario/Bloques del día/Ajustes/Pegar
+     Llamadas/Agregar llamada/Editar hueco/Editar día/Editar llamada/Meta
+     máxima de ACW (v271-306): cabecera con ícono cuadrito (reutiliza
+     .mc-header-icon/.mc-modal-head, v301), cada sección con ícono+título
+     propio (reutiliza .goals-section-title/.goals-section-icon, v300),
+     botón sólido de ancho completo por sección (.mc-btn-solid-full, CSS
+     nuevo — ver comentario junto a esa clase). CERO cambio funcional:
+     ningún id se toca (resetModalTitle/resetDayLabel/resetDayBtn/
+     eraseAllDataBtn). -->
+<div class="modal-head mc-modal-head">
+<div class="mc-header-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg></div>
 <div>
-<h3 id="resetModalTitle">♻️ Reiniciar</h3>
+<h3 id="resetModalTitle">Reiniciar</h3>
 <p>Elige qué tan a fondo querés empezar de nuevo.</p>
 </div>
 <button aria-label="Cerrar" class="modal-close" data-close-modal="resetModal" type="button">×</button>
 </div>
-<div class="field" style="margin-bottom:4px;">
-<label style="font-weight:900;">Reiniciar un día</label>
+
+<div class="goals-section">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg warn" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Reiniciar un día</div>
+<p class="alert-hint" style="margin:0;">Borra llamadas, pausas, huecos, la nota y el log SOLO del día activo (<strong id="resetDayLabel">—</strong>). Tu horario, metas y el resto de tus días no se tocan.</p>
+<button class="mc-btn-solid-full warn" id="resetDayBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg> Reiniciar día activo</button>
 </div>
-<p class="alert-hint">Borra llamadas, pausas, huecos, la nota y el log SOLO del día activo (<strong id="resetDayLabel">—</strong>). Tu horario, metas y el resto de tus días no se tocan.</p>
-<div class="modal-actions" style="margin-top:0;">
-<button class="warn" id="resetDayBtn" type="button">Reiniciar día activo</button>
-</div>
+
 <div class="divider"></div>
-<div class="field" style="margin-bottom:4px;">
-<label style="font-weight:900; color: var(--bad);">Zona de peligro</label>
-</div>
-<p class="alert-hint">Borra TODO lo guardado por la app en este navegador: llamadas, turnos, pausas, horario semanal, metas, nombre/emoji — de TODOS los días, no solo el activo. No se puede deshacer.</p>
-<div class="modal-actions" style="margin-top:0;">
-<button class="bad" id="eraseAllDataBtn" type="button">Borrar todos los datos</button>
+
+<div class="goals-section">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg bad" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg>Zona de peligro</div>
+<p class="alert-hint" style="margin:0;">Borra TODO lo guardado por la app en este navegador: llamadas, turnos, pausas, horario semanal, metas, nombre/emoji — de TODOS los días, no solo el activo. No se puede deshacer.</p>
+<button class="mc-btn-solid-full bad" id="eraseAllDataBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><path d="M6 7V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v3"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> Borrar todos los datos</button>
 </div>
 </div>
 </div>
