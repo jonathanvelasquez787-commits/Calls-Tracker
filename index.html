@@ -516,7 +516,27 @@
       :root:not(.theme-dark) .card,
       :root:not(.theme-dark) .mini,
       :root:not(.theme-dark) .table-card,
-      :root:not(.theme-dark) .list-card {
+      :root:not(.theme-dark) .list-card,
+      /* v295 — Pedido del usuario: las tarjetas nuevas de v292-294
+         (tarjeta de estado de Llamadas, KPIs/Objetivos/gráfica/mini-
+         tarjetas/pills de Reportes) se pintaban con `var(--panel)` — un
+         negro casi plano pensado para fondos YA navy (como los pequeños
+         `.field`/inputs dentro de una tarjeta), no para vivir directo
+         sobre el fondo azul de la página. Se suman aquí a la MISMA lista
+         que ya usa `.hero/.card/.mini/.table-card/.list-card` desde v267
+         — mismo criterio exacto: `var(--panel-navy)` (degradado navy) en
+         modo oscuro (ver la regla base, más abajo en el archivo), y aquí
+         (modo claro) se revierte a `var(--panel)` de siempre, igual que
+         el resto de esa lista — cero cambio en modo claro, donde nunca
+         hubo el problema reportado. */
+      :root:not(.theme-dark) .calls-status-card,
+      :root:not(.theme-dark) .rpt-date-pill,
+      :root:not(.theme-dark) .rpt-sel-pill,
+      :root:not(.theme-dark) .rpt-kpi-card,
+      :root:not(.theme-dark) .rpt-goal-card,
+      :root:not(.theme-dark) .rpt-chart-card,
+      :root:not(.theme-dark) .rpt-mini-card,
+      :root:not(.theme-dark) .rpt-trend-chip {
         background: var(--panel);
       }
       :root:not(.theme-dark) .accordion-card {
@@ -1034,7 +1054,16 @@
     html.theme-light .card,
     html.theme-light .mini,
     html.theme-light .table-card,
-    html.theme-light .list-card {
+    html.theme-light .list-card,
+    /* v295 — Ver comentario gemelo en la rama @media de arriba. */
+    html.theme-light .calls-status-card,
+    html.theme-light .rpt-date-pill,
+    html.theme-light .rpt-sel-pill,
+    html.theme-light .rpt-kpi-card,
+    html.theme-light .rpt-goal-card,
+    html.theme-light .rpt-chart-card,
+    html.theme-light .rpt-mini-card,
+    html.theme-light .rpt-trend-chip {
       background: var(--panel);
     }
     html.theme-light .accordion-card {
@@ -3515,7 +3544,7 @@
        coherente con que descartar es la acción más "destructiva" de las
        dos, igual que ya lo es en la barra fija). */
     .calls-status-card {
-      background: var(--panel);
+      background: var(--panel-navy);
       border: 1px solid var(--line);
       border-radius: var(--radius);
       overflow: hidden;
@@ -7622,7 +7651,7 @@
       margin-top: 4px;
     }
     .rpt-date-pill {
-      background: var(--panel);
+      background: var(--panel-navy);
       border: 1px solid var(--line);
       padding: 8px 13px;
       border-radius: 10px;
@@ -7642,7 +7671,7 @@
       margin-bottom: 18px;
     }
     .rpt-kpi-card {
-      background: var(--panel);
+      background: var(--panel-navy);
       border: 1px solid var(--line);
       border-radius: 14px;
       padding: 14px;
@@ -7697,7 +7726,7 @@
     }
     .rpt-section-title .ic-svg { width: 15px; height: 15px; }
     .rpt-sel-pill {
-      background: var(--panel);
+      background: var(--panel-navy);
       border: 1px solid var(--line);
       color: var(--muted);
       font-size: 11px;
@@ -7712,7 +7741,7 @@
       gap: 10px;
     }
     .rpt-goal-card {
-      background: var(--panel);
+      background: var(--panel-navy);
       border: 1px solid var(--line);
       border-radius: 14px;
       padding: 14px;
@@ -7742,7 +7771,7 @@
     }
 
     .rpt-chart-card {
-      background: var(--panel);
+      background: var(--panel-navy);
       border: 1px solid var(--line);
       border-radius: var(--radius);
       padding: 16px;
@@ -7765,7 +7794,7 @@
       gap: 10px;
     }
     .rpt-mini-card {
-      background: var(--panel);
+      background: var(--panel-navy);
       border: 1px solid var(--line);
       border-radius: 14px;
       padding: 14px;
@@ -7830,7 +7859,7 @@
 
     .rpt-trend-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
     .rpt-trend-chip {
-      background: var(--panel);
+      background: var(--panel-navy);
       border: 1px solid var(--line);
       border-radius: 20px;
       padding: 7px 13px;
