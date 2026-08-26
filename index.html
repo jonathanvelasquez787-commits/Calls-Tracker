@@ -9860,8 +9860,17 @@
   <p class="alert-hint">Borra TODAS las ventanas pasadas de un click. El bono ya ganado por llamadas reales se conserva siempre, aunque borres la ventana que lo generó.</p>
 </div>
 </details>
-<div class="modal-actions">
-<button class="primary" data-close-modal="higherRateModal" type="button">Listo</button>
+<!-- v309 — Pedido del usuario: rediseño 100% visual del botón "Listo" de
+     este modal (único pendiente que quedaba aquí — la lista de ventanas y
+     "Vaciar historial" ya tenían su look nuevo desde antes). Mockup visual
+     de 2 vistas (escritorio y celular) aprobado por el usuario antes de
+     tocar código. CERO cambio funcional: sigue siendo el mismo
+     data-close-modal="higherRateModal" de siempre, wireado por el listener
+     genérico de [data-close-modal] — solo cambia de .modal-actions/.primary
+     viejo a .mc-btn-primary.cyan (v301, ya usado en Pegar Llamadas/Editar
+     hueco/etc. — sin CSS nuevo), con un ícono de check agregado. -->
+<div class="modal-actions mc-action-row">
+<button class="mc-btn-primary cyan" data-close-modal="higherRateModal" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="5 12 10 17 19 6"/></svg> Listo</button>
 </div>
 </div>
 </div>
