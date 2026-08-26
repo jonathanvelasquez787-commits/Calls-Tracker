@@ -9838,20 +9838,41 @@ $0.72"></textarea>
      no una por fecha). -->
 <div aria-hidden="true" class="modal-overlay" id="acwGoalModal">
 <div aria-labelledby="acwGoalModalTitle" aria-modal="true" class="modal-card" role="dialog">
-<div class="modal-head">
+<!-- v306 — Pedido del usuario: rediseño 100% visual de este modal (mockup
+     visual de 2 vistas — escritorio y celular — aprobado antes de tocar
+     código), mismo criterio que Horario/Bloques del día/Ajustes/Pegar
+     Llamadas/Agregar llamada/Editar hueco/Editar día/Editar llamada
+     (v271-305): cabecera con ícono cuadrito (reutiliza .mc-header-icon/
+     .mc-modal-head, v301), el único campo pasa de .field (borde+fondo
+     completo) a .goals-field (línea inferior, v300) dentro de su propia
+     sección con ícono+título (reutiliza .goals-section/.goals-section-
+     title/.goals-section-icon, v300), fila de acciones primario sólido +
+     pill (reutiliza .mc-btn-primary/.mc-btn-warn-pill, v301). CERO cambio
+     funcional: ningún id se toca (acwGoalModalTitle/acwGoalMinInput/
+     saveAcwGoalBtn/acwGoalModal) — openAcwGoalEditor()/saveAcwGoalEditor()
+     siguen funcionando exactamente igual, solo cambia el HTML/CSS que
+     envuelve esos mismos elementos. Ningún CSS nuevo — reutiliza clases ya
+     existentes de v300/v301. -->
+<div class="modal-head mc-modal-head">
+<div class="mc-header-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="10" y1="2" x2="14" y2="2"/><line x1="12" y1="6" x2="12" y2="2.5"/><circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 15 15"/></svg></div>
 <div>
-<h3 id="acwGoalModalTitle"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="10" y1="2" x2="14" y2="2"/><line x1="12" y1="6" x2="12" y2="2.5"/><circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 15 15"/></svg> Meta máxima de ACW</h3>
+<h3 id="acwGoalModalTitle">Meta máxima de ACW</h3>
 <p>La tarjeta de ACW en "Turno de Hoy" se llena contra este número — no contra la duración de tu turno. Al llegar al máximo se ve al 100%, aunque sigas acumulando ACW después.</p>
 </div>
 <button aria-label="Cerrar" class="modal-close" data-close-modal="acwGoalModal" type="button">×</button>
 </div>
-<div class="field">
+
+<div class="goals-section">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg cyan" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>Meta de ACW</div>
+<div class="goals-field">
 <label for="acwGoalMinInput">Máximo de ACW (minutos)</label>
 <input id="acwGoalMinInput" inputmode="numeric" min="1" step="1" type="number"/>
 </div>
-<div class="modal-actions">
-<button class="primary" id="saveAcwGoalBtn" type="button">Guardar</button>
-<button class="warn" data-close-modal="acwGoalModal" type="button">Cancelar</button>
+</div>
+
+<div class="modal-actions mc-action-row">
+<button class="mc-btn-primary cyan" id="saveAcwGoalBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="5 12 10 17 19 6"/></svg> Guardar</button>
+<button class="mc-btn-warn-pill" data-close-modal="acwGoalModal" type="button">Cancelar</button>
 </div>
 </div>
 </div>
