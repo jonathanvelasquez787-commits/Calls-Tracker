@@ -6971,6 +6971,142 @@
     .sched-legend-chip[data-legend="lunch"] strong { color: var(--good); }
 
     /* ==========================================================
+       v299 — Pedido del usuario: rediseño visual COMPACTO de 2 zonas —
+       (1) "Si llegas tarde a tu turno" + "Adherencia" dentro de "Horario",
+       (2) TODA la página "🔔 Avisos" (#notificationsAccordion, sus 5
+       secciones .alert-group). Puramente visual — ningún id ni listener
+       JS cambia; solo el HTML/CSS que envuelve esos mismos elementos.
+       Estas clases nuevas son el "kit compacto" reutilizado por ambas
+       zonas, mismo lenguaje visual que ya usa `.sched-day-card` (v271)
+       pero a menor escala. El tooltip informativo (ⓘ) reutiliza EXACTO
+       el mismo mecanismo hover/focus-within que ya usa
+       `.sched-help-wrap`/`.sched-help-tooltip`/`.sched-header-help-btn`
+       (v273, ver esas reglas más arriba) — `.sched-compact-info-btn` es
+       solo un botón más chico (círculo 16px) que vive DENTRO de un
+       `.sched-help-wrap` normal, sin duplicar el mecanismo de mostrar/
+       ocultar en absoluto. */
+    .sched-compact-card {
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.02);
+      display: grid;
+      gap: 8px;
+    }
+    .sched-compact-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .sched-compact-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text);
+      font-weight: 900;
+      font-size: 13px;
+      min-width: 0;
+    }
+    .sched-compact-title-icon {
+      flex: 0 0 auto;
+      width: 16px;
+      height: 16px;
+      border-radius: 5px;
+      background: rgba(var(--blue-rgb), .16);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sched-compact-title-icon .ic-svg { width: 10px; height: 10px; }
+    /* Círculo ⓘ — mismo botón/tooltip de siempre (.sched-header-help-btn/
+       .sched-help-tooltip), solo redimensionado a 16px y sin texto/label,
+       envuelto en su propio .sched-help-wrap para heredar el hover/
+       focus-within ya existente sin duplicar mecanismo. */
+    .sched-compact-info-btn {
+      flex: 0 0 auto;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1px solid var(--line-2);
+      background: transparent;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: default;
+      padding: 0;
+      transition: border-color .14s ease, color .14s ease, background .14s ease;
+    }
+    .sched-compact-info-btn:hover,
+    .sched-help-wrap:focus-within .sched-compact-info-btn {
+      border-color: rgba(var(--blue-rgb), .45);
+      color: var(--blue);
+      background: rgba(var(--blue-rgb), .08);
+      outline: none;
+    }
+    .sched-compact-field {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+    }
+    .sched-compact-field label {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .sched-compact-field input,
+    .sched-compact-field select {
+      height: 30px;
+      padding: 0 10px;
+      font-size: 13px;
+      font-weight: 800;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+      outline: none;
+      width: 100%;
+    }
+    .sched-compact-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+    .sched-compact-row .sched-compact-field { flex: 1 1 0; }
+    .sched-compact-row .sched-compact-field.narrow { flex: 0 0 64px; }
+    /* Botón "Probar" compacto — cuadrado 30×30, solo ícono (sin texto),
+       mismo lenguaje que `.gap-edit-btn`/`.sidebar-icon-btn` pero a este
+       tamaño puntual — reutilizado en las 4 filas de sonido de Avisos. */
+    .sched-compact-test-btn {
+      flex: 0 0 auto;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .sched-compact-test-btn:hover {
+      background: rgba(255,255,255,.09);
+    }
+    .sched-compact-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 620px) {
+      .sched-compact-grid-2 { grid-template-columns: 1fr; }
+    }
+
+    /* ==========================================================
        v276 — REDISEÑO 100% VISUAL de "Bloques del día"
        (#scheduleAccordion), pedido del usuario, aprobado por mockup de
        texto antes de escribir código (ver resumen_v275.md/chat para el
@@ -8532,29 +8668,54 @@
     </div>
   </div>
 
-  <div class="sched-block">
-    <div class="sched-section-title">Si llegas tarde a tu turno</div>
-    <select class="alert-select" id="lateArrivalModeInput">
-      <option value="anchor">La hora de fin no se mueve (ese tiempo se pierde)</option>
-      <option value="shift">Se corre todo el turno esa misma cantidad de tiempo</option>
-    </select>
-    <p class="sched-hint">Aplica a todos los días. Solo cambia cómo se ve "Bloques del día" — tu Adherencia no depende de esta elección.</p>
-  </div>
-
-  <div class="sched-block">
-    <div class="sched-section-title">Adherencia</div>
-    <p class="sched-hint">"Bloques del día" compara, minuto a minuto, lo que hiciste de verdad contra lo que planeaste aquí arriba.</p>
-    <div class="sched-row">
-      <div class="sched-field">
-        <label for="adherenceGraceMinInput">Minutos de gracia</label>
-        <input id="adherenceGraceMinInput" inputmode="numeric" min="0" step="1" type="number"/>
+  <!-- v299 — Pedido del usuario: rediseño visual COMPACTO de "Si llegas
+       tarde a tu turno" + "Adherencia" — mismo par de campos/select de
+       siempre (lateArrivalModeInput/adherenceGraceMinInput/
+       adherenceGoalPctInput, ningún id/listener cambia), ahora en 2
+       tarjetas chicas lado a lado (.sched-compact-grid-2) en vez de 2
+       bloques apilados con párrafos largos — el texto explicativo que
+       antes vivía en <p class="sched-hint"> pasa a un tooltip ⓘ (mismo
+       mecanismo hover/focus-within que ya usa "¿Cómo funciona?" arriba,
+       ver .sched-compact-info-btn/.sched-help-wrap/.sched-help-tooltip en
+       el CSS) — así esta sección baja bastante de alto y el
+       .modal-actions con los 3 botones de abajo queda mucho más arriba,
+       sin moverlo de lugar en el HTML. -->
+  <div class="sched-compact-grid-2">
+    <div class="sched-compact-card">
+      <div class="sched-compact-head">
+        <div class="sched-compact-title"><span class="sched-compact-title-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 14.5 14.5"/><path d="M5 3 2 6"/><path d="M22 6 19 3"/></svg></span>Si llegas tarde</div>
+        <div class="sched-help-wrap">
+          <button class="sched-compact-info-btn" type="button" aria-describedby="lateArrivalInfoTooltip">i</button>
+          <div class="sched-help-tooltip" id="lateArrivalInfoTooltip" role="tooltip">Aplica a todos los días. Solo cambia cómo se ve "Bloques del día" — tu Adherencia no depende de esta elección.</div>
+        </div>
       </div>
-      <div class="sched-field">
-        <label for="adherenceGoalPctInput">Meta de Adherencia (%)</label>
-        <input id="adherenceGoalPctInput" inputmode="numeric" max="100" min="1" step="1" type="number"/>
+      <div class="sched-compact-field">
+        <select id="lateArrivalModeInput">
+          <option value="anchor">No se mueve la hora de fin</option>
+          <option value="shift">Se corre todo el turno</option>
+        </select>
       </div>
     </div>
-    <p class="sched-hint">"Minutos de gracia" perdona desvíos chicos justo alrededor de cada cambio de bloque (ej. empezar tu break unos minutos tarde) — 0 significa que cualquier desvío cuenta en tu contra de inmediato. "Meta de Adherencia" es tu propio objetivo de %, para compararlo contra tu Adherencia real de cada día.</p>
+
+    <div class="sched-compact-card">
+      <div class="sched-compact-head">
+        <div class="sched-compact-title"><span class="sched-compact-title-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></span>Adherencia</div>
+        <div class="sched-help-wrap">
+          <button class="sched-compact-info-btn" type="button" aria-describedby="adherenceInfoTooltip">i</button>
+          <div class="sched-help-tooltip" id="adherenceInfoTooltip" role="tooltip">"Bloques del día" compara, minuto a minuto, lo que hiciste de verdad contra lo planeado. "Gracia" perdona desvíos chicos alrededor de cada cambio de bloque (0 = cualquier desvío cuenta de inmediato). "Meta" es tu propio objetivo de % para comparar contra tu Adherencia real de cada día.</div>
+        </div>
+      </div>
+      <div class="sched-compact-row">
+        <div class="sched-compact-field">
+          <label for="adherenceGraceMinInput">Gracia (min)</label>
+          <input id="adherenceGraceMinInput" inputmode="numeric" min="0" step="1" type="number"/>
+        </div>
+        <div class="sched-compact-field">
+          <label for="adherenceGoalPctInput">Meta (%)</label>
+          <input id="adherenceGoalPctInput" inputmode="numeric" max="100" min="1" step="1" type="number"/>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="modal-actions">
@@ -8811,169 +8972,194 @@
   <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
 </summary>
 <div class="accordion-body">
-<div class="alert-group">
-<div class="alert-group-head">
-<span class="alert-group-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="4 9 8 9 12 5 12 19 8 15 4 15"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg></span>
-<span class="alert-group-title">Volumen</span>
+<!-- v299 — Pedido del usuario: rediseño visual COMPACTO de TODA la página
+     "🔔 Avisos" — las mismas 5 secciones (.alert-group → .sched-compact-card),
+     mismo orden, ningún id/listener cambia (syncNotificationsModalFields()/
+     updateShiftAlertSettings()/updateBreakAlertSettings()/
+     updateProductiveBreakSettings()/updateAlarmSound()/updateAlarmMessage()/
+     handleAlarmSoundFile()/handleProductiveBreakSoundFile()/testAlarmSound()/
+     testProductiveBreakSound()/updateMasterVolumeSettings() siguen intactas
+     — solo el HTML/CSS que envuelve esos mismos elementos). El texto largo
+     que antes vivía en <p class="alert-hint"> pasa a un tooltip ⓘ (mismo
+     mecanismo hover/focus-within que ya usa "¿Cómo funciona?"/las 2 tarjetas
+     de Horario de más arriba). Los botones "Probar" pasan a cuadrado 30×30
+     solo-ícono (.sched-compact-test-btn); los bloques condicionales de
+     sonido personalizado (…CustomSoundSection/…SoundFile/…SoundFileStatus)
+     se conservan intactos con su display:none manejado por JS, solo con
+     tratamiento visual compacto. -->
+<div class="sched-compact-card">
+<div class="sched-compact-head">
+<div class="sched-compact-title"><span class="sched-compact-title-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="4 9 8 9 12 5 12 19 8 15 4 15"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg></span>Volumen</div>
+<div class="sched-help-wrap">
+<button class="sched-compact-info-btn" type="button" aria-describedby="masterVolumeInfoTooltip">i</button>
+<div class="sched-help-tooltip" id="masterVolumeInfoTooltip" role="tooltip">Un solo control para TODOS los sonidos del programa: avisos de turno/Break/Lunch y descanso por productividad (incluye tu sonido personalizado, si subiste uno). 0% = silencioso, los avisos siguen mostrándose igual como toast, solo sin sonido.</div>
+</div>
 </div>
 <div class="volume-row">
 <input id="masterVolumeInput" max="100" min="0" step="1" type="range" value="100"/>
 <span class="volume-value" id="masterVolumeValue">100%</span>
-<button class="gap-edit-btn" id="testMasterVolumeBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="4 9 8 9 12 5 12 19 8 15 4 15"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg> Probar</button>
+<button class="sched-compact-test-btn" id="testMasterVolumeBtn" type="button" aria-label="Probar sonido"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="4 9 8 9 12 5 12 19 8 15 4 15"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg></button>
 </div>
-<p class="alert-hint">Un solo control para TODOS los sonidos del programa: avisos de turno/Break/Lunch y descanso por productividad (incluye tu sonido personalizado, si subiste uno). 0% = silencioso, los avisos siguen mostrándose igual como toast, solo sin sonido.</p>
 </div>
-<div class="alert-group">
-<div class="alert-group-head">
-<span class="alert-group-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="10" y1="2" x2="14" y2="2"/><line x1="12" y1="6" x2="12" y2="2.5"/><circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 15 15"/></svg></span>
-<span class="alert-group-title">Antes de mi turno</span>
+
+<div class="sched-compact-card">
+<div class="sched-compact-head">
+<div class="sched-compact-title"><span class="sched-compact-title-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="10" y1="2" x2="14" y2="2"/><line x1="12" y1="6" x2="12" y2="2.5"/><circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 15 15"/></svg></span>Antes de mi turno</div>
+<div class="sched-help-wrap">
+<button class="sched-compact-info-btn" type="button" aria-describedby="shiftAlertInfoTooltip">i</button>
+<div class="sched-help-tooltip" id="shiftAlertInfoTooltip" role="tooltip">Suena mientras la pestaña esté abierta, si aún no le diste a "Iniciar shift". 0 min = desactivado. Variable disponible en el mensaje: <code>{hora}</code> (hora de inicio de tu turno). Déjalo vacío y guarda para volver al mensaje de siempre.</div>
 </div>
-<div class="alert-fields-row" style="grid-template-columns: 1fr;">
-<div class="alert-mini-field">
-<label for="shiftAlertMinInput">Minutos antes</label>
+</div>
+<div class="sched-compact-row">
+<div class="sched-compact-field narrow">
+<label for="shiftAlertMinInput">Min antes</label>
 <input id="shiftAlertMinInput" inputmode="numeric" min="0" step="1" type="number"/>
 </div>
+<div class="sched-compact-field">
+<label for="shiftAlarmMessageInput">Mensaje</label>
+<input id="shiftAlarmMessageInput" maxlength="200" type="text"/>
 </div>
-<div class="field" style="margin-top:8px; margin-bottom:0;">
-<label for="shiftAlarmMessageInput">Mensaje del aviso</label>
-<input id="shiftAlarmMessageInput" maxlength="200" style="margin-top:2px;" type="text"/>
 </div>
-<p class="alert-hint">Variable disponible: <code>{hora}</code> (hora de inicio de tu turno). Déjalo vacío y guarda para volver al mensaje de siempre.</p>
-<div class="field" style="margin:0;">
-<label for="shiftAlarmSoundInput">Sonido del aviso</label>
-<div style="display:flex; gap:8px; align-items:center; margin-top:2px;">
-<select class="alert-select" id="shiftAlarmSoundInput" style="margin:0;">
+<div class="sched-compact-row">
+<div class="sched-compact-field">
+<label for="shiftAlarmSoundInput">Sonido</label>
+<select id="shiftAlarmSoundInput">
 <option value="classic">Beep clásico</option>
 <option value="chime">Campanita</option>
 <option value="custom">Sonido personalizado</option>
 </select>
-<button class="gap-edit-btn" id="testShiftAlarmSoundBtn" type="button" style="white-space:nowrap;"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="4 9 8 9 12 5 12 19 8 15 4 15"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg> Probar</button>
 </div>
+<button class="sched-compact-test-btn" id="testShiftAlarmSoundBtn" type="button" aria-label="Probar sonido"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="4 9 8 9 12 5 12 19 8 15 4 15"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg></button>
 </div>
 <div id="shiftAlarmCustomSoundSection" style="display:none;">
-<div class="field" style="margin-top:10px;">
+<div class="sched-compact-field" style="margin-top:2px;">
 <label for="shiftAlarmSoundFile">Subir sonido (MP3/WAV/OGG, máx. 300KB)</label>
-<input accept="audio/*" id="shiftAlarmSoundFile" style="margin-top:4px;" type="file"/>
+<input accept="audio/*" id="shiftAlarmSoundFile" type="file"/>
 </div>
-<p class="alert-hint" id="shiftAlarmSoundFileStatus">Ningún archivo propio guardado — usando el beep clásico mientras tanto.</p>
+<p class="alert-hint" id="shiftAlarmSoundFileStatus" style="margin-top:4px;">Ningún archivo propio guardado — usando el beep clásico mientras tanto.</p>
 </div>
-<p class="alert-hint">Suena mientras la pestaña esté abierta, si aún no le diste a "Iniciar shift". 0 min = desactivado.</p>
 </div>
-<div class="alert-group">
-<div class="alert-group-head">
-<span class="alert-group-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg></span>
-<span class="alert-group-title">Antes de que empiece tu Break/Lunch</span>
+
+<div class="sched-compact-card">
+<div class="sched-compact-head">
+<div class="sched-compact-title"><span class="sched-compact-title-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg></span>Antes de que empiece tu Break/Lunch</div>
+<div class="sched-help-wrap">
+<button class="sched-compact-info-btn" type="button" aria-describedby="breakStartInfoTooltip">i</button>
+<div class="sched-help-tooltip" id="breakStartInfoTooltip" role="tooltip">Suena mientras la pestaña esté abierta, si aún no le diste al botón de Break/Lunch. 0 min = desactivado. Variables disponibles en el mensaje: <code>{tipo}</code> (Break o Lunch), <code>{hora}</code>. Déjalo vacío y guarda para volver al mensaje de siempre.</div>
 </div>
-<div class="alert-fields-row" style="grid-template-columns: 1fr;">
-<div class="alert-mini-field">
-<label for="breakAlertMinInput">Minutos antes</label>
+</div>
+<div class="sched-compact-row">
+<div class="sched-compact-field narrow">
+<label for="breakAlertMinInput">Min antes</label>
 <input id="breakAlertMinInput" inputmode="numeric" min="0" step="1" type="number"/>
 </div>
+<div class="sched-compact-field">
+<label for="breakStartAlarmMessageInput">Mensaje</label>
+<input id="breakStartAlarmMessageInput" maxlength="200" type="text"/>
 </div>
-<div class="field" style="margin-top:8px; margin-bottom:0;">
-<label for="breakStartAlarmMessageInput">Mensaje del aviso</label>
-<input id="breakStartAlarmMessageInput" maxlength="200" style="margin-top:2px;" type="text"/>
 </div>
-<p class="alert-hint">Variables disponibles: <code>{tipo}</code> (Break o Lunch), <code>{hora}</code>. Déjalo vacío y guarda para volver al mensaje de siempre.</p>
-<div class="field" style="margin:0;">
-<label for="breakStartAlarmSoundInput">Sonido del aviso</label>
-<div style="display:flex; gap:8px; align-items:center; margin-top:2px;">
-<select class="alert-select" id="breakStartAlarmSoundInput" style="margin:0;">
+<div class="sched-compact-row">
+<div class="sched-compact-field">
+<label for="breakStartAlarmSoundInput">Sonido</label>
+<select id="breakStartAlarmSoundInput">
 <option value="classic">Beep clásico</option>
 <option value="chime">Campanita</option>
 <option value="custom">Sonido personalizado</option>
 </select>
-<button class="gap-edit-btn" id="testBreakStartAlarmSoundBtn" type="button" style="white-space:nowrap;"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="4 9 8 9 12 5 12 19 8 15 4 15"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg> Probar</button>
 </div>
+<button class="sched-compact-test-btn" id="testBreakStartAlarmSoundBtn" type="button" aria-label="Probar sonido"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="4 9 8 9 12 5 12 19 8 15 4 15"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg></button>
 </div>
 <div id="breakStartAlarmCustomSoundSection" style="display:none;">
-<div class="field" style="margin-top:10px;">
+<div class="sched-compact-field" style="margin-top:2px;">
 <label for="breakStartAlarmSoundFile">Subir sonido (MP3/WAV/OGG, máx. 300KB)</label>
-<input accept="audio/*" id="breakStartAlarmSoundFile" style="margin-top:4px;" type="file"/>
+<input accept="audio/*" id="breakStartAlarmSoundFile" type="file"/>
 </div>
-<p class="alert-hint" id="breakStartAlarmSoundFileStatus">Ningún archivo propio guardado — usando el beep clásico mientras tanto.</p>
+<p class="alert-hint" id="breakStartAlarmSoundFileStatus" style="margin-top:4px;">Ningún archivo propio guardado — usando el beep clásico mientras tanto.</p>
 </div>
-<p class="alert-hint">Suena mientras la pestaña esté abierta, si aún no le diste al botón de Break/Lunch. 0 min = desactivado.</p>
 </div>
-<div class="alert-group">
-<div class="alert-group-head">
-<span class="alert-group-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 14.5 14.5"/><path d="M5 3 2 6"/><path d="M22 6 19 3"/></svg></span>
-<span class="alert-group-title">Antes de que termine tu Break/Lunch</span>
+
+<div class="sched-compact-card">
+<div class="sched-compact-head">
+<div class="sched-compact-title"><span class="sched-compact-title-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><polyline points="12 9 12 13 14.5 14.5"/><path d="M5 3 2 6"/><path d="M22 6 19 3"/></svg></span>Antes de que termine tu Break/Lunch</div>
+<div class="sched-help-wrap">
+<button class="sched-compact-info-btn" type="button" aria-describedby="breakEndInfoTooltip">i</button>
+<div class="sched-help-tooltip" id="breakEndInfoTooltip" role="tooltip">Suena mientras la pestaña esté abierta, con una pausa REAL ya en curso. 0 min = desactivado. Variables disponibles en el mensaje: <code>{tipo}</code> (Break o Lunch), <code>{hora}</code>. Déjalo vacío y guarda para volver al mensaje de siempre.</div>
 </div>
-<div class="alert-fields-row" style="grid-template-columns: 1fr;">
-<div class="alert-mini-field">
-<label for="breakEndAlertMinInput">Minutos antes</label>
+</div>
+<div class="sched-compact-row">
+<div class="sched-compact-field narrow">
+<label for="breakEndAlertMinInput">Min antes</label>
 <input id="breakEndAlertMinInput" inputmode="numeric" min="0" step="1" type="number"/>
 </div>
+<div class="sched-compact-field">
+<label for="breakEndAlarmMessageInput">Mensaje</label>
+<input id="breakEndAlarmMessageInput" maxlength="200" type="text"/>
 </div>
-<div class="field" style="margin-top:8px; margin-bottom:0;">
-<label for="breakEndAlarmMessageInput">Mensaje del aviso</label>
-<input id="breakEndAlarmMessageInput" maxlength="200" style="margin-top:2px;" type="text"/>
 </div>
-<p class="alert-hint">Variables disponibles: <code>{tipo}</code> (Break o Lunch), <code>{hora}</code>. Déjalo vacío y guarda para volver al mensaje de siempre.</p>
-<div class="field" style="margin:0;">
-<label for="breakEndAlarmSoundInput">Sonido del aviso</label>
-<div style="display:flex; gap:8px; align-items:center; margin-top:2px;">
-<select class="alert-select" id="breakEndAlarmSoundInput" style="margin:0;">
+<div class="sched-compact-row">
+<div class="sched-compact-field">
+<label for="breakEndAlarmSoundInput">Sonido</label>
+<select id="breakEndAlarmSoundInput">
 <option value="classic">Beep clásico</option>
 <option value="chime">Campanita</option>
 <option value="custom">Sonido personalizado</option>
 </select>
-<button class="gap-edit-btn" id="testBreakEndAlarmSoundBtn" type="button" style="white-space:nowrap;"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="4 9 8 9 12 5 12 19 8 15 4 15"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg> Probar</button>
 </div>
+<button class="sched-compact-test-btn" id="testBreakEndAlarmSoundBtn" type="button" aria-label="Probar sonido"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="4 9 8 9 12 5 12 19 8 15 4 15"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg></button>
 </div>
 <div id="breakEndAlarmCustomSoundSection" style="display:none;">
-<div class="field" style="margin-top:10px;">
+<div class="sched-compact-field" style="margin-top:2px;">
 <label for="breakEndAlarmSoundFile">Subir sonido (MP3/WAV/OGG, máx. 300KB)</label>
-<input accept="audio/*" id="breakEndAlarmSoundFile" style="margin-top:4px;" type="file"/>
+<input accept="audio/*" id="breakEndAlarmSoundFile" type="file"/>
 </div>
-<p class="alert-hint" id="breakEndAlarmSoundFileStatus">Ningún archivo propio guardado — usando el beep clásico mientras tanto.</p>
+<p class="alert-hint" id="breakEndAlarmSoundFileStatus" style="margin-top:4px;">Ningún archivo propio guardado — usando el beep clásico mientras tanto.</p>
 </div>
-<p class="alert-hint">Suena mientras la pestaña esté abierta, con una pausa REAL ya en curso. 0 min = desactivado.</p>
 </div>
-<div class="alert-group">
-<div class="alert-group-head">
-<span class="alert-group-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></span>
-<span class="alert-group-title">Descanso por productividad</span>
+
+<div class="sched-compact-card">
+<div class="sched-compact-head">
+<div class="sched-compact-title"><span class="sched-compact-title-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></span>Descanso por productividad</div>
+<div class="sched-help-wrap">
+<button class="sched-compact-info-btn" type="button" aria-describedby="productiveBreakInfoTooltip">i</button>
+<div class="sched-help-tooltip" id="productiveBreakInfoTooltip" role="tooltip">Al acumular los minutos productivos configurados desde tu última pausa (o desde el inicio del turno si no has tomado ninguna hoy), suena el aviso — se reinicia cada vez que tomas un Break/Lunch real. Solo informativo, no reserva ni descuenta nada. Variables disponibles en los mensajes: <code>{productivo}</code> (min productivos acumulados), <code>{descanso}</code> (min de descanso ganados). Déjalos vacíos y guarda para volver a los mensajes de siempre.</div>
 </div>
-<div class="alert-fields-row">
-<div class="alert-mini-field">
-<label for="productiveBreakEarnMinInput">Minutos productivos para ganar descanso</label>
+</div>
+<div class="sched-compact-row">
+<div class="sched-compact-field">
+<label for="productiveBreakEarnMinInput">Min productivos</label>
 <input id="productiveBreakEarnMinInput" inputmode="numeric" min="1" step="1" type="number"/>
 </div>
-<div class="alert-mini-field">
-<label for="productiveBreakAwardMinInput">Minutos de descanso otorgados</label>
+<div class="sched-compact-field">
+<label for="productiveBreakAwardMinInput">Min descanso</label>
 <input id="productiveBreakAwardMinInput" inputmode="numeric" min="0" step="1" type="number"/>
 </div>
 </div>
-<div class="field" style="margin-top:8px; margin-bottom:0;">
+<div class="sched-compact-field">
 <label for="productiveBreakMessageFirstInput">Mensaje (primera vez del turno)</label>
-<input id="productiveBreakMessageFirstInput" maxlength="200" style="margin-top:2px;" type="text"/>
+<input id="productiveBreakMessageFirstInput" maxlength="200" type="text"/>
 </div>
-<div class="field" style="margin-top:8px; margin-bottom:0;">
+<div class="sched-compact-field">
 <label for="productiveBreakMessageRepeatInput">Mensaje (siguientes veces del mismo turno)</label>
-<input id="productiveBreakMessageRepeatInput" maxlength="200" style="margin-top:2px;" type="text"/>
+<input id="productiveBreakMessageRepeatInput" maxlength="200" type="text"/>
 </div>
-<p class="alert-hint">Variables disponibles: <code>{productivo}</code> (min productivos acumulados), <code>{descanso}</code> (min de descanso ganados). Déjalo vacío y guarda para volver al mensaje de siempre.</p>
-<div class="field" style="margin:0;">
-<label for="productiveBreakSoundInput">Sonido del aviso</label>
-<div style="display:flex; gap:8px; align-items:center; margin-top:2px;">
-<select class="alert-select" id="productiveBreakSoundInput" style="margin:0;">
+<div class="sched-compact-row">
+<div class="sched-compact-field">
+<label for="productiveBreakSoundInput">Sonido</label>
+<select id="productiveBreakSoundInput">
 <option value="classic">Beep clásico</option>
 <option value="chime">Campanita</option>
 <option value="custom">Sonido personalizado</option>
 </select>
-<button class="gap-edit-btn" id="testProductiveBreakSoundBtn" type="button" style="white-space:nowrap;"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="4 9 8 9 12 5 12 19 8 15 4 15"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg> Probar</button>
 </div>
+<button class="sched-compact-test-btn" id="testProductiveBreakSoundBtn" type="button" aria-label="Probar sonido"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="4 9 8 9 12 5 12 19 8 15 4 15"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg></button>
 </div>
 <div id="productiveBreakCustomSoundSection" style="display:none;">
-<div class="field" style="margin-top:10px;">
+<div class="sched-compact-field" style="margin-top:2px;">
 <label for="productiveBreakSoundFile">Subir sonido (MP3/WAV/OGG, máx. 300KB)</label>
-<input accept="audio/*" id="productiveBreakSoundFile" style="margin-top:4px;" type="file"/>
+<input accept="audio/*" id="productiveBreakSoundFile" type="file"/>
 </div>
-<p class="alert-hint" id="productiveBreakSoundFileStatus">Ningún archivo propio guardado — usando el beep clásico mientras tanto.</p>
+<p class="alert-hint" id="productiveBreakSoundFileStatus" style="margin-top:4px;">Ningún archivo propio guardado — usando el beep clásico mientras tanto.</p>
 </div>
-<p class="alert-hint">Al acumular los minutos productivos configurados desde tu última pausa (o desde el inicio del turno si no has tomado ninguna hoy), suena el aviso — se reinicia cada vez que tomas un Break/Lunch real. Solo informativo, no reserva ni descuenta nada.</p>
 </div>
 </div>
 </details>
