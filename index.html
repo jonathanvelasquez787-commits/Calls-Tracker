@@ -684,9 +684,6 @@
          diagnóstico con --pale-good/--pale-warn/--pale-bad, línea de
          estado con el degradado+color transparente de siempre, dejando
          ganar de nuevo al `style` inline del JS). */
-      :root:not(.theme-dark) .sblk-card[data-accent="cyan"] { --sblk-rgb: var(--cyan-rgb); }
-      :root:not(.theme-dark) .sblk-card[data-accent="warn"] { --sblk-rgb: var(--warn-rgb); }
-      :root:not(.theme-dark) .sblk-card[data-accent="blue"] { --sblk-rgb: var(--blue-rgb); }
       :root:not(.theme-dark) .sblk-diagnostic.tone-good { color: var(--pale-good); }
       :root:not(.theme-dark) .sblk-diagnostic.tone-warn { color: var(--pale-warn); }
       :root:not(.theme-dark) .sblk-diagnostic.tone-bad { color: var(--pale-bad); }
@@ -1152,9 +1149,6 @@
        criterio, mismas reglas (líquido/diagnóstico/línea de estado de
        "Bloques del día" vuelven a su comportamiento de siempre en modo
        claro forzado). */
-    html.theme-light .sblk-card[data-accent="cyan"] { --sblk-rgb: var(--cyan-rgb); }
-    html.theme-light .sblk-card[data-accent="warn"] { --sblk-rgb: var(--warn-rgb); }
-    html.theme-light .sblk-card[data-accent="blue"] { --sblk-rgb: var(--blue-rgb); }
     html.theme-light .sblk-diagnostic.tone-good { color: var(--pale-good); }
     html.theme-light .sblk-diagnostic.tone-warn { color: var(--pale-warn); }
     html.theme-light .sblk-diagnostic.tone-bad { color: var(--pale-bad); }
@@ -7203,6 +7197,15 @@
     .sblk-item[data-block-type="break"] .sblk-dot { border-color: var(--muted); }
     .sblk-item[data-block-type="lunch"] .sblk-dot { border-color: rgba(var(--good-rgb), .8); }
 
+    /* v292 — Pedido del usuario: en "Bloques del día" (a diferencia de
+       "Horario", .sched-tl-card, que NO se toca), las 3 tarjetas de bloque
+       (Trabajo/Break/Lunch) pasan a compartir el MISMO fondo/borde azul,
+       sin importar el tipo — antes cada tipo tenía su propio color de
+       fondo/borde (azul/gris/verde), lo que competía visualmente con el
+       borde izquierdo de acento. Ahora la ÚNICA señal de color que
+       distingue el tipo es ese borde izquierdo (4px, ver
+       `border-left-color` en los 2 overrides de abajo) — Trabajo hereda el
+       azul de esta misma regla base, sin necesitar su propio override. */
     .sblk-card {
       position: relative;
       display: grid;
@@ -7211,16 +7214,11 @@
       border-radius: 14px;
       border: 1px solid rgba(var(--blue-rgb), .24);
       background: rgba(var(--blue-rgb), .07);
+      border-left: 4px solid var(--blue);
       transition: border-color .14s ease, background .14s ease;
     }
-    .sblk-item[data-block-type="break"] .sblk-card {
-      border-color: var(--line);
-      background: rgba(255,255,255,.035);
-    }
-    .sblk-item[data-block-type="lunch"] .sblk-card {
-      border-color: rgba(var(--good-rgb), .24);
-      background: rgba(var(--good-rgb), .07);
-    }
+    .sblk-item[data-block-type="break"] .sblk-card { border-left-color: var(--muted); }
+    .sblk-item[data-block-type="lunch"] .sblk-card { border-left-color: var(--good); }
     .sblk-card.is-active {
       border-color: rgba(var(--cyan-rgb), .5);
       box-shadow: 0 0 0 1px rgba(var(--cyan-rgb), .18);
@@ -7382,20 +7380,14 @@
       transition: height .5s cubic-bezier(.22, .85, .4, 1);
       z-index: 0;
     }
-    /* Color por tipo — mismo mapeo que ya usa `data-accent` en esta
-       misma tarjeta (Trabajo=cyan, Break=warn, Lunch=blue, ver
-       `slotAccent` en renderSchedule(), sin tocar). */
-    /* v280 — Ver comentario junto a --sblk-fill-cyan-rgb/--sblk-fill-warn-rgb/
-       --sblk-fill-blue-rgb en :root: en modo oscuro (aquí, default) el
-       relleno líquido usa la paleta nueva, más oscura, en vez de
-       --cyan-rgb/--warn-rgb/--blue-rgb directo — SOLO afecta a
-       `.sblk-fill` (el único lugar que lee `--sblk-rgb`, verificado); el
-       borde izquierdo/punto del riel de esta misma tarjeta siguen usando
-       --blue-rgb/--muted/--good-rgb tal cual, sin tocar. Revertido a los
-       valores de siempre en las 2 ramas de modo claro, buscar "v280" ahí. */
-    .sblk-card[data-accent="cyan"] { --sblk-rgb: var(--sblk-fill-cyan-rgb); }
-    .sblk-card[data-accent="warn"] { --sblk-rgb: var(--sblk-fill-warn-rgb); }
-    .sblk-card[data-accent="blue"] { --sblk-rgb: var(--sblk-fill-blue-rgb); }
+    /* v292 — Pedido del usuario: el relleno líquido (.sblk-fill) pasa a ser
+       SIEMPRE azul, sin importar el tipo de bloque — se quitan los 3
+       overrides por `data-accent` que antes le daban a cada tipo su propio
+       color de líquido (Trabajo=cyan, Break=warn, Lunch=blue, más los 2
+       overrides gemelos de modo claro, ver "v292" ahí). Sin ningún override
+       de `--sblk-rgb`, `.sblk-fill` cae solo en `var(--blue-rgb)` (el
+       fallback que ya trae `background: rgb(var(--sblk-rgb, var(--blue-rgb)))`
+       arriba), automático en ambos temas. */
 
     /* Punto del riel: pasa de vivir en el flujo normal (margin-top fijo)
        a `position:absolute` con `top` en % — controlado por JS con el
