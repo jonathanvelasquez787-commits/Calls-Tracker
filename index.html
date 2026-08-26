@@ -3794,12 +3794,26 @@
          esté el nodo en cada momento — se agrega aparte porque cuando vive
          fuera de `.app-page` ya no calza con el selector de clase de
          arriba. */
+      /* v311 — Pedido del usuario: se detectó que `#rptDashboard` (panel de
+         Reportes — KPIs, "Calidad y adherencia", "Ganancias del ciclo",
+         etc.) vive dentro de `.app-page` pero NUNCA estuvo en este
+         selector — así que nunca heredó el tope de 1200px y se estiraba al
+         ancho completo de `.app` (1500px de `.app`, menos 32px de padding
+         = 1468px de contenido real). El resto de secciones (Resumen del
+         día, Estadísticas del día, Tabla de llamadas, Resumen semanal...)
+         sí estaban acá, topadas a 1200px — de ahí que Reportes se viera
+         más ancho que las demás. Se iguala el resto de secciones a ese
+         mismo ancho de 1468px (en vez de acotar Reportes a 1200px) para
+         que todas las secciones de escritorio vuelvan a medir lo mismo
+         entre sí. `#rptDashboard` no se agrega a este selector — sigue sin
+         estar acá, ya que ahora coincide de por sí con el nuevo ancho de
+         `.app`, sin necesitar ningún tope propio. */
       .app-page > .accordion-card,
       .app-page > section.card,
       .app-page > .day-stats-grid,
       #heroSection,
       #callsSection {
-        max-width: 1200px;
+        max-width: 1468px;
         margin-left: auto;
         margin-right: auto;
       }
