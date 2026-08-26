@@ -10243,25 +10243,54 @@ $0.72"></textarea>
 </div>
 <div aria-hidden="true" class="modal-overlay" id="onboardingModal">
 <div aria-labelledby="onboardingModalTitle" aria-modal="true" class="modal-card" role="dialog">
-<div class="modal-head">
+<!-- v310 — Pedido del usuario: rediseño 100% visual de este modal (mockup
+     visual de 2 vistas — escritorio y celular — aprobado antes de tocar
+     código), mismo criterio que Ajustes/Pegar Llamadas/etc. (v271-309):
+     cabecera con ícono cuadrito (reutiliza .mc-header-icon/.mc-modal-head,
+     v301), sección "Tu perfil" con emoji circle + campo de nombre + botón
+     "Cambiar emoji" que revela el picker bajo demanda (reutiliza
+     .goals-profile-row/.goals-emoji-circle/.goals-field/.goals-emoji-
+     toggle-btn/.goals-emoji-picker-wrap, mismo patrón que #goalsModal,
+     v300), botón único de ancho completo (reutiliza .mc-btn-primary, v301
+     — sin fila de acciones ni "×" de cerrar, a propósito: este modal solo
+     se cierra guardando). CERO cambio funcional: ningún id se toca
+     (onboardingNameInput/onboardingEmojiInput/emojiPickerOnboarding/
+     onboardingSaveBtn) — finishOnboarding()/renderEmojiPicker()/
+     wireEmojiPicker()/syncEmojiPickerSelection() siguen funcionando
+     exactamente igual, solo cambia el HTML/CSS que envuelve esos mismos
+     elementos. Ningún CSS nuevo — reutiliza clases ya existentes de
+     v300/v301. -->
+<div class="modal-head mc-modal-head">
+<div class="mc-header-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg></div>
 <div>
-<h3 id="onboardingModalTitle">¡Bienvenido! <svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg></h3>
-<p>Antes de empezar, ¿cómo te llamas? Puedes elegir un emoji para tu saludo también. Esto solo se pregunta esta vez — luego lo puedes cambiar cuando quieras desde "Ajustes".</p>
+<h3 id="onboardingModalTitle">¡Bienvenido!</h3>
+<p>Antes de empezar, cuéntanos un poco de ti. Esto solo se pregunta esta vez — luego lo puedes cambiar cuando quieras desde "Ajustes".</p>
 </div>
 </div>
-<div class="goal-fields">
-<div class="field">
+
+<div class="divider"></div>
+
+<div class="goals-section">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg cyan" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Tu perfil</div>
+<div class="goals-profile-row">
+<span class="goals-emoji-circle" id="onboardingEmojiPreview" aria-hidden="true">🙂</span>
+<div class="goals-field goals-profile-name-field">
 <label for="onboardingNameInput">Tu nombre</label>
 <input id="onboardingNameInput" maxlength="40" placeholder="Ej. Jonathan" type="text"/>
 </div>
-<div class="field">
+<button class="goals-emoji-toggle-btn" id="toggleEmojiPickerOnboardingBtn" type="button" aria-expanded="false">Cambiar emoji</button>
+</div>
+<div class="goals-emoji-picker-wrap" id="onboardingEmojiPickerWrap">
+<div class="goals-field">
 <label for="onboardingEmojiInput">Emoji (opcional)</label>
 <input id="onboardingEmojiInput" maxlength="8" placeholder="🙂" type="text"/>
 </div>
-</div>
 <div class="emoji-picker" id="emojiPickerOnboarding" aria-label="Elegir emoji para el saludo"></div>
-<div class="modal-actions">
-<button class="primary" id="onboardingSaveBtn" type="button">Guardar y empezar</button>
+</div>
+</div>
+
+<div class="modal-actions mc-action-row">
+<button class="mc-btn-primary cyan" id="onboardingSaveBtn" type="button" style="width:100%;"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="5 12 10 17 19 6"/></svg> Guardar y empezar</button>
 </div>
 </div>
 </div>
@@ -14642,6 +14671,18 @@ function renderWeekSummary() {
       btn.textContent = open ? 'Ocultar emoji' : 'Cambiar emoji';
     }
 
+    // v310 — Ver comentario junto a toggleEmojiPickerMetas() arriba: mismo
+    // criterio, aplicado al picker del popup de bienvenida.
+    function toggleEmojiPickerOnboarding() {
+      const wrap = document.getElementById('onboardingEmojiPickerWrap');
+      const btn = document.getElementById('toggleEmojiPickerOnboardingBtn');
+      if (!wrap || !btn) return;
+      const open = !wrap.classList.contains('open');
+      wrap.classList.toggle('open', open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.textContent = open ? 'Ocultar emoji' : 'Cambiar emoji';
+    }
+
     function finishOnboarding() {
       const nameInput = document.getElementById('onboardingNameInput');
       const emojiInput = document.getElementById('onboardingEmojiInput');
@@ -15292,6 +15333,12 @@ function renderWeekSummary() {
         if (onboardingNameInput) onboardingNameInput.value = '';
         if (onboardingEmojiInput) onboardingEmojiInput.value = initialEmoji;
         renderEmojiPicker('emojiPickerOnboarding', initialEmoji);
+        const onboardingEmojiPreviewReset = document.getElementById('onboardingEmojiPreview');
+        if (onboardingEmojiPreviewReset) onboardingEmojiPreviewReset.textContent = initialEmoji;
+        const onboardingEmojiPickerWrapReset = document.getElementById('onboardingEmojiPickerWrap');
+        const toggleEmojiPickerOnboardingBtnReset = document.getElementById('toggleEmojiPickerOnboardingBtn');
+        if (onboardingEmojiPickerWrapReset) onboardingEmojiPickerWrapReset.classList.remove('open');
+        if (toggleEmojiPickerOnboardingBtnReset) { toggleEmojiPickerOnboardingBtnReset.setAttribute('aria-expanded', 'false'); toggleEmojiPickerOnboardingBtnReset.textContent = 'Cambiar emoji'; }
         openModal('onboardingModal');
       });
     }
@@ -19462,7 +19509,10 @@ function render() {
       syncEmojiPickerSelection('emojiPickerMetas', e.target.value.trim());
     });
     document.getElementById('onboardingEmojiInput').addEventListener('input', (e) => {
-      syncEmojiPickerSelection('emojiPickerOnboarding', e.target.value.trim());
+      const value = e.target.value.trim();
+      syncEmojiPickerSelection('emojiPickerOnboarding', value);
+      const onboardingEmojiPreview = document.getElementById('onboardingEmojiPreview');
+      if (onboardingEmojiPreview) onboardingEmojiPreview.textContent = value || DEFAULT_USER_EMOJI;
     });
     wireEmojiPicker('emojiPickerMetas', 'userEmojiInput', (emoji) => {
       settings.userEmoji = emoji;
@@ -19471,7 +19521,12 @@ function render() {
     });
     const toggleEmojiPickerMetasBtn = document.getElementById('toggleEmojiPickerMetasBtn');
     if (toggleEmojiPickerMetasBtn) toggleEmojiPickerMetasBtn.addEventListener('click', toggleEmojiPickerMetas);
-    wireEmojiPicker('emojiPickerOnboarding', 'onboardingEmojiInput', null);
+    const toggleEmojiPickerOnboardingBtn = document.getElementById('toggleEmojiPickerOnboardingBtn');
+    if (toggleEmojiPickerOnboardingBtn) toggleEmojiPickerOnboardingBtn.addEventListener('click', toggleEmojiPickerOnboarding);
+    wireEmojiPicker('emojiPickerOnboarding', 'onboardingEmojiInput', (emoji) => {
+      const onboardingEmojiPreview = document.getElementById('onboardingEmojiPreview');
+      if (onboardingEmojiPreview) onboardingEmojiPreview.textContent = emoji || DEFAULT_USER_EMOJI;
+    });
     renderEmojiPicker('emojiPickerMetas', String(settings.userEmoji || ''));
     document.getElementById('onboardingSaveBtn').addEventListener('click', finishOnboarding);
     document.getElementById('rateInput').addEventListener('change', updateRate);
@@ -19835,6 +19890,8 @@ function render() {
       if (onboardingNameInput) onboardingNameInput.value = '';
       if (onboardingEmojiInput) onboardingEmojiInput.value = initialEmoji;
       renderEmojiPicker('emojiPickerOnboarding', initialEmoji);
+      const onboardingEmojiPreviewInit = document.getElementById('onboardingEmojiPreview');
+      if (onboardingEmojiPreviewInit) onboardingEmojiPreviewInit.textContent = initialEmoji;
       openModal('onboardingModal');
     }
 
