@@ -13607,6 +13607,65 @@ function connectedMinutesForDay(dayKey = getActiveDayKey()) {
   return Math.max(0, msBetween(bounds.start, end) / 60000);
 }
 
+// v326 — BUG reportado por el usuario (pendiente desde v325, "no asumir la
+// causa sin revisar el código antes"): dar click en "Iniciar shift" DESPUÉS
+// de haber terminado el turno (un 2do shift el mismo día) dejaba la barra de
+// la tarjeta de "Shift" en "Bloques del día" pegada cerca de 0% durante
+// mucho rato. La sospecha original (que el % comparaba contra una ventana de
+// reloj ya "pasada") se investigó y descartada — se confirmó con una
+// simulación aparte que `connectedMinutesForDay()` sí crece con normalidad
+// minuto a minuto para un turno en curso. La causa real es otra: esa
+// función (y `dayShiftBounds()`, de la que depende) solo conocen la ventana
+// [inicio, fin] del turno MÁS RECIENTE del día — al iniciar un 2do shift,
+// `state.shiftStartedAt` se reemplaza por la hora de ESE click (ver
+// startShift()), así que el tiempo ya conectado durante el 1er turno queda
+// fuera del cálculo por completo. La tarjeta de Shift divide ese tiempo
+// (reiniciado a ~0) entre la duración PLANEADA COMPLETA del turno
+// (`plannedShiftMin`, ej. 9h) — con un denominador tan grande, el resultado
+// se queda pegado cerca de 0% durante un buen rato del 2do turno, sintiéndose
+// "atascado" aunque en realidad sí esté avanzando (muy lento en apariencia).
+// Esta función suma el tiempo Conectado de TODOS los turnos del día (cada
+// par "Shift iniciado"→"Shift terminado" del log de eventos, más el tramo
+// en curso si el turno sigue activo) — a diferencia de
+// `connectedMinutesForDay()`/`dayShiftBounds()`, que solo ven el turno más
+// reciente. Se usa SOLO en la tarjeta de "Shift" (ver
+// renderBlockSummaryStrip/renderSchedule) — el resto de la app (Adherencia,
+// "Conectado" del header, etc.) sigue usando dayShiftBounds() sin cambios,
+// ya que ahí el criterio de "un solo turno por día" no generó ningún reporte
+// de bug.
+function totalConnectedMinutesAcrossShiftsToday(dayKey = getActiveDayKey()) {
+  const normalized = callDateKeyFromValue(dayKey);
+  const sessions = dayEvents(normalized)
+    .filter(e => e && e.type === 'shift' && (/iniciado/i.test(e.title || '') || /terminado/i.test(e.title || '')))
+    .map(e => ({ ts: new Date(e.ts), isStart: /iniciado/i.test(e.title || '') }))
+    .sort((a, b) => a.ts.getTime() - b.ts.getTime());
+
+  let total = 0;
+  let openStart = null;
+  sessions.forEach(ev => {
+    if (ev.isStart) {
+      if (!openStart) openStart = ev.ts;
+    } else if (openStart) {
+      total += Math.max(0, (ev.ts.getTime() - openStart.getTime()) / 60000);
+      openStart = null;
+    }
+  });
+
+  if (openStart) {
+    // El tramo abierto (turno en curso) reutiliza el mismo criterio de
+    // "en vivo" que ya usa dayShiftBounds()/connectedMinutesForDay() — si
+    // por algún motivo ese turno ya no cuenta como en vivo (ej. estimado
+    // congelado por inactividad), no se suma tiempo "hasta ahora" sin
+    // fundamento.
+    const bounds = dayShiftBounds(normalized);
+    if (normalized === todayCallDateKey() && bounds.live) {
+      total += Math.max(0, (new Date().getTime() - openStart.getTime()) / 60000);
+    }
+  }
+
+  return total;
+}
+
 function productiveMinutesForDay(dayKey = getActiveDayKey()) {
   return importedCallStats(callsForDay(dayKey), dayKey).productive;
 }
@@ -19130,11 +19189,16 @@ function renderSchedule() {
 
       // Shift (turno completo): % = tiempo Conectado hasta ahora vs. la
       // duración TOTAL planeada del turno (getShiftWindow) — mismo criterio
-      // que ya usa "Conectado" en el resto de la app (connectedMinutesForDay),
-      // solo comparado contra el plan en vez de mostrarse en crudo.
+      // que ya usa "Conectado" en el resto de la app, solo comparado contra
+      // el plan en vez de mostrarse en crudo.
+      // v326 — Ver comentario junto a totalConnectedMinutesAcrossShiftsToday()
+      // en el JS: se reemplaza connectedMinutesForDay() (que solo conoce el
+      // turno MÁS RECIENTE del día) por esa función nueva, que suma el
+      // tiempo Conectado de TODOS los turnos de hoy — corrige el bug de "un
+      // 2do shift el mismo día deja esta tarjeta pegada cerca de 0%".
       const shiftWindowForCard = getShiftWindow(dayKey);
       const plannedShiftMin = Math.max(0, toMinutes(shiftWindowForCard.end) - toMinutes(shiftWindowForCard.start));
-      const shiftConnectedMin = shiftStart ? connectedMinutesForDay(dayKey) : 0;
+      const shiftConnectedMin = shiftStart ? totalConnectedMinutesAcrossShiftsToday(dayKey) : 0;
       const shiftPct = plannedShiftMin > 0 ? Math.min(100, (shiftConnectedMin / plannedShiftMin) * 100) : 0;
       summaryCards.push({
         name: 'Shift',
