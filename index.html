@@ -8914,6 +8914,178 @@
       .rd-label { font-size: 11px; }
       .rd-value { font-size: 12px; }
     }
+
+    /* ==========================================================
+       v322 — Rediseño 100% visual de "Resumen semanal" (mockup aprobado
+       por el usuario — resumen_semanal_y_mobile.html, vista de escritorio
+       y vista mobile). Reemplaza el patrón viejo `.table-desktop`
+       (`<table>`) + `.table-mobile-list` (`.week-mobile-card`) por un
+       timeline (hora/rail/punto + tarjeta), mismo lenguaje visual que ya
+       usan "Horario"/"Bloques del día" (`.sched-tl-*`/`.sblk-*`) — un solo
+       markup para cualquier ancho, sin distinguir desktop/mobile por HTML,
+       solo por este @media(max-width:760px). CERO cambios funcionales:
+       mismos ids de siempre (weekSummaryWrap/weekPrevBtn/weekTodayBtn/
+       weekNextBtn) y mismos atributos data-week-day/data-day-note-edit que
+       ya escuchan los listeners delegados de siempre (sin tocarlos) — solo
+       cambia el HTML/CSS que renderWeekSummary() arma. `.table-desktop`/
+       `.table-mobile-list`/`.week-mobile-*` NO se tocan — quedan sin uso a
+       propósito (mismo criterio que el resto del archivo con CSS que un
+       rediseño deja huérfano, ver `.mini-accordion`/`.tbl-*` de v317). */
+    .wk-timeline {
+      display: grid;
+      gap: 0;
+    }
+    .wk-item {
+      display: grid;
+      grid-template-columns: 74px 20px 1fr;
+      gap: 10px;
+      align-items: stretch;
+      padding: 0 0 14px;
+      cursor: pointer;
+    }
+    .wk-item:last-child { padding-bottom: 0; }
+    .wk-daylabel {
+      padding-top: 12px;
+      text-align: right;
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .wk-item.is-today .wk-daylabel { color: var(--cyan); }
+    .wk-rail {
+      position: relative;
+      display: flex;
+      justify-content: center;
+    }
+    .wk-rail::before {
+      content: '';
+      position: absolute;
+      top: 4px;
+      bottom: -12px;
+      left: 50%;
+      width: 1.5px;
+      transform: translateX(-50%);
+      background: var(--line-2);
+    }
+    .wk-item:last-child .wk-rail::before { bottom: 50%; }
+    .wk-dot {
+      position: relative;
+      z-index: 1;
+      width: 11px;
+      height: 11px;
+      margin-top: 8px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: 1.5px solid var(--line-2);
+    }
+    .wk-item.is-today .wk-dot { border-color: var(--cyan); }
+    .wk-item.is-worked .wk-dot { border-color: rgba(var(--good-rgb), .75); }
+    .wk-card {
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .03);
+      transition: border-color .14s ease, background .14s ease;
+    }
+    .wk-item:hover .wk-card { border-color: var(--line-2); }
+    .wk-item.is-today .wk-card {
+      border-color: rgba(var(--cyan-rgb), .4);
+      background: rgba(var(--cyan-rgb), .08);
+    }
+    .wk-item.is-worked:not(.is-today) .wk-card {
+      border-color: rgba(var(--good-rgb), .24);
+      background: rgba(var(--good-rgb), .06);
+    }
+    .wk-item.is-future .wk-card { opacity: .75; }
+    .wk-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .wk-card-title {
+      font-weight: 900;
+      font-size: 14px;
+      color: var(--text);
+    }
+    .wk-card-date {
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 12px;
+    }
+    .wk-metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 20px;
+      margin-top: 8px;
+    }
+    .wk-metric {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .wk-metric-value {
+      color: var(--text);
+      font-weight: 800;
+      margin-left: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+    .wk-metric-value.good { color: var(--good); }
+    .wk-metric-value.warn { color: var(--warn); }
+    .wk-metric-value.bad { color: var(--bad); }
+    .wk-metric-sub {
+      display: block;
+      margin-top: 1px;
+      color: var(--muted);
+      font-size: 10.5px;
+      font-weight: 500;
+    }
+    .wk-note {
+      display: flex;
+      align-items: flex-start;
+      gap: 5px;
+      margin-top: 8px;
+      color: var(--warn);
+      font-size: 11.5px;
+      line-height: 1.35;
+    }
+    .wk-note .ic-svg { flex: 0 0 auto; margin-top: 1px; }
+    .wk-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+    /* Fila de Total: mismas 3 columnas que `.wk-item` (etiqueta/rail/
+       tarjeta) para que la columna de la tarjeta quede alineada con las de
+       arriba, pero sin punto ni línea conectora — `.wk-rail-spacer` es un
+       div vacío a propósito, no reutiliza `.wk-rail` (que sí pintaría una
+       línea/punto que no aplica al total). */
+    .wk-total-row {
+      display: grid;
+      grid-template-columns: 74px 20px 1fr;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .wk-card-total {
+      border-color: var(--line-2);
+      background: rgba(255, 255, 255, .04);
+    }
+    .wk-card-total .wk-metric-value { color: #fff; }
+
+    @media (max-width: 760px) {
+      .wk-item { grid-template-columns: 52px 16px 1fr; gap: 8px; padding-bottom: 12px; }
+      .wk-total-row { grid-template-columns: 52px 16px 1fr; gap: 8px; }
+      .wk-daylabel { padding-top: 10px; font-size: 10px; }
+      .wk-rail::before { width: 1.2px; }
+      .wk-dot { width: 9px; height: 9px; margin-top: 6px; border-width: 1.2px; }
+      .wk-card { padding: 10px; border-radius: 12px; }
+      .wk-card-title { font-size: 12.5px; }
+      .wk-card-date { font-size: 10.5px; }
+      .wk-metrics { gap: 4px 12px; margin-top: 5px; }
+      .wk-metric { font-size: 10.5px; }
+      .wk-metric-value { font-size: 11px; }
+    }
   </style>
 </head>
 <body>
@@ -14809,8 +14981,28 @@ function renderWeekSummary() {
     subtitle.textContent = `${weekViewOffset === 0 ? `Semana actual · ${rangeLabel}` : rangeLabel} · ${cycleWeekLabel}`;
   }
 
-  const rowsHtml = summary.days.map(r => {
-    const dayLabel = WEEKDAY_LABELS[weekdayKeyForDayKey(r.dayKey)];
+  // v322 — Rediseño 100% visual de "Resumen semanal" (mockup aprobado por
+  // el usuario — resumen_semanal_y_mobile.html, con vista de escritorio y
+  // vista mobile). Reemplaza el patrón viejo tabla+tarjetas (`.table-desktop`
+  // `<table>` + `.table-mobile-list` de `.week-mobile-card`) por UN solo
+  // timeline (hora/rail/punto + tarjeta), mismo lenguaje visual que ya usan
+  // "Horario"/"Bloques del día" (`.sched-tl-*`/`.sblk-*`) — un solo markup
+  // para cualquier ancho, sin distinguir desktop/mobile por HTML (solo por
+  // CSS, ver `.wk-*` y su @media(max-width:760px)). `dayShortDateLabel()` es
+  // el único helper nuevo (día+mes corto, ej. "25 ago" — distinto de
+  // `formatCallDayLabel()`, que ya incluye el nombre del día abreviado y acá
+  // se mostraría repetido junto al nombre completo del día en el título).
+  const dayShortDateLabel = (dayKey) => {
+    const d = callDateToDate(dayKey);
+    if (!d) return '';
+    return new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(d);
+  };
+
+  const itemsHtml = summary.days.map(r => {
+    const weekdayKey = weekdayKeyForDayKey(r.dayKey);
+    const dayLabel = WEEKDAY_LABELS[weekdayKey];
+    const dayShort = WEEKDAY_LABELS_SHORT[weekdayKey];
+    const dayNum = (callDateToDate(r.dayKey) || new Date()).getDate();
     const noteMeta = r.note ? dayNoteCategoryMeta(r.note.category) : null;
     let statusTag = '';
     // Una nota con categoría (ej. "Sick", "Power outage") pisa el status
@@ -14822,135 +15014,66 @@ function renderWeekSummary() {
     else if (!r.hasShift && !r.calls) statusTag = '<span class="tag bad">Sin datos</span>';
     else statusTag = '<span class="tag good">Trabajado</span>';
 
-    const adherenceTag = r.adherencePct === null
-      ? '—'
-      : `<span class="tag ${r.adherencePct >= 90 ? 'good' : r.adherencePct >= 70 ? 'warn' : 'bad'}">${r.adherencePct}%</span>`;
+    const worked = !r.isFuture && (r.hasShift || r.calls);
+    const itemClasses = ['wk-item', r.isToday ? 'is-today' : '', worked ? 'is-worked' : '', r.isFuture ? 'is-future' : ''].filter(Boolean).join(' ');
 
-    const noteCommentHtml = r.note && r.note.comment
-      ? `<div class="gap-note" title="${escapeHtml(r.note.comment)}"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> ${escapeHtml(r.note.comment.length > 36 ? r.note.comment.slice(0, 36) + '…' : r.note.comment)}</div>`
-      : '';
-    const noteCell = `
-      <div class="gap-cell">
-        <button class="gap-edit-btn" type="button" data-day-note-edit="${escapeHtml(r.dayKey)}"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Editar</button>
-        ${noteCommentHtml}
+    const adherenceTone = r.adherencePct === null ? '' : r.adherencePct >= 90 ? 'good' : r.adherencePct >= 70 ? 'warn' : 'bad';
+    const adherenceText = r.adherencePct === null ? '—' : `${r.adherencePct}%`;
+
+    // Pedido del usuario (mockup): un día FUTURO no muestra ninguna métrica
+    // (nada real que reportar todavía) — solo el título y la píldora
+    // "Futuro", mismo criterio que ya siguió el mockup aprobado.
+    const metricsHtml = r.isFuture ? '' : `
+      <div class="wk-metrics">
+        <span class="wk-metric">Conectado <strong class="wk-metric-value">${r.hasShift ? formatDuration(r.connected * 60000) : '—'}</strong></span>
+        <span class="wk-metric">Productivo <strong class="wk-metric-value">${formatDuration(r.productive * 60000)}</strong></span>
+        <span class="wk-metric">Llamadas <strong class="wk-metric-value">${r.calls}</strong></span>
+        <span class="wk-metric">Ganancias <strong class="wk-metric-value">${money(r.earnings)}</strong>${convertedAmountText(r.earnings) ? `<span class="wk-metric-sub">${escapeHtml(convertedAmountText(r.earnings))}</span>` : ''}</span>
+        <span class="wk-metric">Adherencia <strong class="wk-metric-value ${adherenceTone}">${escapeHtml(adherenceText)}</strong></span>
       </div>
     `;
 
-    return `
-      <tr class="week-row-clickable ${r.isToday ? 'week-row-today' : ''}" data-week-day="${escapeHtml(r.dayKey)}">
-        <td>${escapeHtml(dayLabel)}${r.isToday ? ' · Hoy' : ''}</td>
-        <td>${escapeHtml(formatCallDayLabel(r.dayKey))}</td>
-        <td>${statusTag}</td>
-        <td>${r.hasShift ? formatDuration(r.connected * 60000) : '—'}</td>
-        <td>${formatDuration(r.productive * 60000)}</td>
-        <td>${r.calls}</td>
-        <td>
-          <div>${money(r.earnings)}</div>
-          ${convertedAmountText(r.earnings) ? `<div class="helper" style="font-size:11px; margin-top:2px;">${escapeHtml(convertedAmountText(r.earnings))}</div>` : ''}
-        </td>
-        <td>${adherenceTag}</td>
-        <td>${noteCell}</td>
-      </tr>
-    `;
-  }).join('');
-
-  // Bug reportado por el usuario ("no se ven completo en modo celular"):
-  // "Resumen semanal" solo pintaba la <table> de escritorio (min-width:900px)
-  // dentro de un .table-wrap con scroll horizontal — en mobile eso corta
-  // visualmente las columnas de la derecha (Productivo/Llamadas/Ganancias/
-  // Adherencia) sin ningún indicio de que hay que deslizar para verlas. Se
-  // agrega una vista de tarjetas (mismo patrón .table-desktop/.table-mobile-
-  // list que ya usa "Tabla completa" para el mismo problema), así en mobile
-  // se ven TODAS las métricas de cada día sin necesidad de scroll horizontal.
-  const cardsHtml = summary.days.map(r => {
-    const dayLabel = WEEKDAY_LABELS[weekdayKeyForDayKey(r.dayKey)];
-    const noteMeta = r.note ? dayNoteCategoryMeta(r.note.category) : null;
-    let statusTag = '';
-    if (noteMeta) statusTag = `<span class="tag ${noteMeta.tagClass}">${escapeHtml(noteMeta.label)}</span>`;
-    else if (r.isOff) statusTag = '<span class="tag">Libre</span>';
-    else if (r.isFuture) statusTag = '<span class="tag">Futuro</span>';
-    else if (!r.hasShift && !r.calls) statusTag = '<span class="tag bad">Sin datos</span>';
-    else statusTag = '<span class="tag good">Trabajado</span>';
-
-    const adherenceText = r.adherencePct === null ? '—' : `${r.adherencePct}%`;
-    const noteCommentMobileHtml = r.note && r.note.comment
-      ? `<div class="week-mobile-metric" style="grid-column: 1 / -1;"><span>Nota</span><strong>${escapeHtml(r.note.comment)}</strong></div>`
+    const noteHtml = r.note && r.note.comment
+      ? `<div class="wk-note" title="${escapeHtml(r.note.comment)}"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> ${escapeHtml(r.note.comment.length > 60 ? r.note.comment.slice(0, 60) + '…' : r.note.comment)}</div>`
       : '';
 
     return `
-      <div class="week-mobile-card ${r.isToday ? 'week-mobile-today' : ''}" data-week-day="${escapeHtml(r.dayKey)}">
-        <div class="week-mobile-top">
-          <div>
-            <div class="week-mobile-title">${escapeHtml(dayLabel)}${r.isToday ? ' · Hoy' : ''}</div>
-            <div class="week-mobile-date">${escapeHtml(formatCallDayLabel(r.dayKey))}</div>
+      <div class="${itemClasses}" data-week-day="${escapeHtml(r.dayKey)}">
+        <div class="wk-daylabel">${escapeHtml(dayShort)} ${dayNum}</div>
+        <div class="wk-rail" aria-hidden="true"><span class="wk-dot"></span></div>
+        <div class="wk-card">
+          <div class="wk-card-top">
+            <div class="wk-card-title">${escapeHtml(dayLabel)}<span class="wk-card-date"> · ${escapeHtml(dayShortDateLabel(r.dayKey))}${r.isToday ? ' · Hoy' : ''}</span></div>
+            ${statusTag}
           </div>
-          ${statusTag}
-        </div>
-        <div class="week-mobile-metrics">
-          <div class="week-mobile-metric"><span>Conectado</span><strong>${r.hasShift ? formatDuration(r.connected * 60000) : '—'}</strong></div>
-          <div class="week-mobile-metric"><span>Productivo</span><strong>${formatDuration(r.productive * 60000)}</strong></div>
-          <div class="week-mobile-metric"><span>Llamadas</span><strong>${r.calls}</strong></div>
-          <div class="week-mobile-metric"><span>Ganancias</span><div style="text-align:right;"><strong>${money(r.earnings)}</strong>${convertedAmountText(r.earnings) ? `<div style="font-size:11px; color:var(--muted);">${escapeHtml(convertedAmountText(r.earnings))}</div>` : ''}</div></div>
-          <div class="week-mobile-metric"><span>Adherencia</span><strong>${escapeHtml(adherenceText)}</strong></div>
-          ${noteCommentMobileHtml}
-        </div>
-        <div style="margin-top:8px; display:flex; justify-content:flex-end;">
-          <button class="gap-edit-btn" type="button" data-day-note-edit="${escapeHtml(r.dayKey)}"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Editar día</button>
+          ${metricsHtml}
+          ${noteHtml}
+          <div class="wk-actions">
+            <button class="gap-edit-btn" type="button" data-day-note-edit="${escapeHtml(r.dayKey)}"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Editar día</button>
+          </div>
         </div>
       </div>
     `;
   }).join('');
 
   const t = summary.totals;
-  const totalsHtml = `
-    <tr class="week-row-total">
-      <td colspan="3">Total semana</td>
-      <td>${formatDuration(t.connected * 60000)}</td>
-      <td>${formatDuration(t.productive * 60000)}</td>
-      <td>${t.calls}</td>
-      <td>
-        <div>${money(t.earnings)}</div>
-        ${convertedAmountText(t.earnings) ? `<div class="helper" style="font-size:11px; font-weight:400; margin-top:2px;">${escapeHtml(convertedAmountText(t.earnings))}</div>` : ''}
-      </td>
-      <td>${t.avgAdherence === null ? '—' : `${t.avgAdherence}%`}</td>
-      <td></td>
-    </tr>
-  `;
-
-  const totalsCardHtml = `
-    <div class="week-mobile-card week-mobile-total">
-      <div class="week-mobile-top"><div class="week-mobile-title">Total semana</div></div>
-      <div class="week-mobile-metrics">
-        <div class="week-mobile-metric"><span>Conectado</span><strong>${formatDuration(t.connected * 60000)}</strong></div>
-        <div class="week-mobile-metric"><span>Productivo</span><strong>${formatDuration(t.productive * 60000)}</strong></div>
-        <div class="week-mobile-metric"><span>Llamadas</span><strong>${t.calls}</strong></div>
-        <div class="week-mobile-metric"><span>Ganancias</span><div style="text-align:right;"><strong>${money(t.earnings)}</strong>${convertedAmountText(t.earnings) ? `<div style="font-size:11px; color:var(--muted);">${escapeHtml(convertedAmountText(t.earnings))}</div>` : ''}</div></div>
-        <div class="week-mobile-metric"><span>Adherencia</span><strong>${t.avgAdherence === null ? '—' : `${t.avgAdherence}%`}</strong></div>
+  const totalHtml = `
+    <div class="wk-total-row">
+      <div class="wk-daylabel">Total</div>
+      <div class="wk-rail-spacer" aria-hidden="true"></div>
+      <div class="wk-card wk-card-total">
+        <div class="wk-metrics">
+          <span class="wk-metric">Conectado <strong class="wk-metric-value">${formatDuration(t.connected * 60000)}</strong></span>
+          <span class="wk-metric">Productivo <strong class="wk-metric-value">${formatDuration(t.productive * 60000)}</strong></span>
+          <span class="wk-metric">Llamadas <strong class="wk-metric-value">${t.calls}</strong></span>
+          <span class="wk-metric">Ganancias <strong class="wk-metric-value">${money(t.earnings)}</strong>${convertedAmountText(t.earnings) ? `<span class="wk-metric-sub">${escapeHtml(convertedAmountText(t.earnings))}</span>` : ''}</span>
+          <span class="wk-metric">Adherencia <strong class="wk-metric-value">${t.avgAdherence === null ? '—' : `${t.avgAdherence}%`}</strong></span>
+        </div>
       </div>
     </div>
   `;
 
-  wrap.innerHTML = `
-    <div class="table-desktop">
-      <table>
-        <thead>
-          <tr>
-            <th>Día</th>
-            <th>Fecha</th>
-            <th>Estado</th>
-            <th>Conectado</th>
-            <th>Productivo</th>
-            <th>Llamadas</th>
-            <th>Ganancias</th>
-            <th>Adherencia</th>
-            <th>Nota</th>
-          </tr>
-        </thead>
-        <tbody>${rowsHtml}${totalsHtml}</tbody>
-      </table>
-    </div>
-    <div class="table-mobile-list">${cardsHtml}${totalsCardHtml}</div>
-  `;
+  wrap.innerHTML = `<div class="wk-timeline">${itemsHtml}</div>${totalHtml}`;
 }
 
     function syncGoals(source) {
