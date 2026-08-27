@@ -6308,18 +6308,36 @@
        tick) reutiliza los mismos colores que ya usa el dot de Estado en el
        header (cian=llamada, amarillo=Break, azul=Lunch), para que la barra
        se sienta parte del mismo sistema visual y no un elemento aparte.
-       Pedido del usuario (v213, mismo criterio ya elegido en v212 — "Opción
-       C: sólida"): fondo pasa de opacity .14 a .94, igual que .bsc-fill y
-       .slot-fill — misma opacidad/tinte en las 3 superficies "líquidas" de
-       la app, en vez de que esta barra se quedara con su propio tono
-       apagado aparte. El color sigue siendo el mismo (--live-bar-rgb, ya
-       comparte paleta con el dot de Estado) — solo cambia qué tan sólido se
-       ve. Con el fondo ahora casi sólido, el texto/ícono en el color de
-       acento (dot y label, ver abajo) se volvían invisibles sobre un fondo
-       de ese mismo color — se fuerzan a var(--text) (blanco/negro según
-       tema), mismo criterio que ya usan .action-label/.action-sub de los
-       botones de Controles al quedar en su relleno sólido (hover/pressed/
-       is-active). El timer ya usaba var(--text) desde siempre, sin cambios. */
+       v320 — Rediseño 100% visual (mockup de 2 vistas — escritorio y
+       celular — aprobado antes de tocar código). Reemplaza el fondo sólido
+       "líquido" de v213 (el mismo patrón que el resto de la app ya
+       abandonó en v218/v279) por `var(--panel-navy)`, el mismo degradado
+       oscuro que ya usan el header/los modales/`.calls-status-card`
+       (v293) — la barra deja de sentirse como un elemento aparte. El
+       punto de acento pasa a vivir dentro de un círculo con borde
+       (`.live-bar-icon-wrap`, mismo lenguaje que `.calls-status-icon`),
+       con un pulso sutil de box-shadow (reutiliza el mismo patrón de
+       keyframes que ya usa `.calls-status-dot.live`, parametrizado aquí
+       con `--live-bar-rgb`) en vez de depender de un fondo sólido para
+       transmitir "esto está en vivo". Label+timer pasan a columna
+       (etiqueta chica uppercase + timer grande en mono, mismo patrón que
+       `.calls-status-title`/`.calls-status-timer`). "Guardar" pasa a
+       pastilla tenue verde (--good) con ícono de check; "Descartar" se
+       mantiene como botón cuadrado de solo ícono, tono rojo tenue (mismo
+       lenguaje que `.tbl-icon-btn.bad`). CERO cambios funcionales: mismos
+       ids (liveActivityBar/liveBarLabel/liveBarTimer/liveBarSaveBtn/
+       liveBarDiscardBtn), mismo JS — solo se envuelve el punto existente
+       en un círculo decorativo nuevo (`.live-bar-icon-wrap`, puramente
+       CSS) para poder pintar el borde/pulso alrededor sin tocar ningún
+       listener. */
+    @keyframes live-bar-icon-pulse {
+      0%, 100% { box-shadow: 0 0 0 4px rgba(var(--live-bar-rgb, var(--cyan-rgb)), .18); }
+      50% { box-shadow: 0 0 0 7px rgba(var(--live-bar-rgb, var(--cyan-rgb)), .06); }
+    }
+    @keyframes live-bar-dot-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .4; }
+    }
     .live-activity-bar {
       position: fixed;
       top: 0;
@@ -6332,10 +6350,10 @@
       gap: 12px;
       padding: 10px 16px;
       padding-top: calc(10px + env(safe-area-inset-top, 0px));
-      background: rgba(var(--live-bar-rgb, var(--cyan-rgb)), .94);
-      border-bottom: 1px solid rgba(var(--live-bar-rgb, var(--cyan-rgb)), .6);
+      background: var(--panel-navy);
+      border-bottom: 1px solid rgba(var(--live-bar-rgb, var(--cyan-rgb)), .32);
       backdrop-filter: blur(12px);
-      box-shadow: 0 8px 22px rgba(0, 0, 0, .18);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, .28);
     }
 
     .live-activity-bar.show { display: flex; }
@@ -6343,32 +6361,52 @@
     .live-bar-left {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       min-width: 0;
     }
 
-    .live-bar-dot {
-      width: 9px;
-      height: 9px;
+    .live-bar-icon-wrap {
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
       flex: 0 0 auto;
-      background: var(--text);
-      box-shadow: 0 0 10px rgba(0, 0, 0, .35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(var(--live-bar-rgb, var(--cyan-rgb)), .16);
+      border: 1px solid rgba(var(--live-bar-rgb, var(--cyan-rgb)), .4);
+      animation: live-bar-icon-pulse 1.8s infinite;
+    }
+
+    .live-bar-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+      background: rgb(var(--live-bar-rgb, var(--cyan-rgb)));
+      animation: live-bar-dot-pulse 1.6s infinite;
+    }
+
+    .live-bar-text {
+      display: grid;
+      gap: 1px;
+      min-width: 0;
     }
 
     .live-bar-label {
       font-weight: 900;
-      font-size: 11.5px;
+      font-size: 11px;
       text-transform: uppercase;
       letter-spacing: .06em;
-      color: var(--text);
+      color: rgb(var(--live-bar-rgb, var(--cyan-rgb)));
       white-space: nowrap;
     }
 
     .live-bar-timer {
       font-weight: 900;
       font-variant-numeric: tabular-nums;
-      font-size: 15px;
+      font-size: 16px;
+      letter-spacing: -.02em;
       color: var(--text);
       white-space: nowrap;
     }
@@ -6381,7 +6419,7 @@
 
     .live-bar-btn {
       border-radius: 10px;
-      font-weight: 900;
+      font-weight: 800;
       cursor: pointer;
       border: 1px solid transparent;
       transition: transform .14s ease, filter .14s ease;
@@ -6394,10 +6432,10 @@
     }
 
     .live-bar-save {
-      background: rgba(var(--good-rgb), .18);
-      border-color: rgba(var(--good-rgb), .45);
+      background: rgba(var(--good-rgb), .16);
+      border-color: rgba(var(--good-rgb), .4);
       color: var(--pale-good);
-      padding: 8px 14px;
+      padding: 9px 16px;
       font-size: 12.5px;
       display: inline-flex;
       align-items: center;
@@ -6409,13 +6447,13 @@
       background: rgba(var(--pink-rgb), .10);
       border-color: rgba(var(--pink-rgb), .32);
       color: var(--pale-bad);
-      width: 36px;
-      height: 36px;
+      width: 34px;
+      height: 34px;
       padding: 0;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 15px;
+      font-size: 14px;
       line-height: 1;
     }
 
@@ -6431,9 +6469,22 @@
 
     @media (max-width: 760px) {
       .live-activity-bar { padding: 8px 12px; padding-top: calc(8px + env(safe-area-inset-top, 0px)); gap: 8px; }
-      .live-bar-label { font-size: 10.5px; }
-      .live-bar-timer { font-size: 13px; }
-      .live-bar-save { padding: 7px 11px; font-size: 11.5px; }
+      .live-bar-icon-wrap { width: 32px; height: 32px; }
+      .live-bar-left { gap: 9px; }
+      .live-bar-label { font-size: 9.5px; }
+      .live-bar-timer { font-size: 14px; }
+      .live-bar-save { position: relative; width: 32px; height: 32px; padding: 0; gap: 0; justify-content: center; }
+      .live-bar-save-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
       .live-bar-discard { width: 32px; height: 32px; font-size: 13px; }
       body.has-live-bar .app { padding-top: 54px; }
     }
@@ -8813,12 +8864,14 @@
 <body>
 <div aria-live="polite" class="live-activity-bar" id="liveActivityBar" role="status">
   <div class="live-bar-left">
-    <span class="live-bar-dot"></span>
-    <span class="live-bar-label" id="liveBarLabel">—</span>
-    <span class="live-bar-timer" id="liveBarTimer">00:00:00</span>
+    <span class="live-bar-icon-wrap" aria-hidden="true"><span class="live-bar-dot"></span></span>
+    <div class="live-bar-text">
+      <span class="live-bar-label" id="liveBarLabel">—</span>
+      <span class="live-bar-timer" id="liveBarTimer">00:00:00</span>
+    </div>
   </div>
   <div class="live-bar-actions">
-    <button class="live-bar-btn live-bar-save" id="liveBarSaveBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="8 12.5 11 15.5 16 9"/></svg> Guardar</button>
+    <button class="live-bar-btn live-bar-save" id="liveBarSaveBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="8 12.5 11 15.5 16 9"/></svg><span class="live-bar-save-label">Guardar</span></button>
     <button aria-label="Descartar sin guardar" class="live-bar-btn live-bar-discard" id="liveBarDiscardBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   </div>
 </div>
