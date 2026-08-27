@@ -4555,7 +4555,18 @@
       transform: translateY(-2px);
       outline: none;
     }
-    .action-btn.is-pressed .action-ripple { transform: scale(1); opacity: 1; }
+    /* v321 — Pedido del usuario (ajuste puntual, no rediseño de layout): la
+       opacidad del relleno tipo "onda" al pasar el mouse/tocar (hover y
+       tap, NO el estado ".is-active" persistente de "en curso" — ese se
+       queda igual, sólido, para seguir leyéndose claro como "esto está
+       corriendo ahora") baja de 1 (sólido) a .5 — mismo ajuste replicado en
+       los 3 lugares que la controlan: esta regla (.is-pressed, activada por
+       JS en pointerdown), la de :hover más abajo (dentro de
+       `@media (hover: hover)`), y los keyframes de Web Animations API en
+       `playActionPressAnimation()` (ver el JS) — los 3 deben quedar
+       exactamente en el mismo valor o la transición entre uno y otro se
+       vería con un salto de opacidad. */
+    .action-btn.is-pressed .action-ripple { transform: scale(1); opacity: .5; }
     .action-btn.is-pressed .action-icon { transform: scale(1.12) translateY(-1px); }
     /* Pedido del usuario (v187): con el reposo de .action-label/.action-sub
        cambiado a var(--accent) (ver esas reglas arriba), hace falta forzar
@@ -4594,7 +4605,9 @@
         transform: translateY(-2px);
         outline: none;
       }
-      .action-btn:hover .action-ripple { transform: scale(1); opacity: 1; }
+      /* v321 — Ver comentario junto a `.action-btn.is-pressed .action-ripple`
+         más arriba: mismo ajuste de opacidad (1 → .5), mismo motivo. */
+      .action-btn:hover .action-ripple { transform: scale(1); opacity: .5; }
       .action-btn:hover .action-icon { transform: scale(1.12) translateY(-1px); }
       .action-btn:hover .action-label,
       .action-btn:hover .action-sub {
@@ -20245,10 +20258,14 @@ function render() {
       const DURATION = 620;
 
       // El relleno tipo onda: crece, se sostiene un instante, se retrae.
+      // v321 — Pedido del usuario: opacidad del relleno al tocar baja de 1
+      // (sólido) a .5, mismo valor que ya usan `.is-pressed`/`:hover` en el
+      // CSS (ver esos comentarios) — los 3 deben coincidir para que no haya
+      // un salto de opacidad entre el respaldo CSS y esta animación.
       ripple.animate([
         { transform: 'scale(0)', opacity: 0, offset: 0 },
-        { transform: 'scale(1)', opacity: 1, offset: .5 },
-        { transform: 'scale(1)', opacity: 1, offset: .78 },
+        { transform: 'scale(1)', opacity: .5, offset: .5 },
+        { transform: 'scale(1)', opacity: .5, offset: .78 },
         { transform: 'scale(0)', opacity: 0, offset: 1 },
       ], { duration: DURATION, easing: 'cubic-bezier(.22,.85,.4,1)' });
 
