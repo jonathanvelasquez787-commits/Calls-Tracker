@@ -9040,8 +9040,26 @@
       line-height: 1.35;
     }
     .wk-row-note .ic-svg { flex: 0 0 auto; margin-top: 1px; }
+    /* v324 — Pedido del usuario ("no me gustó esa barra"): la fila de Total
+       de v323 (`.wk-total-row`, franja con label bold + métricas en línea
+       sin separador propio) se sentía como una barra suelta, sobre todo en
+       mobile. Mockup de 2 vistas aprobado antes de tocar código — mismo
+       criterio de siempre. Se reemplaza por un bloque más discreto: un
+       borde superior fino como único separador (sin fondo propio), "Total
+       semana" pasa a etiqueta chica en mayúsculas/muted (como un mini-
+       título, no un label bold a todo color) y cada métrica ahora es su
+       propio bloque label+valor (antes texto suelto + <strong>, ver el
+       markup nuevo en renderWeekSummary()) — en escritorio se ven en línea
+       (label seguido del valor, misma fila), en mobile (@media max-width:
+       760px, buscar "v324" ahí) pasan a una grilla de 2 columnas con el
+       label arriba del valor — así nunca compiten por ancho ni se sienten
+       apretadas, sin necesitar scroll en ningún ancho. CERO cambios
+       funcionales: sigue siendo el mismo `summary.totals` de siempre
+       (Productivo/Llamadas/Ganancias/Adherencia), solo cambia el HTML/CSS
+       que lo envuelve. */
     .wk-total-row {
       padding: 12px 4px 2px;
+      border-top: 1px solid var(--line);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -9049,20 +9067,27 @@
       gap: 10px;
     }
     .wk-total-label {
-      font-weight: 900;
-      font-size: 12.5px;
-      color: var(--text);
+      font-weight: 800;
+      font-size: 11px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--muted);
     }
     .wk-total-metrics {
       display: flex;
-      gap: 16px;
+      gap: 20px;
       flex-wrap: wrap;
     }
-    .wk-total-metric {
+    .wk-total-metric-label {
+      font-size: 11px;
       color: var(--muted);
-      font-size: 11.5px;
     }
-    .wk-total-metric strong { color: #fff; }
+    .wk-total-metric strong {
+      margin-left: 4px;
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #fff;
+    }
 
     @media (max-width: 760px) {
       .wk-row { gap: 9px; padding: 9px 2px; }
@@ -9074,9 +9099,30 @@
       .wk-row-amount { font-size: 12px; }
       .wk-row-amount-sub { font-size: 9.5px; }
       .wk-row-edit { width: 26px; height: 26px; }
-      .wk-total-row { padding: 10px 2px 2px; }
-      .wk-total-metrics { gap: 10px; }
-      .wk-total-metric { font-size: 10.5px; }
+      /* v324 — Ver comentario junto a `.wk-total-row` (regla base, más
+         arriba) — mismo bloque, aquí solo la versión mobile: apila la
+         etiqueta arriba de las métricas y estas pasan a grilla de 2
+         columnas con el label arriba del valor. */
+      .wk-total-row {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 10px 2px 2px;
+        gap: 8px;
+      }
+      .wk-total-metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 14px;
+      }
+      .wk-total-metric-label {
+        display: block;
+        font-size: 10px;
+      }
+      .wk-total-metric strong {
+        display: block;
+        margin-left: 0;
+        font-size: 13px;
+      }
     }
   </style>
 </head>
@@ -15052,12 +15098,12 @@ function renderWeekSummary() {
   const t = summary.totals;
   const totalHtml = `
     <div class="wk-total-row">
-      <span class="wk-total-label">Total semana</span>
+      <div class="wk-total-label">Total semana</div>
       <div class="wk-total-metrics">
-        <span class="wk-total-metric">Productivo <strong>${formatDuration(t.productive * 60000)}</strong></span>
-        <span class="wk-total-metric">Llamadas <strong>${t.calls}</strong></span>
-        <span class="wk-total-metric">Ganancias <strong>${money(t.earnings)}</strong>${convertedAmountText(t.earnings) ? ` <span style="opacity:.75;">(${escapeHtml(convertedAmountText(t.earnings))})</span>` : ''}</span>
-        <span class="wk-total-metric">Adherencia <strong>${t.avgAdherence === null ? '—' : `${t.avgAdherence}%`}</strong></span>
+        <div class="wk-total-metric"><span class="wk-total-metric-label">Productivo</span><strong>${formatDuration(t.productive * 60000)}</strong></div>
+        <div class="wk-total-metric"><span class="wk-total-metric-label">Llamadas</span><strong>${t.calls}</strong></div>
+        <div class="wk-total-metric"><span class="wk-total-metric-label">Ganancias</span><strong>${money(t.earnings)}${convertedAmountText(t.earnings) ? ` <span style="opacity:.75; font-weight:700;">(${escapeHtml(convertedAmountText(t.earnings))})</span>` : ''}</strong></div>
+        <div class="wk-total-metric"><span class="wk-total-metric-label">Adherencia</span><strong>${t.avgAdherence === null ? '—' : `${t.avgAdherence}%`}</strong></div>
       </div>
     </div>
   `;
