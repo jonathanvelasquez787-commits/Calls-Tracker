@@ -19067,10 +19067,32 @@ function dayActionRows(dayKey) {
   });
 
   dayGapRows(normalized).forEach(g => {
-    if ((g.label !== 'acw' && g.label !== 'other') || g.raw <= 0) return;
+    if (g.raw <= 0) return;
+    // Bug reportado por el usuario ("editar huecos está roto"): un hueco
+    // ACW/Otro reclasificado a mano como Break/Lunch desde "Editar hueco"
+    // pasaba a excluirse de esta lista (el filtro solo dejaba pasar
+    // label==='acw'/'other') — la fila desaparecía de la tabla sin dejar
+    // ningún rastro, y como esa reclasificación manual no tiene por qué
+    // corresponder a una pausa real con botón (dayEvents() solo conoce
+    // Break/Lunch iniciados/terminados con el botón), tampoco quedaba
+    // representada por ninguna otra fila — el hueco quedaba huérfano: sin
+    // fila, sin botón "Editar", imposible de revisar o revertir desde
+    // aquí. El comentario de v315 ("no se duplica como fila aparte") solo
+    // aplica cuando SÍ hay una pausa real que ya la representa (ver
+    // `g.manual` — si el sistema ya sugería break/lunch por overlap con una
+    // pausa real, `g.manual` sigue false a menos que el usuario la
+    // confirme a mano) — se agrega esa excepción: una reclasificación
+    // MANUAL a Break/Lunch (sin pausa real detrás) se sigue mostrando, con
+    // su mismo botón "Editar" de siempre, para poder revisarla o
+    // revertirla. Los huecos que el sistema ya sugiere break/lunch por
+    // overlap real (no manuales) se siguen omitiendo, como antes — esos ya
+    // están representados por la fila de Break/Lunch real.
+    const isAcwOrOther = g.label === 'acw' || g.label === 'other';
+    const isManualBreakOrLunch = g.manual && (g.label === 'break' || g.label === 'lunch');
+    if (!isAcwOrOther && !isManualBreakOrLunch) return;
     rows.push({
       ts: g.prev.endISO,
-      badgeLabel: g.label === 'acw' ? 'ACW' : 'Otro',
+      badgeLabel: gapLabelText(g.label),
       badgeClass: `type-${g.label}`,
       detail: g.isShiftStartGap ? 'Inicio de turno → primera llamada' : 'Entre llamadas',
       note: g.note || '',
