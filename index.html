@@ -8426,6 +8426,9 @@
       justify-content: center;
     }
     .mc-header-icon.good { background: var(--good); }
+    /* v316 — Ver comentario junto a #confirmModal en el HTML: variante
+       ámbar, mismo patrón que .good (v301). */
+    .mc-header-icon.warn { background: var(--warn); }
     .mc-header-icon .ic-svg { width: 20px; height: 20px; color: #07101f; stroke: #07101f; }
 
     .mc-modal-head {
@@ -8493,6 +8496,10 @@
        `.sched-add-block-btn`/etc.), en vez de reusar cyan/good de los
        modales de llamadas. */
     .mc-btn-primary.blue { background: var(--blue); }
+    /* v316 — Ver comentario junto a #confirmModal en el HTML: variante
+       ámbar para el botón "Sí, continuar", mismo patrón que .cyan/.good/
+       .blue (v301/v302). */
+    .mc-btn-primary.warn { background: var(--warn); }
     .mc-btn-primary .ic-svg { width: 16px; height: 16px; }
     .mc-btn-warn-pill {
       flex: 0 0 auto;
@@ -10447,18 +10454,38 @@ $0.72"></textarea>
 </div>
 </div>
 </div>
+<!-- v316 — Pedido del usuario: rediseño 100% visual de este modal (mockup
+     de 2 vistas — escritorio y celular — aprobado antes de tocar código),
+     mismo criterio que el resto de modales ya rediseñados (v271-315):
+     cabecera con ícono cuadrito (reutiliza .mc-header-icon/.mc-modal-head,
+     v301) en tono ámbar neutro (nueva variante .warn de .mc-header-icon,
+     v307 ya tenía .good — se suma .warn) — no rojo/bad, porque este modal
+     es genérico: se reutiliza para confirmar acciones de muy distinta
+     gravedad (desde "vaciar llamadas del día" hasta "copiar horario a
+     Lunes-Viernes"), no solo borrados, así que un tono de "atención,
+     confirma esto" encaja mejor que un rojo que solo tendría sentido para
+     los casos destructivos. Fila de acciones reutiliza .mc-btn-primary
+     (nueva variante .warn) + .mc-btn-warn-pill con el mismo override
+     neutro (transparente/borde var(--line)) que ya usa el botón Cancelar
+     de #dayNoteModal — "No" es simplemente cancelar, no una advertencia
+     en sí misma. CERO cambios funcionales: ningún id se toca
+     (confirmModalTitle/confirmModalMessage/confirmModalOkBtn) — appConfirm()/
+     el listener de confirmModalOkBtn/el listener genérico de
+     [data-close-modal] siguen funcionando exactamente igual, solo cambia
+     el HTML/CSS que envuelve esos mismos elementos. -->
 <div aria-hidden="true" class="modal-overlay" id="confirmModal">
 <div aria-labelledby="confirmModalTitle" aria-modal="true" class="modal-card" role="dialog">
-<div class="modal-head">
+<div class="modal-head mc-modal-head">
+<div class="mc-header-icon warn" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg></div>
 <div>
 <h3 id="confirmModalTitle">Confirmar</h3>
 <p id="confirmModalMessage">¿Seguro?</p>
 </div>
 <button aria-label="Cerrar" class="modal-close" data-close-modal="confirmModal" type="button">×</button>
 </div>
-<div class="modal-actions">
-<button class="bad" id="confirmModalOkBtn" type="button">Sí</button>
-<button data-close-modal="confirmModal" type="button">No</button>
+<div class="modal-actions mc-action-row">
+<button class="mc-btn-primary warn" id="confirmModalOkBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="5 12 10 17 19 6"/></svg> Sí, continuar</button>
+<button class="mc-btn-warn-pill" data-close-modal="confirmModal" type="button" style="background:transparent; border-color:var(--line); color:var(--text);">No, cancelar</button>
 </div>
 </div>
 </div>
