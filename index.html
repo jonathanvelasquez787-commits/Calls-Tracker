@@ -5832,22 +5832,137 @@
     .tbl-type-badge.type-other { background: rgba(255,255,255,.06); color: var(--muted); }
     .tbl-type-badge.type-import { background: rgba(var(--good-rgb), .14); color: var(--good); }
 
-    /* Fila de acción (Shift/Break/Lunch/ACW/Otro/Importación) dentro de la
-       tabla desktop — de solo lectura (sin Editar/Eliminar, ver comentario
-       junto a #tableFilterRow en el HTML), así que su columna "Acciones"
-       queda vacía; se atenúa levemente para distinguirla de un vistazo de
-       una fila de llamada (que sí es accionable). */
-    tr.tbl-row-action td {
-      opacity: .82;
+    /* v317 — Pedido del usuario: rediseño 100% visual de "Tabla de
+       llamadas y acciones de hoy" (mockup de 2 vistas aprobado tras
+       descartar una primera propuesta tipo timeline con riel — ver el
+       chat). Reemplaza el `<table>`+`.mobile-call-card`/
+       `.mobile-tbl-action-card` de v315 por UNA sola lista de filas
+       densas, sin distinguir escritorio/mobile por HTML — el mismo
+       markup se ve en ambos anchos, solo cambian tamaños vía
+       `@media (max-width: 760px)` más abajo. `#callTableWrap` ya trae su
+       propio contenedor con borde/fondo redondeado (`.table-wrap`, regla
+       genérica sin tocar) — las filas se pintan directo ahí dentro, sin
+       envolver en otra tarjeta propia (evitaría un doble borde). CERO
+       cambios funcionales: `renderTable()`/`dayActionRows()` siguen
+       devolviendo los mismos datos que ya calculaban en v315, solo cambia
+       el HTML que arman — `data-call-edit`/`data-call-delete`/
+       `data-gap-edit` siguen siendo los mismos atributos que ya escuchan
+       los listeners delegados de siempre, ahora en un botón cuadrito de
+       solo ícono en vez de un enlace de texto. */
+    .tbl-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--line);
     }
-    .mobile-tbl-action-card {
+    .tbl-row:last-child {
+      border-bottom: none;
+    }
+    .tbl-row-icon {
+      flex: 0 0 auto;
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .tbl-row-icon .ic-svg {
+      width: 15px;
+      height: 15px;
+    }
+    .tbl-row-icon.type-call { background: rgba(var(--pink-rgb), .14); color: var(--pink); }
+    .tbl-row-icon.type-shift { background: rgba(var(--cyan-rgb), .14); color: var(--cyan); }
+    .tbl-row-icon.type-break { background: rgba(var(--warn-rgb), .14); color: var(--warn); }
+    .tbl-row-icon.type-lunch { background: rgba(var(--blue-rgb), .14); color: var(--blue); }
+    .tbl-row-icon.type-acw { background: rgba(var(--rpt-purple-rgb), .14); color: var(--rpt-purple); }
+    .tbl-row-icon.type-other { background: rgba(255,255,255,.06); color: var(--muted); }
+    .tbl-row-icon.type-import { background: rgba(var(--good-rgb), .14); color: var(--good); }
+    .tbl-row-main {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .tbl-row-title {
+      font-weight: 800;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+    .tbl-row-sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .tbl-row-right {
+      flex: 0 0 auto;
+      text-align: right;
+    }
+    .tbl-row-amount {
+      font-weight: 900;
+      font-size: 13px;
+      color: var(--good);
+    }
+    .tbl-row-time {
+      font-size: 10.5px;
+      color: var(--muted);
+      margin-top: 1px;
+      white-space: nowrap;
+    }
+    .tbl-row-actions {
+      flex: 0 0 auto;
+      display: flex;
+      gap: 4px;
+    }
+    .tbl-icon-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
       border: 1px solid var(--line);
       background: rgba(255,255,255,.03);
-      border-radius: 18px;
-      padding: 10px 14px;
-      display: grid;
-      gap: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0;
     }
+    .tbl-icon-btn .ic-svg {
+      width: 13px;
+      height: 13px;
+    }
+    .tbl-icon-btn:hover {
+      background: rgba(255,255,255,.08);
+      color: var(--text);
+    }
+    .tbl-icon-btn.bad {
+      border-color: rgba(var(--pink-rgb), .3);
+      background: rgba(var(--pink-rgb), .1);
+      color: var(--pink);
+    }
+    .tbl-icon-btn.bad:hover {
+      background: rgba(var(--pink-rgb), .2);
+    }
+    @media (max-width: 760px) {
+      .tbl-row { padding: 9px 10px; gap: 9px; }
+      .tbl-row-icon { width: 28px; height: 28px; }
+      .tbl-row-icon .ic-svg { width: 13px; height: 13px; }
+      .tbl-row-title { font-size: 12.5px; }
+      .tbl-row-sub, .tbl-row-time { font-size: 10px; }
+      .tbl-row-amount { font-size: 12.5px; }
+      .tbl-icon-btn { width: 26px; height: 26px; }
+      .tbl-icon-btn .ic-svg { width: 12px; height: 12px; }
+    }
+
+    /* v317 — Código muerto a propósito, dejado sin borrar (mismo criterio
+       que ya sigue el resto del archivo con CSS que un rediseño deja sin
+       uso, ver comentario junto a .mini-accordion): estas clases pintaban
+       las tarjetas mobile de "Tabla de llamadas" ANTES de este rediseño
+       (v190-v315) — ya ningún JS las genera (renderTable() ahora arma
+       `.tbl-row` para ambos anchos), pero no hace falta borrarlas del CSS
+       para que el rediseño funcione. */
 
     .divider {
       height: 1px;
@@ -19005,10 +19120,22 @@ function renderTable() {
       // Más recientes primero, mismo criterio de siempre.
       filtered.sort((a, b) => new Date(b.ts) - new Date(a.ts));
 
-      const rows = [];
-      const cards = [];
+      // v317 — Pedido del usuario: rediseño visual (ver comentario junto a
+      // .tbl-row en el CSS) — una sola lista de filas para cualquier
+      // ancho, sin distinguir tabla desktop vs. tarjetas mobile por
+      // separado. Mismos íconos ya usados en el resto de la app
+      // (iconHtml()), un solo mapa chico por tipo para no repetir el
+      // nombre del ícono en cada rama de abajo.
+      const ROW_TYPE_ICON = {
+        'type-shift': 'play',
+        'type-break': 'coffee',
+        'type-lunch': 'utensils',
+        'type-acw': 'timer',
+        'type-other': 'circle',
+        'type-import': 'clipboard',
+      };
 
-      filtered.forEach(entry => {
+      const rowsHtml = filtered.map(entry => {
         if (entry.kind === 'call') {
           const c = entry.call;
           const billableText = String(c.billable).toLowerCase() === 'yes' ? 'Billable' : 'No billable';
@@ -19016,95 +19143,55 @@ function renderTable() {
           const higherRateBonus = higherRateBonusForCall(c);
           const higherRateBadge = higherRateBonus ? higherRateTierBadgeHtml(higherRateBonus.tier, higherRateBonus.amount) : '';
 
-          rows.push(`
-            <tr>
-              <td>${escapeHtml(c.callStart)}</td>
-              <td><span class="tbl-type-badge type-call">Llamada</span></td>
-              <td>#${escapeHtml(c.customerId)} <span style="color:var(--muted);">· ${escapeHtml(billableText)} · ${escapeHtml(droppedText)}</span></td>
-              <td>${c.durationMin} min</td>
-              <td>${money(parseMoney(c.pay))}${higherRateBadge}</td>
-              <td>
-                <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                  <button class="gap-edit-btn" type="button" data-call-edit="${escapeHtml(c.id || '')}">Editar</button>
-                  <button class="gap-edit-btn call-delete-btn" type="button" data-call-delete="${escapeHtml(c.id || '')}">Eliminar</button>
-                </div>
-              </td>
-            </tr>
-          `);
-
-          cards.push(`
-            <div class="mobile-call-card">
-              <div class="mobile-call-row-flex">
-                <span class="mobile-call-check ${String(c.dropped).toLowerCase() === 'yes' ? 'bad' : ''}" aria-hidden="true">${String(c.dropped).toLowerCase() === 'yes' ? iconHtml('alertTriangle') : iconHtml('checkCircle')}</span>
-                <div class="mobile-call-main">
-                  <div class="mobile-call-top">
-                    <div class="mobile-call-title"><span class="tbl-type-badge type-call" style="margin-right:6px;">Llamada</span>#${escapeHtml(c.customerId)}</div>
-                    <div class="mobile-call-pay">${money(parseMoney(c.pay))}${higherRateBonus ? ` ${higherRateTierInlineHtml(higherRateBonus.tier, higherRateBonus.amount)}` : ''}</div>
-                  </div>
-                  <div class="mobile-call-meta">${escapeHtml(c.callDate)} · ${escapeHtml(c.callStart)} · ${c.durationMin} min</div>
-                </div>
+          return `
+            <div class="tbl-row">
+              <span class="tbl-row-icon type-call">${iconHtml('phone')}</span>
+              <div class="tbl-row-main">
+                <div class="tbl-row-title">#${escapeHtml(c.customerId)} <span class="tbl-type-badge type-call">Llamada</span></div>
+                <div class="tbl-row-sub">${escapeHtml(billableText)} · ${escapeHtml(droppedText)}</div>
               </div>
-              <div class="mobile-call-meta">Billable: ${escapeHtml(c.billable)} · Dropped: ${escapeHtml(c.dropped)}</div>
-              <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <button class="gap-edit-btn" type="button" data-call-edit="${escapeHtml(c.id || '')}">Editar llamada</button>
-                <button class="gap-edit-btn call-delete-btn" type="button" data-call-delete="${escapeHtml(c.id || '')}">Eliminar</button>
+              <div class="tbl-row-right">
+                <div class="tbl-row-amount">${money(parseMoney(c.pay))}</div>
+                <div class="tbl-row-time">${escapeHtml(c.callStart)} · ${c.durationMin} min</div>
+                ${higherRateBadge}
+              </div>
+              <div class="tbl-row-actions">
+                <button class="tbl-icon-btn" type="button" data-call-edit="${escapeHtml(c.id || '')}" aria-label="Editar llamada">${iconHtml('edit')}</button>
+                <button class="tbl-icon-btn bad" type="button" data-call-delete="${escapeHtml(c.id || '')}" aria-label="Eliminar llamada">${iconHtml('trash')}</button>
               </div>
             </div>
-          `);
-        } else {
-          const a = entry.action;
-          const hora = timeLabelFromDate(new Date(a.ts));
-          const detailText = a.note ? `${a.detail} · ${a.note}` : a.detail;
-          const hasDuration = a.durationMin !== null && a.durationMin !== undefined;
-          const durationText = hasDuration ? `${formatMinutes(a.durationMin)} min` : '—';
-          const editBtn = a.editable && a.gapKey
-            ? `<button class="gap-edit-btn" type="button" data-gap-edit="${escapeHtml(a.gapKey)}" data-gap-day="${escapeHtml(dayKey)}">Editar</button>`
-            : '';
-
-          rows.push(`
-            <tr class="tbl-row-action">
-              <td>${escapeHtml(hora)}</td>
-              <td><span class="tbl-type-badge ${a.badgeClass}">${escapeHtml(a.badgeLabel)}</span></td>
-              <td>${escapeHtml(detailText)}</td>
-              <td>${escapeHtml(durationText)}</td>
-              <td>—</td>
-              <td>${editBtn || '—'}</td>
-            </tr>
-          `);
-
-          cards.push(`
-            <div class="mobile-tbl-action-card">
-              <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-                <div>
-                  <span class="tbl-type-badge ${a.badgeClass}">${escapeHtml(a.badgeLabel)}</span>
-                  <div style="font-weight:800; font-size:13px; margin-top:5px;">${escapeHtml(detailText)}</div>
-                </div>
-                <div style="text-align:right; font-size:11px; color:var(--muted); white-space:nowrap;">${escapeHtml(hora)}${hasDuration ? ` · ${escapeHtml(durationText)}` : ''}</div>
-              </div>
-              ${editBtn ? `<div style="margin-top:8px;">${editBtn}</div>` : ''}
-            </div>
-          `);
+          `;
         }
+
+        const a = entry.action;
+        const hora = timeLabelFromDate(new Date(a.ts));
+        const hasDuration = a.durationMin !== null && a.durationMin !== undefined;
+        const durationText = hasDuration ? `${formatMinutes(a.durationMin)} min` : '';
+        const editBtn = a.editable && a.gapKey
+          ? `<button class="tbl-icon-btn" type="button" data-gap-edit="${escapeHtml(a.gapKey)}" data-gap-day="${escapeHtml(dayKey)}" aria-label="Editar hueco">${iconHtml('edit')}</button>`
+          : '';
+        const iconName = ROW_TYPE_ICON[a.badgeClass] || 'circle';
+        const iconMarkup = a.badgeClass === 'type-shift' ? iconHtml(iconName, 'ic-fill') : iconHtml(iconName);
+
+        return `
+          <div class="tbl-row">
+            <span class="tbl-row-icon ${a.badgeClass}">${iconMarkup}</span>
+            <div class="tbl-row-main">
+              <div class="tbl-row-title">${escapeHtml(a.detail)} <span class="tbl-type-badge ${a.badgeClass}">${escapeHtml(a.badgeLabel)}</span></div>
+              ${a.note ? `<div class="tbl-row-sub">${escapeHtml(a.note)}</div>` : ''}
+            </div>
+            <div class="tbl-row-right">
+              <div class="tbl-row-time">${escapeHtml(hora)}${hasDuration ? ` · ${escapeHtml(durationText)}` : ''}</div>
+            </div>
+            <div class="tbl-row-actions">${editBtn}</div>
+          </div>
+        `;
       });
 
-      wrap.innerHTML = `
-        <div class="table-desktop">
-          <table>
-            <thead>
-              <tr>
-                <th>Hora</th>
-                <th>Tipo</th>
-                <th>Detalle</th>
-                <th>Duración</th>
-                <th>Billable/Pay</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>${rows.join('')}</tbody>
-          </table>
-        </div>
-        <div class="table-mobile-list">${cards.join('')}</div>
-      `;
+      // `#callTableWrap` ya trae su propio borde/fondo redondeado
+      // (`.table-wrap`, en el HTML) — las filas se pintan directo ahí
+      // dentro, sin envolver en otra tarjeta propia.
+      wrap.innerHTML = rowsHtml.join('');
     }
 
 // v175 (Fase 4): "Resumen del día" + "Estadísticas" — 2 tarjetas nuevas de
