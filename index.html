@@ -8916,175 +8916,167 @@
     }
 
     /* ==========================================================
-       v322 — Rediseño 100% visual de "Resumen semanal" (mockup aprobado
-       por el usuario — resumen_semanal_y_mobile.html, vista de escritorio
-       y vista mobile). Reemplaza el patrón viejo `.table-desktop`
-       (`<table>`) + `.table-mobile-list` (`.week-mobile-card`) por un
-       timeline (hora/rail/punto + tarjeta), mismo lenguaje visual que ya
-       usan "Horario"/"Bloques del día" (`.sched-tl-*`/`.sblk-*`) — un solo
-       markup para cualquier ancho, sin distinguir desktop/mobile por HTML,
-       solo por este @media(max-width:760px). CERO cambios funcionales:
-       mismos ids de siempre (weekSummaryWrap/weekPrevBtn/weekTodayBtn/
-       weekNextBtn) y mismos atributos data-week-day/data-day-note-edit que
-       ya escuchan los listeners delegados de siempre (sin tocarlos) — solo
-       cambia el HTML/CSS que renderWeekSummary() arma. `.table-desktop`/
-       `.table-mobile-list`/`.week-mobile-*` NO se tocan — quedan sin uso a
-       propósito (mismo criterio que el resto del archivo con CSS que un
-       rediseño deja huérfano, ver `.mini-accordion`/`.tbl-*` de v317). */
-    .wk-timeline {
+       v323 — Rediseño 100% visual de "Resumen semanal" (mockup aprobado
+       por el usuario — resumen_semanal_alt_layout.html, vista de
+       escritorio y vista mobile). Reemplaza el timeline de v322
+       (`.wk-item`/`.wk-rail`/`.wk-dot`/`.wk-card`) por una lista de filas
+       densas (ícono en cuadrito + nombre/badge/subtítulo a la izquierda,
+       monto+tiempo productivo a la derecha, botón "Editar" al final) — sin
+       riel ni punto conector. Un solo markup para cualquier ancho, sin
+       distinguir desktop/mobile por HTML — la vista mobile del mockup es
+       la MISMA estructura a escala reducida, no un layout distinto, así
+       que solo cambia por `@media (max-width: 760px)`. CERO cambios
+       funcionales: mismos ids de siempre (weekSummaryWrap/weekPrevBtn/
+       weekTodayBtn/weekNextBtn) y mismos atributos data-week-day/
+       data-day-note-edit que ya escuchan los listeners delegados de
+       siempre (sin tocarlos) — solo cambia el HTML/CSS que
+       renderWeekSummary() arma. `.wk-timeline`/`.wk-item`/`.wk-rail`/
+       `.wk-dot`/`.wk-card`/`.wk-card-top` de v322 y `.table-desktop`/
+       `.table-mobile-list`/`.week-mobile-*` de antes NO se tocan — quedan
+       sin uso a propósito (mismo criterio que el resto del archivo con
+       CSS que un rediseño deja huérfano, ver `.mini-accordion`/`.tbl-*`). */
+    .wk-list {
       display: grid;
       gap: 0;
+      border-top: 1px solid var(--line);
     }
-    .wk-item {
-      display: grid;
-      grid-template-columns: 74px 20px 1fr;
-      gap: 10px;
-      align-items: stretch;
-      padding: 0 0 14px;
+    .wk-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 4px;
+      border-bottom: 1px solid var(--line);
       cursor: pointer;
+      transition: background .14s ease;
     }
-    .wk-item:last-child { padding-bottom: 0; }
-    .wk-daylabel {
-      padding-top: 12px;
-      text-align: right;
-      font-size: 11.5px;
-      font-weight: 800;
+    .wk-row:hover { background: rgba(255,255,255,.03); }
+    .wk-row.is-today {
+      background: rgba(var(--cyan-rgb), .06);
+      margin: 0 -4px;
+      padding-left: 8px;
+      padding-right: 8px;
+      border-radius: 10px;
+    }
+    .wk-row.is-future { opacity: .6; cursor: default; }
+    .wk-row-icon {
+      flex: 0 0 auto;
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,.05);
       color: var(--muted);
+    }
+    .wk-row-icon.tone-good { background: rgba(var(--good-rgb), .14); color: var(--good); }
+    .wk-row-icon.tone-cyan { background: rgba(var(--cyan-rgb), .16); color: var(--cyan); }
+    .wk-row-icon.tone-bad { background: rgba(var(--pink-rgb), .14); color: var(--pink); }
+    .wk-row-main {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .wk-row-title {
+      font-weight: 800;
+      font-size: 13px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+    .wk-row-badge {
+      display: inline-flex;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 10px;
       white-space: nowrap;
     }
-    .wk-item.is-today .wk-daylabel { color: var(--cyan); }
-    .wk-rail {
-      position: relative;
-      display: flex;
-      justify-content: center;
+    .wk-row-badge.tone-good { background: rgba(var(--good-rgb), .14); color: var(--pale-good); }
+    .wk-row-badge.tone-cyan { background: rgba(var(--cyan-rgb), .16); color: var(--pale-cyan); }
+    .wk-row-badge.tone-bad { background: rgba(var(--pink-rgb), .14); color: var(--pale-bad); }
+    .wk-row-badge.tone-neutral { background: rgba(255,255,255,.06); color: var(--muted); }
+    .wk-row-sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
     }
-    .wk-rail::before {
-      content: '';
-      position: absolute;
-      top: 4px;
-      bottom: -12px;
-      left: 50%;
-      width: 1.5px;
-      transform: translateX(-50%);
-      background: var(--line-2);
+    .wk-row-right {
+      flex: 0 0 auto;
+      text-align: right;
     }
-    .wk-item:last-child .wk-rail::before { bottom: 50%; }
-    .wk-dot {
-      position: relative;
-      z-index: 1;
-      width: 11px;
-      height: 11px;
-      margin-top: 8px;
-      border-radius: 50%;
-      background: var(--bg);
-      border: 1.5px solid var(--line-2);
+    .wk-row-amount {
+      font-weight: 900;
+      font-size: 13px;
+      color: var(--good);
     }
-    .wk-item.is-today .wk-dot { border-color: var(--cyan); }
-    .wk-item.is-worked .wk-dot { border-color: rgba(var(--good-rgb), .75); }
-    .wk-card {
-      padding: 12px;
-      border-radius: 14px;
+    .wk-row-amount-sub {
+      font-size: 10.5px;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+    .wk-row-edit {
+      flex: 0 0 auto;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
       border: 1px solid var(--line);
-      background: rgba(255, 255, 255, .03);
-      transition: border-color .14s ease, background .14s ease;
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
     }
-    .wk-item:hover .wk-card { border-color: var(--line-2); }
-    .wk-item.is-today .wk-card {
-      border-color: rgba(var(--cyan-rgb), .4);
-      background: rgba(var(--cyan-rgb), .08);
+    .wk-row-edit:hover { background: rgba(255,255,255,.08); color: var(--text); }
+    .wk-row-note {
+      display: flex;
+      align-items: flex-start;
+      gap: 5px;
+      margin-top: 3px;
+      color: var(--warn);
+      font-size: 10.5px;
+      line-height: 1.35;
     }
-    .wk-item.is-worked:not(.is-today) .wk-card {
-      border-color: rgba(var(--good-rgb), .24);
-      background: rgba(var(--good-rgb), .06);
-    }
-    .wk-item.is-future .wk-card { opacity: .75; }
-    .wk-card-top {
+    .wk-row-note .ic-svg { flex: 0 0 auto; margin-top: 1px; }
+    .wk-total-row {
+      padding: 12px 4px 2px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 8px;
-    }
-    .wk-card-title {
-      font-weight: 900;
-      font-size: 14px;
-      color: var(--text);
-    }
-    .wk-card-date {
-      color: var(--muted);
-      font-weight: 600;
-      font-size: 12px;
-    }
-    .wk-metrics {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px 20px;
-      margin-top: 8px;
-    }
-    .wk-metric {
-      color: var(--muted);
-      font-size: 12px;
-    }
-    .wk-metric-value {
-      color: var(--text);
-      font-weight: 800;
-      margin-left: 4px;
-      font-variant-numeric: tabular-nums;
-    }
-    .wk-metric-value.good { color: var(--good); }
-    .wk-metric-value.warn { color: var(--warn); }
-    .wk-metric-value.bad { color: var(--bad); }
-    .wk-metric-sub {
-      display: block;
-      margin-top: 1px;
-      color: var(--muted);
-      font-size: 10.5px;
-      font-weight: 500;
-    }
-    .wk-note {
-      display: flex;
-      align-items: flex-start;
-      gap: 5px;
-      margin-top: 8px;
-      color: var(--warn);
-      font-size: 11.5px;
-      line-height: 1.35;
-    }
-    .wk-note .ic-svg { flex: 0 0 auto; margin-top: 1px; }
-    .wk-actions {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 8px;
-    }
-    /* Fila de Total: mismas 3 columnas que `.wk-item` (etiqueta/rail/
-       tarjeta) para que la columna de la tarjeta quede alineada con las de
-       arriba, pero sin punto ni línea conectora — `.wk-rail-spacer` es un
-       div vacío a propósito, no reutiliza `.wk-rail` (que sí pintaría una
-       línea/punto que no aplica al total). */
-    .wk-total-row {
-      display: grid;
-      grid-template-columns: 74px 20px 1fr;
       gap: 10px;
-      margin-top: 4px;
     }
-    .wk-card-total {
-      border-color: var(--line-2);
-      background: rgba(255, 255, 255, .04);
+    .wk-total-label {
+      font-weight: 900;
+      font-size: 12.5px;
+      color: var(--text);
     }
-    .wk-card-total .wk-metric-value { color: #fff; }
+    .wk-total-metrics {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .wk-total-metric {
+      color: var(--muted);
+      font-size: 11.5px;
+    }
+    .wk-total-metric strong { color: #fff; }
 
     @media (max-width: 760px) {
-      .wk-item { grid-template-columns: 52px 16px 1fr; gap: 8px; padding-bottom: 12px; }
-      .wk-total-row { grid-template-columns: 52px 16px 1fr; gap: 8px; }
-      .wk-daylabel { padding-top: 10px; font-size: 10px; }
-      .wk-rail::before { width: 1.2px; }
-      .wk-dot { width: 9px; height: 9px; margin-top: 6px; border-width: 1.2px; }
-      .wk-card { padding: 10px; border-radius: 12px; }
-      .wk-card-title { font-size: 12.5px; }
-      .wk-card-date { font-size: 10.5px; }
-      .wk-metrics { gap: 4px 12px; margin-top: 5px; }
-      .wk-metric { font-size: 10.5px; }
-      .wk-metric-value { font-size: 11px; }
+      .wk-row { gap: 9px; padding: 9px 2px; }
+      .wk-row.is-today { padding-left: 6px; padding-right: 6px; }
+      .wk-row-icon { width: 28px; height: 28px; border-radius: 8px; }
+      .wk-row-icon .ic-svg { width: 13px; height: 13px; }
+      .wk-row-title { font-size: 12px; }
+      .wk-row-sub { font-size: 10px; }
+      .wk-row-amount { font-size: 12px; }
+      .wk-row-amount-sub { font-size: 9.5px; }
+      .wk-row-edit { width: 26px; height: 26px; }
+      .wk-total-row { padding: 10px 2px 2px; }
+      .wk-total-metrics { gap: 10px; }
+      .wk-total-metric { font-size: 10.5px; }
     }
   </style>
 </head>
@@ -14981,17 +14973,15 @@ function renderWeekSummary() {
     subtitle.textContent = `${weekViewOffset === 0 ? `Semana actual · ${rangeLabel}` : rangeLabel} · ${cycleWeekLabel}`;
   }
 
-  // v322 — Rediseño 100% visual de "Resumen semanal" (mockup aprobado por
-  // el usuario — resumen_semanal_y_mobile.html, con vista de escritorio y
-  // vista mobile). Reemplaza el patrón viejo tabla+tarjetas (`.table-desktop`
-  // `<table>` + `.table-mobile-list` de `.week-mobile-card`) por UN solo
-  // timeline (hora/rail/punto + tarjeta), mismo lenguaje visual que ya usan
-  // "Horario"/"Bloques del día" (`.sched-tl-*`/`.sblk-*`) — un solo markup
-  // para cualquier ancho, sin distinguir desktop/mobile por HTML (solo por
-  // CSS, ver `.wk-*` y su @media(max-width:760px)). `dayShortDateLabel()` es
-  // el único helper nuevo (día+mes corto, ej. "25 ago" — distinto de
-  // `formatCallDayLabel()`, que ya incluye el nombre del día abreviado y acá
-  // se mostraría repetido junto al nombre completo del día en el título).
+  // v323 — Rediseño 100% visual de "Resumen semanal" (mockup aprobado por
+  // el usuario — resumen_semanal_alt_layout.html, vista de escritorio y
+  // vista mobile). Reemplaza el timeline de v322 (hora/rail/punto+tarjeta)
+  // por una lista de filas densas (ícono en cuadrito + nombre/badge/
+  // subtítulo a la izquierda, monto+productivo a la derecha, botón
+  // "Editar" al final) — un solo markup para cualquier ancho, sin
+  // distinguir desktop/mobile por HTML (solo por CSS, ver `.wk-*` y su
+  // @media(max-width:760px)). `dayShortDateLabel()` sin cambios (mismo
+  // helper de v322).
   const dayShortDateLabel = (dayKey) => {
     const d = callDateToDate(dayKey);
     if (!d) return '';
@@ -15001,57 +14991,60 @@ function renderWeekSummary() {
   const itemsHtml = summary.days.map(r => {
     const weekdayKey = weekdayKeyForDayKey(r.dayKey);
     const dayLabel = WEEKDAY_LABELS[weekdayKey];
-    const dayShort = WEEKDAY_LABELS_SHORT[weekdayKey];
-    const dayNum = (callDateToDate(r.dayKey) || new Date()).getDate();
     const noteMeta = r.note ? dayNoteCategoryMeta(r.note.category) : null;
-    let statusTag = '';
-    // Una nota con categoría (ej. "Sick", "Power outage") pisa el status
-    // genérico — es una razón más específica e intencional que "Libre"/
-    // "Sin datos"/"Trabajado", así que tiene prioridad visual.
-    if (noteMeta) statusTag = `<span class="tag ${noteMeta.tagClass}">${escapeHtml(noteMeta.label)}</span>`;
-    else if (r.isOff) statusTag = '<span class="tag">Libre</span>';
-    else if (r.isFuture) statusTag = '<span class="tag">Futuro</span>';
-    else if (!r.hasShift && !r.calls) statusTag = '<span class="tag bad">Sin datos</span>';
-    else statusTag = '<span class="tag good">Trabajado</span>';
+
+    // Estado del día: decide el badge (texto+tono), el ícono (nombre+tono)
+    // y si la fila cuenta como "trabajada" — mismo orden de prioridad que
+    // v322 (nota con categoría > Libre > Futuro > Sin datos > Trabajado).
+    let badgeText, badgeTone, iconName, iconTone;
+    if (noteMeta) {
+      badgeText = noteMeta.label;
+      badgeTone = noteMeta.tagClass === 'good' ? 'good' : noteMeta.tagClass === 'bad' ? 'bad' : noteMeta.tagClass === 'warn' ? 'bad' : 'neutral';
+      iconName = 'calendar'; iconTone = badgeTone;
+    } else if (r.isOff) {
+      badgeText = 'Libre'; badgeTone = 'neutral'; iconName = 'calendar'; iconTone = 'neutral';
+    } else if (r.isFuture) {
+      badgeText = 'Futuro'; badgeTone = 'neutral'; iconName = 'calendar'; iconTone = 'neutral';
+    } else if (!r.hasShift && !r.calls) {
+      badgeText = 'Sin datos'; badgeTone = 'bad'; iconName = 'alertTriangle'; iconTone = 'bad';
+    } else {
+      badgeText = 'Trabajado'; badgeTone = 'good'; iconName = 'check'; iconTone = 'good';
+    }
+    if (r.isToday) { badgeText = 'Hoy'; badgeTone = 'cyan'; iconTone = 'cyan'; }
 
     const worked = !r.isFuture && (r.hasShift || r.calls);
-    const itemClasses = ['wk-item', r.isToday ? 'is-today' : '', worked ? 'is-worked' : '', r.isFuture ? 'is-future' : ''].filter(Boolean).join(' ');
+    const rowClasses = ['wk-row', r.isToday ? 'is-today' : '', r.isFuture ? 'is-future' : ''].filter(Boolean).join(' ');
 
-    const adherenceTone = r.adherencePct === null ? '' : r.adherencePct >= 90 ? 'good' : r.adherencePct >= 70 ? 'warn' : 'bad';
-    const adherenceText = r.adherencePct === null ? '—' : `${r.adherencePct}%`;
+    const adherenceText = r.adherencePct === null ? '' : ` · Adherencia ${r.adherencePct}%`;
+    const subText = r.isFuture
+      ? escapeHtml(dayShortDateLabel(r.dayKey))
+      : `${escapeHtml(dayShortDateLabel(r.dayKey))} · ${r.calls} llamada(s)${adherenceText}`;
 
-    // Pedido del usuario (mockup): un día FUTURO no muestra ninguna métrica
-    // (nada real que reportar todavía) — solo el título y la píldora
-    // "Futuro", mismo criterio que ya siguió el mockup aprobado.
-    const metricsHtml = r.isFuture ? '' : `
-      <div class="wk-metrics">
-        <span class="wk-metric">Conectado <strong class="wk-metric-value">${r.hasShift ? formatDuration(r.connected * 60000) : '—'}</strong></span>
-        <span class="wk-metric">Productivo <strong class="wk-metric-value">${formatDuration(r.productive * 60000)}</strong></span>
-        <span class="wk-metric">Llamadas <strong class="wk-metric-value">${r.calls}</strong></span>
-        <span class="wk-metric">Ganancias <strong class="wk-metric-value">${money(r.earnings)}</strong>${convertedAmountText(r.earnings) ? `<span class="wk-metric-sub">${escapeHtml(convertedAmountText(r.earnings))}</span>` : ''}</span>
-        <span class="wk-metric">Adherencia <strong class="wk-metric-value ${adherenceTone}">${escapeHtml(adherenceText)}</strong></span>
+    // Un día futuro no muestra monto ni tiempo productivo — nada real que
+    // reportar todavía, mismo criterio que ya usaba v322.
+    const rightHtml = r.isFuture ? '' : `
+      <div class="wk-row-right">
+        <div class="wk-row-amount">${money(r.earnings)}</div>
+        <div class="wk-row-amount-sub">${formatDuration(r.productive * 60000)} productivo</div>
       </div>
     `;
 
+    const editBtnHtml = `<button class="wk-row-edit" type="button" data-day-note-edit="${escapeHtml(r.dayKey)}" aria-label="Editar día" title="Editar día"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>`;
+
     const noteHtml = r.note && r.note.comment
-      ? `<div class="wk-note" title="${escapeHtml(r.note.comment)}"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> ${escapeHtml(r.note.comment.length > 60 ? r.note.comment.slice(0, 60) + '…' : r.note.comment)}</div>`
+      ? `<div class="wk-row-note" title="${escapeHtml(r.note.comment)}"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> ${escapeHtml(r.note.comment.length > 60 ? r.note.comment.slice(0, 60) + '…' : r.note.comment)}</div>`
       : '';
 
     return `
-      <div class="${itemClasses}" data-week-day="${escapeHtml(r.dayKey)}">
-        <div class="wk-daylabel">${escapeHtml(dayShort)} ${dayNum}</div>
-        <div class="wk-rail" aria-hidden="true"><span class="wk-dot"></span></div>
-        <div class="wk-card">
-          <div class="wk-card-top">
-            <div class="wk-card-title">${escapeHtml(dayLabel)}<span class="wk-card-date"> · ${escapeHtml(dayShortDateLabel(r.dayKey))}${r.isToday ? ' · Hoy' : ''}</span></div>
-            ${statusTag}
-          </div>
-          ${metricsHtml}
+      <div class="${rowClasses}" data-week-day="${escapeHtml(r.dayKey)}">
+        <span class="wk-row-icon tone-${iconTone}" aria-hidden="true">${iconHtml(iconName)}</span>
+        <div class="wk-row-main">
+          <div class="wk-row-title">${escapeHtml(dayLabel)} <span class="wk-row-badge tone-${badgeTone}">${escapeHtml(badgeText)}</span></div>
+          <div class="wk-row-sub">${subText}</div>
           ${noteHtml}
-          <div class="wk-actions">
-            <button class="gap-edit-btn" type="button" data-day-note-edit="${escapeHtml(r.dayKey)}"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Editar día</button>
-          </div>
         </div>
+        ${rightHtml}
+        ${editBtnHtml}
       </div>
     `;
   }).join('');
@@ -15059,21 +15052,17 @@ function renderWeekSummary() {
   const t = summary.totals;
   const totalHtml = `
     <div class="wk-total-row">
-      <div class="wk-daylabel">Total</div>
-      <div class="wk-rail-spacer" aria-hidden="true"></div>
-      <div class="wk-card wk-card-total">
-        <div class="wk-metrics">
-          <span class="wk-metric">Conectado <strong class="wk-metric-value">${formatDuration(t.connected * 60000)}</strong></span>
-          <span class="wk-metric">Productivo <strong class="wk-metric-value">${formatDuration(t.productive * 60000)}</strong></span>
-          <span class="wk-metric">Llamadas <strong class="wk-metric-value">${t.calls}</strong></span>
-          <span class="wk-metric">Ganancias <strong class="wk-metric-value">${money(t.earnings)}</strong>${convertedAmountText(t.earnings) ? `<span class="wk-metric-sub">${escapeHtml(convertedAmountText(t.earnings))}</span>` : ''}</span>
-          <span class="wk-metric">Adherencia <strong class="wk-metric-value">${t.avgAdherence === null ? '—' : `${t.avgAdherence}%`}</strong></span>
-        </div>
+      <span class="wk-total-label">Total semana</span>
+      <div class="wk-total-metrics">
+        <span class="wk-total-metric">Productivo <strong>${formatDuration(t.productive * 60000)}</strong></span>
+        <span class="wk-total-metric">Llamadas <strong>${t.calls}</strong></span>
+        <span class="wk-total-metric">Ganancias <strong>${money(t.earnings)}</strong>${convertedAmountText(t.earnings) ? ` <span style="opacity:.75;">(${escapeHtml(convertedAmountText(t.earnings))})</span>` : ''}</span>
+        <span class="wk-total-metric">Adherencia <strong>${t.avgAdherence === null ? '—' : `${t.avgAdherence}%`}</strong></span>
       </div>
     </div>
   `;
 
-  wrap.innerHTML = `<div class="wk-timeline">${itemsHtml}</div>${totalHtml}`;
+  wrap.innerHTML = `<div class="wk-list">${itemsHtml}</div>${totalHtml}`;
 }
 
     function syncGoals(source) {
