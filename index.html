@@ -8859,6 +8859,61 @@
     .mc-btn-solid-full.warn { background: var(--warn); }
     .mc-btn-solid-full.bad { background: var(--bad); }
     .mc-btn-solid-full .ic-svg { width: 16px; height: 16px; color: #07101f; stroke: #07101f; }
+
+    /* ==========================================================
+       v321 — Rediseño 100% visual de "Resumen del día"/"Estadísticas del
+       día" (mockup aprobado por el usuario — resumen_dia_desktop.html,
+       vista de escritorio; en mobile el mismo grid pasa a 1 columna, ver
+       @media más abajo). Mismo criterio que el resto de secciones ya
+       rediseñadas: secciones agrupadas con ícono+título (reutiliza
+       `.goals-section-title`/`.goals-section-icon`, v300, sin duplicar
+       ese patrón) y filas de label+valor con línea divisoria en vez del
+       patrón viejo `.stats-row`/`.stat-cell`/`.stats-list-row`. CERO
+       cambios funcionales: mismos ids de siempre (resumenDiaLlamadas/
+       resumenDiaAdherencia/.../statsAvgPay) — setText() en
+       renderDayStatsCards() sigue escribiendo exactamente los mismos
+       elementos, solo cambia el HTML/CSS que los envuelve.
+       `.stats-row`/`.stat-cell`/`.stats-list-row` NO se tocan — quedan
+       sin uso a propósito (mismo criterio que el resto del archivo con
+       CSS que un rediseño deja huérfano, ver `.mini-accordion`). */
+    .rd-group { display: grid; gap: 10px; }
+    .rd-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px 20px;
+    }
+    .rd-list { display: flex; flex-direction: column; }
+    .rd-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .rd-grid .rd-row:nth-last-child(-n+2) { border-bottom: none; }
+    .rd-list .rd-row { padding: 7px 0; }
+    .rd-list .rd-row:last-child { border-bottom: none; }
+    /* "Más corta" necesita envolver también la nota aclaratoria
+       (statsShortestNote, ver v202 en el JS) debajo de su propio valor —
+       mismo criterio que ya usaba `.stats-list-row-wrap` para el patrón
+       viejo, adaptado a `.rd-row`. */
+    .rd-list .rd-row-wrap {
+      border-bottom: 1px solid var(--line);
+      padding: 7px 0 6px;
+    }
+    .rd-list .rd-row-wrap:last-child { border-bottom: none; }
+    .rd-list .rd-row-wrap .rd-row { border-bottom: none; padding: 0; }
+    .rd-list .rd-row-wrap .gap-note { margin: 3px 0 0; text-align: right; }
+    .rd-label { color: var(--muted); font-size: 12.5px; }
+    .rd-value { color: var(--text); font-size: 13.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .rd-value.good { color: var(--good); }
+    .rd-value.warn { color: var(--warn); }
+    @media (max-width: 620px) {
+      .rd-grid { gap: 6px 12px; }
+      .rd-label { font-size: 11px; }
+      .rd-value { font-size: 12px; }
+    }
   </style>
 </head>
 <body>
@@ -9686,37 +9741,47 @@
 <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
 </summary>
 <div class="accordion-body">
-<div class="stats-row">
-<div class="stat-cell"><span class="stat-label">Llamadas</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaLlamadas">0</span><span class="stat-sub">Total</span></div></div>
-<div class="stat-cell"><span class="stat-label">Productivo</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaProductivo">00:00:00</span><span class="stat-sub">Tiempo real</span></div></div>
-<div class="stat-cell"><span class="stat-label">ACW</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaACW">00:00:00</span><span class="stat-sub">Tiempo extra</span></div></div>
-<div class="stat-cell"><span class="stat-label">Adherencia</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaAdherencia">—</span><span class="stat-sub" id="resumenDiaAdherenciaGoal">Objetivo ≥ 95%</span></div></div>
+<!-- v321 — Rediseño 100% visual (mockup aprobado, ver comentario extenso
+     junto a ".rd-*" en el CSS). CERO cambios funcionales: mismos ids de
+     siempre (resumenDiaLlamadas/resumenDiaAdherencia/resumenDiaProductivo/
+     resumenDiaACW/resumenDiaAdherenciaGoal/resumenDiaBreak/resumenDiaLunch/
+     resumenDiaOtro/resumenDiaHigherRate/resumenDiaConectado/
+     resumenDiaTiempoLlamadas/resumenDiaBillable/resumenDiaDropped) —
+     renderDayStatsCards() sigue escribiendo exactamente los mismos
+     elementos vía setText(), solo cambió el HTML que los envuelve. -->
+<div class="rd-group">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg cyan" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="20" x2="4" y2="10"/><line x1="10" y1="20" x2="10" y2="4"/><line x1="16" y1="20" x2="16" y2="14"/><line x1="21" y1="20" x2="3" y2="20"/></svg>Actividad</div>
+<div class="rd-grid">
+<div class="rd-row"><span class="rd-label">Llamadas</span><strong class="rd-value" id="resumenDiaLlamadas">0</strong></div>
+<div class="rd-row"><span class="rd-label">Adherencia</span><strong class="rd-value good" id="resumenDiaAdherencia">—</strong></div>
+<div class="rd-row"><span class="rd-label">Productivo</span><strong class="rd-value" id="resumenDiaProductivo">00:00:00</strong></div>
+<div class="rd-row"><span class="rd-label">ACW</span><strong class="rd-value" id="resumenDiaACW">00:00:00</strong></div>
 </div>
-<!-- Pedido del usuario (v199): desglose de tiempo no-llamada (Break/Lunch/
-     Otro, ya calculados por importedCallStats() para los tags de "Ganancias
-     de hoy"/Tabla de llamadas, pero sin lugar propio en "Resumen del día")
-     + el bono de Higher Rate ganado hoy (antes solo visible mezclado dentro
-     del monto total de Ganancias). Segunda fila del mismo componente
-     .stats-row — mismo estilo/responsive que la fila de arriba, sin CSS
-     nuevo. -->
-<div class="stats-row" style="margin-top:10px;">
-<div class="stat-cell"><span class="stat-label">Break</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaBreak">00:00:00</span><span class="stat-sub">Tiempo tomado</span></div></div>
-<div class="stat-cell"><span class="stat-label">Lunch</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaLunch">00:00:00</span><span class="stat-sub">Tiempo tomado</span></div></div>
-<div class="stat-cell"><span class="stat-label">Otro</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaOtro">00:00:00</span><span class="stat-sub">Sin clasificar</span></div></div>
-<div class="stat-cell"><span class="stat-label">Higher Rate</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaHigherRate">$0.00</span><span class="stat-sub">Bono ganado hoy</span></div></div>
+<p class="sched-hint" id="resumenDiaAdherenciaGoal" style="margin:0; text-align:right;">Objetivo ≥ 95%</p>
 </div>
-<!-- v240 — Pedido del usuario (parte 3 del pedido original de 3 partes):
-     Conectado/Tiempo llamadas/Billable/Dropped como stat-cell nuevas en
-     "Resumen del día" — mismos datos que ya se ven como píldoras en
-     "Ganancias de hoy" (renderHeader) y en Tabla de llamadas, sin lugar
-     propio hasta ahora dentro de Reportes. Tercera fila del mismo
-     componente .stats-row, mismo criterio que ya usó v199 para la segunda
-     fila (Break/Lunch/Otro/Higher Rate) — sin CSS nuevo. -->
-<div class="stats-row" style="margin-top:10px;">
-<div class="stat-cell"><span class="stat-label">Conectado</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaConectado">00:00:00</span><span class="stat-sub">Inicio a fin de shift</span></div></div>
-<div class="stat-cell"><span class="stat-label">Tiempo llamadas</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaTiempoLlamadas">00:00:00</span><span class="stat-sub">Suma de duraciones</span></div></div>
-<div class="stat-cell"><span class="stat-label">Billable</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaBillable">0</span><span class="stat-sub">Llamadas</span></div></div>
-<div class="stat-cell"><span class="stat-label">Dropped</span><div class="stat-value-wrap"><span class="stat-value" id="resumenDiaDropped">0</span><span class="stat-sub">Llamadas</span></div></div>
+
+<div class="divider"></div>
+
+<div class="rd-group">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg warn" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>Descansos y bonos</div>
+<div class="rd-grid">
+<div class="rd-row"><span class="rd-label">Break</span><strong class="rd-value" id="resumenDiaBreak">00:00:00</strong></div>
+<div class="rd-row"><span class="rd-label">Lunch</span><strong class="rd-value" id="resumenDiaLunch">00:00:00</strong></div>
+<div class="rd-row"><span class="rd-label">Otro</span><strong class="rd-value" id="resumenDiaOtro">00:00:00</strong></div>
+<div class="rd-row"><span class="rd-label">Higher Rate</span><strong class="rd-value warn" id="resumenDiaHigherRate">$0.00</strong></div>
+</div>
+</div>
+
+<div class="divider"></div>
+
+<div class="rd-group">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg blue" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.05 5A5 5 0 0 1 19 8.95M15.05 1A9 9 0 0 1 23 8.94m-1 7.98v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.68 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.32 1.85.55 2.81.68A2 2 0 0 1 22 16.92Z"/></svg>Conexión y llamadas</div>
+<div class="rd-grid">
+<div class="rd-row"><span class="rd-label">Conectado</span><strong class="rd-value" id="resumenDiaConectado">00:00:00</strong></div>
+<div class="rd-row"><span class="rd-label">Tiempo llamadas</span><strong class="rd-value" id="resumenDiaTiempoLlamadas">00:00:00</strong></div>
+<div class="rd-row"><span class="rd-label">Billable</span><strong class="rd-value" id="resumenDiaBillable">0</strong></div>
+<div class="rd-row"><span class="rd-label">Dropped</span><strong class="rd-value" id="resumenDiaDropped">0</strong></div>
+</div>
 </div>
 </div>
 </details>
@@ -9728,28 +9793,35 @@
 <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
 </summary>
 <div class="accordion-body">
-<div style="margin-top:4px;">
-<!-- Pedido del usuario (v202): "Más corta" mostraba el mínimo real (a veces
-     0 min, si Propio exportó una llamada rarísima con inicio=fin) sin
-     ninguna aclaración — se veía como si la app hubiera calculado mal. Se
-     agrega una nota debajo (statsShortestNote, oculta por default) que
-     aclara cuántas llamadas de 0 min hubo y cuál es la siguiente más corta
-     por encima de 0 — el número principal NO cambia, sigue siendo el
-     mínimo real. */-->
-<div class="stats-list-row-wrap">
-<div class="stats-list-row"><span>Más corta:</span><strong id="statsShortest">—</strong></div>
+<!-- v321 — Rediseño 100% visual (mockup aprobado, ver ".rd-*" en el CSS).
+     CERO cambios funcionales: mismos ids de siempre (statsShortest/
+     statsShortestNote/statsLongest/statsAvg/statsGapLongest/statsGapAvg/
+     statsAvgPay) — renderDayStatsCards() sigue escribiendo exactamente
+     los mismos elementos, solo cambió el HTML que los envuelve. La nota
+     de "Más corta" (v202, statsShortestNote) sigue oculta por default —
+     se muestra/oculta igual que siempre, ahora dentro de `.rd-row-wrap`
+     en vez de `.stats-list-row-wrap`. -->
+<div class="rd-group">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg cyan" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>Duración de llamadas</div>
+<div class="rd-list">
+<div class="rd-row-wrap">
+<div class="rd-row"><span class="rd-label">Más corta</span><strong class="rd-value" id="statsShortest">—</strong></div>
 <div class="gap-note" id="statsShortestNote" style="display:none;"></div>
 </div>
-<div class="stats-list-row"><span>Más larga:</span><strong id="statsLongest">—</strong></div>
-<div class="stats-list-row"><span>Promedio:</span><strong id="statsAvg">—</strong></div>
-<!-- Pedido del usuario (v199): hueco más largo/promedio del día (ya
-     calculados por importedCallStats() como gapLongest/gapAvg, sin lugar
-     propio hasta ahora) + pago promedio por llamada (Ganancias ÷ Total de
-     llamadas, cálculo nuevo y chico). Mismo componente .stats-list-row que
-     ya usa esta tarjeta, sin CSS nuevo. -->
-<div class="stats-list-row"><span>Hueco más largo:</span><strong id="statsGapLongest">—</strong></div>
-<div class="stats-list-row"><span>Hueco promedio:</span><strong id="statsGapAvg">—</strong></div>
-<div class="stats-list-row"><span>Pago promedio/llamada:</span><strong id="statsAvgPay">—</strong></div>
+<div class="rd-row"><span class="rd-label">Más larga</span><strong class="rd-value" id="statsLongest">—</strong></div>
+<div class="rd-row"><span class="rd-label">Promedio</span><strong class="rd-value" id="statsAvg">—</strong></div>
+</div>
+</div>
+
+<div class="divider"></div>
+
+<div class="rd-group">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg good" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v18"/><path d="M5 4h9l-1 3 1 3H5"/></svg>Huecos y pago</div>
+<div class="rd-list">
+<div class="rd-row"><span class="rd-label">Hueco más largo</span><strong class="rd-value" id="statsGapLongest">—</strong></div>
+<div class="rd-row"><span class="rd-label">Hueco promedio</span><strong class="rd-value" id="statsGapAvg">—</strong></div>
+<div class="rd-row"><span class="rd-label">Pago promedio/llamada</span><strong class="rd-value" id="statsAvgPay">—</strong></div>
+</div>
 </div>
 </div>
 </details>
