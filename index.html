@@ -4945,6 +4945,27 @@
       background: rgba(255,255,255,.02);
     }
 
+    /* v325 — Pedido del usuario: barra de scroll horizontal visible debajo
+       de "Resumen semanal" (#weekSummaryWrap), heredada de `.table-wrap`
+       (overflow:auto, arriba) — esa regla sigue haciendo falta para
+       #callTableWrap (su contenido interno puede desbordar en anchos
+       intermedios), pero desde el rediseño de v323 el contenido de
+       #weekSummaryWrap es `.wk-list` (filas densas, sin ningún ancho fijo
+       ni tabla de columnas por debajo) — nunca desborda su contenedor, así
+       que esa barra no tenía ninguna función real, solo aparecía como
+       resto visual sin utilidad. Se apaga aquí, con un selector propio por
+       ID (no se toca `.table-wrap` en general, que sigue sirviendo para
+       #callTableWrap sin cambios) — mismo criterio de "ocultar scrollbar
+       nativa sin quitar overflow" que ya usa el resto de la app
+       (scrollbar-width:none + ::-webkit-scrollbar), aquí llevado a
+       overflow-x:hidden directo porque no hace falta ningún desplazamiento
+       horizontal en absoluto para este contenedor. overflow-y se deja tal
+       cual (`visible`, heredado) — este contenedor tampoco necesita scroll
+       vertical propio, la página entera se desplaza normal. */
+    #weekSummaryWrap {
+      overflow-x: hidden;
+    }
+
     .gap-cell {
       display: grid;
       gap: 4px;
