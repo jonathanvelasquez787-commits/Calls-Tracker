@@ -9460,19 +9460,11 @@
 <div class="sidebar-section-label">Navegación</div>
 <div class="sidebar-links">
 <button class="sidebar-link active" data-page="home" type="button"><span class="sidebar-link-icon sidebar-link-icon-home"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg></span><span class="sidebar-link-label">Inicio</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
-<!-- v270 — Pedido del usuario: orden del menú lateral — Inicio, Bloques del
-     día, Horario, Reportes, Avisos (antes: Inicio, Horario, Bloques del
-     día, Reportes, Avisos). Solo se reordenan estos 2 botones entre sí —
-     mismos ids/data-page de siempre (schedule/blocks), sin tocar
-     navigateToPage() ni ninguna otra lógica, que ya rutea por data-page sin
-     depender del orden en el DOM. -->
-<!-- v250 — Pedido del usuario: "Bloques del día" (antes la 2da sección
-     dentro de la página "🗓️ Horario", justo debajo del editor) pasa a su
-     PROPIA página del menú lateral — ver #pageBlocks más abajo. Se separa
-     el CONFIGURAR (Horario, sigue en su propia página) de VER CÓMO VA EL
-     DÍA (Bloques del día, ahora acá) — mismo criterio de "una página, un
-     propósito" que ya separa Horario de Reportes. -->
-<button class="sidebar-link" data-page="blocks" type="button"><span class="sidebar-link-icon sidebar-link-icon-blocks"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg></span><span class="sidebar-link-label">Bloques del día</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
+<!-- v331 — Pedido del usuario: "Bloques del día" deja de ser su propia
+     página del menú lateral (ver comentario extenso junto a
+     #scheduleAccordion, más abajo, dentro de #pageHome) — se quita este
+     botón sin reemplazo. El sidebar queda con 4 páginas: Inicio, Horario,
+     Reportes, Avisos. -->
 <button class="sidebar-link" data-page="schedule" type="button"><span class="sidebar-link-icon sidebar-link-icon-schedule"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span class="sidebar-link-label">Horario</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
 <button class="sidebar-link" data-page="reports" type="button"><span class="sidebar-link-icon sidebar-link-icon-reports"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="20" x2="4" y2="10"/><line x1="10" y1="20" x2="10" y2="4"/><line x1="16" y1="20" x2="16" y2="14"/><line x1="21" y1="20" x2="3" y2="20"/></svg></span><span class="sidebar-link-label">Reportes</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
 <!-- v251 — Pedido del usuario: el botón/página del menú lateral se
@@ -9694,6 +9686,102 @@
 </div>
 </details>
 
+<!-- v331 — Pedido del usuario (ya aprobado con mockup en otra sesión —
+     fusión de secciones, no rediseño visual, así que no vuelve a pasar por
+     el protocolo de mockup): "Bloques del día" deja de ser su propia
+     página del menú lateral ("📋 Bloques del día", #pageBlocks — pasó por
+     ahí desde v250) y se fusiona aquí, dentro de "🏠 Inicio", justo
+     después de "Ganancias de hoy" y antes de "Llamadas" — mismo criterio
+     que ya agrupa en Inicio todo lo que se quiere ver de un vistazo al
+     abrir la app. CERO cambios funcionales: mismo id `scheduleAccordion`
+     (con `open` desde siempre, sin tocar) y todos sus hijos
+     (scheduleSubtitle/scheduleOffWorkedNote/blockSummaryStrip/
+     dayMetricsRow/adherenceBadge/adherenceGoalBadge/
+     productivityGoalBadge/adherenceLiveBadge/dayInterruptionsRow/
+     collapseCompletedBlocksBtn/scheduleList) — el JS que ya los usa
+     (renderSchedule(), etc.) sigue funcionando exactamente igual, solo
+     cambió qué `.app-page` lo envuelve. El sidebar queda con 4 páginas:
+     Inicio, Horario, Reportes, Avisos. -->
+<details class="accordion-card" id="scheduleAccordion" open>
+<summary>
+  <div class="accordion-head">
+    <h2>Bloques del día</h2>
+    <p id="scheduleSubtitle">Horario fijo que la app ya conoce.</p>
+    <p class="schedule-off-worked-note" id="scheduleOffWorkedNote" style="display:none;">Trabajaste en tu día libre — no aparece marcado como libre, se ve igual que un día laboral normal.</p>
+  </div>
+  <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
+</summary>
+<div class="accordion-body">
+  <!-- v314 — Pedido del usuario: "Turno de Hoy" (antes su propia sección
+       arriba de Llamadas, con Shift/Break/Lunch/ACW) se fusiona aquí,
+       arriba de la fila de Adherencia/Meta/Productividad — conceptualmente
+       ambas filas ya eran "resumen del día", y renderSchedule() (la misma
+       función que llena #scheduleList más abajo) ya calculaba ambos
+       conjuntos de datos juntos, solo que se pintaban en 2 secciones
+       separadas. Mockup VISUAL de 2 vistas (celular y escritorio) aprobado
+       por el usuario antes de tocar código — incluyó también quitar el
+       relleno líquido de estas tarjetas (ver .bsc-fill en el CSS). CERO
+       cambios funcionales: mismo id `blockSummaryStrip`, mismo
+       renderBlockSummaryStrip() de siempre — solo cambió dónde vive el nodo
+       en el HTML.
+       v330 — Pedido del usuario (rediseño escritorio de "Bloques del día",
+       mockup de 2 vistas aprobado — la vista mobile ya se había aprobado en
+       otra sesión, no se repite acá): en escritorio, Shift/Break/Lunch/ACW
+       pasan de 2 filas (Shift ancho arriba, grid de 3 abajo) a UNA sola
+       fila de 4 columnas (1.6fr 1fr 1fr 1fr), como en el mockup. Se agrega
+       la clase `blocks-top-grid` a este mismo contenedor — el CSS (ver
+       ".blocks-top-grid", buscar "v330") usa `display:contents` en
+       `.block-summary-strip` para que sus 3 hijos (Break/Lunch/ACW) se
+       vuelvan hijos DIRECTOS de este grid, ocupando las columnas 2-4,
+       mientras `.block-summary-shift-row` ocupa la columna 1 — sin tocar
+       renderBlockSummaryStrip() ni el HTML que genera, que sigue
+       escribiendo exactamente el mismo markup de siempre (mismo
+       `.block-summary-shift-row` + `.block-summary-strip` por separado).
+       Solo aplica desde el breakpoint de escritorio — en mobile (ya
+       aprobado aparte) se mantiene la disposición apilada de siempre. -->
+  <div class="blocks-top-grid" id="blockSummaryStrip"></div>
+  <div class="day-metrics-row sched-blocks-summary-row" id="dayMetricsRow">
+    <div class="sched-blocks-summary-card" data-metric="adherence">
+      <div class="sched-blocks-summary-label"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg> Adherencia</div>
+      <span class="slot-status" id="adherenceBadge">Adherencia: —</span>
+    </div>
+    <div class="sched-blocks-summary-card" data-metric="goal">
+      <div class="sched-blocks-summary-label"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v18"/><path d="M5 4h9l-1 3 1 3H5"/></svg> Meta</div>
+      <span class="slot-status" id="adherenceGoalBadge" style="display:none;"></span>
+    </div>
+    <div class="sched-blocks-summary-card" data-metric="productivity">
+      <div class="sched-blocks-summary-label"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Productividad</div>
+      <span class="slot-status" id="productivityGoalBadge" title="Minutos productivos logrados hoy vs. la suma de las metas configuradas en cada bloque de Trabajo (Horario → Bloques). Un bloque sin meta configurada no cuenta para este total.">Meta productiva: —</span>
+    </div>
+    <span class="slot-status bad live-exception" id="adherenceLiveBadge" style="display:none;"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg> Fuera de adherencia ahora</span>
+  </div>
+  <!-- v330 — Pedido del usuario (mockup de escritorio aprobado): el chip de
+       interrupción y el toggle de contraer pasan a vivir en la MISMA fila,
+       uno al lado del otro (antes cada uno en su propia fila completa,
+       apilados). `.blocks-footer-row` es puramente un envoltorio nuevo —
+       ninguno de los 2 hijos cambia de id/clase/contenido, solo se
+       reacomodan por CSS (buscar "v330" en ese bloque). En mobile se
+       mantiene la disposición apilada de siempre. -->
+  <div class="blocks-footer-row">
+  <!-- v293 — Pedido del usuario: interrupciones accidentales de Shift/
+       Break/Lunch (ver state.dayInterruptions/registerDayInterruption() en
+       el JS) — chips ámbar informativos, llenados por renderSchedule().
+       Vacío = display:none, sin caja colgando. -->
+  <div class="day-interruptions-row" id="dayInterruptionsRow" style="display:none;"></div>
+  <!-- v278 — Pedido del usuario: toggle "Contraer bloques al terminar",
+       persistido en settings.collapseCompletedBlocks (ver
+       defaultSettings()/toggleCollapseCompletedBlocks() en el JS). -->
+  <div class="sblk-collapse-row">
+    <button class="sblk-collapse-toggle" id="collapseCompletedBlocksBtn" type="button" aria-pressed="false">
+      <span class="sblk-collapse-check" aria-hidden="true">✓</span>
+      <span>Contraer bloques al terminar</span>
+    </button>
+  </div>
+  </div>
+  <div class="schedule sblk-timeline" id="scheduleList"></div>
+</div>
+</details>
+
 <!-- v266 — Pedido del usuario: "Llamadas" (Iniciar llamada/Pegar
      Llamadas/Agregar llamada) vive DENTRO de la página "🏠 Inicio"
      (#pageHome), justo debajo de "Turno de Hoy" y arriba de "Ganancias del
@@ -9879,9 +9967,11 @@
      lo devolvió a ser un popup propio (#higherRateModal, ver header) — ya
      no vive en esta página.
      v250 — Pedido del usuario: "Bloques del día" (#scheduleAccordion) se
-     muda a su PROPIA página ("📋 Bloques del día", ver #pageBlocks más
-     abajo) — esta página se queda SOLO con el editor de Horario
-     (#scheduleConfigAccordion). -->
+     muda a su PROPIA página ("📋 Bloques del día") — esta página se queda
+     SOLO con el editor de Horario (#scheduleConfigAccordion).
+     v331 — Esa página propia se elimina (ver comentario junto a
+     #scheduleAccordion, ahora dentro de #pageHome) — esta nota histórica
+     se deja tal cual, el editor de Horario se queda igual. -->
 <div class="app-page" data-page="schedule" hidden id="pageSchedule">
 <!-- v236 — Pedido del usuario: "Horario" (antes un modal, #shiftModal) pasa
      a ser una sección expandible más de la página, mismo patrón que "Tabla
@@ -9907,9 +9997,10 @@
      necesitar scroll ni forzar el open.
      v250 — Nota sobre el párrafo de arriba ("se coloca justo arriba de
      'Bloques del día'"): ya no es así — "Bloques del día" se mudó a su
-     propia página ("📋 Bloques del día", ver #pageBlocks), separada de
-     esta. Se deja el resto del comentario tal cual por su valor histórico
-     (explica por qué el editor de Horario tiene la forma que tiene). -->
+     propia página, separada de esta (v331: esa página ya no existe, ver
+     comentario junto a #scheduleAccordion dentro de #pageHome). Se deja
+     el resto del comentario tal cual por su valor histórico (explica por
+     qué el editor de Horario tiene la forma que tiene). -->
 <details class="accordion-card sched-v271" id="scheduleConfigAccordion">
 <summary>
   <div class="accordion-head">
@@ -10111,102 +10202,7 @@
 
 </div><!-- /pageSchedule -->
 
-<!-- v250 — Pedido del usuario: "Bloques del día" (antes la 2da sección de
-     la página "🗓️ Horario", justo debajo del editor de Horario) pasa a su
-     PROPIA página del menú lateral ("📋 Bloques del día") — separa
-     CONFIGURAR el horario (página "Horario") de VER cómo va el día en
-     curso contra ese plan (esta página). Ningún id cambió
-     (scheduleAccordion/scheduleSubtitle/scheduleOffWorkedNote/
-     dayMetricsRow/adherenceAccordion/adherenceBadge/
-     adherenceCheckpointList/adherenceGoalBadge/adherenceLiveBadge/
-     productivityGoalBadge/scheduleList) — el JS que ya los usa
-     (renderSchedule/dayAdherence/slotMinuteAdherence/etc.) sigue
-     funcionando exactamente igual, solo cambió qué `.app-page` los
-     envuelve. `applyAccordionState()`/`wireAccordionPersistence()` ya
-     iteran `details[id]` de forma genérica (no por página), así que el
-     recuerdo de abierto/cerrado de este acordeón sigue funcionando sin
-     tocar nada ahí. -->
-<div class="app-page" data-page="blocks" hidden id="pageBlocks">
-<details class="accordion-card" id="scheduleAccordion" open>
-<summary>
-  <div class="accordion-head">
-    <h2>Bloques del día</h2>
-    <p id="scheduleSubtitle">Horario fijo que la app ya conoce.</p>
-    <p class="schedule-off-worked-note" id="scheduleOffWorkedNote" style="display:none;">Trabajaste en tu día libre — no aparece marcado como libre, se ve igual que un día laboral normal.</p>
-  </div>
-  <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
-</summary>
-<div class="accordion-body">
-  <!-- v314 — Pedido del usuario: "Turno de Hoy" (antes su propia sección
-       arriba de Llamadas, con Shift/Break/Lunch/ACW) se fusiona aquí,
-       arriba de la fila de Adherencia/Meta/Productividad — conceptualmente
-       ambas filas ya eran "resumen del día", y renderSchedule() (la misma
-       función que llena #scheduleList más abajo) ya calculaba ambos
-       conjuntos de datos juntos, solo que se pintaban en 2 secciones
-       separadas. Mockup VISUAL de 2 vistas (celular y escritorio) aprobado
-       por el usuario antes de tocar código — incluyó también quitar el
-       relleno líquido de estas tarjetas (ver .bsc-fill en el CSS). CERO
-       cambios funcionales: mismo id `blockSummaryStrip`, mismo
-       renderBlockSummaryStrip() de siempre — solo cambió dónde vive el nodo
-       en el HTML.
-       v330 — Pedido del usuario (rediseño escritorio de "Bloques del día",
-       mockup de 2 vistas aprobado — la vista mobile ya se había aprobado en
-       otra sesión, no se repite acá): en escritorio, Shift/Break/Lunch/ACW
-       pasan de 2 filas (Shift ancho arriba, grid de 3 abajo) a UNA sola
-       fila de 4 columnas (1.6fr 1fr 1fr 1fr), como en el mockup. Se agrega
-       la clase `blocks-top-grid` a este mismo contenedor — el CSS (ver
-       ".blocks-top-grid", buscar "v330") usa `display:contents` en
-       `.block-summary-strip` para que sus 3 hijos (Break/Lunch/ACW) se
-       vuelvan hijos DIRECTOS de este grid, ocupando las columnas 2-4,
-       mientras `.block-summary-shift-row` ocupa la columna 1 — sin tocar
-       renderBlockSummaryStrip() ni el HTML que genera, que sigue
-       escribiendo exactamente el mismo markup de siempre (mismo
-       `.block-summary-shift-row` + `.block-summary-strip` por separado).
-       Solo aplica desde el breakpoint de escritorio — en mobile (ya
-       aprobado aparte) se mantiene la disposición apilada de siempre. -->
-  <div class="blocks-top-grid" id="blockSummaryStrip"></div>
-  <div class="day-metrics-row sched-blocks-summary-row" id="dayMetricsRow">
-    <div class="sched-blocks-summary-card" data-metric="adherence">
-      <div class="sched-blocks-summary-label"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg> Adherencia</div>
-      <span class="slot-status" id="adherenceBadge">Adherencia: —</span>
-    </div>
-    <div class="sched-blocks-summary-card" data-metric="goal">
-      <div class="sched-blocks-summary-label"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v18"/><path d="M5 4h9l-1 3 1 3H5"/></svg> Meta</div>
-      <span class="slot-status" id="adherenceGoalBadge" style="display:none;"></span>
-    </div>
-    <div class="sched-blocks-summary-card" data-metric="productivity">
-      <div class="sched-blocks-summary-label"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Productividad</div>
-      <span class="slot-status" id="productivityGoalBadge" title="Minutos productivos logrados hoy vs. la suma de las metas configuradas en cada bloque de Trabajo (Horario → Bloques). Un bloque sin meta configurada no cuenta para este total.">Meta productiva: —</span>
-    </div>
-    <span class="slot-status bad live-exception" id="adherenceLiveBadge" style="display:none;"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg> Fuera de adherencia ahora</span>
-  </div>
-  <!-- v330 — Pedido del usuario (mockup de escritorio aprobado): el chip de
-       interrupción y el toggle de contraer pasan a vivir en la MISMA fila,
-       uno al lado del otro (antes cada uno en su propia fila completa,
-       apilados). `.blocks-footer-row` es puramente un envoltorio nuevo —
-       ninguno de los 2 hijos cambia de id/clase/contenido, solo se
-       reacomodan por CSS (buscar "v330" en ese bloque). En mobile se
-       mantiene la disposición apilada de siempre. -->
-  <div class="blocks-footer-row">
-  <!-- v293 — Pedido del usuario: interrupciones accidentales de Shift/
-       Break/Lunch (ver state.dayInterruptions/registerDayInterruption() en
-       el JS) — chips ámbar informativos, llenados por renderSchedule().
-       Vacío = display:none, sin caja colgando. -->
-  <div class="day-interruptions-row" id="dayInterruptionsRow" style="display:none;"></div>
-  <!-- v278 — Pedido del usuario: toggle "Contraer bloques al terminar",
-       persistido en settings.collapseCompletedBlocks (ver
-       defaultSettings()/toggleCollapseCompletedBlocks() en el JS). -->
-  <div class="sblk-collapse-row">
-    <button class="sblk-collapse-toggle" id="collapseCompletedBlocksBtn" type="button" aria-pressed="false">
-      <span class="sblk-collapse-check" aria-hidden="true">✓</span>
-      <span>Contraer bloques al terminar</span>
-    </button>
-  </div>
-  </div>
-  <div class="schedule sblk-timeline" id="scheduleList"></div>
-</div>
-</details>
-</div><!-- /pageBlocks -->
+
 
 <!-- v238 — Pedido del usuario: página "📊 Reportes" del menú lateral —
      Resumen del día/Estadísticas del día, Ganancias del ciclo y Resumen
@@ -20396,11 +20392,11 @@ function render() {
     }
 
     function navigateToPage(page) {
-      // v250 — Pedido del usuario: "Bloques del día" se muda a su propia
-      // página ("blocks", ver #pageBlocks en el HTML) — se agrega aquí a
-      // la lista de páginas válidas, mismo criterio que ya usa cada id
-      // existente.
-      const pages = ['home', 'schedule', 'blocks', 'reports', 'settings'];
+      // v331 — Pedido del usuario: "Bloques del día" se fusiona dentro de
+      // "home" (ver #scheduleAccordion en el HTML, ahora hijo de
+      // #pageHome) — se quita 'blocks' de esta lista, el sidebar queda con
+      // 4 páginas.
+      const pages = ['home', 'schedule', 'reports', 'settings'];
       if (!pages.includes(page)) page = 'home';
       currentPage = page;
       relocateCallsSection(page);
