@@ -2966,26 +2966,18 @@
       }
     }
 
-    /* v330 — Pedido del usuario: en escritorio, el chip de interrupción
-       accidental y el toggle "Contraer bloques al terminar" pasan a vivir
-       en la misma fila (antes cada uno en su propia fila completa,
-       apilados) — mismo criterio del mockup. `margin-left: auto` en el
-       toggle lo pega al borde derecho tanto si el chip de interrupción
-       está visible (day-interruptions-row con contenido) como si está
-       vacío/oculto (display:none, el caso normal — sin interrupciones ese
-       día) — no depende de leer el estado del hermano. Solo escritorio;
-       en mobile `.blocks-footer-row` no tiene ninguna regla propia, así
-       que ambos elementos se quedan apilados en su fila completa de
-       siempre, sin cambios. */
+    /* v330 — Pedido del usuario: en escritorio, el toggle "Contraer bloques
+       al terminar" vive dentro de `.blocks-footer-row` (antes compartía
+       fila con el chip de interrupción accidental, ver v335 — ese chip ya
+       no existe, así que este envoltorio ahora solo tiene un hijo real,
+       pero se deja tal cual para no tocar el HTML de más). `margin-left:
+       auto` lo pega al borde derecho. Solo escritorio; en mobile
+       `.blocks-footer-row` no tiene ninguna regla propia. */
     @media (min-width: 761px) {
       .blocks-footer-row {
         display: flex;
         align-items: center;
         gap: 14px;
-      }
-      .blocks-footer-row .day-interruptions-row {
-        flex: 1 1 auto;
-        margin-bottom: 0;
       }
       .blocks-footer-row .sblk-collapse-row {
         flex: 0 0 auto;
@@ -8144,62 +8136,18 @@
       background-image: none !important;
     }
 
-    /* v293 — Pedido del usuario: interrupciones accidentales de Shift/
-       Break/Lunch (cierre por error, reabierto dentro de la ventana de
-       gracia — ver ACCIDENTAL_TOGGLE_GRACE_MIN/registerDayInterruption()
-       en el JS) — chips informativos, tono ámbar (mismo lenguaje visual
-       que `.imported-late`: fondo/borde/texto derivados de --warn-rgb).
-       Vive arriba del timeline de bloques, debajo de las 3 mini-tarjetas
-       de `#dayMetricsRow`. Contenedor oculto por completo (display:none,
-       ver HTML) cuando no hay ninguna interrupción ese día — nunca una
-       caja vacía. */
-    .day-interruptions-row {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-bottom: 4px;
-    }
-    .day-interruption-chip {
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      border-radius: 12px;
-      border: 1px solid rgba(var(--warn-rgb), .34);
-      background: rgba(var(--warn-rgb), .10);
-      padding: 9px 12px;
-    }
-    .day-interruption-chip .ic-svg {
-      flex: 0 0 auto;
-      margin-top: 1px;
-      color: var(--warn);
-      stroke: var(--warn);
-    }
-    .day-interruption-chip-title {
-      font-size: 12.5px;
-      font-weight: 800;
-      color: var(--pale-warn);
-    }
-    .day-interruption-chip-detail {
-      font-size: 11.5px;
-      color: var(--muted);
-      margin-top: 2px;
-    }
-    /* Nota secundaria dentro de la tarjeta de bloque afectada — mismo
-       lenguaje que `.sblk-meta-line`, con el ícono "refresh" (↺) y el
-       texto en tono ámbar en vez del gris de siempre. */
-    .sblk-interruption-note {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--pale-warn);
-      font-weight: 700;
-    }
-    .sblk-interruption-note .ic-svg {
-      color: var(--warn);
-      stroke: var(--warn);
-    }
+    /* v335 — Pedido del usuario: se quitó por completo la UI de
+       "interrupciones accidentales" (el chip resumen `.day-interruption-
+       chip*` y la nota secundaria `.sblk-interruption-note` dentro de la
+       tarjeta de bloque afectada) — ya no se muestra en ningún lado. El
+       registro subyacente (state.dayInterruptions/registerDayInterruption(),
+       y la lógica de "continuar tras cierre accidental" en startShift()/
+       startPause()) se conserva sin cambios, solo dejó de tener UI propia
+       — ver el comentario junto a registerDayInterruption() en el JS. Las
+       reglas CSS que pintaban esa UI se retiran aquí (código muerto sin
+       ningún elemento que las use ya en el HTML).
 
-    /* "Contraer bloques al terminar": toggle chico tipo checkbox, mismo
+       "Contraer bloques al terminar": toggle chico tipo checkbox, mismo
        lenguaje visual que ya usa `.sidebar-icon-btn[aria-pressed="true"]`
        (píldora con borde/fondo/texto en cian cuando está activo). Vive
        arriba de `#scheduleList`, dentro del mismo `.accordion-body` de
@@ -9909,11 +9857,11 @@
        reacomodan por CSS (buscar "v330" en ese bloque). En mobile se
        mantiene la disposición apilada de siempre. -->
   <div class="blocks-footer-row">
-  <!-- v293 — Pedido del usuario: interrupciones accidentales de Shift/
-       Break/Lunch (ver state.dayInterruptions/registerDayInterruption() en
-       el JS) — chips ámbar informativos, llenados por renderSchedule().
-       Vacío = display:none, sin caja colgando. -->
-  <div class="day-interruptions-row" id="dayInterruptionsRow" style="display:none;"></div>
+  <!-- v335 — Pedido del usuario: se quitó el chip resumen de interrupciones
+       accidentales (antes #dayInterruptionsRow aquí) — el registro
+       subyacente (state.dayInterruptions/registerDayInterruption()) se
+       conserva sin mostrarse en ningún lado, ver nota junto a
+       registerDayInterruption() en el JS. -->
   <!-- v278 — Pedido del usuario: toggle "Contraer bloques al terminar",
        persistido en settings.collapseCompletedBlocks (ver
        defaultSettings()/toggleCollapseCompletedBlocks() en el JS). -->
@@ -10314,11 +10262,10 @@
 </div>
 <div class="rpt-cycle-grid rpt-cycle-grid-2" id="rptCycleGrid"></div>
 
-<div class="rpt-section-head">
-<div class="rpt-section-title" id="rptSecInterrupt"></div>
-</div>
-<div id="rptInterruptCard"></div>
-
+<!-- v335 — Pedido del usuario: se quitó la sección "Interrupciones
+     accidentales — esta semana" (antes aquí, #rptSecInterrupt/
+     #rptInterruptCard) — el registro subyacente no se toca, ver el
+     comentario junto a registerDayInterruption() en el JS. -->
 <div class="rpt-section-head" style="margin-bottom:8px;">
 <div class="rpt-section-title" style="text-transform:uppercase;">Tendencias (vs 7 días anteriores)</div>
 </div>
@@ -15442,12 +15389,6 @@ function reportsCallsByHour(days = 14) {
   return buckets;
 }
 
-// Interrupciones accidentales (Shift/Break/Lunch continuados tras un cierre
-// por error, ver registerDayInterruption()) acumuladas en la semana.
-function reportsWeekInterruptions(offset = 0) {
-  return weekDaysForOffset(offset).reduce((sum, d) => sum + dayInterruptions(todayCallDateKey(d)).length, 0);
-}
-
 // % Billable / % Dropped de TODAS las llamadas de la semana (en vez de
 // solo el total crudo que ya muestra Resumen semanal).
 function reportsWeekBillableDropped(offset = 0) {
@@ -15525,7 +15466,6 @@ function renderReportsDashboard() {
   setSecTitle('rptSecHours', `${iconHtml('phone')} Llamadas por hora del día`);
   setSecTitle('rptSecQuality', `${iconHtml('zap')} Calidad y adherencia`);
   setSecTitle('rptSecCycle', `${iconHtml('flag')} Ganancias del ciclo`);
-  setSecTitle('rptSecInterrupt', `${iconHtml('alertTriangle')} Interrupciones accidentales — esta semana`);
 
   // v327 — Pedido del usuario: fusión de los 4 KPI cards (Productivo/
   // Adherencia/Llamadas/Ganancias, comparados contra ayer) con las 3
@@ -15738,19 +15678,10 @@ function renderReportsDashboard() {
     `;
   }
 
-  // v327 — Interrupciones accidentales de la semana (nuevo) — reutiliza
-  // dayInterruptions()/registerDayInterruption(), ya existentes desde v293
-  // (turno/Break/Lunch continuados tras un cierre por error).
-  const interruptCard = document.getElementById('rptInterruptCard');
-  if (interruptCard) {
-    const count = reportsWeekInterruptions(0);
-    interruptCard.innerHTML = `
-      <div class="rpt-mini-card">
-        <div class="rpt-act-row"><span class="rpt-act-left">${iconHtml('alertTriangle')} Turno/Break/Lunch continuados por error</span><span class="rpt-act-val">${count}</span></div>
-        <div class="note" style="margin:6px 0 0;">${count === 0 ? 'Ninguna esta semana — nada que revisar.' : 'Ver el detalle en la tarjeta del bloque afectado, dentro de "Bloques del día" de ese día.'}</div>
-      </div>
-    `;
-  }
+  // v335 — Pedido del usuario: se quitó la tarjeta "Interrupciones
+  // accidentales — esta semana" (antes aquí, #rptInterruptCard) — el
+  // registro subyacente no se toca, ver el comentario junto a
+  // registerDayInterruption() en el JS.
 
   // Tendencias vs 7 días anteriores + % Billable/Dropped semanal (nuevo)
   const trendRow = document.getElementById('rptTrendRow');
@@ -16252,12 +16183,21 @@ function renderWeekSummary() {
     // patrón que SHIFT_START_EARLY_GRACE_MIN/ADHERENCE_TOLERANCE_MIN.
     const ACCIDENTAL_TOGGLE_GRACE_MIN = 5;
 
-    // Registra un hueco de interrupción accidental para mostrarse
-    // informativamente en "Bloques del día" (ver renderSchedule()) — no
-    // afecta ningún cálculo (Conectado ya es tiempo real transcurrido de
-    // inicio a fin, sin restar nada; el hueco simplemente queda incluido
-    // ahí, comportamiento ya esperado). Mismo patrón que dayNotes/
-    // gapAnnotations: objeto { [dayKey]: [{ id, type, gapStart, gapEnd }] }.
+    // v335 — Pedido del usuario: se quitó toda la UI que mostraba esto
+    // (el chip resumen en "Bloques del día" y la sección de Reportes) —
+    // el registro en sí SE CONSERVA a propósito, sin ningún cambio de
+    // comportamiento: startShift()/startPause() siguen "reabriendo" un
+    // turno/Break/Lunch cerrado por accidente dentro de la ventana de
+    // gracia (ACCIDENTAL_TOGGLE_GRACE_MIN), y "Tabla de llamadas y
+    // acciones de hoy" sigue mostrando esas filas como "Shift/Break/Lunch
+    // continuado (interrupción accidental)" (ver setEvent(), vía
+    // dayEvents() — un registro aparte, no tocado). Solo dejó de existir
+    // el chip/tarjeta que resumían esto mismo en otro lado. Registra un
+    // hueco de interrupción accidental — no afecta ningún cálculo
+    // (Conectado ya es tiempo real transcurrido de inicio a fin, sin
+    // restar nada; el hueco simplemente queda incluido ahí, comportamiento
+    // ya esperado). Mismo patrón que dayNotes/gapAnnotations: objeto
+    // { [dayKey]: [{ id, type, gapStart, gapEnd }] }.
     function registerDayInterruption(dayKey, type, gapStartISO, gapEndISO) {
       if (!state.dayInterruptions || typeof state.dayInterruptions !== 'object') state.dayInterruptions = {};
       const normalized = callDateKeyFromValue(dayKey) || dayKey;
@@ -19468,52 +19408,11 @@ function renderBlockSummaryStrip(cards) {
   `;
 }
 
-// v293 — Pedido del usuario: fila de chips ámbar con las interrupciones
-// accidentales de HOY (o del día activo) — ver state.dayInterruptions/
-// registerDayInterruption(). Se oculta por completo (display:none, sin
-// caja colgando) cuando no hay ninguna. Llamada desde renderSchedule(), una
-// sola vez por render — antes del `return` temprano de "sin horario
-// configurado", para que también se vea en ese caso.
-function renderDayInterruptionsRow(dayKey) {
-  const row = document.getElementById('dayInterruptionsRow');
-  if (!row) return;
-  const list = dayInterruptions(dayKey);
-  if (!list.length) {
-    row.style.display = 'none';
-    row.innerHTML = '';
-    return;
-  }
-  const typeLabel = { shift: 'Turno', break: 'Break', lunch: 'Lunch' };
-  // v329 — Bug reportado por el usuario (con captura, mockup mobile
-  // aprobado): cuando la interrupción se resuelve casi al instante (el
-  // caso típico — el usuario da click por error y vuelve a dar click casi
-  // enseguida), gapStart y gapEnd caen prácticamente en el mismo segundo:
-  // el texto salía como "11:10 AM – 11:10 AM · 0 min" — un dato que se lee
-  // como roto (misma hora dos veces, "0 min"), en vez de comunicar que fue
-  // una interrupción breve sin consecuencia. Se muestra una sola hora
-  // (el inicio) + un mensaje genérico cuando la interrupción dura menos de
-  // 1 minuto; solo se muestra el rango completo + los minutos cuando de
-  // verdad hay una duración que vale la pena reportar.
-  row.innerHTML = list.map(item => {
-    const gapStart = new Date(item.gapStart);
-    const gapEnd = new Date(item.gapEnd);
-    const mins = Math.max(0, (gapEnd.getTime() - gapStart.getTime()) / 60000);
-    const label = typeLabel[item.type] || 'Turno';
-    const detailText = mins < 1
-      ? `${timeLabelFromDate(gapStart)} · interrupción breve, sin perder tu progreso`
-      : `${timeLabelFromDate(gapStart)} – ${timeLabelFromDate(gapEnd)} · ${formatMinutes(mins)} min · sin perder tu progreso`;
-    return `
-      <div class="day-interruption-chip">
-        ${iconHtml('alertTriangle')}
-        <div style="min-width:0;">
-          <div class="day-interruption-chip-title">${escapeHtml(label)} continuado por accidente</div>
-          <div class="day-interruption-chip-detail">${detailText}</div>
-        </div>
-      </div>
-    `;
-  }).join('');
-  row.style.display = '';
-}
+// v335 — Pedido del usuario: se quitó por completo el chip resumen de
+// interrupciones accidentales (antes renderDayInterruptionsRow(), pintaba
+// #dayInterruptionsRow) y la nota secundaria dentro de la tarjeta de
+// bloque afectada — ver el comentario junto a registerDayInterruption()
+// en el JS para qué se conserva y qué no.
 
 function renderSchedule() {
       const dayKey = getActiveDayKey();
@@ -19571,8 +19470,6 @@ function renderSchedule() {
         offWorkedNote.style.display = workedOnDayOff ? 'block' : 'none';
       }
 
-      renderDayInterruptionsRow(dayKey);
-
       if (!plannedSlots.length) {
         wrap.innerHTML = '<div class="note">No hay horario configurado para este día. Edítalo en “Horario”.</div>';
         renderBlockSummaryStrip([]);
@@ -19627,12 +19524,6 @@ function renderSchedule() {
       // tarjeta de Shift para su propio rango.
       const breakBlockTimes = [];
       const lunchBlockTimes = [];
-
-      // v293 — Pedido del usuario: lista de interrupciones accidentales de
-      // este día (ver registerDayInterruption()) — se usa tanto para el
-      // chip resumen (ver renderDayInterruptionsRow) como para la nota
-      // secundaria dentro de la tarjeta de bloque afectada, más abajo.
-      const dayInterruptionsList = dayInterruptions(dayKey);
 
       const slotRows = plannedSlots.map((slot, slotIdx) => {
         const s = toMinutes(slot.start), e = toMinutes(slot.end);
@@ -19799,23 +19690,6 @@ function renderSchedule() {
           ? `<div class="sblk-meta-line" style="${statusClass ? `color: var(--${statusClass}); font-weight: 700;` : ''}">${escapeHtml(stats.status)}</div>`
           : '';
 
-        // v293 — Pedido del usuario: nota secundaria "Continuado tras
-        // interrupción accidental de X min (HH:MM–HH:MM)" dentro del bloque
-        // cuya ventana contiene el hueco registrado — 'shift' se asocia a
-        // bloques de Trabajo (la interrupción es del turno completo, no de
-        // un tipo de bloque puntual); Break/Lunch se asocian a su propio
-        // tipo. Solo se muestra si el hueco cae dentro de [slotStart,
-        // slotEnd) de ESTE bloque — sin match, no se agrega nada.
-        const slotInterruptionType = slot.type === 'Work' ? 'shift' : slot.type.toLowerCase();
-        const matchedInterruption = dayInterruptionsList.find(item => {
-          if (item.type !== slotInterruptionType) return false;
-          const gapStartTime = new Date(item.gapStart).getTime();
-          return gapStartTime >= stats.slotStart.getTime() && gapStartTime < stats.slotEnd.getTime();
-        });
-        const interruptionNoteHtml = matchedInterruption
-          ? `<div class="sblk-meta-line sblk-interruption-note">${iconHtml('repeat')} Continuado tras interrupción accidental de ${formatMinutes(Math.max(0, (new Date(matchedInterruption.gapEnd).getTime() - new Date(matchedInterruption.gapStart).getTime()) / 60000))} min (${timeLabelFromDate(new Date(matchedInterruption.gapStart))}–${timeLabelFromDate(new Date(matchedInterruption.gapEnd))})</div>`
-          : '';
-
         // v278 — Pedido del usuario: relleno líquido vertical + punto del
         // riel sincronizado + texto legible sobre el líquido. Un solo
         // número, 3 usos: el alto de `.sblk-fill`, el `top` de `.sblk-dot`,
@@ -19885,7 +19759,6 @@ function renderSchedule() {
                 ${goalBarHtml}
                 <div class="sblk-meta-line">${escapeHtml(progressLabel)}</div>
                 ${statusDetailLine}
-                ${interruptionNoteHtml}
                 ${adherenceBarHtml}
               </div>
             </div>
