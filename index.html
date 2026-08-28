@@ -3080,6 +3080,43 @@
       .earnings-mode-btn { padding: 5px 12px; font-size: 11px; }
     }
 
+    /* v336 — Pedido del usuario: fusión de "Bloques del día" y "Tabla de
+       llamadas y acciones de hoy" en UNA sola tarjeta, con una pastilla
+       segmentada "Bloques / Llamadas" en el <summary> (mismo mecanismo que
+       "Hoy / Ciclo" de v334 — alterna dos vistas de golpe, sin animación).
+       Clases APARTE de `.earnings-mode-toggle`/`.earnings-mode-btn` (mismo
+       criterio que v334 explicó para esas: vive dentro de un <summary>
+       distinto, con su propio listener preventDefault/stopPropagation) —
+       CSS idéntico a propósito, mismo lenguaje "segmented pill". */
+    .blocks-view-toggle {
+      display: inline-flex;
+      gap: 2px;
+      padding: 3px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--line);
+      flex: 0 0 auto;
+    }
+    .blocks-view-btn {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 6px 13px;
+      font-weight: 800;
+      font-size: 11.5px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .14s ease, color .14s ease;
+    }
+    .blocks-view-btn.active {
+      background: var(--cyan);
+      color: #07101f;
+    }
+    @media (max-width: 760px) {
+      .blocks-view-btn { padding: 5px 12px; font-size: 11px; }
+    }
+
     .goal-fields {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -9796,6 +9833,25 @@
      (renderSchedule(), etc.) sigue funcionando exactamente igual, solo
      cambió su posición dentro de `#pageHome`. El sidebar queda con 4
      páginas: Inicio, Horario, Reportes, Avisos. -->
+<!-- v336 — Pedido del usuario: fusión de "Bloques del día" y "Tabla de
+     llamadas y acciones de hoy" en UNA sola tarjeta (`#scheduleAccordion`),
+     con una pastilla segmentada "Bloques / Llamadas" en el `<summary>`
+     (junto al chevron) que alterna el contenido de golpe, sin animación —
+     mismo mecanismo que "Hoy / Ciclo" en "Ganancias de hoy" (v334): dos
+     `<div>` que se ocultan/muestran con `display:none`/`''`. Mockup VISUAL
+     de 2 vistas (escritorio y celular) aprobado por el usuario antes de
+     tocar código. `#callTableAccordion` (su propio `<details class=
+     "accordion-card">` desde v238) se elimina como sección independiente —
+     su `<div class="accordion-body">` completo (botón de vaciar + hint +
+     filtro + tabla, con los mismos ids de siempre: clearDayCallsBtn/
+     clearDayCallsDayLabel/tableFilterRow/callTableWrap) se mueve tal cual
+     dentro de un `<div id="callTableAccordion">` (ya no `<details>`, un
+     simple contenedor) — se conserva el id a propósito: las reglas CSS que
+     ya apuntan a `#callTableAccordion table/th/td` y `:where(#callTable
+     Accordion) .tag.bad/.imported-late/...` (temas claro/oscuro, ver "v217"
+     en el CSS) siguen aplicando sin tocarlas. CERO cambios funcionales:
+     mismos ids/listeners de siempre en ambas mitades — renderSchedule()/
+     renderTable() siguen escribiendo exactamente los mismos elementos. -->
 <details class="accordion-card" id="scheduleAccordion" open>
 <summary>
   <div class="accordion-head">
@@ -9803,9 +9859,16 @@
     <p id="scheduleSubtitle">Horario fijo que la app ya conoce.</p>
     <p class="schedule-off-worked-note" id="scheduleOffWorkedNote" style="display:none;">Trabajaste en tu día libre — no aparece marcado como libre, se ve igual que un día laboral normal.</p>
   </div>
-  <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
+  <div style="display:flex; align-items:center; gap:10px;">
+    <div class="blocks-view-toggle" id="blocksViewToggle" role="group" aria-label="Ver Bloques o Llamadas">
+      <button class="blocks-view-btn active" data-blocks-view="blocks" type="button">Bloques</button>
+      <button class="blocks-view-btn" data-blocks-view="calls" type="button">Llamadas</button>
+    </div>
+    <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
+  </div>
 </summary>
 <div class="accordion-body">
+<div id="blocksView">
   <!-- v314 — Pedido del usuario: "Turno de Hoy" (antes su propia sección
        arriba de Llamadas, con Shift/Break/Lunch/ACW) se fusiona aquí,
        arriba de la fila de Adherencia/Meta/Productividad — conceptualmente
@@ -9873,55 +9936,9 @@
   </div>
   </div>
   <div class="schedule sblk-timeline" id="scheduleList"></div>
-</div>
-</details>
-
-<!-- v266 — Pedido del usuario: "Llamadas" (Iniciar llamada/Pegar
-     Llamadas/Agregar llamada) vive DENTRO de la página "🏠 Inicio"
-     (#pageHome), justo debajo de "Turno de Hoy" y arriba de "Ganancias del
-     ciclo") — ESTA es su posición en el HTML de partida. Pero a diferencia
-     de v265 (donde solo se veía en Inicio), ahora también debe seguir
-     viéndose en Horario/Bloques del día/Reportes/Avisos — como esas 4
-     páginas no tienen "Turno de Hoy" (ni tendría sentido meterlo ahí, cada
-     una tiene su propio contenido), la única forma de lograr "siempre
-     visible, pero dentro de Turno de Hoy solo en Inicio" es MOVIENDO el
-     nodo real del DOM según la página activa: `relocateCallsSection()`
-     (ver el JS, llamada desde `navigateToPage()`) lo reinserta aquí mismo
-     al volver a Inicio, o lo saca de `.app-page` (como hermano de
-     `#heroSection`, arriba de todo) en cualquier otra página. Ningún id
-     cambió (callsSection/callControlBtn/pasteCallsBtn/addCallManualBtn/
-     callControlLabel/callControlTimer) — el JS que ya los usa
-     (renderHeader(), los listeners de los 3 botones) sigue funcionando
-     exactamente igual, solo cambia dónde vive el nodo en cada momento.
-     `#callsSection` se agregó de vuelta a los 2 selectores de CSS de
-     max-width/centrado y margin-bottom (buscar "v266" en el CSS) — a
-     diferencia de v265, esta vez el agregado explícito SÍ hace falta,
-     porque el nodo pasa buena parte del tiempo fuera de `.app-page`.
-     v334 — "Ganancias del ciclo" (antes su propio acordeón aquí,
-     #cycleAccordion) se fusionó dentro de "Ganancias de hoy"
-     (#earningsAccordion, ver ese comentario más arriba) — este acordeón
-     ya no existe como sección propia. -->
-
-<!-- v238 — Pedido del usuario: "Tabla de llamadas" se mueve aquí (antes
-     vivía al final de la página, dentro de `.grid` junto a "Resumen
-     semanal") para poder editar llamadas rápido sin salir de Inicio.
-     Ningún id cambió (callTableWrap/clearDayCallsBtn/etc.) — renderTable()
-     sigue funcionando exactamente igual, solo cambió dónde vive en el
-     HTML. */-->
-<details class="accordion-card" id="callTableAccordion">
-<summary>
-  <div class="accordion-head">
-    <h2>Tabla de llamadas y acciones de hoy</h2>
-    <p>Cada llamada importada + cada acción de tu turno, en una sola línea de tiempo.</p>
-  </div>
-  <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
-</summary>
-<div class="accordion-body">
-  <!-- v247 — Pedido del usuario (con captura): este `.note` repetía
-       exactamente el mismo texto que ya se ve en el subtítulo del
-       <summary> de arriba ("Detalle de cada fila importada con su gap.",
-       texto viejo — ver v315 más abajo, ya cambió), duplicado en pantalla.
-       Se quita sin reemplazo — el subtítulo del acordeón ya cumple ese rol. -->
+</div><!-- /blocksView -->
+<div id="blocksCallsView" style="display:none;">
+  <div id="callTableAccordion">
   <!-- v244 — Pedido del usuario (con captura): "Vaciar llamadas del día"
        pasa de botón grande (clase `.bad` de `.modal-actions`, ocupando
        ancho completo, hasta abajo de la sección) a un botón CHICO, pegado
@@ -9957,8 +9974,39 @@
     <button class="table-filter-btn" data-table-filter="actions" type="button">Acciones</button>
   </div>
   <div class="table-wrap" id="callTableWrap"></div>
+  </div>
+</div><!-- /blocksCallsView -->
 </div>
 </details>
+
+<!-- v266 — Pedido del usuario: "Llamadas" (Iniciar llamada/Pegar
+     Llamadas/Agregar llamada) vive DENTRO de la página "🏠 Inicio"
+     (#pageHome), justo debajo de "Turno de Hoy" y arriba de "Ganancias del
+     ciclo") — ESTA es su posición en el HTML de partida. Pero a diferencia
+     de v265 (donde solo se veía en Inicio), ahora también debe seguir
+     viéndose en Horario/Bloques del día/Reportes/Avisos — como esas 4
+     páginas no tienen "Turno de Hoy" (ni tendría sentido meterlo ahí, cada
+     una tiene su propio contenido), la única forma de lograr "siempre
+     visible, pero dentro de Turno de Hoy solo en Inicio" es MOVIENDO el
+     nodo real del DOM según la página activa: `relocateCallsSection()`
+     (ver el JS, llamada desde `navigateToPage()`) lo reinserta aquí mismo
+     al volver a Inicio, o lo saca de `.app-page` (como hermano de
+     `#heroSection`, arriba de todo) en cualquier otra página. Ningún id
+     cambió (callsSection/callControlBtn/pasteCallsBtn/addCallManualBtn/
+     callControlLabel/callControlTimer) — el JS que ya los usa
+     (renderHeader(), los listeners de los 3 botones) sigue funcionando
+     exactamente igual, solo cambia dónde vive el nodo en cada momento.
+     `#callsSection` se agregó de vuelta a los 2 selectores de CSS de
+     max-width/centrado y margin-bottom (buscar "v266" en el CSS) — a
+     diferencia de v265, esta vez el agregado explícito SÍ hace falta,
+     porque el nodo pasa buena parte del tiempo fuera de `.app-page`.
+     v334 — "Ganancias del ciclo" (antes su propio acordeón aquí,
+     #cycleAccordion) se fusionó dentro de "Ganancias de hoy"
+     (#earningsAccordion, ver ese comentario más arriba) — este acordeón
+     ya no existe como sección propia. v336 — "Tabla de llamadas y acciones
+     de hoy" (antes su propio acordeón aquí, #callTableAccordion) se fusionó
+     dentro de "Bloques del día" (#scheduleAccordion, ver ese comentario más
+     arriba) — este acordeón ya no existe como sección propia. -->
 
 </div><!-- /pageHome -->
 
@@ -14919,6 +14967,24 @@ function setEarningsViewMode(mode) {
     if (title) title.textContent = earningsSectionLabel(getActiveDayKey());
     if (subtitle) subtitle.textContent = 'Gana, meta y margen del día, de un vistazo.';
   }
+}
+
+// v336 — Pedido del usuario: pastilla "Bloques / Llamadas" dentro de
+// "Bloques del día" (mockup aprobado) — alterna entre #blocksView/
+// #blocksCallsView sin animación, mismo mecanismo que earningsViewMode
+// (v334). Vive en memoria (no en localStorage) — arranca en 'blocks' en
+// cada carga de página, mismo criterio que earningsViewMode.
+let blocksViewMode = 'blocks';
+
+function setBlocksViewMode(mode) {
+  blocksViewMode = mode === 'calls' ? 'calls' : 'blocks';
+  const blocksView = document.getElementById('blocksView');
+  const callsView = document.getElementById('blocksCallsView');
+  document.querySelectorAll('#blocksViewToggle .blocks-view-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-blocks-view') === blocksViewMode);
+  });
+  if (blocksView) blocksView.style.display = blocksViewMode === 'blocks' ? '' : 'none';
+  if (callsView) callsView.style.display = blocksViewMode === 'calls' ? '' : 'none';
 }
 
 // Pedido del usuario: "Resumen semanal" usaba semanas Lunes-Domingo fijas,
@@ -20884,6 +20950,15 @@ function render() {
       const btn = e.target instanceof Element ? e.target.closest('[data-earnings-mode]') : null;
       if (!btn) return;
       setEarningsViewMode(btn.getAttribute('data-earnings-mode'));
+    });
+    // v336 — Pastilla "Bloques / Llamadas" dentro del <summary> de "Bloques
+    // del día" — mismo criterio que earningsModeToggle arriba.
+    document.getElementById('blocksViewToggle').addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const btn = e.target instanceof Element ? e.target.closest('[data-blocks-view]') : null;
+      if (!btn) return;
+      setBlocksViewMode(btn.getAttribute('data-blocks-view'));
     });
     // Delegado en el contenedor: las filas se reconstruyen por completo en
     // cada renderBlocksEditor()/addBlockRow()/removeBlockRowAt(), así que un
