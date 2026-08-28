@@ -2901,6 +2901,98 @@
       font-size: 14px;
     }
 
+    /* v330 — Pedido del usuario (rediseño ESCRITORIO de "Bloques del día",
+       mockup de 2 vistas aprobado — la vista mobile ya venía aprobada de
+       otra sesión, no se repite acá): Shift/Break/Lunch/ACW pasan de 2
+       filas (Shift ancho arriba, grid de 3 chicas abajo) a UNA sola fila
+       de 4 columnas — mismo peso visual que el mockup (Shift más ancho:
+       1.6fr, las otras 3 a 1fr). CERO cambios funcionales: no se toca
+       renderBlockSummaryStrip() ni el HTML que ya arma (`#blockSummaryStrip`
+       sigue conteniendo exactamente `.block-summary-shift-row` +
+       `.block-summary-strip`, en ese orden) — el truco es puramente CSS:
+       `display: contents` en `.block-summary-strip` hace que sus 3 hijos
+       (las tarjetas de Break/Lunch/ACW) se comporten como hijos DIRECTOS
+       de `.blocks-top-grid` para efectos del grid, ocupando las columnas
+       2-4, mientras `.block-summary-shift-row` (el otro hijo real) ocupa
+       la columna 1. Solo aplica desde este breakpoint — en mobile
+       (`@media max-width:760px`, ver más abajo) `.blocks-top-grid` no
+       tiene ninguna regla propia, así que se queda con el layout apilado
+       de siempre (ya aprobado aparte). */
+    @media (min-width: 761px) {
+      .blocks-top-grid {
+        display: grid;
+        grid-template-columns: 1.6fr 1fr 1fr 1fr;
+        gap: 12px;
+        align-items: stretch;
+        margin-bottom: 14px;
+      }
+      .blocks-top-grid.blocks-top-grid #blockSummaryStrip,
+      .blocks-top-grid .block-summary-shift-row {
+        margin-bottom: 0;
+      }
+      .blocks-top-grid .block-summary-strip {
+        display: contents;
+      }
+      .blocks-top-grid .block-summary-card-shift {
+        height: 100%;
+      }
+    }
+
+    /* v330 — Pedido del usuario: Adherencia/Meta/Productividad pasan, en
+       escritorio, de tarjeta apilada (ícono+label arriba, valor debajo,
+       centrado) a fila horizontal (label a la izquierda, valor grande a
+       la derecha) — igual que el mockup. Mismos ids/clases de siempre
+       (`#adherenceBadge`/`#adherenceGoalBadge`/`#productivityGoalBadge`,
+       todos `<span class="slot-status">`) — solo cambia el layout del
+       contenedor `.sched-blocks-summary-card` y el tamaño del valor.
+       Scoped a este breakpoint: en mobile se queda exactamente como v329
+       la dejó (label arriba, valor abajo, ya aprobado aparte). */
+    @media (min-width: 761px) {
+      .sched-blocks-summary-row .sched-blocks-summary-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        min-height: 0;
+        padding: 13px 15px;
+      }
+      .sched-blocks-summary-row .sched-blocks-summary-label {
+        margin: 0;
+        flex: 0 0 auto;
+      }
+      .sched-blocks-summary-row .sched-blocks-summary-card .slot-status {
+        text-align: right;
+        font-size: 14px;
+      }
+    }
+
+    /* v330 — Pedido del usuario: en escritorio, el chip de interrupción
+       accidental y el toggle "Contraer bloques al terminar" pasan a vivir
+       en la misma fila (antes cada uno en su propia fila completa,
+       apilados) — mismo criterio del mockup. `margin-left: auto` en el
+       toggle lo pega al borde derecho tanto si el chip de interrupción
+       está visible (day-interruptions-row con contenido) como si está
+       vacío/oculto (display:none, el caso normal — sin interrupciones ese
+       día) — no depende de leer el estado del hermano. Solo escritorio;
+       en mobile `.blocks-footer-row` no tiene ninguna regla propia, así
+       que ambos elementos se quedan apilados en su fila completa de
+       siempre, sin cambios. */
+    @media (min-width: 761px) {
+      .blocks-footer-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .blocks-footer-row .day-interruptions-row {
+        flex: 1 1 auto;
+        margin-bottom: 0;
+      }
+      .blocks-footer-row .sblk-collapse-row {
+        flex: 0 0 auto;
+        margin-left: auto;
+      }
+    }
+
     @media (max-width: 760px) {
       /* Pedido del usuario (v191): antes de v190, este grid tenía 4
          tarjetas (Shift+Break+Lunch+ACW) y el 2x2 en mobile tenía sentido
@@ -10056,8 +10148,23 @@
        relleno líquido de estas tarjetas (ver .bsc-fill en el CSS). CERO
        cambios funcionales: mismo id `blockSummaryStrip`, mismo
        renderBlockSummaryStrip() de siempre — solo cambió dónde vive el nodo
-       en el HTML. -->
-  <div id="blockSummaryStrip"></div>
+       en el HTML.
+       v330 — Pedido del usuario (rediseño escritorio de "Bloques del día",
+       mockup de 2 vistas aprobado — la vista mobile ya se había aprobado en
+       otra sesión, no se repite acá): en escritorio, Shift/Break/Lunch/ACW
+       pasan de 2 filas (Shift ancho arriba, grid de 3 abajo) a UNA sola
+       fila de 4 columnas (1.6fr 1fr 1fr 1fr), como en el mockup. Se agrega
+       la clase `blocks-top-grid` a este mismo contenedor — el CSS (ver
+       ".blocks-top-grid", buscar "v330") usa `display:contents` en
+       `.block-summary-strip` para que sus 3 hijos (Break/Lunch/ACW) se
+       vuelvan hijos DIRECTOS de este grid, ocupando las columnas 2-4,
+       mientras `.block-summary-shift-row` ocupa la columna 1 — sin tocar
+       renderBlockSummaryStrip() ni el HTML que genera, que sigue
+       escribiendo exactamente el mismo markup de siempre (mismo
+       `.block-summary-shift-row` + `.block-summary-strip` por separado).
+       Solo aplica desde el breakpoint de escritorio — en mobile (ya
+       aprobado aparte) se mantiene la disposición apilada de siempre. -->
+  <div class="blocks-top-grid" id="blockSummaryStrip"></div>
   <div class="day-metrics-row sched-blocks-summary-row" id="dayMetricsRow">
     <div class="sched-blocks-summary-card" data-metric="adherence">
       <div class="sched-blocks-summary-label"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg> Adherencia</div>
@@ -10073,6 +10180,14 @@
     </div>
     <span class="slot-status bad live-exception" id="adherenceLiveBadge" style="display:none;"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg> Fuera de adherencia ahora</span>
   </div>
+  <!-- v330 — Pedido del usuario (mockup de escritorio aprobado): el chip de
+       interrupción y el toggle de contraer pasan a vivir en la MISMA fila,
+       uno al lado del otro (antes cada uno en su propia fila completa,
+       apilados). `.blocks-footer-row` es puramente un envoltorio nuevo —
+       ninguno de los 2 hijos cambia de id/clase/contenido, solo se
+       reacomodan por CSS (buscar "v330" en ese bloque). En mobile se
+       mantiene la disposición apilada de siempre. -->
+  <div class="blocks-footer-row">
   <!-- v293 — Pedido del usuario: interrupciones accidentales de Shift/
        Break/Lunch (ver state.dayInterruptions/registerDayInterruption() en
        el JS) — chips ámbar informativos, llenados por renderSchedule().
@@ -10086,6 +10201,7 @@
       <span class="sblk-collapse-check" aria-hidden="true">✓</span>
       <span>Contraer bloques al terminar</span>
     </button>
+  </div>
   </div>
   <div class="schedule sblk-timeline" id="scheduleList"></div>
 </div>
