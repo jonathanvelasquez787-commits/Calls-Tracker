@@ -2710,6 +2710,19 @@
       flex: 0 0 auto;
     }
 
+    /* v329 — Pedido del usuario: el ícono de cada tarjeta (▶/☕/🍽️/⏱️) pasa
+       a pintarse con el color de acento de SU propio tipo (cyan/warn/blue/
+       good — ver los overrides de `--bsc-rgb` por `data-accent` más abajo)
+       en vez del blanco/negro monocromo que fuerza `.ic-svg` en toda la
+       app (v290) — excepción puntual, mismo criterio que ya usa
+       `.sched-blocks-summary-label .ic-svg` (v290) para su propio caso.
+       Gana por especificidad (2 clases descendientes) sobre la regla
+       genérica `.ic-svg`. */
+    .block-summary-card .bsc-icon .ic-svg {
+      color: rgb(var(--bsc-rgb));
+      stroke: rgb(var(--bsc-rgb));
+    }
+
     /* v210: con el relleno ahora casi sólido (ver .bsc-fill arriba), el
        texto necesita pasar a blanco en la franja YA cubierta por el
        líquido — mismo truco de degradado de 2 colores con corte duro +
@@ -2730,13 +2743,25 @@
       text-overflow: ellipsis;
     }
 
+    /* v329 — Pedido del usuario (rediseño mobile de "Bloques del día",
+       mockup aprobado): el rango de cada tarjeta chica (ej. "Siguiente:
+       02:35–02:50 PM", "1 min de meta 60 min") se veía cortado con "..."
+       en pantallas angostas — `white-space: nowrap` + `text-overflow:
+       ellipsis` truncaban la segunda línea sin importar el largo real del
+       texto. Se quita ese truncado y se permite el salto de línea normal
+       (`white-space: normal`) — la tarjeta ya no tiene una altura fija
+       (`min-height` en la fila, no en la tarjeta individual) y las 3
+       tarjetas del grid se estiran parejas por el `display: grid` del
+       contenedor padre (comportamiento de grid por default), así que una
+       tarjeta con texto de 2 líneas no queda más alta que sus vecinas de
+       forma descuadrada — simplemente las 3 crecen juntas. */
     .block-summary-card .bsc-range {
       color: var(--muted);
       font-size: 10.5px;
       line-height: 1.3;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: unset;
     }
 
     .block-summary-card .bsc-progress-row {
@@ -2759,11 +2784,15 @@
       background: rgb(var(--bsc-rgb));
     }
 
+    /* v329 — Pedido del usuario: el % de cada tarjeta pasa de blanco fijo a
+       colorearse con el mismo acento de su tipo (mismo criterio que el
+       ícono, arriba) — refuerza de un vistazo a qué tarjeta pertenece cada
+       número, en vez de que las 4 se vean con el mismo texto blanco. */
     .block-summary-card .bsc-pct {
       flex: 0 0 auto;
       font-size: 10.5px;
       font-weight: 900;
-      color: var(--text);
+      color: rgb(var(--bsc-rgb));
       font-variant-numeric: tabular-nums;
     }
 
@@ -2782,6 +2811,24 @@
        el HTML/JS (no aportan nada visual ya, pero no hace falta tocarlos
        para este cambio). */
     .block-summary-card { --bsc-rgb: var(--rpt-purple-rgb); }
+
+    /* v329 — Pedido del usuario (rediseño mobile de "Bloques del día",
+       mockup aprobado): REVERSIÓN PARCIAL de v313 — el usuario ahora pide
+       que cada tarjeta de "Turno de Hoy" vuelva a tener su propio color
+       por tipo (Shift=cyan, Break=ámbar, Lunch=azul, ACW=verde) en vez del
+       morado uniforme de v313 — "se distinguen de un vistazo", como pidió
+       explícitamente en este cambio. Se agregan de vuelta los 4 overrides
+       por `data-accent` (mismos nombres de acento que ya trae el HTML/JS
+       sin tocar, ver renderBlockSummaryStrip()) — ganan por especificidad
+       sobre la regla genérica de arriba (que se deja tal cual, sin
+       borrarla, por si algún acento nuevo apareciera sin match propio).
+       Reutiliza las mismas variables de paleta que ya usa el resto de la
+       app para estos 4 conceptos (--cyan-rgb/--warn-rgb/--blue-rgb/
+       --good-rgb) — ningún color nuevo. */
+    .block-summary-card[data-accent="cyan"] { --bsc-rgb: var(--cyan-rgb); }
+    .block-summary-card[data-accent="warn"] { --bsc-rgb: var(--warn-rgb); }
+    .block-summary-card[data-accent="blue"] { --bsc-rgb: var(--blue-rgb); }
+    .block-summary-card[data-accent="good"] { --bsc-rgb: var(--good-rgb); }
 
     /* v314 — Pedido del usuario: mockup de 3 opacidades de líquido (14/30/50%)
        mostrado junto con la opción de "sin relleno" — el usuario, tras ver el
@@ -7493,17 +7540,29 @@
        encima. El grid de 3 columnas iguales (`repeat(3, 1fr)`) ya era
        responsive desde v277 — se conserva sin cambios, solo se ajusta el
        alto mínimo también en el breakpoint mobile de abajo. */
+    /* v329 — Pedido del usuario (rediseño mobile de "Bloques del día",
+       mockup aprobado): REVERSIÓN de v281 — el fondo azul uniforme
+       (rgba(--blue-rgb,.18)) de estas 3 tarjetas se cambia a un fondo
+       neutro (mismo tratamiento "tarjeta chica" que ya usa `.field`/
+       `.alert-mini-field` en el resto de la app: rgba(255,255,255,.03) +
+       borde var(--line)) — con el texto ya coloreado por estado (ver más
+       abajo) sobre un fondo azul, el conjunto se sentía saturado; el
+       fondo neutro deja que el color del VALOR sea la única señal. */
     .sched-blocks-summary-card {
       border-radius: 14px;
       padding: 9px 10px;
-      border: 1px solid rgba(var(--blue-rgb), .4);
-      background: rgba(var(--blue-rgb), .18);
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.03);
       display: grid;
       align-content: center;
       gap: 4px;
       min-width: 0;
       min-height: 62px;
     }
+    /* v329 — Ver comentario junto a `.sched-blocks-summary-card` arriba:
+       con el fondo ya neutro (no azul), el label vuelve a su tratamiento
+       muted de siempre (var(--muted)) — el blanco fijo de v281/v290 solo
+       tenía sentido para contrastar contra el azul que ya no está. */
     .sched-blocks-summary-label {
       display: flex;
       align-items: center;
@@ -7512,19 +7571,14 @@
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: .04em;
-      color: #fff;
+      color: var(--muted);
       min-width: 0;
     }
-    /* v290 — Excepción puntual al monocromo global (--icon-mono): esta
-       etiqueta ya forzaba texto blanco SIEMPRE (v281, sin importar el
-       tema — la tarjeta detrás es azul en los 2 temas) antes de que
-       existiera este ícono. Si el ícono heredara --icon-mono como el
-       resto de la app, en modo claro saldría NEGRO junto a texto blanco
-       sobre una tarjeta azul — un choque de color que --icon-mono nunca
-       tuvo intención de crear. Se scoped aquí (gana por especificidad a
-       `.ic-svg`) para que el ícono siga el mismo blanco fijo que ya usa
-       el texto de al lado, en vez del blanco/negro por tema. */
-    .sched-blocks-summary-label .ic-svg { color: #fff; stroke: #fff; }
+    /* v329 — Ver comentario junto a `.sched-blocks-summary-label` arriba:
+       el ícono acompaña el mismo tratamiento muted que el label, en vez
+       del blanco/negro monocromo fijo de v290 (ese fix existía para no
+       chocar con el fondo azul, que ya no aplica). */
+    .sched-blocks-summary-label .ic-svg { color: var(--muted); stroke: var(--muted); }
     .sched-blocks-summary-label::before {
       flex: 0 0 auto;
       font-size: 11px;
@@ -7546,6 +7600,14 @@
        renderSchedule(). Sin nowrap/ellipsis a propósito — textos como "Meta
        90% — te faltan 77pts" o "Meta productiva: 228/300 min" necesitan
        poder pasar a una 2da línea en vez de cortarse. */
+    /* v329 — Pedido del usuario (rediseño mobile de "Bloques del día",
+       mockup aprobado): "nada de texto cortado con '...'" — este selector
+       ya traía un comentario diciendo "sin nowrap/ellipsis a propósito",
+       pero el CSS real SÍ los tenía declarados (bug de desincronía entre
+       comentario y código) — de ahí que "Faltan 24pts"/"Meta productiva:
+       228/300 min" se vieran cortados en pantallas angostas. Se quita el
+       truncado de una vez por todas: `white-space: normal` deja que el
+       texto pase a una 2da línea en vez de recortarse. */
     .sched-blocks-summary-card .slot-status {
       display: block;
       width: auto;
@@ -7557,23 +7619,22 @@
       line-height: 1.25;
       font-weight: 900;
       letter-spacing: -.01em;
-      color: #fff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      color: var(--text);
+      white-space: normal;
+      overflow: visible;
+      text-overflow: unset;
       max-width: 100%;
     }
-    /* v281 — Ver comentario junto a `.sched-blocks-summary-card` arriba: el
-       valor se queda blanco SIEMPRE, incluso cuando renderSchedule() le
-       agrega la clase good/warn/bad (adherencia baja, meta no alcanzada,
-       etc.) — antes esos 3 estados pintaban el texto de otro color (verde/
-       ámbar/rojo), rompiendo la uniformidad pedida. El dato en sí no
-       cambia, solo el color del texto. */
-    .sched-blocks-summary-card .slot-status.good,
-    .sched-blocks-summary-card .slot-status.warn,
-    .sched-blocks-summary-card .slot-status.bad {
-      color: #fff;
-    }
+    /* v329 — REVERSIÓN de v281: el valor vuelve a colorearse según su
+       estado real (good/warn/bad, las mismas clases que ya le pone
+       renderSchedule() — sin tocar esa lógica) en vez del blanco forzado
+       de siempre — con el fondo de la tarjeta ya neutro (ver comentario
+       arriba), el color de estado es la señal principal de cada tarjeta.
+       Sin override propio aquí: se deja caer en la regla genérica
+       `.slot-status.good/.warn/.bad` (ya definida en el resto del
+       archivo, usada por el timeline de bloques) — mismos tonos
+       --pale-good/--pale-warn/--pale-bad de siempre, automáticos por
+       tema, sin duplicar ningún color. */
     .sched-blocks-summary-summary {
       display: flex;
       align-items: flex-start;
@@ -7583,14 +7644,15 @@
       list-style: none;
     }
     .sched-blocks-summary-summary::-webkit-details-marker { display: none; }
-    /* v281 — Ver comentario junto a `.sched-blocks-summary-card` arriba:
-       mismo criterio de "letras blancas" aplicado al toggle "Detalle ⌄"
-       de la tarjeta de Adherencia (antes var(--muted), gris apagado). */
+    /* v329 — REVERSIÓN de v281: el toggle "Detalle ⌄" vuelve a su gris
+       muted de siempre — el blanco fijo de v281 era para destacar sobre
+       el fondo azul, que ya no aplica (ver comentario junto a
+       `.sched-blocks-summary-card` arriba). */
     .sched-blocks-summary-card .mini-accordion-toggle {
       flex: 0 0 auto;
       margin-top: 1px;
       font-size: 10px;
-      color: #fff;
+      color: var(--muted);
     }
     .sched-blocks-summary-card .mini-accordion-body {
       margin-top: 8px;
@@ -19222,17 +19284,30 @@ function renderDayInterruptionsRow(dayKey) {
     return;
   }
   const typeLabel = { shift: 'Turno', break: 'Break', lunch: 'Lunch' };
+  // v329 — Bug reportado por el usuario (con captura, mockup mobile
+  // aprobado): cuando la interrupción se resuelve casi al instante (el
+  // caso típico — el usuario da click por error y vuelve a dar click casi
+  // enseguida), gapStart y gapEnd caen prácticamente en el mismo segundo:
+  // el texto salía como "11:10 AM – 11:10 AM · 0 min" — un dato que se lee
+  // como roto (misma hora dos veces, "0 min"), en vez de comunicar que fue
+  // una interrupción breve sin consecuencia. Se muestra una sola hora
+  // (el inicio) + un mensaje genérico cuando la interrupción dura menos de
+  // 1 minuto; solo se muestra el rango completo + los minutos cuando de
+  // verdad hay una duración que vale la pena reportar.
   row.innerHTML = list.map(item => {
     const gapStart = new Date(item.gapStart);
     const gapEnd = new Date(item.gapEnd);
     const mins = Math.max(0, (gapEnd.getTime() - gapStart.getTime()) / 60000);
     const label = typeLabel[item.type] || 'Turno';
+    const detailText = mins < 1
+      ? `${timeLabelFromDate(gapStart)} · interrupción breve, sin perder tu progreso`
+      : `${timeLabelFromDate(gapStart)} – ${timeLabelFromDate(gapEnd)} · ${formatMinutes(mins)} min · sin perder tu progreso`;
     return `
       <div class="day-interruption-chip">
         ${iconHtml('alertTriangle')}
         <div style="min-width:0;">
-          <div class="day-interruption-chip-title">${escapeHtml(label)} continuado — interrupción accidental</div>
-          <div class="day-interruption-chip-detail">${timeLabelFromDate(gapStart)} – ${timeLabelFromDate(gapEnd)} · ${formatMinutes(mins)} min · no se reinició el progreso</div>
+          <div class="day-interruption-chip-title">${escapeHtml(label)} continuado por accidente</div>
+          <div class="day-interruption-chip-detail">${detailText}</div>
         </div>
       </div>
     `;
