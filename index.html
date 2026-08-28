@@ -10488,6 +10488,16 @@
 </span>
 </div>
 <div class="note" style="margin:0;">El ciclo siempre dura 14 días desde la fecha que pongas arriba. Se guarda solo. Ajusta esto si tus ciclos reales no coinciden con "Ganancias del ciclo".</div>
+<!-- v328 — Pedido del usuario: Meta del ciclo actual editable — mismo
+     override que el ✎ en la tarjeta de "Ganancias del ciclo" de Reportes
+     (ver cycleGoalOverrides/effectiveCycleGoal() en el JS). Vacío o 0 =
+     vuelve al cálculo automático (tu meta diaria × días laborales del
+     ciclo). -->
+<div class="goals-field" style="margin-top:10px; max-width:220px;">
+<label for="cycleGoalInput">Meta del ciclo actual ($)</label>
+<input id="cycleGoalInput" inputmode="decimal" min="0" step="0.01" type="number"/>
+</div>
+<div class="note" style="margin:6px 0 0;">Se calcula sola (tu meta diaria × días laborales del ciclo) salvo que la edites aquí o con el ✎ en Reportes. Déjala vacía o en 0 para volver al cálculo automático.</div>
 </div>
 
 <div class="divider"></div>
@@ -10681,6 +10691,38 @@ $0.72"></textarea>
 <div class="modal-actions mc-action-row">
 <button class="mc-btn-primary cyan" id="saveAcwGoalBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="5 12 10 17 19 6"/></svg> Guardar</button>
 <button class="mc-btn-warn-pill" data-close-modal="acwGoalModal" type="button">Cancelar</button>
+</div>
+</div>
+</div>
+<!-- v328 — Pedido del usuario: editor rápido de la Meta del ciclo (✎ en la
+     tarjeta "Ganancias del ciclo" de Reportes) — mismo patrón simple que
+     #acwGoalModal (v306): cabecera con ícono cuadrito, un campo, fila de
+     acciones. Se agrega además "Usar automático" para volver al cálculo
+     de siempre (tu meta diaria × días laborales del ciclo) sin tener que
+     adivinar ese número a mano. -->
+<div aria-hidden="true" class="modal-overlay" id="cycleGoalModal">
+<div aria-labelledby="cycleGoalModalTitle" aria-modal="true" class="modal-card" role="dialog">
+<div class="modal-head mc-modal-head">
+<div class="mc-header-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v18"/><path d="M5 4h9l-1 3 1 3H5"/></svg></div>
+<div>
+<h3 id="cycleGoalModalTitle">Meta del ciclo</h3>
+<p>La tarjeta "Ganancias del ciclo" se llena contra este número. Por default se calcula sola (tu meta diaria × días laborales del ciclo) — edítala aquí si tu meta real de esta quincena es distinta.</p>
+</div>
+<button aria-label="Cerrar" class="modal-close" data-close-modal="cycleGoalModal" type="button">×</button>
+</div>
+
+<div class="goals-section">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg good" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v18"/><path d="M5 4h9l-1 3 1 3H5"/></svg>Meta del ciclo actual</div>
+<div class="goals-field">
+<label for="cycleGoalAmountInput">Meta ($)</label>
+<input id="cycleGoalAmountInput" inputmode="decimal" min="0" step="0.01" type="number"/>
+</div>
+</div>
+
+<div class="modal-actions mc-action-row">
+<button class="mc-btn-primary cyan" id="saveCycleGoalBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="5 12 10 17 19 6"/></svg> Guardar</button>
+<button class="mc-btn-warn-pill" id="useAutoCycleGoalBtn" type="button">Usar automático</button>
+<button class="mc-btn-warn-pill" data-close-modal="cycleGoalModal" type="button" style="background:transparent; border-color:var(--line); color:var(--text);">Cancelar</button>
 </div>
 </div>
 </div>
@@ -11779,6 +11821,20 @@ $0.72"></textarea>
         // (#streakSkipOffToggle) y computeComplianceStreak(). true = saltar
         // (default, menos castigo por un día libre legítimo).
         streakSkipOffDays: true,
+        // v328 — Pedido del usuario: "Meta" de Ganancias del ciclo (antes
+        // SIEMPRE calculada sola: tu meta diaria × días laborales del
+        // ciclo) pasa a ser editable — tanto con el ✎ en la tarjeta de
+        // Reportes como desde Ajustes → Ciclo de pago. El cálculo
+        // automático se conserva como el valor de PARTIDA/sugerido: si el
+        // usuario nunca la edita, sigue funcionando exactamente igual que
+        // antes (ver autoCycleGoal()/effectiveCycleGoal()). Cada override
+        // se guarda por ciclo (clave = fecha de inicio de ESE ciclo,
+        // "YYYY-MM-DD", mismo criterio que ya usa
+        // scheduleOverridesByWeek para semanas específicas) — así una meta
+        // personalizada de la quincena pasada no se "arrastra" a la
+        // siguiente sin querer; cada ciclo nuevo vuelve a sugerir el
+        // cálculo automático hasta que se edite aparte.
+        cycleGoalOverrides: {},
       };
     }
 
@@ -11860,6 +11916,18 @@ $0.72"></textarea>
           weekObj[wd] = migrateDayConfigToBlocks(weekObj[wd]);
           weekObj[wd] = ensureBlockProductivityGoals(weekObj[wd]);
         });
+      });
+      // v328 — Ver comentario junto a cycleGoalOverrides en
+      // defaultSettings(): se descarta cualquier clave que no sea una
+      // fecha "YYYY-MM-DD" o cualquier valor que no sea un número > 0 —
+      // mismo criterio defensivo que el resto de esta función.
+      if (!settings.cycleGoalOverrides || typeof settings.cycleGoalOverrides !== 'object' || Array.isArray(settings.cycleGoalOverrides)) {
+        settings.cycleGoalOverrides = {};
+      }
+      Object.keys(settings.cycleGoalOverrides).forEach((key) => {
+        const val = Number(settings.cycleGoalOverrides[key]);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(key) || !Number.isFinite(val) || val <= 0) delete settings.cycleGoalOverrides[key];
+        else settings.cycleGoalOverrides[key] = val;
       });
       if (!Array.isArray(settings.higherRateWindows)) settings.higherRateWindows = [];
       settings.higherRateWindows = settings.higherRateWindows
@@ -14902,15 +14970,54 @@ function reportsAdherenceStats() {
 // nueva aquí: suma de tu meta diaria en $ (settings.earningsGoal) por cada
 // día NO libre del ciclo — mismo criterio que "Objetivos del día" usa para
 // un solo día, extendido a los 14 días del ciclo completo.
-function reportsCycleBreakdown() {
-  const cycle = cycleEarningsForOffset(0);
+// v328 — Pedido del usuario: "Meta" del ciclo pasa de ser SIEMPRE calculada
+// (tu meta diaria × días laborales del ciclo) a editable, con ese cálculo
+// como sugerencia/default por ciclo — ver comentario junto a
+// cycleGoalOverrides en defaultSettings(). cycleGoalKeyForOffset() usa el
+// mismo criterio de "clave = fecha de inicio de ese ciclo" que ya usan las
+// demás funciones de este bloque (cycleBoundsForOffset).
+function cycleGoalKeyForOffset(offset = 0) {
+  const { start } = cycleBoundsForOffset(offset);
+  return `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}`;
+}
+
+function autoCycleGoal(offset = 0) {
+  const { start } = cycleBoundsForOffset(offset);
   let workDays = 0;
   for (let i = 0; i < CYCLE_LENGTH_DAYS; i++) {
-    const d = new Date(cycle.start.getFullYear(), cycle.start.getMonth(), cycle.start.getDate() + i);
+    const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
     const cfg = dayConfigFor(todayCallDateKey(d));
     if (!(cfg && cfg.off)) workDays++;
   }
-  const goal = Number(settings.earningsGoal || 0) * workDays;
+  return Number(settings.earningsGoal || 0) * workDays;
+}
+
+function getCycleGoalOverride(offset = 0) {
+  const key = cycleGoalKeyForOffset(offset);
+  const val = settings.cycleGoalOverrides && settings.cycleGoalOverrides[key];
+  return Number.isFinite(Number(val)) && Number(val) > 0 ? Number(val) : null;
+}
+
+function effectiveCycleGoal(offset = 0) {
+  const override = getCycleGoalOverride(offset);
+  return override !== null ? override : autoCycleGoal(offset);
+}
+
+// amount=null (o cualquier valor no válido) borra el override, volviendo al
+// cálculo automático para ese ciclo — sin dejar una clave "vacía" colgando
+// en settings.cycleGoalOverrides.
+function setCycleGoalOverride(offset, amount) {
+  if (!settings.cycleGoalOverrides) settings.cycleGoalOverrides = {};
+  const key = cycleGoalKeyForOffset(offset);
+  const num = Number(amount);
+  if (Number.isFinite(num) && num > 0) settings.cycleGoalOverrides[key] = num;
+  else delete settings.cycleGoalOverrides[key];
+  saveSettingsOnly();
+}
+
+function reportsCycleBreakdown() {
+  const cycle = cycleEarningsForOffset(0);
+  const goal = effectiveCycleGoal(0);
   const trabajo = cycle.earnings - (cycle.higherRateBonus || 0);
   return {
     amount: cycle.earnings,
@@ -14918,7 +15025,49 @@ function reportsCycleBreakdown() {
     pctOfGoal: goal > 0 ? Math.min(100, (cycle.earnings / goal) * 100) : 0,
     trabajo,
     higherRate: cycle.higherRateBonus || 0,
+    isCustomGoal: getCycleGoalOverride(0) !== null,
   };
+}
+
+// Editor rápido de la meta del ciclo (✎ en la tarjeta de Reportes) — mismo
+// patrón simple que openAcwGoalEditor()/#acwGoalModal: un campo, Guardar/
+// Cancelar, + un botón aparte para volver al cálculo automático.
+function openCycleGoalEditor() {
+  const input = document.getElementById('cycleGoalAmountInput');
+  if (input) input.value = effectiveCycleGoal(0).toFixed(2);
+  openModal('cycleGoalModal');
+}
+
+function saveCycleGoalEditor() {
+  const input = document.getElementById('cycleGoalAmountInput');
+  const amount = Number(input?.value);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    toast('La meta debe ser un número mayor a 0');
+    return;
+  }
+  setCycleGoalOverride(0, amount);
+  closeModal('cycleGoalModal');
+  render();
+  toast(`Meta del ciclo: ${money(amount)}`);
+}
+
+function useAutoCycleGoal() {
+  setCycleGoalOverride(0, null);
+  closeModal('cycleGoalModal');
+  render();
+  toast('Meta del ciclo vuelve a calcularse automáticamente');
+}
+
+// Ajustes → Ciclo de pago: mismo override que el ✎ de Reportes, editado
+// desde el otro lugar pedido por el usuario. Un valor vacío o inválido
+// borra el override (vuelve al cálculo automático) en vez de rechazar el
+// cambio — mismo criterio permisivo que el resto de campos sueltos de
+// Ajustes/Horario.
+function updateCycleGoalFromAjustes() {
+  const input = document.getElementById('cycleGoalInput');
+  const amount = Number(input?.value);
+  setCycleGoalOverride(0, Number.isFinite(amount) && amount > 0 ? amount : null);
+  render();
 }
 
 // Mejor/peor día de los últimos 7 días CON adherencia calculable — score =
@@ -15310,14 +15459,17 @@ function renderReportsDashboard() {
     cycleGrid.innerHTML = `
       <div class="rpt-mini-card rpt-cycle-card">
         <div class="rpt-cycle-top">
-          <div class="rpt-cycle-amt">${money(c.amount)}</div>
-          <div class="rpt-cycle-pct">${Math.round(c.pctOfGoal)}%</div>
+          <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+            <div class="rpt-cycle-amt">${money(c.amount)}</div>
+            <div class="rpt-cycle-pct">${Math.round(c.pctOfGoal)}%</div>
+          </div>
+          <button class="tbl-icon-btn" type="button" data-edit-card="cycle-goal" aria-label="Editar meta del ciclo" title="Editar meta del ciclo">${iconHtml('edit')}</button>
         </div>
         <div class="rpt-goal-bar purple"><div style="width:${c.pctOfGoal}%;"></div></div>
         <div class="rpt-mini-stats">
           <div>Trabajo<b>${money(c.trabajo)}</b></div>
           <div>Higher Rate<b>${money(c.higherRate)}</b></div>
-          <div>Meta<b>${money(c.goal)}</b></div>
+          <div>Meta<b>${money(c.goal)}</b>${c.isCustomGoal ? '' : ' <span style="font-weight:600;color:var(--muted);font-size:9.5px;">(auto)</span>'}</div>
         </div>
       </div>
       <div class="rpt-mini-card">
@@ -16614,6 +16766,10 @@ function renderWeekSummary() {
       const cyclePayOffsetInput = document.getElementById('cyclePayOffsetInput');
       if (cycleAnchorInput && document.activeElement !== cycleAnchorInput) cycleAnchorInput.value = settings.cycleAnchorDate;
       if (cyclePayOffsetInput && document.activeElement !== cyclePayOffsetInput) cyclePayOffsetInput.value = settings.cyclePayOffsetDays;
+      // v328 — Meta del ciclo actual, editable también desde aquí (ver
+      // comentario junto a cycleGoalOverrides en defaultSettings()).
+      const cycleGoalInput = document.getElementById('cycleGoalInput');
+      if (cycleGoalInput && document.activeElement !== cycleGoalInput) cycleGoalInput.value = effectiveCycleGoal(0).toFixed(2);
     }
 
     function formatHHMM(value) {
@@ -20299,6 +20455,15 @@ function render() {
       openAcwGoalEditor();
     });
 
+    // v328 — Botón ✎ de la tarjeta "Ganancias del ciclo" en Reportes —
+    // mismo patrón delegado que el de ACW arriba (el contenedor se
+    // reconstruye por completo en cada render).
+    document.addEventListener('click', (e) => {
+      const target = e.target instanceof Element ? e.target.closest('[data-edit-card="cycle-goal"]') : null;
+      if (!target) return;
+      openCycleGoalEditor();
+    });
+
     document.getElementById('clearDayCallsBtn').addEventListener('click', clearActiveDayCalls);
 
     document.addEventListener('click', (e) => {
@@ -20765,6 +20930,16 @@ function render() {
         saveAcwGoalEditor();
       }
     });
+    // v328 — Meta del ciclo: editor rápido (✎ en Reportes) + campo en
+    // Ajustes → Ciclo de pago, ambos apuntando al mismo override.
+    document.getElementById('saveCycleGoalBtn').addEventListener('click', saveCycleGoalEditor);
+    document.getElementById('useAutoCycleGoalBtn').addEventListener('click', useAutoCycleGoal);
+    document.getElementById('cycleGoalModal').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        saveCycleGoalEditor();
+      }
+    });
+    document.getElementById('cycleGoalInput').addEventListener('change', updateCycleGoalFromAjustes);
 
 
     if (!state.events.length && !state.shiftStartedAt && !calls.length) {
