@@ -843,7 +843,7 @@
          más específico en el archivo para estos 2 ids + `.week-nav` que esto
          pudiera romper (verificado). Buscar "v230"/"v231". */
       :root:not(.theme-dark) #weekSummaryAccordion .week-nav button:hover,
-      :root:not(.theme-dark) #cycleAccordion .week-nav button:hover {
+      :root:not(.theme-dark) #earningsAccordion .week-nav button:hover {
         background: #4a90e2;
         border-color: #4a90e2;
         color: #fff;
@@ -1223,7 +1223,7 @@
     /* Ver comentario gemelo en la rama @media de arriba (v230/v231) — mismo
        criterio, mismas reglas. */
     html.theme-light #weekSummaryAccordion .week-nav button:hover,
-    html.theme-light #cycleAccordion .week-nav button:hover {
+    html.theme-light #earningsAccordion .week-nav button:hover {
       background: #4a90e2;
       border-color: #4a90e2;
       color: #fff;
@@ -2303,8 +2303,8 @@
        "v230"/"v231". */
     #weekSummaryAccordion .week-nav button:hover,
     #weekSummaryAccordion .week-nav button:focus-visible,
-    #cycleAccordion .week-nav button:hover,
-    #cycleAccordion .week-nav button:focus-visible {
+    #earningsAccordion .week-nav button:hover,
+    #earningsAccordion .week-nav button:focus-visible {
       background: rgba(255,255,255,.09);
       color: var(--hover-flip);
     }
@@ -3049,6 +3049,43 @@
       color: var(--pale-cyan);
       font-size: 13px;
       font-weight: 700;
+    }
+
+    /* v334 — Pedido del usuario: pastilla segmentada "Hoy / Ciclo" en el
+       <summary> de "Ganancias de hoy" (mockup aprobado) — alterna entre
+       #earningsDayView/#earningsCycleView (ver setEarningsViewMode() en el
+       JS). Mismo lenguaje "segmented pill" que ya usa `.sched-segmented`/
+       `.table-filter-row` en el resto de la app, con su propia clase (en
+       vez de reutilizar esas) porque vive dentro de un `<summary>` — clic
+       en el toggle no debe disparar el toggle nativo de abrir/cerrar el
+       acordeón (ver preventDefault/stopPropagation en el listener). */
+    .earnings-mode-toggle {
+      display: inline-flex;
+      gap: 2px;
+      padding: 3px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--line);
+      flex: 0 0 auto;
+    }
+    .earnings-mode-btn {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 6px 13px;
+      font-weight: 800;
+      font-size: 11.5px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .14s ease, color .14s ease;
+    }
+    .earnings-mode-btn.active {
+      background: var(--cyan);
+      color: #07101f;
+    }
+    @media (max-width: 760px) {
+      .earnings-mode-btn { padding: 5px 12px; font-size: 11px; }
     }
 
     .goal-fields {
@@ -9704,18 +9741,45 @@
      al chevron, para que se siga viendo de un vistazo aunque el usuario la
      colapse a mano — igual que el resto de la sección, ningún id cambió,
      así que renderHeader() sigue actualizándolo exactamente igual. -->
+<!-- v334 — Pedido del usuario: fusión de "Ganancias de hoy" y "Ganancias
+     del ciclo" en UNA sola tarjeta, con una pastilla segmentada "Hoy /
+     Ciclo" en el <summary> (junto al chevron) que alterna el contenido de
+     golpe, sin animación — mockup visual (2 vistas: escritorio y celular)
+     aprobado antes de tocar código. #cycleAccordion (su propio acordeón,
+     ver comentario histórico "v266" que describía su posición anterior)
+     desaparece — su contenido se mueve tal cual a #earningsCycleView,
+     dentro de esta misma tarjeta. CERO cambios funcionales: mismos ids de
+     siempre en ambas vistas (earningsValue/earningsConvertedText/
+     goalAmountBadge/goalAmountConvertedText/goalMinBadge/remainingText/
+     earningsTagsRow/earningsBar/los 5 .tick/.tick-label — y
+     cyclePrevBtn/cycleCurrentBtn/cycleNextBtn/cycleEarningsValue/
+     cycleEarningsConvertedText/cycleRangeBadge/cyclePayDateBadge/
+     cycleWeek1ProductiveTag/cycleWeek2ProductiveTag/cycleTotalProductiveTag)
+     — renderHeader() sigue escribiendo exactamente los mismos elementos,
+     solo cambia el HTML/CSS que los envuelve y qué vista está visible en
+     cada momento (ver setEarningsViewMode() en el JS). `earningsSectionTitle`
+     ya no se sobreescribe con earningsSectionLabel(dayKey) en modo 'cycle'
+     (ver ese ajuste en renderHeader()) — el título de esa vista es fijo
+     ("Ganancias del ciclo"), no depende del día activo. `goalPctBadge`
+     solo se muestra en modo 'day' (no aplica a Ganancias del ciclo, que
+     nunca tuvo su propio % de meta en el header). -->
 <details class="accordion-card" id="earningsAccordion" open>
 <summary>
 <div class="accordion-head">
 <h2 id="earningsSectionTitle">Ganancias de hoy</h2>
-<p>Gana, meta y margen del día, de un vistazo.</p>
+<p id="earningsSectionSubtitle">Gana, meta y margen del día, de un vistazo.</p>
 </div>
 <div style="display:flex; align-items:center; gap:10px;">
+<div class="earnings-mode-toggle" id="earningsModeToggle" role="group" aria-label="Ver Hoy o Ciclo">
+<button class="earnings-mode-btn active" data-earnings-mode="day" type="button">Hoy</button>
+<button class="earnings-mode-btn" data-earnings-mode="cycle" type="button">Ciclo</button>
+</div>
 <div class="goal-badge" id="goalPctBadge">0%</div>
 <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
 </div>
 </summary>
 <div class="accordion-body">
+<div id="earningsDayView">
 <div class="big-earnings">
 <div class="earn-row">
 <div>
@@ -9741,6 +9805,29 @@
 <span class="tick" data-threshold="50" style="left:50%"></span><span class="tick-label" data-threshold="50" style="left:50%">50%</span>
 <span class="tick" data-threshold="75" style="left:75%"></span><span class="tick-label" data-threshold="75" style="left:75%">75%</span>
 <span class="tick" data-threshold="100" style="left:100%"></span><span class="tick-label" data-threshold="100" style="left:100%">100%</span>
+</div>
+</div>
+</div>
+<div id="earningsCycleView" style="display:none;">
+<div class="week-nav">
+<button id="cyclePrevBtn" type="button">‹ Anterior</button>
+<button id="cycleCurrentBtn" type="button">Ciclo actual</button>
+<button id="cycleNextBtn" type="button">Siguiente ›</button>
+</div>
+<div class="earn-row" style="margin-top:10px;">
+<div>
+<div class="earnings-big earnings-value-accent" style="font-size: clamp(24px, 3.2vw, 36px);" id="cycleEarningsValue">$0.00</div>
+<div class="helper" id="cycleEarningsConvertedText"></div>
+</div>
+<div class="goal-pair">
+<div class="goal-badge goal-soft" id="cycleRangeBadge">Ciclo: — – —</div>
+<div class="goal-badge goal-soft" id="cyclePayDateBadge">Pago: —</div>
+</div>
+</div>
+<div class="table-tags" style="margin-top:4px;">
+<span class="tag" id="cycleWeek1ProductiveTag">Semana 1: 00:00:00</span>
+<span class="tag" id="cycleWeek2ProductiveTag">Semana 2: 00:00:00</span>
+<span class="tag good" id="cycleTotalProductiveTag">Total: 00:00:00</span>
 </div>
 </div>
 </div>
@@ -9861,48 +9948,11 @@
      `#callsSection` se agregó de vuelta a los 2 selectores de CSS de
      max-width/centrado y margin-bottom (buscar "v266" en el CSS) — a
      diferencia de v265, esta vez el agregado explícito SÍ hace falta,
-     porque el nodo pasa buena parte del tiempo fuera de `.app-page`. -->
-<details class="accordion-card" id="cycleAccordion">
-<summary>
-  <div class="accordion-head">
-    <h2>Ganancias del ciclo</h2>
-    <p>Total del ciclo de pago actual (14 días) y la próxima fecha de pago.</p>
-  </div>
-  <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
-</summary>
-<div class="accordion-body">
-<div class="week-nav">
-<button id="cyclePrevBtn" type="button">‹ Anterior</button>
-<button id="cycleCurrentBtn" type="button">Ciclo actual</button>
-<button id="cycleNextBtn" type="button">Siguiente ›</button>
-</div>
-<div class="earn-row">
-<div>
-<div class="earnings-big earnings-value-accent" style="font-size: clamp(24px, 3.2vw, 36px);" id="cycleEarningsValue">$0.00</div>
-<div class="helper" id="cycleEarningsConvertedText"></div>
-</div>
-<!-- v269 — Pedido del usuario: "Ciclo: ..." y "Pago: ..." se veían apiladas
-     (una debajo de la otra) porque su contenedor era .goal-stack (grid de
-     1 columna, mismo patrón que usan las 2 filas de Meta/restantes en
-     "Ganancias de hoy" — ahí SÍ se quiere apiladas). Aquí solo hay 2
-     píldoras sueltas, sin ninguna otra fila que apilar contra ellas — se
-     cambia a .goal-pair (la misma clase que ya usa la app para poner 2
-     píldoras en una sola fila, ver "Meta $X" / "≈ L X" en Ganancias de
-     hoy), sin CSS nuevo. En mobile, .goal-pair ya tiene su propio ajuste
-     (justify-content:flex-start) igual que .goal-stack lo tenía, así que
-     el comportamiento angosto no cambia. -->
-<div class="goal-pair">
-<div class="goal-badge goal-soft" id="cycleRangeBadge">Ciclo: — – —</div>
-<div class="goal-badge goal-soft" id="cyclePayDateBadge">Pago: —</div>
-</div>
-</div>
-<div class="table-tags" style="margin-top:4px;">
-<span class="tag" id="cycleWeek1ProductiveTag">Semana 1: 00:00:00</span>
-<span class="tag" id="cycleWeek2ProductiveTag">Semana 2: 00:00:00</span>
-<span class="tag good" id="cycleTotalProductiveTag">Total: 00:00:00</span>
-</div>
-</div>
-</details>
+     porque el nodo pasa buena parte del tiempo fuera de `.app-page`.
+     v334 — "Ganancias del ciclo" (antes su propio acordeón aquí,
+     #cycleAccordion) se fusionó dentro de "Ganancias de hoy"
+     (#earningsAccordion, ver ese comentario más arriba) — este acordeón
+     ya no existe como sección propia. -->
 
 <!-- v238 — Pedido del usuario: "Tabla de llamadas" se mueve aquí (antes
      vivía al final de la página, dentro de `.grid` junto a "Resumen
@@ -14895,6 +14945,35 @@ let weekViewOffset = 0; // 0 = semana actual, -1 = semana pasada, +1 = próxima
 // activo", igual que weekViewOffset es independiente de él.
 let cycleViewOffset = 0;
 
+// v334 — Pedido del usuario: pastilla "Hoy / Ciclo" dentro de "Ganancias de
+// hoy" (mockup aprobado) — alterna entre #earningsDayView/#earningsCycleView
+// sin animación. Vive en memoria (no en localStorage) — arranca en 'day' en
+// cada carga de página, mismo criterio que weekViewOffset/scheduleEditDay
+// (vistas de sesión, no preferencias persistidas).
+let earningsViewMode = 'day';
+
+function setEarningsViewMode(mode) {
+  earningsViewMode = mode === 'cycle' ? 'cycle' : 'day';
+  const dayView = document.getElementById('earningsDayView');
+  const cycleView = document.getElementById('earningsCycleView');
+  const goalBadge = document.getElementById('goalPctBadge');
+  const subtitle = document.getElementById('earningsSectionSubtitle');
+  const title = document.getElementById('earningsSectionTitle');
+  document.querySelectorAll('#earningsModeToggle .earnings-mode-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-earnings-mode') === earningsViewMode);
+  });
+  if (dayView) dayView.style.display = earningsViewMode === 'day' ? '' : 'none';
+  if (cycleView) cycleView.style.display = earningsViewMode === 'cycle' ? '' : 'none';
+  if (goalBadge) goalBadge.style.display = earningsViewMode === 'day' ? '' : 'none';
+  if (earningsViewMode === 'cycle') {
+    if (title) title.textContent = 'Ganancias del ciclo';
+    if (subtitle) subtitle.textContent = 'Total del ciclo de pago actual (14 días) y la próxima fecha de pago.';
+  } else {
+    if (title) title.textContent = earningsSectionLabel(getActiveDayKey());
+    if (subtitle) subtitle.textContent = 'Gana, meta y margen del día, de un vistazo.';
+  }
+}
+
 // Pedido del usuario: "Resumen semanal" usaba semanas Lunes-Domingo fijas,
 // sin relación con cuándo arranca de verdad el ciclo de pago de 14 días
 // (cycleAnchorDate/cyclePayOffsetDays, ver Horario). Ahora cada "semana" es
@@ -18416,8 +18495,14 @@ function renderHeader() {
     }
   }
   const viewingToday = isViewingToday();
+  // v334 — El título de "Ganancias de hoy"/"Ganancias del ciclo" ya no se
+  // sobreescribe aquí cuando la pastilla "Hoy/Ciclo" está en modo 'cycle'
+  // — ese título es fijo ("Ganancias del ciclo", no depende del día activo)
+  // y ya lo puso setEarningsViewMode() al cambiar de pestaña. Solo en modo
+  // 'day' este render() (que corre cada segundo) sigue reflejando el día
+  // activo, exactamente igual que antes.
   const earningsTitle = document.getElementById('earningsSectionTitle');
-  if (earningsTitle) earningsTitle.textContent = earningsSectionLabel(dayKey);
+  if (earningsTitle && earningsViewMode === 'day') earningsTitle.textContent = earningsSectionLabel(dayKey);
 
   const status = currentStateLabel();
   const dot = document.getElementById('stateDot');
@@ -20915,6 +21000,17 @@ function render() {
     document.getElementById('scheduleHelpBtn').addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
+    });
+    // v334 — Pastilla "Hoy / Ciclo" dentro del <summary> de "Ganancias de
+    // hoy" — mismo criterio que scheduleHelpBtn arriba: preventDefault/
+    // stopPropagation para que tocar el toggle no dispare el abrir/cerrar
+    // nativo del acordeón que lo envuelve.
+    document.getElementById('earningsModeToggle').addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const btn = e.target instanceof Element ? e.target.closest('[data-earnings-mode]') : null;
+      if (!btn) return;
+      setEarningsViewMode(btn.getAttribute('data-earnings-mode'));
     });
     // Delegado en el contenedor: las filas se reconstruyen por completo en
     // cada renderBlocksEditor()/addBlockRow()/removeBlockRowAt(), así que un
