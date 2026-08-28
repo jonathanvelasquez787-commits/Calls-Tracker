@@ -9516,7 +9516,7 @@
 <div class="sidebar-darkmode-row">
 <span class="sidebar-darkmode-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/></svg></span>
 <span>Modo oscuro</span>
-<label class="sidebar-switch">
+<label class="sidebar-switch" title="Estamos trabajando en mejorar el modo claro — disponible pronto.">
 <input aria-label="Modo oscuro" id="sidebarDarkModeInput" type="checkbox"/>
 <span class="sidebar-switch-track"><span class="sidebar-switch-thumb"></span></span>
 </label>
@@ -12170,10 +12170,23 @@ $0.72"></textarea>
     // (ver comentarios en el CSS, junto a :root). No hace falta relistar
     // aquí qué variables cambian — todo vive en el CSS, esta función solo
     // decide qué clase(s) poner.
+    // Pedido del usuario: modo claro DESACTIVADO temporalmente — la app se
+    // queda siempre en oscuro, sin importar `settings.theme` ni la
+    // preferencia del sistema operativo (`prefers-color-scheme`). Se
+    // ignora a propósito cualquier valor guardado de 'light'/'auto' — nunca
+    // se agrega `theme-light`, y `theme-dark` se agrega siempre. Con eso,
+    // las 2 ramas de CSS de modo claro (`@media (prefers-color-scheme:
+    // light)` y `html.theme-light`, ambas gateadas por `:not(.theme-dark)`
+    // o el propio selector de clase) dejan de aplicar por completo, sin
+    // tocar ni una regla de ese CSS. `settings.theme` NO se sobreescribe
+    // aquí (se deja tal cual esté guardado) — así, si el modo claro se
+    // reactiva más adelante, la preferencia previa del usuario no se
+    // pierde. El switch "Modo oscuro" del sidebar se queda visible pero
+    // sin poder apagarse — ver setThemeFromSidebarSwitch().
     function applyTheme() {
       const root = document.documentElement;
-      root.classList.toggle('theme-light', settings.theme === 'light');
-      root.classList.toggle('theme-dark', settings.theme === 'dark');
+      root.classList.remove('theme-light');
+      root.classList.add('theme-dark');
       updateThemeButtonUI();
     }
 
@@ -12225,11 +12238,24 @@ $0.72"></textarea>
     // simple en vez del ciclo de 3 estados (Auto/Claro/Oscuro). Encenderlo
     // fuerza 'dark', apagarlo fuerza 'light' — 'auto' se queda disponible
     // solo desde el botón 🌓 del header, sin tocar ese flujo.
+    // Pedido del usuario: modo claro DESACTIVADO — el switch se queda
+    // visible y "funcional" en apariencia (sigue respondiendo al tap/click,
+    // sigue teniendo su tooltip explicativo vía `title`, ver el HTML), pero
+    // apagarlo (intentar pasar a claro) ya NO cambia el tema — se revierte
+    // el propio checkbox al instante y se avisa con un toast. Encenderlo
+    // (isDark === true) no tiene nada que hacer distinto de antes, ya que
+    // applyTheme() ahora fuerza oscuro siempre de todos modos — se deja el
+    // flujo normal para ese caso, sin inventar una rama especial.
     function setThemeFromSidebarSwitch(isDark) {
-      settings.theme = isDark ? 'dark' : 'light';
+      if (!isDark) {
+        const sidebarSwitch = document.getElementById('sidebarDarkModeInput');
+        if (sidebarSwitch) sidebarSwitch.checked = true;
+        toast('🚧 Estamos trabajando en mejorar el modo claro — disponible pronto.');
+        return;
+      }
+      settings.theme = 'dark';
       saveSettingsOnly();
       applyTheme();
-      toast(`Tema: ${themeButtonLabel(settings.theme)}`);
     }
 
     // ---- Persistencia de secciones expandibles (pedido del usuario) ----
