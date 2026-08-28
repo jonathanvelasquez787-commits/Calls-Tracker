@@ -9630,12 +9630,74 @@
      está aquí en el DOM — revisa relocateCallsSection() para el
      comportamiento completo. -->
 <div class="app-page" data-page="home" id="pageHome">
-<!-- Pedido del usuario (v199): "Ganancias de hoy" sube arriba de "Llamadas"
-     — es lo primero que el usuario quiere ver al entrar (cuánto llevo),
-     mientras que Llamadas son botones de acción que se usan varias veces
-     al día, no la primera respuesta que se busca de un vistazo. Mismo
-     bloque de siempre, solo reordenado — ningún id cambió, así que
-     renderHeader() sigue actualizándolo exactamente igual. -->
+<!-- v332 — Pedido del usuario: "Llamadas" (#callsSection) sube al PRIMER
+     lugar de la página "🏠 Inicio" — arriba de "Ganancias de hoy" — y
+     "Bloques del día" (#scheduleAccordion) pasa a ser la ÚLTIMA sección de
+     Inicio (después de "Tabla de llamadas"). Reordenamiento 100% visual
+     (mover nodos ya existentes en el HTML) — ningún id/clase/listener
+     cambió, así que todo el JS que ya los usa (renderHeader()/
+     updateCallsStatusCard()/renderSchedule()/etc.) sigue funcionando
+     exactamente igual. Nuevo orden de Inicio: Llamadas → Ganancias de hoy
+     → Ganancias del ciclo → Tabla de llamadas → Bloques del día.
+     relocateCallsSection() (ver el JS) se actualizó para insertar
+     #callsSection antes de #earningsAccordion (antes era antes de
+     #cycleAccordion) cuando se navega de vuelta a Inicio. -->
+<section class="card span-12" id="callsSection">
+<div class="section-title">
+<div>
+<h2>Llamadas</h2>
+<p>Inicia una llamada, pega tu exportación de Propio o agrega una manual.</p>
+</div>
+</div>
+
+<!-- v293 — Ver comentario extenso junto a `.calls-status-card` en el CSS.
+     Contenido dinámico (dot/título/timer/ícono/texto/tag en vivo/waveform/
+     botones) lo llena updateCallsStatusCard(), llamada desde el mismo tick
+     de 1s que ya actualiza `.live-activity-bar` — nunca se re-renderiza
+     desde cero, solo se hace toggle de estilos/texto sobre estos ids. -->
+<div class="calls-status-card" id="callsStatusCard">
+<div class="calls-status-head">
+<div class="calls-status-head-left">
+<span class="calls-status-dot" id="callsStatusDot"></span>
+<span class="calls-status-title" id="callsStatusTitle">Listo para llamar</span>
+</div>
+<span class="calls-status-timer" id="callsStatusTimer" style="display:none;">00:00:00</span>
+</div>
+<div class="calls-status-body">
+<span class="calls-status-icon" id="callsStatusIcon" aria-hidden="true"></span>
+<div class="calls-status-text">
+<div class="calls-status-text-title" id="callsStatusTextTitle">Comienza una nueva llamada</div>
+<span class="calls-status-live-tag" id="callsStatusLiveTag" style="display:none;"><span class="dot"></span>En vivo</span>
+</div>
+<div class="calls-status-waveform" id="callsStatusWaveform" style="display:none;"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+<div class="calls-status-actions" id="callsStatusActions" style="display:none;">
+<button class="calls-status-btn-save" id="callsStatusSaveBtn" type="button">Guardar</button>
+<button class="calls-status-btn-end" id="callsStatusEndBtn" type="button">Descartar</button>
+</div>
+</div>
+</div>
+
+<div class="controls-grid">
+<button class="action-btn" id="callControlBtn" type="button" data-accent="pink">
+<span class="action-ripple"></span>
+<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.05 5A5 5 0 0 1 19 8.95M15.05 1A9 9 0 0 1 23 8.94m-1 7.98v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.68 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.32 1.85.55 2.81.68A2 2 0 0 1 22 16.92Z"/></svg></span></span>
+<span class="action-label" id="callControlLabel">Iniciar llamada</span>
+<span class="action-sub" id="callControlTimer">00:00:00</span>
+</button>
+<button class="action-btn" id="pasteCallsBtn" type="button" data-accent="cyan"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg></span></span><span class="action-label">Pegar Llamadas</span><span class="action-sub">Importar data</span></button>
+<button class="action-btn" id="addCallManualBtn" type="button" data-accent="good"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></span><span class="action-label">Agregar llamada</span><span class="action-sub">Manual</span></button>
+</div>
+</section>
+
+<!-- v262 — Pedido del usuario: "Ganancias del ciclo" se muda aquí (antes
+     vivía en la página "📊 Reportes", ver #cycleAccordion) — justo debajo
+     de "Turno de Hoy", en Inicio. Ningún id cambió
+     (cycleAccordion/cyclePrevBtn/cycleCurrentBtn/cycleNextBtn/
+     cycleEarningsValue/cycleEarningsConvertedText/cycleRangeBadge/
+     cyclePayDateBadge/cycleWeek1ProductiveTag/cycleWeek2ProductiveTag/
+     cycleTotalProductiveTag) — el JS que ya los usa (renderHeader(), el
+     wiring de cyclePrevBtn/cycleCurrentBtn/cycleNextBtn) sigue funcionando
+     exactamente igual, solo cambió dónde vive en el HTML. -->
 <!-- Pedido del usuario: "Ganancias de hoy" debe ser expandible y abrir
      expandida por defecto — antes era una tarjeta fija (`section.card`),
      mismo patrón que ya usan "Ganancias del ciclo"/"Bloques del día" (ver
@@ -9686,22 +9748,122 @@
 </div>
 </details>
 
-<!-- v331 — Pedido del usuario (ya aprobado con mockup en otra sesión —
-     fusión de secciones, no rediseño visual, así que no vuelve a pasar por
-     el protocolo de mockup): "Bloques del día" deja de ser su propia
+<details class="accordion-card" id="cycleAccordion">
+<summary>
+  <div class="accordion-head">
+    <h2>Ganancias del ciclo</h2>
+    <p>Total del ciclo de pago actual (14 días) y la próxima fecha de pago.</p>
+  </div>
+  <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
+</summary>
+<div class="accordion-body">
+<div class="week-nav">
+<button id="cyclePrevBtn" type="button">‹ Anterior</button>
+<button id="cycleCurrentBtn" type="button">Ciclo actual</button>
+<button id="cycleNextBtn" type="button">Siguiente ›</button>
+</div>
+<div class="earn-row">
+<div>
+<div class="earnings-big earnings-value-accent" style="font-size: clamp(24px, 3.2vw, 36px);" id="cycleEarningsValue">$0.00</div>
+<div class="helper" id="cycleEarningsConvertedText"></div>
+</div>
+<!-- v269 — Pedido del usuario: "Ciclo: ..." y "Pago: ..." se veían apiladas
+     (una debajo de la otra) porque su contenedor era .goal-stack (grid de
+     1 columna, mismo patrón que usan las 2 filas de Meta/restantes en
+     "Ganancias de hoy" — ahí SÍ se quiere apiladas). Aquí solo hay 2
+     píldoras sueltas, sin ninguna otra fila que apilar contra ellas — se
+     cambia a .goal-pair (la misma clase que ya usa la app para poner 2
+     píldoras en una sola fila, ver "Meta $X" / "≈ L X" en Ganancias de
+     hoy), sin CSS nuevo. En mobile, .goal-pair ya tiene su propio ajuste
+     (justify-content:flex-start) igual que .goal-stack lo tenía, así que
+     el comportamiento angosto no cambia. -->
+<div class="goal-pair">
+<div class="goal-badge goal-soft" id="cycleRangeBadge">Ciclo: — – —</div>
+<div class="goal-badge goal-soft" id="cyclePayDateBadge">Pago: —</div>
+</div>
+</div>
+<div class="table-tags" style="margin-top:4px;">
+<span class="tag" id="cycleWeek1ProductiveTag">Semana 1: 00:00:00</span>
+<span class="tag" id="cycleWeek2ProductiveTag">Semana 2: 00:00:00</span>
+<span class="tag good" id="cycleTotalProductiveTag">Total: 00:00:00</span>
+</div>
+</div>
+</details>
+
+<!-- v238 — Pedido del usuario: "Tabla de llamadas" se mueve aquí (antes
+     vivía al final de la página, dentro de `.grid` junto a "Resumen
+     semanal") para poder editar llamadas rápido sin salir de Inicio.
+     Ningún id cambió (callTableWrap/clearDayCallsBtn/etc.) — renderTable()
+     sigue funcionando exactamente igual, solo cambió dónde vive en el
+     HTML. */-->
+<details class="accordion-card" id="callTableAccordion">
+<summary>
+  <div class="accordion-head">
+    <h2>Tabla de llamadas y acciones de hoy</h2>
+    <p>Cada llamada importada + cada acción de tu turno, en una sola línea de tiempo.</p>
+  </div>
+  <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
+</summary>
+<div class="accordion-body">
+  <!-- v247 — Pedido del usuario (con captura): este `.note` repetía
+       exactamente el mismo texto que ya se ve en el subtítulo del
+       <summary> de arriba ("Detalle de cada fila importada con su gap.",
+       texto viejo — ver v315 más abajo, ya cambió), duplicado en pantalla.
+       Se quita sin reemplazo — el subtítulo del acordeón ya cumple ese rol. -->
+  <!-- v244 — Pedido del usuario (con captura): "Vaciar llamadas del día"
+       pasa de botón grande (clase `.bad` de `.modal-actions`, ocupando
+       ancho completo, hasta abajo de la sección) a un botón CHICO, pegado
+       a la izquierda, arriba de la tabla — antes de la tabla, no después.
+       Reutiliza el mismo tamaño/forma que `.gap-edit-btn` (ya usado en
+       toda la app para acciones secundarias chicas) con el MISMO combo de
+       clases que ya usa el botón "Eliminar" de cada fila individual
+       (`.call-delete-btn`) — mismo tono rojo/peligro, y las reglas ya
+       existentes para esas 2 clases dentro de `#callTableAccordion` (ver
+       CSS, v217/v233) se aplican automáticamente sin código nuevo, en
+       ambos temas. Sin `data-call-delete` (a propósito — ese atributo es
+       lo que activa el listener de borrar UNA fila; este botón sigue
+       wireado por su `id`, sin tocar esa lógica). -->
+  <button class="gap-edit-btn call-delete-btn" id="clearDayCallsBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><path d="M6 7V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v3"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> Vaciar llamadas del día</button>
+  <p class="alert-hint">Borra TODAS las llamadas de <strong id="clearDayCallsDayLabel">—</strong> (el día activo). Las acciones de la tabla (Shift/Break/Lunch/ACW) no se tocan — son un registro, no se borran desde aquí. Para reiniciar también turno/pausas/horario de ese día, usa "Reiniciar día" en el botón ♻️ Reiniciar del header.</p>
+  <!-- v315 — Pedido del usuario: fusión de "Turno de Hoy" (el registro de
+       Shift/Break/Lunch/ACW, hasta ahora solo visible como resumen en
+       "Bloques del día") dentro de esta tabla — mockup completo (escritorio
+       + celular) aprobado en el chat antes de tocar código. Filtro
+       Todo/Llamadas/Acciones para no perder la vista rápida de solo pagos
+       que ya usaba esta sección — ver dayActionRows()/renderTable() en el
+       JS. Reutiliza 100% los sistemas de edición ya existentes: llamadas
+       siguen con data-call-edit/data-call-delete (openCallEditor/
+       deleteCallRecord, sin tocar), los huecos ACW/Otro siguen con
+       data-gap-edit (openGapEditor, sin tocar) — las filas de Shift/Break/
+       Lunch/Importación son de solo lectura (vienen de state.events, el
+       mismo registro que ya alimenta dayShiftBounds() y el resto de la
+       app) porque editar esos timestamps a mano podría desincronizar
+       Adherencia/ACW; eso quedaría para un pedido aparte, no de oficio. -->
+  <div class="table-filter-row" id="tableFilterRow">
+    <button class="table-filter-btn active" data-table-filter="all" type="button">Todo</button>
+    <button class="table-filter-btn" data-table-filter="calls" type="button">Llamadas</button>
+    <button class="table-filter-btn" data-table-filter="actions" type="button">Acciones</button>
+  </div>
+  <div class="table-wrap" id="callTableWrap"></div>
+</div>
+</details>
+
+<!-- v331 — Pedido del usuario: "Bloques del día" deja de ser su propia
      página del menú lateral ("📋 Bloques del día", #pageBlocks — pasó por
-     ahí desde v250) y se fusiona aquí, dentro de "🏠 Inicio", justo
-     después de "Ganancias de hoy" y antes de "Llamadas" — mismo criterio
-     que ya agrupa en Inicio todo lo que se quiere ver de un vistazo al
-     abrir la app. CERO cambios funcionales: mismo id `scheduleAccordion`
-     (con `open` desde siempre, sin tocar) y todos sus hijos
-     (scheduleSubtitle/scheduleOffWorkedNote/blockSummaryStrip/
-     dayMetricsRow/adherenceBadge/adherenceGoalBadge/
+     ahí desde v250) y se fusiona dentro de "🏠 Inicio". CERO cambios
+     funcionales: mismo id `scheduleAccordion` (con `open` desde siempre,
+     sin tocar) y todos sus hijos (scheduleSubtitle/scheduleOffWorkedNote/
+     blockSummaryStrip/dayMetricsRow/adherenceBadge/adherenceGoalBadge/
      productivityGoalBadge/adherenceLiveBadge/dayInterruptionsRow/
      collapseCompletedBlocksBtn/scheduleList) — el JS que ya los usa
      (renderSchedule(), etc.) sigue funcionando exactamente igual, solo
      cambió qué `.app-page` lo envuelve. El sidebar queda con 4 páginas:
-     Inicio, Horario, Reportes, Avisos. -->
+     Inicio, Horario, Reportes, Avisos.
+     v332 — Pedido del usuario: esta sección pasa de "justo después de
+     Ganancias de hoy" a ser la ÚLTIMA sección de Inicio (después de
+     "Tabla de llamadas") — ver el comentario junto a #callsSection, más
+     arriba, para el nuevo orden completo. Puro reordenamiento de nodo,
+     sin tocar nada de lo descrito arriba. -->
 <details class="accordion-card" id="scheduleAccordion" open>
 <summary>
   <div class="accordion-head">
@@ -9803,162 +9965,6 @@
      max-width/centrado y margin-bottom (buscar "v266" en el CSS) — a
      diferencia de v265, esta vez el agregado explícito SÍ hace falta,
      porque el nodo pasa buena parte del tiempo fuera de `.app-page`. -->
-<section class="card span-12" id="callsSection">
-<div class="section-title">
-<div>
-<h2>Llamadas</h2>
-<p>Inicia una llamada, pega tu exportación de Propio o agrega una manual.</p>
-</div>
-</div>
-
-<!-- v293 — Ver comentario extenso junto a `.calls-status-card` en el CSS.
-     Contenido dinámico (dot/título/timer/ícono/texto/tag en vivo/waveform/
-     botones) lo llena updateCallsStatusCard(), llamada desde el mismo tick
-     de 1s que ya actualiza `.live-activity-bar` — nunca se re-renderiza
-     desde cero, solo se hace toggle de estilos/texto sobre estos ids. -->
-<div class="calls-status-card" id="callsStatusCard">
-<div class="calls-status-head">
-<div class="calls-status-head-left">
-<span class="calls-status-dot" id="callsStatusDot"></span>
-<span class="calls-status-title" id="callsStatusTitle">Listo para llamar</span>
-</div>
-<span class="calls-status-timer" id="callsStatusTimer" style="display:none;">00:00:00</span>
-</div>
-<div class="calls-status-body">
-<span class="calls-status-icon" id="callsStatusIcon" aria-hidden="true"></span>
-<div class="calls-status-text">
-<div class="calls-status-text-title" id="callsStatusTextTitle">Comienza una nueva llamada</div>
-<span class="calls-status-live-tag" id="callsStatusLiveTag" style="display:none;"><span class="dot"></span>En vivo</span>
-</div>
-<div class="calls-status-waveform" id="callsStatusWaveform" style="display:none;"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
-<div class="calls-status-actions" id="callsStatusActions" style="display:none;">
-<button class="calls-status-btn-save" id="callsStatusSaveBtn" type="button">Guardar</button>
-<button class="calls-status-btn-end" id="callsStatusEndBtn" type="button">Descartar</button>
-</div>
-</div>
-</div>
-
-<div class="controls-grid">
-<button class="action-btn" id="callControlBtn" type="button" data-accent="pink">
-<span class="action-ripple"></span>
-<span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.05 5A5 5 0 0 1 19 8.95M15.05 1A9 9 0 0 1 23 8.94m-1 7.98v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.68 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.32 1.85.55 2.81.68A2 2 0 0 1 22 16.92Z"/></svg></span></span>
-<span class="action-label" id="callControlLabel">Iniciar llamada</span>
-<span class="action-sub" id="callControlTimer">00:00:00</span>
-</button>
-<button class="action-btn" id="pasteCallsBtn" type="button" data-accent="cyan"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg></span></span><span class="action-label">Pegar Llamadas</span><span class="action-sub">Importar data</span></button>
-<button class="action-btn" id="addCallManualBtn" type="button" data-accent="good"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></span><span class="action-label">Agregar llamada</span><span class="action-sub">Manual</span></button>
-</div>
-</section>
-
-<!-- v262 — Pedido del usuario: "Ganancias del ciclo" se muda aquí (antes
-     vivía en la página "📊 Reportes", ver #cycleAccordion) — justo debajo
-     de "Turno de Hoy", en Inicio. Ningún id cambió
-     (cycleAccordion/cyclePrevBtn/cycleCurrentBtn/cycleNextBtn/
-     cycleEarningsValue/cycleEarningsConvertedText/cycleRangeBadge/
-     cyclePayDateBadge/cycleWeek1ProductiveTag/cycleWeek2ProductiveTag/
-     cycleTotalProductiveTag) — el JS que ya los usa (renderHeader(), el
-     wiring de cyclePrevBtn/cycleCurrentBtn/cycleNextBtn) sigue funcionando
-     exactamente igual, solo cambió dónde vive en el HTML. -->
-<details class="accordion-card" id="cycleAccordion">
-<summary>
-  <div class="accordion-head">
-    <h2>Ganancias del ciclo</h2>
-    <p>Total del ciclo de pago actual (14 días) y la próxima fecha de pago.</p>
-  </div>
-  <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
-</summary>
-<div class="accordion-body">
-<div class="week-nav">
-<button id="cyclePrevBtn" type="button">‹ Anterior</button>
-<button id="cycleCurrentBtn" type="button">Ciclo actual</button>
-<button id="cycleNextBtn" type="button">Siguiente ›</button>
-</div>
-<div class="earn-row">
-<div>
-<div class="earnings-big earnings-value-accent" style="font-size: clamp(24px, 3.2vw, 36px);" id="cycleEarningsValue">$0.00</div>
-<div class="helper" id="cycleEarningsConvertedText"></div>
-</div>
-<!-- v269 — Pedido del usuario: "Ciclo: ..." y "Pago: ..." se veían apiladas
-     (una debajo de la otra) porque su contenedor era .goal-stack (grid de
-     1 columna, mismo patrón que usan las 2 filas de Meta/restantes en
-     "Ganancias de hoy" — ahí SÍ se quiere apiladas). Aquí solo hay 2
-     píldoras sueltas, sin ninguna otra fila que apilar contra ellas — se
-     cambia a .goal-pair (la misma clase que ya usa la app para poner 2
-     píldoras en una sola fila, ver "Meta $X" / "≈ L X" en Ganancias de
-     hoy), sin CSS nuevo. En mobile, .goal-pair ya tiene su propio ajuste
-     (justify-content:flex-start) igual que .goal-stack lo tenía, así que
-     el comportamiento angosto no cambia. -->
-<div class="goal-pair">
-<div class="goal-badge goal-soft" id="cycleRangeBadge">Ciclo: — – —</div>
-<div class="goal-badge goal-soft" id="cyclePayDateBadge">Pago: —</div>
-</div>
-</div>
-<div class="table-tags" style="margin-top:4px;">
-<span class="tag" id="cycleWeek1ProductiveTag">Semana 1: 00:00:00</span>
-<span class="tag" id="cycleWeek2ProductiveTag">Semana 2: 00:00:00</span>
-<span class="tag good" id="cycleTotalProductiveTag">Total: 00:00:00</span>
-</div>
-</div>
-</details>
-
-<!-- v238 — Pedido del usuario: "Tabla de llamadas" se mueve aquí (antes
-     vivía al final de la página, dentro de `.grid` junto a "Resumen
-     semanal") para poder editar llamadas rápido sin salir de Inicio.
-     Ningún id cambió (callTableWrap/clearDayCallsBtn/etc.) — renderTable()
-     sigue funcionando exactamente igual, solo cambió dónde vive en el
-     HTML. */-->
-<details class="accordion-card" id="callTableAccordion">
-<summary>
-  <div class="accordion-head">
-    <h2>Tabla de llamadas y acciones de hoy</h2>
-    <p>Cada llamada importada + cada acción de tu turno, en una sola línea de tiempo.</p>
-  </div>
-  <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
-</summary>
-<div class="accordion-body">
-  <!-- v247 — Pedido del usuario (con captura): este `.note` repetía
-       exactamente el mismo texto que ya se ve en el subtítulo del
-       <summary> de arriba ("Detalle de cada fila importada con su gap.",
-       texto viejo — ver v315 más abajo, ya cambió), duplicado en pantalla.
-       Se quita sin reemplazo — el subtítulo del acordeón ya cumple ese rol. -->
-  <!-- v244 — Pedido del usuario (con captura): "Vaciar llamadas del día"
-       pasa de botón grande (clase `.bad` de `.modal-actions`, ocupando
-       ancho completo, hasta abajo de la sección) a un botón CHICO, pegado
-       a la izquierda, arriba de la tabla — antes de la tabla, no después.
-       Reutiliza el mismo tamaño/forma que `.gap-edit-btn` (ya usado en
-       toda la app para acciones secundarias chicas) con el MISMO combo de
-       clases que ya usa el botón "Eliminar" de cada fila individual
-       (`.call-delete-btn`) — mismo tono rojo/peligro, y las reglas ya
-       existentes para esas 2 clases dentro de `#callTableAccordion` (ver
-       CSS, v217/v233) se aplican automáticamente sin código nuevo, en
-       ambos temas. Sin `data-call-delete` (a propósito — ese atributo es
-       lo que activa el listener de borrar UNA fila; este botón sigue
-       wireado por su `id`, sin tocar esa lógica). -->
-  <button class="gap-edit-btn call-delete-btn" id="clearDayCallsBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><path d="M6 7V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v3"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> Vaciar llamadas del día</button>
-  <p class="alert-hint">Borra TODAS las llamadas de <strong id="clearDayCallsDayLabel">—</strong> (el día activo). Las acciones de la tabla (Shift/Break/Lunch/ACW) no se tocan — son un registro, no se borran desde aquí. Para reiniciar también turno/pausas/horario de ese día, usa "Reiniciar día" en el botón ♻️ Reiniciar del header.</p>
-  <!-- v315 — Pedido del usuario: fusión de "Turno de Hoy" (el registro de
-       Shift/Break/Lunch/ACW, hasta ahora solo visible como resumen en
-       "Bloques del día") dentro de esta tabla — mockup completo (escritorio
-       + celular) aprobado en el chat antes de tocar código. Filtro
-       Todo/Llamadas/Acciones para no perder la vista rápida de solo pagos
-       que ya usaba esta sección — ver dayActionRows()/renderTable() en el
-       JS. Reutiliza 100% los sistemas de edición ya existentes: llamadas
-       siguen con data-call-edit/data-call-delete (openCallEditor/
-       deleteCallRecord, sin tocar), los huecos ACW/Otro siguen con
-       data-gap-edit (openGapEditor, sin tocar) — las filas de Shift/Break/
-       Lunch/Importación son de solo lectura (vienen de state.events, el
-       mismo registro que ya alimenta dayShiftBounds() y el resto de la
-       app) porque editar esos timestamps a mano podría desincronizar
-       Adherencia/ACW; eso quedaría para un pedido aparte, no de oficio. -->
-  <div class="table-filter-row" id="tableFilterRow">
-    <button class="table-filter-btn active" data-table-filter="all" type="button">Todo</button>
-    <button class="table-filter-btn" data-table-filter="calls" type="button">Llamadas</button>
-    <button class="table-filter-btn" data-table-filter="actions" type="button">Acciones</button>
-  </div>
-  <div class="table-wrap" id="callTableWrap"></div>
-</div>
-</details>
-
 </div><!-- /pageHome -->
 
 <!-- v238 — Pedido del usuario: página "🗓️ Horario" del menú lateral —
@@ -20378,12 +20384,16 @@ function render() {
       if (!callsSection) return;
       if (page === 'home') {
         const pageHome = document.getElementById('pageHome');
-        const cycleAccordion = document.getElementById('cycleAccordion');
+        // v332 — Pedido del usuario: "Llamadas" pasa a ser la PRIMERA
+        // sección de Inicio (antes iba antes de "Ganancias del ciclo") —
+        // se ancla ahora contra #earningsAccordion en vez de
+        // #cycleAccordion, mismo mecanismo de siempre.
+        const earningsAccordion = document.getElementById('earningsAccordion');
         if (!pageHome) return;
-        if (cycleAccordion && cycleAccordion.parentElement === pageHome) {
-          pageHome.insertBefore(callsSection, cycleAccordion);
+        if (earningsAccordion && earningsAccordion.parentElement === pageHome) {
+          pageHome.insertBefore(callsSection, earningsAccordion);
         } else {
-          pageHome.appendChild(callsSection);
+          pageHome.insertBefore(callsSection, pageHome.firstChild);
         }
       } else {
         const heroSection = document.getElementById('heroSection');
