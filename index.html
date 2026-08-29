@@ -11581,22 +11581,29 @@ $0.72"></textarea>
     // |'lunch', start, dur}, editable/agregable/eliminable exactamente igual
     // sin importar el tipo. Ya NO hay auto-relleno de "lo que sobra" como
     // Trabajo — todo bloque (incluyendo Trabajo) debe declararse explícito.
-    // Los mismos horarios de siempre (Break 09:10/20, Break 11:40/20, Lunch
-    // 13:00/50) se mantienen como default, con los bloques de Trabajo que
-    // antes se auto-calculaban ahora declarados explícitamente entre medio.
+    // v343 — Pedido del usuario: nuevo horario por default (con capturas del
+    // timeline ya armado a su gusto) — mismos bloques/orden de siempre
+    // (Trabajo/Break/Trabajo/Break/Trabajo/Lunch/Trabajo), solo se ajustan 3
+    // valores puntuales: la Meta productiva de los 2 primeros bloques de
+    // Trabajo baja de 130 a 120 min, Lunch pasa de 50 a 55 min, y el último
+    // bloque de Trabajo se acorta de 2h10m a 1h5m (13:55–15:00, Meta
+    // productiva 60 min en vez de 130) — el fin del turno se recorta de
+    // 16:00 a 15:00 para que siga coincidiendo con el fin real del último
+    // bloque. El resto (horas de Break, el bloque de Trabajo 12:00–13:00)
+    // se queda igual.
     function defaultDaySchedule(isWorkDay) {
       return {
         off: !isWorkDay,
         start: '07:00',
-        end: '16:00',
+        end: '15:00',
         blocks: [
-          { type: 'work', start: '07:00', dur: 130, goalMin: 130 },
+          { type: 'work', start: '07:00', dur: 130, goalMin: 120 },
           { type: 'break', start: '09:10', dur: 20 },
-          { type: 'work', start: '09:30', dur: 130, goalMin: 130 },
+          { type: 'work', start: '09:30', dur: 130, goalMin: 120 },
           { type: 'break', start: '11:40', dur: 20 },
           { type: 'work', start: '12:00', dur: 60, goalMin: 60 },
-          { type: 'lunch', start: '13:00', dur: 50 },
-          { type: 'work', start: '13:50', dur: 130, goalMin: 130 },
+          { type: 'lunch', start: '13:00', dur: 55 },
+          { type: 'work', start: '13:55', dur: 65, goalMin: 60 },
         ],
       };
     }
