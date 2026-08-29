@@ -7501,6 +7501,100 @@
     .sched-legend-chip[data-legend="lunch"] { border-color: rgba(var(--good-rgb), .32); }
     .sched-legend-chip[data-legend="lunch"] strong { color: var(--good); }
 
+    /* v340 — Pedido del usuario: control "Ajustar turno completo" en
+       Horario → Bloques del día — mueve TODOS los bloques del día (más
+       Inicio/Fin del turno) la misma cantidad de tiempo de una sola vez,
+       en vez de editar cada bloque a mano uno por uno. Mockup aprobado
+       (stepper de horas/minutos + botón "Aplicar a todos", con vista
+       antes/después) antes de escribir código. Caja con borde punteado
+       (mismo lenguaje que ".sched-add-block-btn") para distinguirla como
+       una "herramienta" aparte de los bloques en sí, no un bloque más. */
+    .sched-offset-block {
+      border: 1.5px dashed var(--line-2);
+      border-radius: 16px;
+      padding: 14px 16px;
+      background: rgba(var(--blue-rgb), .04);
+      margin-top: 4px;
+    }
+    .sched-offset-row {
+      display: flex;
+      gap: 8px;
+      align-items: stretch;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .sched-offset-stepper {
+      display: flex;
+      align-items: stretch;
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      flex: 1 1 160px;
+    }
+    .sched-offset-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 18px;
+      font-weight: 700;
+      padding: 9px 16px;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .sched-offset-btn:hover,
+    .sched-offset-btn:focus-visible {
+      color: var(--blue);
+      background: rgba(var(--blue-rgb), .1);
+      outline: none;
+    }
+    .sched-offset-display {
+      flex: 1;
+      text-align: center;
+      padding: 8px 4px;
+      border-left: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      min-width: 0;
+    }
+    .sched-offset-display span:first-child {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      display: block;
+    }
+    .sched-offset-unit {
+      font-size: 9px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .sched-offset-apply-btn {
+      flex: 0 0 auto;
+      border: 0;
+      border-radius: 12px;
+      padding: 0 18px;
+      background: var(--blue);
+      color: #07101f;
+      font-weight: 800;
+      font-size: 12.5px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .sched-offset-apply-btn:hover,
+    .sched-offset-apply-btn:focus-visible {
+      filter: brightness(1.08);
+      outline: none;
+    }
+    .sched-offset-apply-btn:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+      filter: none;
+    }
+    @media (max-width: 480px) {
+      .sched-offset-apply-btn { flex: 1 1 100%; padding: 11px; }
+    }
+
     /* ==========================================================
        v299 — Pedido del usuario: rediseño visual COMPACTO de 2 zonas —
        (1) "Si llegas tarde a tu turno" + "Adherencia" dentro de "Horario",
@@ -10151,6 +10245,23 @@
   <div class="sched-block">
     <div class="sched-section-title">Bloques del día (Trabajo, Break, Lunch)</div>
     <p class="sched-hint">Cada franja de tu turno es un bloque. Agrega uno por cada Trabajo, Break o Lunch que planees, con su hora de inicio y de fin — el resto del turno que no cubras con ningún bloque simplemente queda sin plan, sin afectar tu Adherencia. Un bloque de Trabajo puede llevar además una "meta productiva": cuántos minutos en llamada esperas lograr en ese bloque.</p>
+
+    <div class="sched-offset-block">
+      <div class="sched-compact-title" style="font-size:12.5px;"><span class="sched-compact-title-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg></span>Ajustar turno completo</div>
+      <p class="sched-hint" style="margin-top:4px;">Mueve TODOS los bloques de hoy (más Inicio/Fin del turno) la misma cantidad de tiempo, sin perder el orden ni la duración de cada uno.</p>
+      <div class="sched-offset-row">
+        <div class="sched-offset-stepper">
+          <button type="button" id="scheduleOffsetMinusBtn" class="sched-offset-btn" aria-label="Restar 15 minutos">−</button>
+          <div class="sched-offset-display">
+            <span id="scheduleOffsetValue">+0:00</span>
+            <span class="sched-offset-unit">horas</span>
+          </div>
+          <button type="button" id="scheduleOffsetPlusBtn" class="sched-offset-btn" aria-label="Sumar 15 minutos">+</button>
+        </div>
+        <button type="button" id="scheduleOffsetApplyBtn" class="sched-offset-apply-btn">Aplicar a todos</button>
+      </div>
+    </div>
+
     <div class="gap-editor-list sched-timeline" id="blocksEditorList"></div>
     <div class="sched-timeline-add-row">
       <span class="sched-timeline-add-hour" aria-hidden="true"></span>
@@ -17132,6 +17243,62 @@ function renderWeekSummary() {
     }
 
     let scheduleEditDay = 'mon';
+    // v340 — Pedido del usuario: "Ajustar turno completo" (ver
+    // .sched-offset-block en el HTML/CSS) — cuánto se va a mover el turno
+    // la próxima vez que se toque "Aplicar a todos", en minutos (positivo =
+    // más tarde, negativo = más temprano). Vive en memoria, no en
+    // localStorage — mismo criterio que scheduleEditDay/weekViewOffset: es
+    // un control de sesión, se resetea a 0 cada vez que se cambia de día/
+    // semana o después de aplicarlo (ver syncShiftModalFields()/
+    // applyScheduleOffset()).
+    let scheduleOffsetMin = 0;
+
+    // "+1:00" / "-0:30" / "+0:00" — mismo formato que ya usa el resto de la
+    // app para horas (ver formatDuration()), pero con signo explícito y sin
+    // segundos, ya que aquí el usuario razona en pasos de 15 min.
+    function formatScheduleOffsetLabel(mins) {
+      const sign = mins < 0 ? '-' : '+';
+      const abs = Math.abs(mins);
+      const h = Math.floor(abs / 60);
+      const m = abs % 60;
+      return `${sign}${h}:${pad(m)}`;
+    }
+
+    function syncScheduleOffsetUI() {
+      const valueEl = document.getElementById('scheduleOffsetValue');
+      if (valueEl) valueEl.textContent = formatScheduleOffsetLabel(scheduleOffsetMin);
+    }
+
+    // Mueve Inicio/Fin del turno Y todos los bloques del formulario por
+    // `scheduleOffsetMin` minutos — mismo desplazamiento para todo, así que
+    // el orden y la duración de cada bloque no cambian, solo su hora.
+    // Reutiliza toMinutes()/minutesToHHMM() (ya manejan el wrap de 24h con
+    // valores negativos, ver esa función) — ningún cálculo nuevo. No se
+    // guarda solo: el usuario sigue teniendo que darle a "Guardar día"
+    // después, igual que cualquier otra edición en este formulario — así
+    // puede revisar/ajustar algo más antes de confirmar.
+    function applyScheduleOffset() {
+      if (!scheduleOffsetMin) {
+        toast('Elige cuánto ajustar el turno antes de aplicar.');
+        return;
+      }
+      const startInput = document.getElementById('dayStartInput');
+      const endInput = document.getElementById('dayEndInput');
+      if (startInput) startInput.value = minutesToHHMM(toMinutes(formatHHMM(startInput.value)) + scheduleOffsetMin);
+      if (endInput) endInput.value = minutesToHHMM(toMinutes(formatHHMM(endInput.value)) + scheduleOffsetMin);
+
+      const current = readBlocksFromEditor();
+      if (!current.length) {
+        toast('No hay bloques que ajustar en este día.');
+        return;
+      }
+      const shifted = current.map(b => ({ ...b, start: minutesToHHMM(toMinutes(b.start) + scheduleOffsetMin) }));
+      renderBlocksEditor(shifted);
+      toast(`Turno ajustado ${formatScheduleOffsetLabel(scheduleOffsetMin)} — recuerda "Guardar día" para confirmar`);
+      scheduleOffsetMin = 0;
+      syncScheduleOffsetUI();
+    }
+
     // Pedido del usuario: el editor de Horario ahora tiene 2 modos.
     // 'template' (default, comportamiento de siempre): edita la plantilla
     // recurrente Lunes-Domingo (settings.weeklySchedule). 'week': edita el
@@ -17525,7 +17692,7 @@ function renderWeekSummary() {
     // activó "Personalizar esta semana" (se ve la plantilla de referencia,
     // pero no se edita ahí por accidente).
     function setScheduleFormDisabled(disabled) {
-      ['dayOffInput', 'dayStartInput', 'dayEndInput', 'addBlockBtn', 'copyDayToAllBtn', 'copyWeekendBtn', 'saveShiftWindowBtn'].forEach(id => {
+      ['dayOffInput', 'dayStartInput', 'dayEndInput', 'addBlockBtn', 'copyDayToAllBtn', 'copyWeekendBtn', 'saveShiftWindowBtn', 'scheduleOffsetMinusBtn', 'scheduleOffsetPlusBtn', 'scheduleOffsetApplyBtn'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.disabled = disabled;
       });
@@ -17650,6 +17817,11 @@ function renderWeekSummary() {
       if (adherenceGoalPctInput && document.activeElement !== adherenceGoalPctInput) adherenceGoalPctInput.value = settings.adherenceGoalPct;
       renderDayTabs();
       syncScheduleWeekNavUI();
+      // v340 — El ajuste de turno es por-visita, no por-día: cambiar de día
+      // (o de semana) sin haber tocado "Aplicar a todos" debe dejarlo en
+      // 0:00 para el día nuevo, no arrastrar el valor del día anterior.
+      scheduleOffsetMin = 0;
+      syncScheduleOffsetUI();
     }
 
     // Pedido del usuario (v145): Volumen/Avisos con sonido/Adherencia/
@@ -20956,6 +21128,18 @@ function render() {
     document.getElementById('currencyLabelInput').addEventListener('change', updateCurrencySettings);
     document.getElementById('saveShiftWindowBtn').addEventListener('click', saveShiftWindow);
     document.getElementById('addBlockBtn').addEventListener('click', addBlockRow);
+    // v340 — "Ajustar turno completo": -/+ mueven el stepper de 15 en 15
+    // min (sin límite de rango — el usuario puede acumular varias horas si
+    // hace falta), "Aplicar a todos" dispara applyScheduleOffset().
+    document.getElementById('scheduleOffsetMinusBtn').addEventListener('click', () => {
+      scheduleOffsetMin -= 15;
+      syncScheduleOffsetUI();
+    });
+    document.getElementById('scheduleOffsetPlusBtn').addEventListener('click', () => {
+      scheduleOffsetMin += 15;
+      syncScheduleOffsetUI();
+    });
+    document.getElementById('scheduleOffsetApplyBtn').addEventListener('click', applyScheduleOffset);
     // v273 — Pedido del usuario: "¿Cómo funciona?" ya no hace nada al hacer
     // click — la información vive en un tooltip que se muestra solo con
     // hover/foco (ver .sched-help-wrap/.sched-help-tooltip en el CSS). Este
