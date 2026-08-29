@@ -9542,6 +9542,293 @@
       font-weight: 800;
     }
 
+    /* ==========================================================
+       v346 — Pedido del usuario: rediseño 100% visual de "Higher Rate"
+       (#higherRateModal), mockup de 2 vistas (escritorio y celular)
+       aprobado antes de tocar código. Cabecera con ícono cuadrito en
+       degradado cian→azul (reutiliza .mc-header-icon/.mc-modal-head, v301
+       — el degradado es la única variante nueva, ".hr-gradient", ya que el
+       resto de cabeceras de esta familia usan un color sólido). Banner
+       informativo de la regla de los 5 min reutiliza el mismo lenguaje que
+       .mc-warning-box (ámbar) pero en tono cian — variante nueva
+       ".mc-info-box" en vez de forzar un color de "peligro" sobre
+       información neutral. Cada ventana pasa de fila de formulario
+       (.block-row con 4 inputs sueltos) a una tarjeta (.hr-window-card)
+       con acento de color por nivel (mismos --tier-bronze/--tier-silver/
+       --tier-gold ya usados en .rate-tile-icon) — grid de 2 columnas en
+       escritorio, 1 en mobile. CERO cambios funcionales: los campos reales
+       (.hr-window-date-input/.hr-window-start-input/.hr-window-end-input/
+       .hr-window-tier-input) siguen siendo los mismos <input>/<select> de
+       siempre, sin tocar readHigherRateWindowsFromEditor() — solo se
+       restylean para verse como texto dentro de la tarjeta (mismo criterio
+       ya usado en `.sched-tl-time-input`/`.sched-tl-type-select` para este
+       mismo problema) y el nivel se elige con un segmented pill que
+       escribe en el <select> oculto (mismo mecanismo que ya usan los pills
+       de Billable/Dropped en #manualCallModal/#callEditModal). */
+    .mc-header-icon.hr-gradient {
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+    }
+    .mc-info-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      border: 1px solid rgba(var(--cyan-rgb), .18);
+      background: rgba(var(--cyan-rgb), .07);
+      border-radius: 12px;
+      padding: 10px 13px;
+      margin-top: 4px;
+    }
+    .mc-info-box .ic-svg {
+      flex: 0 0 auto;
+      margin-top: 1px;
+      color: var(--cyan);
+      stroke: var(--cyan);
+    }
+    .mc-info-box span {
+      font-size: 11.5px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .mc-info-box strong {
+      color: var(--text);
+      font-weight: 800;
+    }
+    .hr-section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 18px 0 10px;
+    }
+    .hr-section-title {
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: -.01em;
+    }
+    .hr-count-pill {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--muted);
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--line);
+      padding: 3px 9px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .hr-window-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 620px) {
+      .hr-window-grid { grid-template-columns: 1fr; }
+    }
+    .hr-window-card {
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.03);
+      padding: 13px 14px;
+      position: relative;
+      transition: border-color .14s ease, background .14s ease;
+    }
+    .hr-window-card[data-tier="bronze"] { border-color: rgba(224,160,107,.32); background: rgba(224,160,107,.05); }
+    .hr-window-card[data-tier="silver"] { border-color: rgba(215,222,230,.28); background: rgba(215,222,230,.04); }
+    .hr-window-card[data-tier="gold"] { border-color: rgba(255,215,110,.32); background: rgba(255,215,110,.05); }
+    .hr-window-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .hr-window-day {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+    }
+    .hr-window-day-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      background: rgba(255,255,255,.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      color: var(--text);
+    }
+    .hr-window-day-text { min-width: 0; }
+    .hr-window-day-name {
+      font-weight: 900;
+      font-size: 13.5px;
+      letter-spacing: -.01em;
+    }
+    .hr-window-date-visible {
+      display: block;
+      border: 0;
+      background: transparent;
+      padding: 0;
+      margin-top: 1px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      font-family: inherit;
+      outline: none;
+      cursor: pointer;
+      max-width: 118px;
+    }
+    .hr-window-remove-btn {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      border: 1px solid rgba(var(--pink-rgb), .28);
+      background: rgba(var(--pink-rgb), .08);
+      color: var(--pink);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      cursor: pointer;
+      padding: 0;
+    }
+    .hr-window-remove-btn:hover {
+      background: rgba(var(--pink-rgb), .2);
+    }
+    .hr-window-remove-btn .ic-svg { width: 12px; height: 12px; }
+    .hr-window-time {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 11px;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .hr-window-time-icon .ic-svg { color: var(--muted); stroke: var(--muted); }
+    .hr-window-time-input {
+      border: 0;
+      background: transparent;
+      color: var(--text);
+      font-weight: 700;
+      font-size: 12.5px;
+      padding: 0;
+      font-family: inherit;
+      outline: none;
+      max-width: 92px;
+    }
+    .hr-window-time-input::-webkit-calendar-picker-indicator {
+      display: none;
+    }
+    .hr-time-sep {
+      color: var(--muted);
+      font-weight: 400;
+    }
+    .hr-window-tier-row {
+      display: flex;
+      gap: 2px;
+      padding: 3px;
+      margin-top: 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--line);
+    }
+    .hr-window-tier-btn {
+      flex: 1;
+      text-align: center;
+      padding: 6px 4px;
+      border-radius: 9px;
+      font-size: 10.5px;
+      font-weight: 800;
+      color: var(--muted);
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .14s ease, color .14s ease;
+    }
+    .hr-window-tier-btn[aria-pressed="true"] { font-weight: 900; }
+    .hr-window-tier-btn[aria-pressed="true"][data-tier="bronze"] { background: var(--tier-bronze); color: #3a2308; }
+    .hr-window-tier-btn[aria-pressed="true"][data-tier="silver"] { background: var(--tier-silver); color: #2a2f36; }
+    .hr-window-tier-btn[aria-pressed="true"][data-tier="gold"] { background: var(--tier-gold); color: #413006; }
+    .hr-add-window-btn {
+      width: 100%;
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 13px;
+      border-radius: 16px;
+      border: 1.5px dashed rgba(var(--blue-rgb), .5);
+      color: var(--blue);
+      background: transparent;
+      font-weight: 800;
+      font-size: 13.5px;
+      cursor: pointer;
+      transition: border-color .14s ease, background .14s ease;
+    }
+    .hr-add-window-btn:hover,
+    .hr-add-window-btn:focus-visible {
+      border-color: rgba(var(--blue-rgb), .8);
+      background: rgba(var(--blue-rgb), .06);
+      outline: none;
+    }
+    .hr-add-window-plus {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 1.5px dashed rgba(var(--blue-rgb), .6);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex: 0 0 auto;
+    }
+    /* Historial: <details> nativo sin envolver en `.accordion-card` (esta
+       instancia vive dentro de un modal ya con su propio fondo/padding) —
+       la fila resumen (`<summary>`) se restylea a este lenguaje compacto,
+       el toggle abrir/cerrar del navegador no se toca. */
+    #higherRateHistoryAccordion {
+      margin-top: 18px;
+    }
+    #higherRateHistoryAccordion > summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px 0 0;
+      border-top: 1px solid var(--line);
+    }
+    #higherRateHistoryAccordion > summary::-webkit-details-marker { display: none; }
+    .hr-history-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .hr-history-label .ic-svg { color: var(--muted); stroke: var(--muted); }
+    .hr-history-chevron {
+      color: var(--muted);
+      transition: transform .18s ease;
+    }
+    #higherRateHistoryAccordion[open] .hr-history-chevron { transform: rotate(180deg); }
+    #higherRateHistoryAccordion .accordion-body {
+      padding: 12px 0 0;
+      display: grid;
+      gap: 10px;
+    }
+    @media (max-width: 620px) {
+      .hr-window-card { padding: 11px 12px; border-radius: 14px; }
+      .hr-window-day-icon { width: 26px; height: 26px; }
+      .hr-window-day-name { font-size: 12.5px; }
+      .hr-window-time { font-size: 11.5px; }
+      .hr-window-tier-btn { font-size: 9.5px; padding: 5px 3px; }
+    }
+
     @media (max-width: 760px) {
       .wk-row { gap: 9px; padding: 9px 2px; }
       .wk-row.is-today { padding-left: 6px; padding-right: 6px; }
@@ -10961,53 +11248,64 @@
 </div>
 </div>
 </div>
-<!-- v248 — Pedido del usuario: "Higher Rate" abre su propio popup (como
-     "Ajustes"), no navega a otra página de la app — reversión de v238
-     (que lo había vuelto una sección inline dentro de "Horario", ver ese
-     comentario en pageSchedule). Mismos ids de siempre para el editor de
-     ventanas (higherRateWindowsList/addHigherRateWindowBtn/
+<!-- v346 — Pedido del usuario: rediseño 100% visual de este modal (mockup
+     visual de 2 vistas — escritorio y celular — aprobado antes de tocar
+     código), mismo criterio que el resto de modales ya rediseñados
+     (v271-345): cabecera con ícono cuadrito (reutiliza .mc-header-icon/
+     .mc-modal-head, v301, con degradado propio ".hr-gradient"), banner
+     informativo de la regla de los 5 min (".mc-info-box", variante cian de
+     .mc-warning-box), cada ventana pasa de fila de formulario a tarjeta
+     con acento por nivel (".hr-window-card", ver CSS) en un grid de 2
+     columnas (1 en mobile). CERO cambios funcionales: mismos ids de
+     siempre (higherRateWindowsList/addHigherRateWindowBtn/
      higherRateHistoryAccordion/higherRateHistoryList/
-     purgeHigherRateWindowsBtn) — el JS que ya los usa no se toca, solo
-     cambia el HTML que los envuelve (ahora modal-card, antes accordion-body). -->
+     purgeHigherRateWindowsBtn) y mismos campos reales por fila
+     (.hr-window-date-input/.hr-window-start-input/.hr-window-end-input/
+     .hr-window-tier-input, leídos por readHigherRateWindowsFromEditor(),
+     sin tocar esa función) — solo cambia el HTML/CSS que arma cada fila
+     (renderHigherRateWindowRow()) y el mecanismo del selector de nivel
+     (ahora un segmented pill que escribe en el mismo <select> oculto,
+     mismo patrón que ya usan los pills de Billable/Dropped en
+     #manualCallModal/#callEditModal). -->
 <div aria-hidden="true" class="modal-overlay" id="higherRateModal">
 <div aria-labelledby="higherRateModalTitle" aria-modal="true" class="modal-card" role="dialog">
-<div class="modal-head">
+<div class="modal-head mc-modal-head">
+<div class="mc-header-icon hr-gradient" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c2 3-1 4-1 7a3 3 0 1 0 6 0c0-1-.5-2-.5-2 2 1 3 3.5 3 6a7 7 0 1 1-14 0c0-4 2-6 3.5-8 .5 2 1 2.5 3-3Z"/></svg></div>
 <div>
-<h3 id="higherRateModalTitle"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c2 3-1 4-1 7a3 3 0 1 0 6 0c0-1-.5-2-.5-2 2 1 3 3.5 3 6a7 7 0 1 1-14 0c0-4 2-6 3.5-8 .5 2 1 2.5 3-3Z"/></svg> Higher Rate</h3>
-<p>Fecha específica + hora de inicio/fin donde aplica un bono sobre la tasa por minuto — Propio lo avisa por correo, no lo expone en los datos que la app importa, así que se configura a mano.</p>
+<h3 id="higherRateModalTitle">Higher Rate</h3>
+<p>Franjas horarias con bono extra por minuto, avisadas por Propio por correo. Configúralas aquí para que el pago se sume solo.</p>
 </div>
 <button aria-label="Cerrar" class="modal-close" data-close-modal="higherRateModal" type="button">×</button>
 </div>
-<div class="gap-editor-list" id="higherRateWindowsList"></div>
-<div class="modal-actions mc-action-row" style="margin-top:0;">
-<button class="mc-btn-primary warn" id="addHigherRateWindowBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Agregar ventana</button>
+
+<div class="mc-info-box">
+<svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1.5 1-1.5 2.2"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg>
+<span>Una llamada cuenta <strong>completa</strong> si empieza hasta 5 min antes de que la ventana comience, o en cualquier momento antes de que termine, aunque se extienda después.</span>
 </div>
-<p class="alert-hint">Una llamada cuenta COMPLETA (no solo la parte dentro de la ventana) si empieza hasta 5 minutos antes de que la ventana comience, o en cualquier momento antes de que termine, aunque se extienda después.</p>
-<details class="accordion-card" id="higherRateHistoryAccordion" style="margin-top:10px;">
+
+<div class="hr-section-head">
+<div class="hr-section-title">Ventanas activas</div>
+<div class="hr-count-pill" id="higherRateActiveCountPill">0 próximas</div>
+</div>
+<div class="hr-window-grid" id="higherRateWindowsList"></div>
+
+<button class="hr-add-window-btn" id="addHigherRateWindowBtn" type="button"><span class="hr-add-window-plus" aria-hidden="true">+</span> Agregar ventana</button>
+
+<details id="higherRateHistoryAccordion">
 <summary>
-  <div class="accordion-head">
-    <h2 id="higherRateHistoryTitle"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"/><line x1="10" y1="13" x2="14" y2="13"/></svg> Ventanas pasadas (0)</h2>
-    <p>Se mueven aquí solas apenas su fecha ya pasó — la lista de arriba se queda limpia con solo hoy y lo que viene. Siguen editables o eliminables cuando quieras, no se borran solas.</p>
-  </div>
-  <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
+  <span class="hr-history-label" id="higherRateHistoryTitle"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"/><line x1="10" y1="13" x2="14" y2="13"/></svg> Historial (0 pasadas)</span>
+  <svg class="ic-svg hr-history-chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
 </summary>
 <div class="accordion-body">
-  <div class="gap-editor-list" id="higherRateHistoryList"></div>
+  <p class="sched-hint" style="margin:0 0 4px;">Se mueven aquí solas apenas su fecha ya pasó — la lista de arriba se queda limpia con solo hoy y lo que viene. Siguen editables o eliminables cuando quieras, no se borran solas.</p>
+  <div class="hr-window-grid" id="higherRateHistoryList"></div>
   <div class="modal-actions mc-action-row" style="margin-top:0;">
     <button class="gap-edit-btn call-delete-btn" id="purgeHigherRateWindowsBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><path d="M6 7V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v3"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> Vaciar historial</button>
   </div>
   <p class="alert-hint">Borra TODAS las ventanas pasadas de un click. El bono ya ganado por llamadas reales se conserva siempre, aunque borres la ventana que lo generó.</p>
 </div>
 </details>
-<!-- v309 — Pedido del usuario: rediseño 100% visual del botón "Listo" de
-     este modal (único pendiente que quedaba aquí — la lista de ventanas y
-     "Vaciar historial" ya tenían su look nuevo desde antes). Mockup visual
-     de 2 vistas (escritorio y celular) aprobado por el usuario antes de
-     tocar código. CERO cambio funcional: sigue siendo el mismo
-     data-close-modal="higherRateModal" de siempre, wireado por el listener
-     genérico de [data-close-modal] — solo cambia de .modal-actions/.primary
-     viejo a .mc-btn-primary.cyan (v301, ya usado en Pegar Llamadas/Editar
-     hueco/etc. — sin CSS nuevo), con un ícono de check agregado. -->
+
 <div class="modal-actions mc-action-row">
 <button class="mc-btn-primary cyan" data-close-modal="higherRateModal" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="5 12 10 17 19 6"/></svg> Listo</button>
 </div>
@@ -18562,31 +18860,57 @@ function renderWeekSummary() {
     // la vista principal. Nada se borra automáticamente — el historial se
     // acumula ahí hasta que el usuario decida limpiarlo a mano (fila por
     // fila con "✕", o de golpe con "🗑️ Vaciar historial").
+    // v346 — Ver comentario extenso junto al HTML de #higherRateModal
+    // (rediseño 100% visual, mockup aprobado): el día de la semana y la
+    // fecha completa ("Miércoles" / "20 de noviembre") son puramente
+    // decorativos — se derivan de la misma fecha que ya guarda cada
+    // ventana (w.date), sin ningún dato nuevo.
+    function hrWindowWeekdayLabel(dayKeyStr) {
+      const d = callDateToDate(dayKeyStr);
+      if (!d) return '—';
+      const raw = new Intl.DateTimeFormat('es-MX', { weekday: 'long' }).format(d);
+      return raw.charAt(0).toUpperCase() + raw.slice(1);
+    }
+    // Texto de cada botón del pill de nivel — el activo muestra su bono
+    // ("Gold +$0.03"), los otros solo el nombre. Reutilizada tanto al
+    // pintar la tarjeta como al cambiar de nivel en vivo (ver el listener
+    // delegado de [data-hr-tier-btn] más abajo), para que ambos casos
+    // arme exactamente el mismo texto.
+    function hrTierButtonLabel(tierKey, active) {
+      const meta = HIGHER_RATE_TIERS[tierKey];
+      return active ? `${meta.label} +${money(meta.bonusPerMin)}` : meta.label;
+    }
+
     function renderHigherRateWindowRow(w) {
       const tier = HIGHER_RATE_TIERS[w.tier] ? w.tier : 'bronze';
+      const tierButtonsHtml = ['bronze', 'silver', 'gold'].map(t => {
+        const active = t === tier;
+        return `<button type="button" class="hr-window-tier-btn" data-hr-tier-btn data-tier="${t}" aria-pressed="${active ? 'true' : 'false'}">${escapeHtml(hrTierButtonLabel(t, active))}</button>`;
+      }).join('');
       return `
-        <div class="block-row" data-hr-window-id="${escapeHtml(w.id || '')}">
-          <div class="field" style="flex:1 1 150px;">
-            <label>Fecha</label>
-            <input type="date" class="hr-window-date-input" value="${escapeHtml(isoDateFromDayKey(w.date))}"/>
+        <div class="hr-window-card" data-hr-window-id="${escapeHtml(w.id || '')}" data-tier="${tier}">
+          <div class="hr-window-top">
+            <div class="hr-window-day">
+              <span class="hr-window-day-icon" aria-hidden="true">${iconHtml('calendar')}</span>
+              <div class="hr-window-day-text">
+                <div class="hr-window-day-name">${escapeHtml(hrWindowWeekdayLabel(w.date))}</div>
+                <input type="date" class="hr-window-date-input hr-window-date-visible" value="${escapeHtml(isoDateFromDayKey(w.date))}" title="Fecha de la ventana"/>
+              </div>
+            </div>
+            <button type="button" class="hr-window-remove-btn" data-remove-hr-window aria-label="Eliminar ventana"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
           </div>
-          <div class="field">
-            <label>Inicio</label>
-            <input type="time" class="hr-window-start-input" value="${formatHHMM(w.start)}"/>
+          <div class="hr-window-time">
+            <span class="hr-window-time-icon" aria-hidden="true">${iconHtml('clock')}</span>
+            <input type="time" class="hr-window-start-input hr-window-time-input" value="${formatHHMM(w.start)}" title="Hora de inicio"/>
+            <span class="hr-time-sep" aria-hidden="true">–</span>
+            <input type="time" class="hr-window-end-input hr-window-time-input" value="${formatHHMM(w.end)}" title="Hora de fin"/>
           </div>
-          <div class="field">
-            <label>Fin</label>
-            <input type="time" class="hr-window-end-input" value="${formatHHMM(w.end)}"/>
-          </div>
-          <div class="field" style="flex:0 0 160px;">
-            <label>Nivel</label>
-            <select class="alert-select hr-window-tier-input" style="margin-top:2px;">
-              <option value="bronze" ${tier === 'bronze' ? 'selected' : ''}>Bronce (+$0.01)</option>
-              <option value="silver" ${tier === 'silver' ? 'selected' : ''}>Silver (+$0.02)</option>
-              <option value="gold" ${tier === 'gold' ? 'selected' : ''}>Gold (+$0.03)</option>
-            </select>
-          </div>
-          <button type="button" class="gap-edit-btn block-remove-btn" data-remove-hr-window style="background: rgba(255,111,143,.12); border-color: rgba(255,111,143,.3);" aria-label="Eliminar ventana"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+          <select class="alert-select hr-window-tier-input" style="display:none;">
+            <option value="bronze" ${tier === 'bronze' ? 'selected' : ''}>Bronce (+$0.01)</option>
+            <option value="silver" ${tier === 'silver' ? 'selected' : ''}>Silver (+$0.02)</option>
+            <option value="gold" ${tier === 'gold' ? 'selected' : ''}>Gold (+$0.03)</option>
+          </select>
+          <div class="hr-window-tier-row" role="group" aria-label="Nivel de la ventana">${tierButtonsHtml}</div>
         </div>
       `;
     }
@@ -18595,6 +18919,7 @@ function renderWeekSummary() {
       const list = document.getElementById('higherRateWindowsList');
       const historyList = document.getElementById('higherRateHistoryList');
       const historyTitle = document.getElementById('higherRateHistoryTitle');
+      const activeCountPill = document.getElementById('higherRateActiveCountPill');
       if (!list || !historyList) return;
       const arr = Array.isArray(windows) ? windows : [];
       const today = todayRange();
@@ -18615,7 +18940,8 @@ function renderWeekSummary() {
 
       historyList.innerHTML = sortedPast.map(renderHigherRateWindowRow).join('')
         || '<div class="note" style="margin:0;">Sin ventanas pasadas todavía.</div>';
-      if (historyTitle) historyTitle.innerHTML = `${iconHtml('history')} Ventanas pasadas (${sortedPast.length})`;
+      if (historyTitle) historyTitle.innerHTML = `${iconHtml('history')} Historial (${sortedPast.length} ${sortedPast.length === 1 ? 'pasada' : 'pasadas'})`;
+      if (activeCountPill) activeCountPill.textContent = `${sortedActive.length} ${sortedActive.length === 1 ? 'próxima' : 'próximas'}`;
     }
 
     // Lee todas las filas del editor tal como están en el DOM — AMBAS listas
@@ -18625,7 +18951,7 @@ function renderWeekSummary() {
     // entre re-renders en vez de regenerar un id nuevo cada vez que se edita
     // cualquier campo.
     function readHigherRateWindowsFromEditor() {
-      const rows = document.querySelectorAll('#higherRateWindowsList .block-row, #higherRateHistoryList .block-row');
+      const rows = document.querySelectorAll('#higherRateWindowsList .hr-window-card, #higherRateHistoryList .hr-window-card');
       return Array.from(rows).map(row => {
         const dateInput = row.querySelector('.hr-window-date-input');
         const startInput = row.querySelector('.hr-window-start-input');
@@ -21445,15 +21771,50 @@ function render() {
     // que lo había movido a `#higherRateAccordion` cuando esto era una
     // sección inline de Horario en vez de un popup).
     document.getElementById('higherRateModal').addEventListener('click', (e) => {
+      // v346 — Pill de nivel (Bronce/Silver/Gold): escribe en el mismo
+      // <select class="hr-window-tier-input"> oculto de siempre (mismo
+      // mecanismo que ya usan los pills de Billable/Dropped en
+      // #manualCallModal/#callEditModal) y actualiza el acento de la
+      // tarjeta + el texto de los 3 botones (el activo muestra su bono) —
+      // sin reconstruir la tarjeta completa, para no perder el foco si el
+      // usuario venía de editar fecha/hora.
+      const tierBtn = e.target instanceof Element ? e.target.closest('[data-hr-tier-btn]') : null;
+      if (tierBtn) {
+        const card = tierBtn.closest('.hr-window-card');
+        const select = card ? card.querySelector('.hr-window-tier-input') : null;
+        const tier = tierBtn.getAttribute('data-tier');
+        if (select) select.value = tier;
+        if (card) {
+          card.setAttribute('data-tier', tier);
+          card.querySelectorAll('.hr-window-tier-btn').forEach(b => {
+            const t = b.getAttribute('data-tier');
+            const active = t === tier;
+            b.setAttribute('aria-pressed', active ? 'true' : 'false');
+            b.textContent = hrTierButtonLabel(t, active);
+          });
+        }
+        saveHigherRateWindowsFromEditor();
+        return;
+      }
       const btn = e.target instanceof Element ? e.target.closest('[data-remove-hr-window]') : null;
       if (!btn) return;
-      const row = btn.closest('.block-row');
+      const row = btn.closest('.hr-window-card');
       const id = row ? row.getAttribute('data-hr-window-id') : null;
       if (id) removeHigherRateWindowRowAt(id);
     });
     document.getElementById('higherRateModal').addEventListener('change', (e) => {
       if (!(e.target instanceof Element)) return;
-      if (!e.target.closest('.block-row')) return;
+      const card = e.target.closest('.hr-window-card');
+      if (!card) return;
+      // v346 — La fecha sigue siendo un <input type="date"> real (editable),
+      // solo restylada para verse como texto — al cambiarla se refresca el
+      // día de la semana/fecha decorativos de al lado (hrWindowWeekdayLabel/
+      // hrWindowFullDateLabel), puramente visual.
+      if (e.target.classList.contains('hr-window-date-input')) {
+        const dayKey = dayKeyFromIsoDate(e.target.value) || todayCallDateKey();
+        const nameEl = card.querySelector('.hr-window-day-name');
+        if (nameEl) nameEl.textContent = hrWindowWeekdayLabel(dayKey);
+      }
       saveHigherRateWindowsFromEditor();
     });
     document.getElementById('daySelector').addEventListener('change', (e) => {
