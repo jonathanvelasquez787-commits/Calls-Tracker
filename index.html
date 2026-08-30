@@ -7922,6 +7922,21 @@
        nueva — Work=cyan, Break=neutro, Lunch=good, mismo mapeo que ya
        usa data-accent en el resto de la app. */
 
+    /* v348 — Pedido del usuario: se quitaron las 3 tarjetas de Adherencia/
+       Meta/Productividad (#adherenceBadge/#adherenceGoalBadge/
+       #productivityGoalBadge) de #dayMetricsRow — ver el comentario junto a
+       ese id en el HTML para el motivo completo (info ya duplicada en
+       Ganancias de hoy/Reportes/Resumen semanal/el diagnóstico de cada
+       bloque). Las reglas de esta familia (`.sched-blocks-summary-row`/
+       `.sched-blocks-summary-card`/`.sched-blocks-summary-label`/
+       `.sched-blocks-summary-summary` y sus variantes de mobile) quedan sin
+       ningún elemento que las use — se dejan sin borrar a propósito, mismo
+       criterio que el resto del archivo con CSS que un cambio deja
+       huérfano (ver `.mini-accordion`). `#dayMetricsRow` se queda con la
+       clase `.sched-blocks-summary-row` solo para heredar su
+       `display:grid`/gap, ahora con un único hijo (`adherenceLiveBadge`,
+       que no es una de estas 3 y se queda igual). */
+
     /* ---- Resumen de arriba: 3 mini-tarjetas (v277 — rediseño pedido por el
        usuario: la v276 quedó demasiado grande (número a 22px) tanto en
        escritorio como en mobile — en mobile además colapsaban a 1 columna
@@ -10532,19 +10547,26 @@
        Solo aplica desde el breakpoint de escritorio — en mobile (ya
        aprobado aparte) se mantiene la disposición apilada de siempre. -->
   <div class="blocks-top-grid" id="blockSummaryStrip"></div>
+  <!-- v348 — Pedido del usuario: se quitan las 3 tarjetas de Adherencia/
+       Meta/Productividad de esta fila (#adherenceBadge/#adherenceGoalBadge/
+       #productivityGoalBadge) — la info ya vivía duplicada en varios
+       lugares: el tag "Adherencia: X%" de #earningsTagsRow (Ganancias de
+       hoy), la tarjeta "Adherencia" del panel de Reportes (con arco +
+       mejor/peor/promedio 7 días, que ya compara contra la misma
+       settings.adherenceGoalPct), la columna "Adherencia" de Resumen
+       semanal, y el diagnóstico de adherencia que YA trae cada bloque
+       individual del timeline de abajo (línea ✓/⚠️ con su propio semáforo,
+       ver `.sblk-diagnostic`). "Meta productiva" (el total del día) era la
+       única de las 3 con un dato algo distinto (suma SOLO los bloques con
+       meta configurada por bloque en Horario → Bloques, a diferencia de la
+       tarjeta "Productividad" de Reportes, que compara contra la meta
+       global única) — aun así, el usuario pidió quitarla también; ese
+       mismo desglose por bloque sigue viéndose en la barra de Meta
+       productiva de cada tarjeta individual del timeline (`.sblk-bar-row`
+       con `goalBarHtml`, sin tocar). `adherenceLiveBadge` ("Fuera de
+       adherencia ahora") NO es una de estas 3 — se queda igual, sigue
+       siendo la única señal en esta fila. -->
   <div class="day-metrics-row sched-blocks-summary-row" id="dayMetricsRow">
-    <div class="sched-blocks-summary-card" data-metric="adherence">
-      <div class="sched-blocks-summary-label"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg> Adherencia</div>
-      <span class="slot-status" id="adherenceBadge">Adherencia: —</span>
-    </div>
-    <div class="sched-blocks-summary-card" data-metric="goal">
-      <div class="sched-blocks-summary-label"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v18"/><path d="M5 4h9l-1 3 1 3H5"/></svg> Meta</div>
-      <span class="slot-status" id="adherenceGoalBadge" style="display:none;"></span>
-    </div>
-    <div class="sched-blocks-summary-card" data-metric="productivity">
-      <div class="sched-blocks-summary-label"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Productividad</div>
-      <span class="slot-status" id="productivityGoalBadge" title="Minutos productivos logrados hoy vs. la suma de las metas configuradas en cada bloque de Trabajo (Horario → Bloques). Un bloque sin meta configurada no cuenta para este total.">Meta productiva: —</span>
-    </div>
     <span class="slot-status bad live-exception" id="adherenceLiveBadge" style="display:none;"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg> Fuera de adherencia ahora</span>
   </div>
   <!-- v330 — Pedido del usuario (mockup de escritorio aprobado): el chip de
@@ -20490,22 +20512,8 @@ function renderSchedule() {
       if (!plannedSlots.length) {
         wrap.innerHTML = '<div class="note">No hay horario configurado para este día. Edítalo en “Horario”.</div>';
         renderBlockSummaryStrip([]);
-        const adherenceBadgeEmpty = document.getElementById('adherenceBadge');
-        if (adherenceBadgeEmpty) adherenceBadgeEmpty.textContent = 'Adherencia: —';
-        const productivityGoalBadgeEmpty = document.getElementById('productivityGoalBadge');
-        if (productivityGoalBadgeEmpty) productivityGoalBadgeEmpty.textContent = 'Meta productiva: —';
         return;
       }
-
-      // Acumuladores para "Meta productiva" del día: se suman los mismos
-      // valores (goalMin/achievedMin) que ya calcula slotStats() por cada
-      // bloque de Trabajo CON meta configurada, para que el total del día
-      // sea consistente con la suma de los desgloses por bloque (mismo
-      // número, no un cálculo aparte). Un bloque sin meta configurada
-      // (productivityGoal === null) simplemente no aporta a ninguno de los
-      // dos — no cuenta como "meta 0" ni distorsiona el total.
-      let dayGoalTargetMin = 0;
-      let dayGoalAchievedMin = 0;
 
       // Índices del primer y último bloque de Trabajo del día — se usan
       // para extender la ventana de conteo de llamadas SOLO en esos dos
@@ -20610,8 +20618,6 @@ function renderSchedule() {
         // es un error, solo un objetivo en progreso).
         let goalBarHtml = '';
         if (slot.type === 'Work' && stats.productivityGoal) {
-          dayGoalTargetMin += stats.productivityGoal.goalMin;
-          dayGoalAchievedMin += stats.productivityGoal.achievedMin;
           const g = stats.productivityGoal;
           const goalIconHtml = g.met ? `${iconHtml('checkCircle')} ` : '';
           const goalText = g.met
@@ -20918,57 +20924,14 @@ function renderSchedule() {
 
       renderBlockSummaryStrip(summaryCards);
 
-      // ---- Resumen del día: Adherencia + Meta productiva (arriba de la lista) ----
-      const productivityGoalBadge = document.getElementById('productivityGoalBadge');
-      if (productivityGoalBadge) {
-        if (dayGoalTargetMin <= 0.05) {
-          // Ningún bloque de Trabajo de hoy tiene una meta configurada (o
-          // aún no hay ninguno con actividad) — nada que comparar todavía.
-          productivityGoalBadge.innerHTML = 'Meta productiva: sin meta configurada';
-          productivityGoalBadge.className = 'slot-status';
-        } else {
-          const dayGoalMet = dayGoalAchievedMin >= dayGoalTargetMin - 0.05;
-          productivityGoalBadge.innerHTML = dayGoalMet
-            ? `${iconHtml('checkCircle')} Meta productiva: ${formatMinutes(dayGoalAchievedMin)}/${formatMinutes(dayGoalTargetMin)} min`
-            : `Meta productiva: ${formatMinutes(dayGoalAchievedMin)}/${formatMinutes(dayGoalTargetMin)} min`;
-          productivityGoalBadge.className = `slot-status ${dayGoalMet ? 'good' : 'warn'}`;
-        }
-      }
-
-      const adherence = dayAdherence(dayKey);
-      const adherenceBadge = document.getElementById('adherenceBadge');
-      if (adherenceBadge) {
-        if (!adherence) {
-          adherenceBadge.textContent = 'Adherencia: —';
-          adherenceBadge.className = 'slot-status';
-        } else {
-          const pct = adherence.scorePct;
-          const tone = pct >= 90 ? 'good' : pct >= 70 ? 'warn' : 'bad';
-          adherenceBadge.textContent = `Adherencia: ${pct}%`;
-          adherenceBadge.className = `slot-status ${tone}`;
-        }
-      }
-
-      // Pedido del usuario (mejora D): comparar tu Adherencia del día contra
-      // tu Meta personal (settings.adherenceGoalPct). Oculto si no hay
-      // adherencia calculable todavía (mismo caso que el badge principal).
-      const adherenceGoalBadge = document.getElementById('adherenceGoalBadge');
-      if (adherenceGoalBadge) {
-        const goalPct = Number.isFinite(Number(settings.adherenceGoalPct)) ? Number(settings.adherenceGoalPct) : 95;
-        if (!adherence) {
-          adherenceGoalBadge.style.display = 'none';
-        } else {
-          const diff = adherence.scorePct - goalPct;
-          adherenceGoalBadge.style.display = '';
-          if (diff >= 0) {
-            adherenceGoalBadge.innerHTML = `${iconHtml('checkCircle')} Meta alcanzada (${goalPct}%)`;
-            adherenceGoalBadge.className = 'slot-status good';
-          } else {
-            adherenceGoalBadge.innerHTML = `Meta ${goalPct}% — te faltan ${Math.abs(diff)}pts`;
-            adherenceGoalBadge.className = 'slot-status warn';
-          }
-        }
-      }
+      // v348 — Pedido del usuario: se quitó de aquí el resumen del día de
+      // Adherencia/Meta/Productividad (antes #adherenceBadge/
+      // #adherenceGoalBadge/#productivityGoalBadge, ver el comentario junto
+      // a #dayMetricsRow en el HTML para el detalle completo de por qué) —
+      // `dayAdherence(dayKey)` ya no hace falta calcularse aquí para eso;
+      // `isRightNowOutOfAdherence()` (usada por adherenceLiveBadge, más
+      // abajo) hace su propio cálculo interno, sin depender de esta
+      // variable.
 
       // Pedido del usuario (mejora B): indicador en vivo — solo aplica
       // viendo "Hoy" con el turno en curso; isRightNowOutOfAdherence() ya
