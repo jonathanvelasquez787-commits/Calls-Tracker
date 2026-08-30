@@ -2479,6 +2479,14 @@
       background: linear-gradient(90deg, var(--teal), var(--blue));
     }
 
+    /* v347 — Ningún elemento del HTML usa ya `.scale`/`.tick`/`.tick-label`
+       — "Ganancias de hoy" reemplazó esta escala de puntos por un anillo
+       circular de % (ver `.gh-ring` más arriba y `renderHeader()` en el
+       JS). Se dejan las 6 reglas de esta familia sin borrar a propósito
+       (mismo criterio que el resto del archivo con CSS que un rediseño
+       deja huérfano, ver `.mini-accordion`) — sus 2 overrides de tema claro
+       (`:root:not(.theme-dark) .tick-label.active` / `html.theme-light
+       .tick-label.active`) quedan igual de sin uso, sin tocarse. */
     .scale {
       position: relative;
       height: 34px;
@@ -3033,6 +3041,17 @@
       align-items: baseline;
     }
 
+    /* v347 — Ningún elemento del HTML usa ya esta clase (ni `.goal-badge`
+       sola ni `.goal-badge.goal-soft`, ver esa regla más abajo) — el
+       rediseño de "Ganancias de hoy"/"Ganancias del ciclo" reemplazó
+       `goalPctBadge` (antes `.goal-badge` en el `<summary>`) por el anillo
+       nuevo, y `cycleRangeBadge`/`cyclePayDateBadge` (antes `.goal-badge
+       .goal-soft`) por `.gh-info-pill`. Se dejan sin borrar a propósito —
+       mismo criterio que el resto del archivo con CSS que un rediseño deja
+       huérfano (ver `.mini-accordion`) — por si se reutilizan en otro lado
+       más adelante. Sus 2 overrides de tema claro (`:root:not(.theme-dark)
+       .goal-badge` / `html.theme-light .goal-badge`) quedan igual de sin
+       uso, sin tocarse. */
     .goal-badge {
       padding: 8px 12px;
       border-radius: 999px;
@@ -3080,6 +3099,155 @@
       .earnings-mode-btn { padding: 5px 12px; font-size: 11px; }
     }
 
+    /* ==========================================================
+       v347 — Pedido del usuario: rediseño 100% visual de "Ganancias de hoy"/
+       "Ganancias del ciclo" (mockup de 2 vistas — escritorio y celular —
+       aprobado: ganancias_hoy_ciclo_mockup_v2.html). Reemplaza la escala de
+       puntos 0/25/50/75/100% (`.scale`/`.tick`/`.tick-label`, ver más abajo
+       — sin uso a partir de este cambio) por un anillo circular de %, mismo
+       patrón `conic-gradient` que ya usa `.sidebar-progress-ring` (v238,
+       reutilizado tal cual, con su propia variable `--ring-pct` para no
+       compartir estado con el anillo del sidebar). Los 2 `.goal-pair` de
+       Meta $/≈/Meta min/restantes se fusionan en `.gh-goal-card` (fila
+       superior + barra + pie). Las 2 `.goal-badge.goal-soft` de Ciclo/Pago
+       pasan a `.gh-info-pill` con ícono. El bono de Higher Rate (si aplica)
+       gana un chip propio de ancho completo (`.gh-bonus-chip`, ver
+       `higherRateBonusChipsHtml()` en el JS) en vez de vivir solo como tag
+       chico dentro de `#earningsTagsRow`. */
+    .gh-ring-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      flex: 0 0 auto;
+    }
+    .gh-ring {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background: conic-gradient(var(--cyan) calc(var(--ring-pct, 0) * 1%), rgba(255,255,255,.10) 0);
+    }
+    .gh-ring::before {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      background: var(--panel-navy);
+    }
+    .gh-ring-value {
+      position: relative;
+      z-index: 1;
+      font-weight: 900;
+      font-size: 14px;
+      letter-spacing: -.02em;
+    }
+    .gh-ring-label {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 700;
+      text-align: center;
+      white-space: nowrap;
+    }
+    @media (max-width: 760px) {
+      .gh-ring { width: 52px; height: 52px; }
+      .gh-ring-value { font-size: 12px; }
+    }
+
+    .gh-goal-card {
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-top: 4px;
+      display: grid;
+      gap: 8px;
+    }
+    .gh-goal-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    /* La etiqueta interna "Meta" que ya trae el innerHTML de goalAmountBadge/
+       cycleGoalAmountBadge (`.gp-label`, sin tocar ese JS) se oculta SOLO
+       aquí, scoped a `.gh-goal-top` — el label externo ("Meta diaria"/"Meta
+       del ciclo") ya cubre ese mismo texto, mostrar los dos juntos se leía
+       repetido ("Meta diaria ... Meta $71.52"). El resto de usos de
+       `.gp-label` en la app (fuera de esta tarjeta) no se tocan. */
+    .gh-goal-top .gp-label { display: none; }
+    .gh-goal-top .gp-value,
+    .gh-goal-top b {
+      color: var(--text);
+      font-weight: 900;
+      font-size: 13.5px;
+      margin-left: 0;
+    }
+    .gh-goal-subitem {
+      font-size: 11.5px;
+    }
+    .gh-goal-subitem .gp-label {
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .gh-goal-subitem .gp-value {
+      color: var(--muted);
+      font-weight: 800;
+      margin-left: 4px;
+    }
+    .gh-goal-sub-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 14px;
+    }
+    .gh-goal-foot {
+      font-size: 11.5px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .gh-goal-foot .gp-label { color: var(--muted); font-weight: 600; }
+    .gh-goal-foot .gp-value { color: var(--text); font-weight: 800; margin-left: 4px; }
+
+    .gh-info-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 2px 0 0;
+    }
+    .gh-info-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid rgba(var(--blue-rgb), .35);
+      background: rgba(var(--blue-rgb), .1);
+      color: var(--blue);
+      border-radius: 999px;
+      padding: 6px 11px;
+      font-size: 11.5px;
+      font-weight: 700;
+    }
+    .gh-info-pill .ic-svg { width: 13px; height: 13px; }
+
+    .gh-bonus-chip {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      padding: 9px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      margin-top: 10px;
+    }
     /* v336 — Pedido del usuario: fusión de "Bloques del día" y "Tabla de
        llamadas y acciones de hoy" en UNA sola tarjeta, con una pastilla
        segmentada "Bloques / Llamadas" en el <summary> (mismo mecanismo que
@@ -3161,10 +3329,15 @@
        label corto en --muted y el valor en --text bold — mismo tratamiento
        que ya usa .helper (el "≈ L..." bajo el monto grande) en vez de
        inventar un estilo nuevo. Los pills de estado siguen siendo pills; ya
-       no hay ambigüedad de "esto también es un estado". Nota: NO se tocó
-       .goal-badge.goal-soft (arriba) — esa clase la siguen usando
-       cycleRangeBadge/cyclePayDateBadge en "Ganancias del ciclo", que no
-       fueron parte de este pedido y se quedan igual que antes. */
+       no hay ambigüedad de "esto también es un estado". Nota histórica: en
+       su momento NO se tocó .goal-badge.goal-soft (arriba) porque
+       cycleRangeBadge/cyclePayDateBadge la seguían usando — eso cambió en
+       v347 (rediseño de "Ganancias de hoy"/"Ganancias del ciclo"): esos 2
+       ids pasan a `.gh-info-pill`, y ningún elemento del HTML usa ya
+       `.goal-plain-row` tampoco (`goalAmountBadge`/`goalAmountConvertedText`/
+       `goalMinBadge`/`remainingText` pasan a `.gh-goal-*`) — ambas clases
+       quedan sin uso a propósito, mismo criterio que el resto del archivo
+       con CSS que un rediseño deja huérfano. */
     .goal-plain-row {
       font-size: 13px;
       line-height: 1.35;
@@ -10172,6 +10345,18 @@
      ("Ganancias del ciclo"), no depende del día activo. `goalPctBadge`
      solo se muestra en modo 'day' (no aplica a Ganancias del ciclo, que
      nunca tuvo su propio % de meta en el header). -->
+<!-- v347 — Pedido del usuario: rediseño 100% visual de ambas vistas (mockup
+     aprobado, ganancias_hoy_ciclo_mockup_v2.html) — ver el bloque de CSS
+     "v347" y el comentario junto a renderHeader() en el JS para el detalle
+     completo. Actualiza lo dicho en los comentarios históricos de arriba:
+     `goalPctBadge` ya NO vive en el `<summary>` — se mudó dentro del nuevo
+     anillo circular de `#earningsDayView` (mismo id, mismo textContent);
+     los 5 `.tick`/`.tick-label` de la vieja escala de puntos desaparecen
+     (reemplazados por ese mismo anillo); y "Ganancias del ciclo" gana su
+     propia comparación contra meta (anillo + tarjeta), antes exclusiva de
+     Reportes — ver esos ids nuevos (cycleGoalRing/cycleGoalPctBadge/
+     cycleGoalAmountBadge/cycleGoalBar/cycleGoalFootText/cycleGoalEditBtn)
+     en el HTML de #earningsCycleView, más abajo. -->
 <details class="accordion-card" id="earningsAccordion" open>
 <summary>
 <div class="accordion-head">
@@ -10183,11 +10368,21 @@
 <button class="earnings-mode-btn active" data-earnings-mode="day" type="button">Hoy</button>
 <button class="earnings-mode-btn" data-earnings-mode="cycle" type="button">Ciclo</button>
 </div>
-<div class="goal-badge" id="goalPctBadge">0%</div>
 <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
 </div>
 </summary>
 <div class="accordion-body">
+<!-- v347 — Pedido del usuario: rediseño 100% visual (mockup de 2 vistas
+     aprobado, ganancias_hoy_ciclo_mockup_v2.html) — ver el bloque de CSS
+     "v347" más arriba para el detalle completo. `goalPctBadge` (antes en
+     el <summary>, junto a la pastilla Hoy/Ciclo) se muda DENTRO del nuevo
+     anillo (`.gh-ring`) de esta vista — mismo id, mismo textContent que ya
+     escribe renderHeader(), solo cambia dónde vive y qué clase lo envuelve
+     (`.gh-ring-value` en vez de `.goal-badge`, para no heredar el look de
+     pastilla). setEarningsViewMode() sigue mostrando/ocultando este mismo
+     nodo por id sin cambios — como ahora vive DENTRO de #earningsDayView
+     (que ya se oculta entero en modo 'cycle'), ese toggle queda redundante
+     pero inofensivo. -->
 <div id="earningsDayView">
 <div class="big-earnings">
 <div class="earn-row">
@@ -10195,26 +10390,22 @@
 <div class="earnings-big earnings-value-accent" id="earningsValue">$0.00</div>
 <div class="helper" id="earningsConvertedText"></div>
 </div>
-<div class="goal-stack">
-<div class="goal-pair">
-<div class="goal-plain-row" id="goalAmountBadge">Meta $0.00</div>
-<div class="goal-plain-row" id="goalAmountConvertedText"></div>
-</div>
-<div class="goal-pair">
-<div class="goal-plain-row" id="goalMinBadge">Meta 59.0 min</div>
-<div class="goal-plain-row" id="remainingText">0 min restantes</div>
+<div class="gh-ring-wrap">
+<div class="gh-ring" id="earningsGoalRing"><span class="gh-ring-value" id="goalPctBadge">0%</span></div>
+<div class="gh-ring-label">de tu meta</div>
 </div>
 </div>
+<div class="gh-goal-card">
+<div class="gh-goal-top"><span>Meta diaria</span><b id="goalAmountBadge">Meta $0.00</b></div>
+<div class="gh-goal-sub-row">
+<span class="gh-goal-subitem" id="goalAmountConvertedText"></span>
+<span class="gh-goal-subitem" id="goalMinBadge">Meta 59.0 min</span>
+</div>
+<div class="progress" style="margin-top: 4px;"><div id="earningsBar"></div></div>
+<div class="gh-goal-foot" id="remainingText">0 min restantes</div>
 </div>
 <div class="table-tags" id="earningsTagsRow"></div>
-<div class="progress" style="margin-top: 4px;"><div id="earningsBar"></div></div>
-<div class="scale">
-<span class="tick" data-threshold="0" style="left:0%"></span><span class="tick-label" data-threshold="0" style="left:0%">0</span>
-<span class="tick" data-threshold="25" style="left:25%"></span><span class="tick-label" data-threshold="25" style="left:25%">25%</span>
-<span class="tick" data-threshold="50" style="left:50%"></span><span class="tick-label" data-threshold="50" style="left:50%">50%</span>
-<span class="tick" data-threshold="75" style="left:75%"></span><span class="tick-label" data-threshold="75" style="left:75%">75%</span>
-<span class="tick" data-threshold="100" style="left:100%"></span><span class="tick-label" data-threshold="100" style="left:100%">100%</span>
-</div>
+<div id="earningsBonusRow"></div>
 </div>
 </div>
 <div id="earningsCycleView" style="display:none;">
@@ -10228,10 +10419,30 @@
 <div class="earnings-big earnings-value-accent" style="font-size: clamp(24px, 3.2vw, 36px);" id="cycleEarningsValue">$0.00</div>
 <div class="helper" id="cycleEarningsConvertedText"></div>
 </div>
-<div class="goal-pair">
-<div class="goal-badge goal-soft" id="cycleRangeBadge">Ciclo: — – —</div>
-<div class="goal-badge goal-soft" id="cyclePayDateBadge">Pago: —</div>
+<!-- v347 — Ver comentario junto a renderHeader() en el JS: anillo/tarjeta
+     de Meta del ciclo son elementos NUEVOS (antes esta comparación solo
+     vivía en la tarjeta de Reportes) — reutilizan `effectiveCycleGoal()`/
+     `getCycleGoalOverride()` ya existentes, sin ningún cálculo nuevo. El
+     lápiz (`data-edit-card="cycle-goal"`) reutiliza el listener delegado
+     que ya abre `#cycleGoalModal` (ver `openCycleGoalEditor()`), y solo se
+     muestra viendo el ciclo actual — ese editor está pensado para el ciclo
+     de hoy únicamente (mismo alcance que ya tenía en Reportes). -->
+<div class="gh-ring-wrap">
+<div class="gh-ring" id="cycleGoalRing"><span class="gh-ring-value" id="cycleGoalPctBadge">0%</span></div>
+<div class="gh-ring-label">de tu meta</div>
 </div>
+</div>
+<div class="gh-goal-card">
+<div class="gh-goal-top"><span>Meta del ciclo</span><b id="cycleGoalAmountBadge">Meta $0.00</b></div>
+<div class="progress" style="margin-top: 4px;"><div id="cycleGoalBar" style="width:0%; background: linear-gradient(90deg, var(--teal), var(--blue));"></div></div>
+<div class="gh-goal-foot">
+<span id="cycleGoalFootText">Sugerida automáticamente</span>
+<button class="tbl-icon-btn" type="button" data-edit-card="cycle-goal" id="cycleGoalEditBtn" aria-label="Editar meta del ciclo" title="Editar meta del ciclo"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+</div>
+</div>
+<div class="gh-info-row">
+<span class="gh-info-pill"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> <span id="cycleRangeBadge">Ciclo: — – —</span></span>
+<span class="gh-info-pill"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><line x1="6" y1="9" x2="6" y2="9.01"/><line x1="18" y1="15" x2="18" y2="15.01"/></svg> <span id="cyclePayDateBadge">Pago: —</span></span>
 </div>
 <div class="table-tags" style="margin-top:4px;">
 <span class="tag" id="cycleWeek1ProductiveTag">Semana 1: 00:00:00</span>
@@ -13109,6 +13320,31 @@ $0.72"></textarea>
         const rgb = meta?.colorRgb || '255,209,92';
         const label = meta?.label || tier;
         return `<span class="${tagClass}" style="background: rgba(${rgb},.16); border-color: rgba(${rgb},.4); color: var(${colorVar});">${iconHtml('flame')} ${escapeHtml(label)}: +${money(amount)}</span>`;
+      }).join('');
+    }
+
+    // v347 — Pedido del usuario: rediseño 100% visual de "Ganancias de hoy"/
+    // "Ganancias del ciclo" (mockup aprobado, ganancias_hoy_ciclo_mockup_v2.html)
+    // — chip destacado de bono Higher Rate debajo de la fila de tags, en vez
+    // de (o además de) los tags de nivel chicos que ya vivían dentro de
+    // #earningsTagsRow. Se reemplaza esa inclusión por este chip más
+    // prominente (ver renderHeader()) — mismo dato (`stats.higherRateBreakdown`,
+    // sin tocar), mismo criterio de color/orden por nivel que
+    // `higherRateBreakdownTagsHtml()` (que se deja intacta y sin uso a
+    // propósito, mismo criterio que el resto del archivo con funciones que
+    // un rediseño deja huérfanas — ver `.mini-accordion` en el CSS) — solo
+    // cambia el tratamiento visual (chip de ancho completo con ícono +
+    // frase completa, en vez de una pill chica dentro de la fila de tags).
+    function higherRateBonusChipsHtml(breakdown) {
+      const entries = Object.entries(breakdown || {}).filter(([, amt]) => amt > 0);
+      if (!entries.length) return '';
+      entries.sort((a, b) => (HIGHER_RATE_TIERS[b[0]]?.bonusPerMin || 0) - (HIGHER_RATE_TIERS[a[0]]?.bonusPerMin || 0));
+      return entries.map(([tier, amount]) => {
+        const meta = HIGHER_RATE_TIERS[tier];
+        const colorVar = meta?.colorVar || '--warn';
+        const rgb = meta?.colorRgb || '255,209,92';
+        const label = meta?.label || tier;
+        return `<div class="gh-bonus-chip" style="background: rgba(${rgb},.14); border-color: rgba(${rgb},.4); color: var(${colorVar});">${iconHtml('flame')} <span>${escapeHtml(label)}: +${money(amount)} de bono Higher Rate</span></div>`;
       }).join('');
     }
 
@@ -19289,6 +19525,12 @@ function renderHeader() {
   const earningsConvertedEl = document.getElementById('earningsConvertedText');
   if (earningsConvertedEl) earningsConvertedEl.textContent = convertedAmountText(stats.earnings);
   document.getElementById('goalPctBadge').textContent = `${Math.round(goalPct)}%`;
+  // v347 — Anillo circular de % (reemplaza la vieja escala de puntos 0/25/
+  // 50/75/100%, ver más abajo) — mismo patrón conic-gradient que ya usa
+  // `.sidebar-progress-ring`, con su propia variable `--ring-pct`. Mismo
+  // `goalPct` de siempre, ningún cálculo nuevo.
+  const earningsGoalRingEl = document.getElementById('earningsGoalRing');
+  if (earningsGoalRingEl) earningsGoalRingEl.style.setProperty('--ring-pct', String(goalPct));
   // Pedido del usuario: estas 4 metas (Meta $, ≈ conversión, Meta min,
   // restantes) pasaron de píldora a texto plano (ver .goal-plain-row en el
   // CSS) — cada una se arma como label muted + valor bold vía innerHTML en
@@ -19340,6 +19582,36 @@ function renderHeader() {
   if (cycleWeek2El) cycleWeek2El.textContent = `Semana 2: ${formatDuration(cycle.week2ProductiveMin * 60000)}`;
   const cycleTotalEl = document.getElementById('cycleTotalProductiveTag');
   if (cycleTotalEl) cycleTotalEl.textContent = `Total: ${formatDuration(cycle.totalProductiveMin * 60000)}`;
+  // v347 — Pedido del usuario (rediseño 100% visual + mockup aprobado): se
+  // agrega comparación contra la Meta del ciclo también aquí, en "Ganancias
+  // del ciclo" de Inicio — antes esta comparación SOLO vivía en la tarjeta
+  // de Reportes. Reutiliza EXACTAMENTE las mismas funciones que ya existen
+  // para eso (effectiveCycleGoal()/getCycleGoalOverride(), sin tocarlas) —
+  // ningún cálculo de negocio nuevo, solo una vista más de un dato ya
+  // calculado. El editor (✎, data-edit-card="cycle-goal") reutiliza el
+  // mismo listener delegado que ya abre #cycleGoalModal — ese editor está
+  // pensado solo para el ciclo ACTUAL (openCycleGoalEditor()/
+  // saveCycleGoalEditor() usan offset 0 fijo), así que el lápiz se oculta
+  // al navegar a otro ciclo con ‹›/Anterior-Siguiente.
+  const cycleGoalAmount = effectiveCycleGoal(cycleViewOffset);
+  const cycleGoalPct = cycleGoalAmount > 0 ? Math.min(100, (cycle.earnings / cycleGoalAmount) * 100) : 0;
+  const cycleGoalRingEl = document.getElementById('cycleGoalRing');
+  if (cycleGoalRingEl) cycleGoalRingEl.style.setProperty('--ring-pct', String(cycleGoalPct));
+  const cycleGoalPctBadgeEl = document.getElementById('cycleGoalPctBadge');
+  if (cycleGoalPctBadgeEl) cycleGoalPctBadgeEl.textContent = `${Math.round(cycleGoalPct)}%`;
+  const cycleGoalAmountBadgeEl = document.getElementById('cycleGoalAmountBadge');
+  if (cycleGoalAmountBadgeEl) cycleGoalAmountBadgeEl.textContent = `Meta ${money(cycleGoalAmount)}`;
+  const cycleGoalBarEl = document.getElementById('cycleGoalBar');
+  if (cycleGoalBarEl) cycleGoalBarEl.style.width = `${cycleGoalPct}%`;
+  const isCustomCycleGoal = getCycleGoalOverride(cycleViewOffset) !== null;
+  const cycleGoalFootTextEl = document.getElementById('cycleGoalFootText');
+  if (cycleGoalFootTextEl) {
+    cycleGoalFootTextEl.textContent = cycleViewOffset === 0
+      ? (isCustomCycleGoal ? 'Meta personalizada' : 'Sugerida automáticamente')
+      : (isCustomCycleGoal ? 'Meta personalizada de ese ciclo' : 'Sugerida para ese ciclo');
+  }
+  const cycleGoalEditBtnEl = document.getElementById('cycleGoalEditBtn');
+  if (cycleGoalEditBtnEl) cycleGoalEditBtnEl.style.display = cycleViewOffset === 0 ? '' : 'none';
   // Antes esto era un solo <div class="big-meta"> con texto plano ("X
   // llamada(s) · Y completados · ACW Z"). Pedido del usuario: mostrar esta
   // info como los mismos tags/pills que ya usa "Tabla de llamadas" (misma
@@ -19375,10 +19647,17 @@ function renderHeader() {
     stats.breakGapTotal > 0 ? `<span class="tag warn">Break: ${formatDuration(stats.breakGapTotal * 60000)}</span>` : '',
     stats.lunchGapTotal > 0 ? `<span class="tag cyan">Lunch: ${formatDuration(stats.lunchGapTotal * 60000)}</span>` : '',
     stats.otherGapTotal > 0 ? `<span class="tag">Otro: ${formatDuration(stats.otherGapTotal * 60000)}</span>` : '',
-    higherRateBreakdownTagsHtml(stats.higherRateBreakdown, 'tag'),
     adherenceForTag ? `<span class="tag ${adherenceForTag.scorePct >= 90 ? 'good' : adherenceForTag.scorePct >= 70 ? 'warn' : 'bad'}">Adherencia: ${adherenceForTag.scorePct}%</span>` : '',
   ].join('');
   document.getElementById('earningsTagsRow').innerHTML = earningsTagsHtml;
+  // v347 — Pedido del usuario: el bono de Higher Rate (si aplica hoy) ya no
+  // vive SOLO como tag chico dentro de la fila de arriba (se quitó
+  // `higherRateBreakdownTagsHtml(...)` de ese array) — pasa a un chip
+  // propio, más prominente, debajo de los tags (ver `.gh-bonus-chip` en el
+  // CSS y `higherRateBonusChipsHtml()` más arriba) — mismo dato
+  // (`stats.higherRateBreakdown`), sin duplicar la misma info dos veces.
+  const earningsBonusRowEl = document.getElementById('earningsBonusRow');
+  if (earningsBonusRowEl) earningsBonusRowEl.innerHTML = higherRateBonusChipsHtml(stats.higherRateBreakdown);
   const earnBar = document.getElementById('earningsBar');
   earnBar.style.width = `${goalPct}%`;
   // Pedido del usuario (v217): esta barra (relleno de "Ganancias de hoy")
@@ -19389,14 +19668,14 @@ function renderHeader() {
   // cero cambio de render ahí.
   earnBar.style.background = 'linear-gradient(90deg, var(--teal), var(--accent-decorative, var(--cyan)))';
 
-  const thresholds = [0, 25, 50, 75, 100];
-  thresholds.forEach((threshold) => {
-    const tick = document.querySelector(`.scale .tick[data-threshold="${threshold}"]`);
-    const label = document.querySelector(`.scale .tick-label[data-threshold="${threshold}"]`);
-    const active = goalPct >= threshold;
-    if (tick) tick.classList.toggle('active', active);
-    if (label) label.classList.toggle('active', active);
-  });
+  // v347 — Pedido del usuario: se quita la escala de puntos 0/25/50/75/100%
+  // (`.scale`/`.tick`/`.tick-label`) — reemplazada por el anillo de arriba
+  // (`#earningsGoalRing`/`--ring-pct`, mismo `goalPct`). Sin esos nodos ya
+  // en el HTML, este loop no tiene sentido — se retira en vez de dejarlo
+  // noopeando sobre `document.querySelector` que nunca encuentra nada. No
+  // es "CERO cambios funcionales" en sentido estricto (se quita esta lógica
+  // y se agrega la del anillo/chip de bono/meta del ciclo) — documentado en
+  // el resumen de este cambio.
 
   formatGoalFields();
   updateChipsScrollHint();
