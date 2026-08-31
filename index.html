@@ -532,7 +532,6 @@
       :root:not(.theme-dark) .calls-status-card,
       :root:not(.theme-dark) .rpt-date-pill,
       :root:not(.theme-dark) .rpt-sel-pill,
-      :root:not(.theme-dark) .rpt-kpi-card,
       :root:not(.theme-dark) .rpt-goal-card,
       :root:not(.theme-dark) .rpt-chart-card,
       :root:not(.theme-dark) .rpt-mini-card,
@@ -939,12 +938,6 @@
       :root:not(.theme-dark) .progress > div {
         background: linear-gradient(90deg, var(--teal), var(--accent-decorative));
       }
-      :root:not(.theme-dark) .tick-label.active {
-        color: var(--accent-decorative-pale);
-      }
-      :root:not(.theme-dark) .goal-badge {
-        color: var(--accent-decorative-pale);
-      }
       :root:not(.theme-dark) .brand {
         background: rgba(var(--accent-decorative-rgb), .10);
         border-color: rgba(var(--accent-decorative-rgb), .22);
@@ -1003,15 +996,6 @@
         background: rgb(var(--danger-red-rgb));
         color: #fff;
       }
-      /* Pedido del usuario: el resaltado de "hoy" en las tarjetas mobile de
-         Resumen semanal (semana angosta, sin tabla) usaba --cyan-rgb crudo,
-         sin el fix de v209 — mismo rosa prestado, ahora corregido al mismo
-         cian #00F0FF que ya usa la fila "hoy" de la versión de escritorio
-         (tr.week-row-today, ya en accent-decorative desde v209). */
-      :root:not(.theme-dark) .week-mobile-card.week-mobile-today {
-        border-color: rgba(var(--accent-decorative-rgb), .4);
-        background: rgba(var(--accent-decorative-rgb), .07);
-      }
       /* v234 — Bug reportado por el usuario (con capturas): en modo claro,
          "Pegar Llamadas" (y por el mismo motivo "Iniciar shift" en su
          estado de reposo, antes de arrancar el turno — ambos usan
@@ -1056,7 +1040,6 @@
     html.theme-light .calls-status-card,
     html.theme-light .rpt-date-pill,
     html.theme-light .rpt-sel-pill,
-    html.theme-light .rpt-kpi-card,
     html.theme-light .rpt-goal-card,
     html.theme-light .rpt-chart-card,
     html.theme-light .rpt-mini-card,
@@ -1303,12 +1286,6 @@
     html.theme-light .progress > div {
       background: linear-gradient(90deg, var(--teal), var(--accent-decorative));
     }
-    html.theme-light .tick-label.active {
-      color: var(--accent-decorative-pale);
-    }
-    html.theme-light .goal-badge {
-      color: var(--accent-decorative-pale);
-    }
     html.theme-light .brand {
       background: rgba(var(--accent-decorative-rgb), .10);
       border-color: rgba(var(--accent-decorative-rgb), .22);
@@ -1359,10 +1336,6 @@
     html.theme-light :where(#callTableAccordion) .modal-actions button.bad:hover {
       background: rgb(var(--danger-red-rgb));
       color: #fff;
-    }
-    html.theme-light .week-mobile-card.week-mobile-today {
-      border-color: rgba(var(--accent-decorative-rgb), .4);
-      background: rgba(var(--accent-decorative-rgb), .07);
     }
     /* v234 — Ver comentario gemelo en la rama @media de arriba. */
     html.theme-light .action-btn[data-accent="cyan"] {
@@ -2479,80 +2452,6 @@
       background: linear-gradient(90deg, var(--teal), var(--blue));
     }
 
-    /* v347 — Ningún elemento del HTML usa ya `.scale`/`.tick`/`.tick-label`
-       — "Ganancias de hoy" reemplazó esta escala de puntos por un anillo
-       circular de % (ver `.gh-ring` más arriba y `renderHeader()` en el
-       JS). Se dejan las 6 reglas de esta familia sin borrar a propósito
-       (mismo criterio que el resto del archivo con CSS que un rediseño
-       deja huérfano, ver `.mini-accordion`) — sus 2 overrides de tema claro
-       (`:root:not(.theme-dark) .tick-label.active` / `html.theme-light
-       .tick-label.active`) quedan igual de sin uso, sin tocarse. */
-    .scale {
-      position: relative;
-      height: 34px;
-      margin-top: 10px;
-    }
-
-    /* Pedido del usuario: en vez de puntitos que solo cambian de color al
-       alcanzar cada umbral (0/25/50/75/100%), se ven como cuadritos tipo
-       checkbox que se "marcan" con un check (✓) — más claro visualmente que
-       "ya llegaste a este %". La lógica de activación NO cambia: sigue
-       siendo el mismo toggle de la clase .active que ya hace renderHeader()
-       (`tick.classList.toggle('active', goalPct >= threshold)`), solo se
-       rediseña cómo se ve esa clase. El check vive en un ::after con
-       content:'✓' — transparente por default, visible solo cuando el
-       cuadrito está .active (mismo patrón que ya usaba el color de fondo
-       antes, ahora aplicado también al color del check). */
-    .tick {
-      position: absolute;
-      top: 0;
-      width: 18px;
-      height: 18px;
-      border-radius: 5px;
-      border: 1px solid rgba(255,255,255,.24);
-      background: rgba(255,255,255,.05);
-      transform: translateX(-50%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease;
-    }
-
-    .tick::after {
-      content: '✓';
-      font-size: 11px;
-      font-weight: 900;
-      line-height: 1;
-      color: transparent;
-      transition: color .18s ease;
-    }
-
-    .tick-label {
-      position: absolute;
-      top: 24px;
-      transform: translateX(-50%);
-      color: rgba(144, 160, 190, .82);
-      font-size: 11px;
-      white-space: nowrap;
-      transition: color .18s ease, font-weight .18s ease;
-    }
-
-    .tick.active {
-      background: var(--good);
-      border-color: var(--good);
-      box-shadow: 0 0 12px rgba(var(--good-rgb), .45);
-      transform: translateX(-50%) scale(1.05);
-    }
-
-    .tick.active::after {
-      color: #0b2b1c;
-    }
-
-    .tick-label.active {
-      color: var(--pale-cyan);
-      font-weight: 800;
-    }
-
     .grid { display: grid; gap: 14px; }
 
     .card, .table-card, .list-card {
@@ -2946,34 +2845,6 @@
       }
     }
 
-    /* v330 — Pedido del usuario: Adherencia/Meta/Productividad pasan, en
-       escritorio, de tarjeta apilada (ícono+label arriba, valor debajo,
-       centrado) a fila horizontal (label a la izquierda, valor grande a
-       la derecha) — igual que el mockup. Mismos ids/clases de siempre
-       (`#adherenceBadge`/`#adherenceGoalBadge`/`#productivityGoalBadge`,
-       todos `<span class="slot-status">`) — solo cambia el layout del
-       contenedor `.sched-blocks-summary-card` y el tamaño del valor.
-       Scoped a este breakpoint: en mobile se queda exactamente como v329
-       la dejó (label arriba, valor abajo, ya aprobado aparte). */
-    @media (min-width: 761px) {
-      .sched-blocks-summary-row .sched-blocks-summary-card {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        min-height: 0;
-        padding: 13px 15px;
-      }
-      .sched-blocks-summary-row .sched-blocks-summary-label {
-        margin: 0;
-        flex: 0 0 auto;
-      }
-      .sched-blocks-summary-row .sched-blocks-summary-card .slot-status {
-        text-align: right;
-        font-size: 14px;
-      }
-    }
-
     /* v330 — Pedido del usuario: en escritorio, el toggle "Contraer bloques
        al terminar" vive dentro de `.blocks-footer-row` (antes compartía
        fila con el chip de interrupción accidental, ver v335 — ese chip ya
@@ -3039,27 +2910,6 @@
       gap: 12px;
       flex-wrap: wrap;
       align-items: baseline;
-    }
-
-    /* v347 — Ningún elemento del HTML usa ya esta clase (ni `.goal-badge`
-       sola ni `.goal-badge.goal-soft`, ver esa regla más abajo) — el
-       rediseño de "Ganancias de hoy"/"Ganancias del ciclo" reemplazó
-       `goalPctBadge` (antes `.goal-badge` en el `<summary>`) por el anillo
-       nuevo, y `cycleRangeBadge`/`cyclePayDateBadge` (antes `.goal-badge
-       .goal-soft`) por `.gh-info-pill`. Se dejan sin borrar a propósito —
-       mismo criterio que el resto del archivo con CSS que un rediseño deja
-       huérfano (ver `.mini-accordion`) — por si se reutilizan en otro lado
-       más adelante. Sus 2 overrides de tema claro (`:root:not(.theme-dark)
-       .goal-badge` / `html.theme-light .goal-badge`) quedan igual de sin
-       uso, sin tocarse. */
-    .goal-badge {
-      padding: 8px 12px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,.03);
-      color: var(--pale-cyan);
-      font-size: 13px;
-      font-weight: 700;
     }
 
     /* v334 — Pedido del usuario: pastilla segmentada "Hoy / Ciclo" en el
@@ -3285,76 +3135,6 @@
       .blocks-view-btn { padding: 5px 12px; font-size: 11px; }
     }
 
-    .goal-fields {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-      margin-top: 4px;
-    }
-
-    .goal-stack {
-      display: grid;
-      gap: 8px;
-      justify-items: end;
-      align-content: start;
-    }
-
-    /* Pedido del usuario: "Meta $X" y "≈ L X" van uno al lado del otro
-       (antes cada badge del .goal-stack caía en su propia fila, ya que
-       .goal-stack es un grid de una sola columna). "Meta X min" se queda
-       como hermano suelto fuera de este wrapper, en su propia fila debajo,
-       sin cambios. flex-wrap permite que en un contenedor angosto (mobile)
-       el segundo badge baje de línea en vez de desbordar, sin necesidad de
-       una regla aparte en el media query. */
-    .goal-pair {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: flex-end;
-    }
-
-    .goal-badge.goal-soft {
-      font-size: 12px;
-      color: var(--pale-teal);
-      border-color: rgba(88, 232, 200, .28);
-      background: rgba(88, 232, 200, .09);
-    }
-
-    /* Pedido del usuario: las píldoras de Meta/conversión/restantes DENTRO
-       de "Ganancias de hoy" (Meta $, ≈ L, Meta min, restantes) se
-       confundían visualmente con los tags de estado de abajo (Conectado,
-       Billable, ACW...) — ambos usaban el mismo lenguaje de "pill" (fondo +
-       borde + esquinas redondas). Se probaron 3 opciones (mockup mostrado
-       al usuario) y se eligió esta: texto plano sin fondo/borde, con un
-       label corto en --muted y el valor en --text bold — mismo tratamiento
-       que ya usa .helper (el "≈ L..." bajo el monto grande) en vez de
-       inventar un estilo nuevo. Los pills de estado siguen siendo pills; ya
-       no hay ambigüedad de "esto también es un estado". Nota histórica: en
-       su momento NO se tocó .goal-badge.goal-soft (arriba) porque
-       cycleRangeBadge/cyclePayDateBadge la seguían usando — eso cambió en
-       v347 (rediseño de "Ganancias de hoy"/"Ganancias del ciclo"): esos 2
-       ids pasan a `.gh-info-pill`, y ningún elemento del HTML usa ya
-       `.goal-plain-row` tampoco (`goalAmountBadge`/`goalAmountConvertedText`/
-       `goalMinBadge`/`remainingText` pasan a `.gh-goal-*`) — ambas clases
-       quedan sin uso a propósito, mismo criterio que el resto del archivo
-       con CSS que un rediseño deja huérfano. */
-    .goal-plain-row {
-      font-size: 13px;
-      line-height: 1.35;
-      white-space: nowrap;
-    }
-
-    .goal-plain-row .gp-label {
-      color: var(--muted);
-      font-weight: 600;
-    }
-
-    .goal-plain-row .gp-value {
-      color: var(--text);
-      font-weight: 800;
-      margin-left: 4px;
-    }
-
     .field {
       padding: 10px 12px;
       border-radius: 16px;
@@ -3373,75 +3153,6 @@
       font-size: 16px;
       font-weight: 800;
       padding: 0;
-    }
-
-    /* Pedido del usuario: la sección de avisos/Adherencia en Horario (llegada
-       tarde, aviso de turno, aviso de Break/Lunch, ventana de gracia) se veía
-       como una pared plana de campos + párrafos largos, todos del mismo peso
-       visual, sin agrupar — "se ve feo y no se entiende". Se agrupa en
-       tarjetas (.alert-group) con encabezado propio (ícono + título corto,
-       .alert-group-head) y una sola nota corta al final (.alert-hint) en vez
-       de un párrafo largo por campo — el detalle fino que antes vivía en esos
-       párrafos se resume a lo esencial, ya que el nombre del campo + su
-       agrupación visual comunican la mayor parte por sí solos. */
-    .alert-group {
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      background: rgba(255,255,255,.025);
-      padding: 14px;
-      display: grid;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    .alert-group-head {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .alert-group-icon {
-      font-size: 16px;
-      line-height: 1;
-    }
-
-    .alert-group-title {
-      font-weight: 900;
-      font-size: 14px;
-      letter-spacing: -.01em;
-      color: var(--text);
-    }
-
-    .alert-fields-row {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-    }
-
-    .alert-mini-field {
-      display: grid;
-      gap: 4px;
-      padding: 8px 10px;
-      border-radius: 12px;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,.03);
-    }
-
-    .alert-mini-field label {
-      color: var(--muted);
-      font-size: 11.5px;
-      line-height: 1.25;
-    }
-
-    .alert-mini-field input {
-      border: 0;
-      outline: none;
-      background: transparent;
-      color: var(--text);
-      font-size: 16px;
-      font-weight: 800;
-      padding: 0;
-      width: 100%;
     }
 
     /* Bug reportado por el usuario: el texto de la opción seleccionada de
@@ -4415,79 +4126,6 @@
       grid-template-columns: 1fr;
       gap: 14px;
       margin: 0 0 14px;
-    }
-    .stat-cell {
-      display: grid;
-      gap: 3px;
-    }
-    /* Pedido del usuario (v200): envuelve valor+sub en su propio contenedor
-       para poder reacomodarlos como bloque único al lado del label en
-       mobile (ver el media query de abajo), sin duplicar el HTML por
-       breakpoint. En escritorio/tablet se comporta idéntico a antes (grid
-       de 1 columna, mismo gap:3px entre value y sub que ya tenía
-       .stat-cell entre sus 3 hijos). */
-    .stat-value-wrap {
-      display: grid;
-      gap: 3px;
-    }
-    .stat-cell .stat-label {
-      color: var(--muted);
-      font-size: 12px;
-    }
-    .stat-cell .stat-value {
-      font-size: 18px;
-      font-weight: 900;
-      letter-spacing: -.03em;
-    }
-    .stat-cell .stat-sub {
-      color: var(--muted);
-      font-size: 11px;
-    }
-    .stats-row {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 14px 10px;
-      margin-top: 12px;
-    }
-    @media (min-width: 761px) {
-      .stats-row {
-        grid-template-columns: repeat(4, 1fr);
-      }
-    }
-    .stats-list-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12.5px;
-      padding: 6px 0;
-      border-bottom: 1px solid var(--line);
-    }
-    .stats-list-row:last-child { border-bottom: none; }
-    .stats-list-row span { color: var(--muted); }
-    .stats-list-row strong { color: var(--text); }
-
-    /* v222 — Bug reportado por el usuario (con captura): la nota de "Más
-       corta" (statsShortestNote) se veía atravesada por la línea divisoria
-       de la fila de arriba — el texto quedaba "cortado" por el
-       border-bottom. Causa: la nota vivía como hermano SUELTO después de
-       `.stats-list-row`, con un margin-top NEGATIVO (-4px) para acercarla a
-       la fila — pero ese border-bottom pertenece a la CAJA de la fila
-       ("Más corta"), fija en su lugar sin importar el margen del hermano
-       siguiente; al subir la nota con margin negativo, esta terminaba
-       flotando justo encima/a través de esa línea en vez de debajo de ella.
-       Fix: se envuelve la fila + su nota en `.stats-list-row-wrap`, que es
-       quien ahora lleva el único border-bottom del grupo — la fila interna
-       y la nota pierden su propio borde/margen negativo, así que ya no hay
-       ninguna línea cruzando el texto. */
-    .stats-list-row-wrap {
-      border-bottom: 1px solid var(--line);
-    }
-    .stats-list-row-wrap .stats-list-row {
-      border-bottom: none;
-      padding-bottom: 2px;
-    }
-    .stats-list-row-wrap .gap-note {
-      margin: 0 0 6px;
-      text-align: right;
     }
 
     @media (min-width: 1201px) {
@@ -5927,209 +5565,6 @@
       margin-bottom: 6px;
     }
 
-    /* Mini-accordion propio para el detalle de Adherencia: mismo mecanismo
-       nativo <details> que .accordion-card, pero sin el padding/borde/sombra
-       de tarjeta completa — aquí es solo un badge con un toggle de texto al
-       lado, no una sección de nivel superior.
-       v298 — Pedido del usuario: la tarjeta de Adherencia dentro de
-       "Bloques del día" (#dayMetricsRow) dejó de ser expandible — ahora es
-       una tarjeta plana de solo lectura, igual en estructura a las de
-       Meta/Productividad de al lado (ver el HTML de esa tarjeta y
-       renderSchedule() en el JS). Las 4 reglas de esta familia
-       (.mini-accordion/.mini-accordion-summary/.mini-accordion-toggle/
-       .mini-accordion-body) ya no las usa NINGÚN elemento del archivo —
-       código muerto, dejado tal cual a propósito (no se pidió borrarlo) por
-       si se necesita un mini-acordeón similar en el futuro. */
-    .mini-accordion {
-      border: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .mini-accordion-summary {
-      list-style: none;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .mini-accordion-summary::-webkit-details-marker { display: none; }
-
-    .mini-accordion-toggle {
-      color: var(--muted);
-      font-size: 11.5px;
-      font-weight: 700;
-    }
-
-    .mini-accordion-body {
-      margin-top: 8px;
-      display: grid;
-      gap: 6px;
-      padding: 10px 12px;
-      border-radius: 14px;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,.03);
-    }
-
-    .checkpoint-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      font-size: 12.5px;
-      color: var(--muted);
-    }
-
-    .checkpoint-row strong { color: var(--text); }
-
-    .table-mobile-list {
-      display: none;
-      gap: 10px;
-    }
-
-    .table-desktop { display: block; }
-
-    .mobile-call-card {
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,.03);
-      border-radius: 18px;
-      padding: 12px 14px;
-      display: grid;
-      gap: 8px;
-    }
-
-    /* v293 — Pedido del usuario: reskin de la tarjeta de llamada (mobile)
-       al estilo "call-row" del mock de referencia — círculo de estado a la
-       izquierda (✓ verde si la llamada cuenta como productiva, ⚠ rojo si
-       quedó marcada Dropped — mismo criterio que ya usan los tags Billable/
-       Dropped de abajo, ahora también reflejado en el ícono) + el resto de
-       la tarjeta (customer id/pay/fecha/hora/duración/hueco/nota/Billable/
-       Dropped/botones Editar-Eliminar) exactamente igual que antes, sin
-       quitar NINGÚN dato — el mock no mostraba billable/dropped/hueco/pago
-       en su tarjeta, pero esta app ya los tenía y el usuario pidió no
-       borrar nada, así que se conservan debajo del nuevo encabezado. */
-    .mobile-call-row-flex {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-    }
-    .mobile-call-check {
-      width: 30px;
-      height: 30px;
-      flex: 0 0 auto;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(var(--good-rgb), .14);
-    }
-    .mobile-call-check .ic-svg {
-      width: 15px;
-      height: 15px;
-      stroke: var(--good);
-      color: var(--good);
-    }
-    .mobile-call-check.bad {
-      background: rgba(var(--pink-rgb), .14);
-    }
-    .mobile-call-check.bad .ic-svg {
-      stroke: var(--pink);
-      color: var(--pink);
-    }
-    .mobile-call-main {
-      flex: 1 1 auto;
-      min-width: 0;
-      display: grid;
-      gap: 6px;
-    }
-
-    .mobile-call-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: flex-start;
-    }
-
-    .mobile-call-title {
-      font-weight: 900;
-      letter-spacing: -.02em;
-      line-height: 1.1;
-    }
-
-    .mobile-call-pay {
-      font-weight: 900;
-      color: var(--teal);
-      white-space: nowrap;
-    }
-
-    .mobile-call-meta {
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.4;
-    }
-
-    /* Tarjetas mobile para "Resumen semanal" — mismo patrón que
-       .mobile-call-card (usa los mismos contenedores genéricos
-       .table-mobile-list/.table-desktop para el toggle por breakpoint), pero
-       con clases propias porque el contenido es de días, no de llamadas. */
-    .week-mobile-card {
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,.03);
-      border-radius: 18px;
-      padding: 12px 14px;
-      display: grid;
-      gap: 6px;
-    }
-
-    .week-mobile-card.week-mobile-today {
-      border-color: rgba(var(--cyan-rgb), .4);
-      background: rgba(var(--cyan-rgb), .07);
-    }
-
-    .week-mobile-card.week-mobile-total {
-      border-color: var(--line-2);
-      background: rgba(255,255,255,.05);
-    }
-
-    .week-mobile-top {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      align-items: flex-start;
-    }
-
-    .week-mobile-title {
-      font-weight: 900;
-      letter-spacing: -.02em;
-      line-height: 1.15;
-    }
-
-    .week-mobile-date {
-      color: var(--muted);
-      font-size: 12px;
-      margin-top: 2px;
-    }
-
-    .week-mobile-metrics {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px 10px;
-      margin-top: 4px;
-    }
-
-    .week-mobile-metric {
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      font-size: 12.5px;
-      color: var(--muted);
-    }
-
-    .week-mobile-metric strong {
-      color: var(--text);
-      font-weight: 800;
-    }
-
     table {
       width: 100%;
       border-collapse: collapse;
@@ -6360,13 +5795,12 @@
       .tbl-icon-btn .ic-svg { width: 12px; height: 12px; }
     }
 
-    /* v317 — Código muerto a propósito, dejado sin borrar (mismo criterio
-       que ya sigue el resto del archivo con CSS que un rediseño deja sin
-       uso, ver comentario junto a .mini-accordion): estas clases pintaban
-       las tarjetas mobile de "Tabla de llamadas" ANTES de este rediseño
-       (v190-v315) — ya ningún JS las genera (renderTable() ahora arma
-       `.tbl-row` para ambos anchos), pero no hace falta borrarlas del CSS
-       para que el rediseño funcione. */
+    /* v317 — Nota histórica: estas clases pintaban las tarjetas mobile de
+       "Tabla de llamadas" ANTES de este rediseño (v190-v315) — ya ningún
+       JS las genera (renderTable() ahora arma `.tbl-row` para ambos
+       anchos). Las reglas en sí (`.mobile-call-*`) se borraron en v349
+       (limpieza de CSS sin uso, ver resumen_v349.md) — se deja esta nota
+       por su valor histórico. */
 
     .divider {
       height: 1px;
@@ -6484,58 +5918,6 @@
 
     @media (max-width: 760px) {
       .app { padding: 12px; }
-      /* Pedido del usuario (v181): "Resumen del día" se seguía viendo
-         grande en mobile pese al achique de v180 (24px→18px, aplicado en
-         todos los anchos). Se recorta un poco más SOLO en mobile — 18px→15px
-         para el valor grande, y se acerca stat-label/stat-sub para que el
-         bloque de 4 celdas se sienta más compacto sin perder legibilidad. */
-      /* Historial: v200 puso label/valor en fila (izq/der) pero dejó
-         `.stats-row` en 2 columnas — la fila de un dato quedaba a la misma
-         altura que la fila del dato de al lado, entrelazando la lectura
-         ("no lo entiendo"). v201 lo arregló pasando a 1 sola columna (cada
-         dato en su propia línea completa) — pero eso subió de 4 a 8 filas
-         visibles, y la tarjeta terminó viéndose MÁS grande que
-         "Estadísticas del día" (v203 intentó arreglarlo solo compactando
-         tipografía/padding en 1 columna, insuficiente a juicio del
-         usuario). Pedido del usuario (v204): volver a 2 columnas — el
-         usuario prefiere celdas más angostas y una tarjeta más baja aunque
-         eso implique que los datos de columnas vecinas queden a la misma
-         altura. `.stat-cell` sigue en fila (label izquierda, valor+sub
-         derecha, mismo criterio visual que ya usa `.stats-list-row`) pero
-         ahora dentro de una celda de grid más angosta — texto compacto
-         (13px/10px/9px, igual que v203) para que quepa cómodo en la mitad
-         del ancho. Line-borde debajo de cada celda, salvo las 2 últimas de
-         la fila final — con 2 columnas, `:last-child` (que usaba v201/v203)
-         solo apaga el borde de la ÚLTIMA celda del grid, dejando la
-         penúltima (columna izquierda de esa misma fila) con una línea
-         colgada sin nada debajo; `:nth-last-child(-n+2)` apaga las 2 celdas
-         de la última fila del grid a la vez (8 datos → 2 columnas → última
-         fila = celdas 7 y 8). */
-      .stat-cell .stat-value { font-size: 13px; }
-      .stat-cell .stat-label { font-size: 10px; }
-      .stat-cell .stat-sub { font-size: 9px; }
-      .stats-row { grid-template-columns: repeat(2, 1fr); gap: 0 12px; }
-      .stat-cell {
-        display: flex;
-        flex-direction: row;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: 8px;
-        padding: 7px 0;
-        border-bottom: 1px solid var(--line);
-        min-width: 0;
-      }
-      .stats-row .stat-cell:nth-last-child(-n+2) {
-        border-bottom: none;
-      }
-      .stat-value-wrap {
-        text-align: right;
-        justify-items: end;
-        gap: 1px;
-        min-width: 0;
-      }
-      .goal-fields { grid-template-columns: 1fr; }
-      .alert-fields-row { grid-template-columns: 1fr; }
       /* v236 — Ver comentario junto a .sched-row (regla base, más arriba) —
          mismo criterio que .goal-fields/.alert-fields-row: 1 sola columna
          en mobile, para que Inicio/Fin (o los 2 campos de Adherencia) no
@@ -6693,10 +6075,6 @@
         font-size: 9px;
         line-height: 1.25;
       }
-      .goal-stack { justify-items: start; }
-      .goal-pair { justify-content: flex-start; }
-      .table-mobile-list { display: grid; }
-      .table-desktop { display: none; }
     }
 
     /* Pedido del usuario ("como el de Mochi", con capturas de referencia):
@@ -7922,190 +7300,23 @@
        nueva — Work=cyan, Break=neutro, Lunch=good, mismo mapeo que ya
        usa data-accent en el resto de la app. */
 
-    /* v348 — Pedido del usuario: se quitaron las 3 tarjetas de Adherencia/
-       Meta/Productividad (#adherenceBadge/#adherenceGoalBadge/
-       #productivityGoalBadge) de #dayMetricsRow — ver el comentario junto a
-       ese id en el HTML para el motivo completo (info ya duplicada en
-       Ganancias de hoy/Reportes/Resumen semanal/el diagnóstico de cada
-       bloque). Las reglas de esta familia (`.sched-blocks-summary-row`/
-       `.sched-blocks-summary-card`/`.sched-blocks-summary-label`/
-       `.sched-blocks-summary-summary` y sus variantes de mobile) quedan sin
-       ningún elemento que las use — se dejan sin borrar a propósito, mismo
-       criterio que el resto del archivo con CSS que un cambio deja
-       huérfano (ver `.mini-accordion`). `#dayMetricsRow` se queda con la
-       clase `.sched-blocks-summary-row` solo para heredar su
-       `display:grid`/gap, ahora con un único hijo (`adherenceLiveBadge`,
-       que no es una de estas 3 y se queda igual). */
-
-    /* ---- Resumen de arriba: 3 mini-tarjetas (v277 — rediseño pedido por el
-       usuario: la v276 quedó demasiado grande (número a 22px) tanto en
-       escritorio como en mobile — en mobile además colapsaban a 1 columna
-       de ancho completo, agrandando el problema — y los colores (rosa
-       fijo para Adherencia + texto rojo/naranja de estado encima) se veían
-       feos/en conflicto entre sí. Se compactan al mismo lenguaje visual que
-       ya usan las tarjetas de "Turno de Hoy" (`.block-summary-card`):
-       tamaño chico (padding ~9px, texto ~11-14px en vez de 22px), acento
-       sutil de borde/fondo por categoría (cyan/warn/blue, el mismo trío que
-       ya usa Shift/Break/Lunch — se quita el rosa, que no combinaba bien
-       con el rojo de estado "bad") y SIEMPRE 3 columnas (también en mobile,
-       igual que el grid de Turno de Hoy), no 1 columna apilada. El ícono de
-       cada label es puramente decorativo (::before por atributo
-       data-metric) — no toca ningún id/clase funcional. Los badges reales
-       (#adherenceBadge/#adherenceGoalBadge/#productivityGoalBadge) siguen
-       siendo el mismo <span class="slot-status"> de siempre, con el mismo
-       texto/clase good/warn/bad que ya les pone renderSchedule() — solo se
-       redimensionan. */
+    /* v349 — Pedido del usuario: limpieza de CSS huérfano acumulado. Las
+       tarjetas de Adherencia/Meta/Productividad de #dayMetricsRow se
+       quitaron en v348; `.sched-blocks-summary-card`/`-label`/`-summary`
+       (y sus variantes de mobile) no las usa ya ningún elemento del HTML,
+       así que se borran aquí — se mantiene solo `.sched-blocks-summary-row`
+       (base + su ajuste mobile), ya que `#dayMetricsRow` sigue llevando
+       esa clase para heredar su `display:grid`/gap con su único hijo real
+       (`adherenceLiveBadge`). Ver resumen_v349.md para el resto de esta
+       limpieza. */
     .sched-blocks-summary-row {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
       margin-bottom: 4px;
     }
-    /* v281 — Pedido del usuario (con captura): las 3 mini-tarjetas del
-       resumen de "Bloques del día" (Adherencia/Meta/Productividad) tenían
-       3 problemas: (1) cada una llevaba su propio acento de color (cyan/
-       warn/blue, heredado de v277) — se pidió que las 3 usen el MISMO
-       fondo azul; (2) el label y el valor usaban --muted/el color del
-       propio acento (o good/warn/bad según el estado) — se pidió texto
-       blanco fijo, igual en las 3, sin importar el estado; (3) no medían
-       lo mismo entre sí — con texto que cabe en 1 línea (Adherencia/Meta)
-       al lado de texto que se pasaba a 2 líneas (ej. "Meta productiva:
-       228/300 min"), la tarjeta de Productividad se veía más alta que las
-       otras 2. Se fija un alto mínimo igual para las 3 (min-height, con el
-       contenido centrado verticalmente vía `align-content: center` — sigue
-       siendo el mismo grid de 1 columna, sin tocar el layout) y el valor
-       pasa a una sola línea con "…" si no cabe (ver `.slot-status` más
-       abajo) — cada badge ya trae su propio `title` en el HTML, así que el
-       texto completo se sigue pudiendo leer al mantener el cursor/dedo
-       encima. El grid de 3 columnas iguales (`repeat(3, 1fr)`) ya era
-       responsive desde v277 — se conserva sin cambios, solo se ajusta el
-       alto mínimo también en el breakpoint mobile de abajo. */
-    /* v329 — Pedido del usuario (rediseño mobile de "Bloques del día",
-       mockup aprobado): REVERSIÓN de v281 — el fondo azul uniforme
-       (rgba(--blue-rgb,.18)) de estas 3 tarjetas se cambia a un fondo
-       neutro (mismo tratamiento "tarjeta chica" que ya usa `.field`/
-       `.alert-mini-field` en el resto de la app: rgba(255,255,255,.03) +
-       borde var(--line)) — con el texto ya coloreado por estado (ver más
-       abajo) sobre un fondo azul, el conjunto se sentía saturado; el
-       fondo neutro deja que el color del VALOR sea la única señal. */
-    .sched-blocks-summary-card {
-      border-radius: 14px;
-      padding: 9px 10px;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,.03);
-      display: grid;
-      align-content: center;
-      gap: 4px;
-      min-width: 0;
-      min-height: 62px;
-    }
-    /* v329 — Ver comentario junto a `.sched-blocks-summary-card` arriba:
-       con el fondo ya neutro (no azul), el label vuelve a su tratamiento
-       muted de siempre (var(--muted)) — el blanco fijo de v281/v290 solo
-       tenía sentido para contrastar contra el azul que ya no está. */
-    .sched-blocks-summary-label {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 10px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: .04em;
-      color: var(--muted);
-      min-width: 0;
-    }
-    /* v329 — Ver comentario junto a `.sched-blocks-summary-label` arriba:
-       el ícono acompaña el mismo tratamiento muted que el label, en vez
-       del blanco/negro monocromo fijo de v290 (ese fix existía para no
-       chocar con el fondo azul, que ya no aplica). */
-    .sched-blocks-summary-label .ic-svg { color: var(--muted); stroke: var(--muted); }
-    .sched-blocks-summary-label::before {
-      flex: 0 0 auto;
-      font-size: 11px;
-      line-height: 1;
-    }
-    /* v290 — Los íconos de estas 3 etiquetas (Adherencia/Meta/Productividad)
-       se movieron de `content` en `::before` (con emoji embebido, ver
-       historial) a un `<svg class="ic-svg">` real dentro del HTML — mismo
-       motivo que el resto de este cambio (los emoji no pueden forzarse a
-       blanco/negro sólido). Sin `content` declarado aquí, el pseudo-
-       elemento ya no genera ninguna caja — se deja la regla base
-       (`.sched-blocks-summary-label::before`) sin uso real por si alguna
-       otra variante la necesita en el futuro, sin borrarla por completo. */
-    /* Los badges reales (#adherenceBadge/#adherenceGoalBadge/
-       #productivityGoalBadge) siguen siendo el mismo <span class="slot-status">
-       de siempre — aquí, dentro de su propia mini-tarjeta, se leen como un
-       valor chico y bold (color de la categoría por default, o good/warn/
-       bad si aplica), sin tocar el texto/clase que ya les pone
-       renderSchedule(). Sin nowrap/ellipsis a propósito — textos como "Meta
-       90% — te faltan 77pts" o "Meta productiva: 228/300 min" necesitan
-       poder pasar a una 2da línea en vez de cortarse. */
-    /* v329 — Pedido del usuario (rediseño mobile de "Bloques del día",
-       mockup aprobado): "nada de texto cortado con '...'" — este selector
-       ya traía un comentario diciendo "sin nowrap/ellipsis a propósito",
-       pero el CSS real SÍ los tenía declarados (bug de desincronía entre
-       comentario y código) — de ahí que "Faltan 24pts"/"Meta productiva:
-       228/300 min" se vieran cortados en pantallas angostas. Se quita el
-       truncado de una vez por todas: `white-space: normal` deja que el
-       texto pase a una 2da línea en vez de recortarse. */
-    .sched-blocks-summary-card .slot-status {
-      display: block;
-      width: auto;
-      background: transparent;
-      border: none;
-      padding: 0;
-      margin-top: 0;
-      font-size: 13px;
-      line-height: 1.25;
-      font-weight: 900;
-      letter-spacing: -.01em;
-      color: var(--text);
-      white-space: normal;
-      overflow: visible;
-      text-overflow: unset;
-      max-width: 100%;
-    }
-    /* v329 — REVERSIÓN de v281: el valor vuelve a colorearse según su
-       estado real (good/warn/bad, las mismas clases que ya le pone
-       renderSchedule() — sin tocar esa lógica) en vez del blanco forzado
-       de siempre — con el fondo de la tarjeta ya neutro (ver comentario
-       arriba), el color de estado es la señal principal de cada tarjeta.
-       Sin override propio aquí: se deja caer en la regla genérica
-       `.slot-status.good/.warn/.bad` (ya definida en el resto del
-       archivo, usada por el timeline de bloques) — mismos tonos
-       --pale-good/--pale-warn/--pale-bad de siempre, automáticos por
-       tema, sin duplicar ningún color. */
-    .sched-blocks-summary-summary {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 6px;
-      cursor: pointer;
-      list-style: none;
-    }
-    .sched-blocks-summary-summary::-webkit-details-marker { display: none; }
-    /* v329 — REVERSIÓN de v281: el toggle "Detalle ⌄" vuelve a su gris
-       muted de siempre — el blanco fijo de v281 era para destacar sobre
-       el fondo azul, que ya no aplica (ver comentario junto a
-       `.sched-blocks-summary-card` arriba). */
-    .sched-blocks-summary-card .mini-accordion-toggle {
-      flex: 0 0 auto;
-      margin-top: 1px;
-      font-size: 10px;
-      color: var(--muted);
-    }
-    .sched-blocks-summary-card .mini-accordion-body {
-      margin-top: 8px;
-      padding: 8px 9px;
-      font-size: 11.5px;
-    }
     @media (max-width: 620px) {
       .sched-blocks-summary-row { gap: 5px; }
-      .sched-blocks-summary-card { padding: 7px 6px; border-radius: 11px; gap: 3px; min-height: 54px; }
-      .sched-blocks-summary-label { font-size: 8.5px; gap: 3px; }
-      .sched-blocks-summary-label::before { font-size: 9.5px; }
-      .sched-blocks-summary-card .slot-status { font-size: 11px; }
-      .sched-blocks-summary-card .mini-accordion-toggle { font-size: 9px; }
     }
     /* "Fuera de adherencia ahora" — banner de ancho completo debajo de las
        3 mini-tarjetas (antes vivía metido en la misma fila que las
@@ -8647,55 +7858,6 @@
       gap: 6px;
     }
     .rpt-date-pill .ic-svg { width: 13px; height: 13px; }
-
-    /* v327 — Pedido del usuario: los 4 KPI cards se fusionaron dentro de
-       ".rpt-goal-card" (bar vs meta + delta vs ayer en una sola tarjeta,
-       ver renderReportsDashboard()) — ya no hay ningún #rptKpiGrid en el
-       HTML. Se deja este bloque sin borrar (código muerto a propósito,
-       mismo criterio que el resto del archivo) por si se reutiliza.
-    */
-    .rpt-kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-      margin-bottom: 18px;
-    }
-    .rpt-kpi-card {
-      background: var(--panel-navy);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 14px;
-    }
-    .rpt-kpi-icon {
-      width: 26px;
-      height: 26px;
-      margin-bottom: 8px;
-    }
-    .rpt-kpi-icon .ic-svg { width: 16px; height: 16px; }
-    .rpt-kpi-label {
-      font-size: 10.5px;
-      font-weight: 800;
-      letter-spacing: .06em;
-      color: var(--muted);
-    }
-    .rpt-kpi-val {
-      font-size: 20px;
-      font-weight: 900;
-      margin-top: 6px;
-      letter-spacing: -.02em;
-    }
-    .rpt-kpi-delta {
-      font-size: 11px;
-      margin-top: 5px;
-      font-weight: 800;
-    }
-    .rpt-kpi-delta.up { color: var(--good); }
-    .rpt-kpi-delta.down { color: var(--bad); }
-    .rpt-kpi-delta.flat { color: var(--muted); }
-    @media (max-width: 760px) {
-      .rpt-kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-      .rpt-kpi-val { font-size: 17px; }
-    }
 
     .rpt-section-head {
       display: flex;
@@ -9468,9 +8630,10 @@
        resumenDiaAdherencia/.../statsAvgPay) — setText() en
        renderDayStatsCards() sigue escribiendo exactamente los mismos
        elementos, solo cambia el HTML/CSS que los envuelve.
-       `.stats-row`/`.stat-cell`/`.stats-list-row` NO se tocan — quedan
-       sin uso a propósito (mismo criterio que el resto del archivo con
-       CSS que un rediseño deja huérfano, ver `.mini-accordion`). */
+       `.stats-row`/`.stat-cell`/`.stats-list-row` quedaron huérfanas tras
+       este cambio — se borraron en v349 (limpieza de CSS sin uso, ver
+       resumen_v349.md), junto con el resto de familias marcadas como
+       código muerto en este archivo. */
     .rd-group { display: grid; gap: 10px; }
     .rd-grid {
       display: grid;
@@ -9526,10 +8689,11 @@
        data-day-note-edit que ya escuchan los listeners delegados de
        siempre (sin tocarlos) — solo cambia el HTML/CSS que
        renderWeekSummary() arma. `.wk-timeline`/`.wk-item`/`.wk-rail`/
-       `.wk-dot`/`.wk-card`/`.wk-card-top` de v322 y `.table-desktop`/
-       `.table-mobile-list`/`.week-mobile-*` de antes NO se tocan — quedan
-       sin uso a propósito (mismo criterio que el resto del archivo con
-       CSS que un rediseño deja huérfano, ver `.mini-accordion`/`.tbl-*`). */
+       `.wk-dot`/`.wk-card`/`.wk-card-top` de v322 ya no existían en el
+       archivo; `.table-desktop`/`.table-mobile-list`/`.week-mobile-*`/
+       `.mobile-call-*` de antes de v317 quedaron huérfanas tras este
+       cambio — se borraron en v349 (limpieza de CSS sin uso, ver
+       resumen_v349.md). */
     .wk-list {
       display: grid;
       gap: 0;
@@ -13354,7 +12518,7 @@ $0.72"></textarea>
     // sin tocar), mismo criterio de color/orden por nivel que
     // `higherRateBreakdownTagsHtml()` (que se deja intacta y sin uso a
     // propósito, mismo criterio que el resto del archivo con funciones que
-    // un rediseño deja huérfanas — ver `.mini-accordion` en el CSS) — solo
+    // un rediseño deja huérfanas) — solo
     // cambia el tratamiento visual (chip de ancho completo con ícono +
     // frase completa, en vez de una pill chica dentro de la fila de tags).
     function higherRateBonusChipsHtml(breakdown) {
@@ -19654,8 +18818,7 @@ function renderHeader() {
   // las metas por bloque de Horario → Bloques) de "Ganancias de hoy" — el
   // usuario ya no la quería ahí. `dayProductivityGoalTotals()` se deja sin
   // borrar (código muerto a propósito, mismo criterio que el resto del
-  // archivo con funciones que un cambio deja sin uso, ver `.mini-accordion`
-  // en el CSS) — sigue usándose el mismo cálculo por-bloque dentro de
+  // archivo con funciones que un cambio deja sin uso) — sigue usándose el mismo cálculo por-bloque dentro de
   // "Bloques del día" (renderSchedule()), solo se quitó este resumen
   // agregado de aquí.
   const adherenceForTag = dayAdherence(dayKey);
