@@ -3465,78 +3465,61 @@
     }
 
     /* Pedido del usuario (v192): Iniciar shift/Break/Lunch (antes su propia
-       sección "Acciones del turno", debajo del todo) suben al header —
-       la sección "Acciones del turno" se elimina por completo (buscar
-       "controlsSection" ya no aparece en el HTML) — este es el único
-       lugar donde viven estos 3 botones desde entonces. Reutiliza el mismo
-       componente .action-btn (mismo relleno tipo onda, mismo anillo
-       pulsante, mismo manejo de acento/estado activo por JS vía
-       data-accent/.is-active — cero cambio de lógica), solo se estiliza
-       con reglas scoped a este contenedor en vez de tocar .action-btn en
-       general (los botones de "Llamadas" siguen con su propio tamaño,
-       sin cambios). v192-v349: vivió DENTRO de `.chips`, empujado a la
-       derecha con margin-left:auto, como botones chicos tipo chip. v350
-       (rediseño de header/hero, mockup aprobado): sale de `.chips` y pasa
-       a ser su propia fila de ancho completo debajo — ver `.hero-shift-
-       actions` más abajo para el estilo actual (ícono en círculo + label/
-       sub, fila en escritorio/columna en mobile). */
-    /* v350 — Pedido del usuario: rediseño 100% visual del header/hero
-       (mockup de 2 vistas aprobado, mockup_header_v1.html) — Shift/Break/
-       Lunch dejan de vivir DENTRO de `.chips` (empujados a la derecha con
-       margin-left:auto, como botones chicos tipo chip) y pasan a su PROPIA
-       fila debajo, de ancho completo, con el mismo lenguaje "ícono en
-       círculo + label/sub" que ya usa `.controls-grid .action-btn` (v292,
-       Llamadas) — mismo componente `.action-btn` de siempre (ripple/
-       anillo/pulso/is-active/data-accent, sin tocar), solo cambia el
-       layout con reglas scoped a este contenedor. En escritorio es una
-       fila (ícono a la izquierda, label+sub apilados a la derecha); en
-       mobile pasa a columna (ícono arriba, label debajo, sub oculto — ver
-       @media más abajo), tal como se aprobó en el mockup. */
+       sección "Acciones del turno", debajo del todo) suben a la misma fila
+       de chips del header — a la par de "No iniciado"/"Día activo", pegados
+       a la derecha — como botones CHICOS. La sección "Acciones del turno"
+       se elimina por completo (buscar "controlsSection" ya no aparece en el
+       HTML) — este es el único lugar donde viven estos 3 botones ahora,
+       tanto en escritorio como en mobile. Reutiliza el mismo componente
+       .action-btn (mismo relleno tipo onda, mismo anillo pulsante, mismo
+       manejo de acento/estado activo por JS vía data-accent/.is-active —
+       cero cambio de lógica), solo se achica su tamaño con reglas scoped a
+       este contenedor en vez de tocar .action-btn en general (los botones
+       de "Llamadas" siguen grandes, sin cambios).
+       margin-left:auto empuja el grupo al extremo derecho de .chips
+       (flexbox) sin necesitar tocar el layout de los chips que ya existen
+       a la izquierda (Estado/ACW en vivo/Día activo). flex-shrink:0 evita
+       que el grupo se comprima como bloque — cada botón individual ya trae
+       su propio min-width por contenido (padding+texto), así que en un
+       viewport angosto el conjunto simplemente pasa a envolver en su propia
+       línea dentro de .chips (ver la regla mobile de .chips, sin cambios) en
+       vez de aplastarse.
+       v350 — Pedido del usuario: se intentó un rediseño (botón grande,
+       ícono en círculo, fila propia de ancho completo debajo de .chips,
+       mockup aprobado). El usuario lo probó y no le gustó — pidió
+       explícitamente volver al tamaño/posición de antes (3 botones chicos
+       arriba a la derecha en escritorio). Revertido en v351: vuelve a
+       vivir DENTRO de `.chips`, mismo tamaño chico de siempre. */
     .hero-shift-actions {
       display: flex;
-      gap: 8px;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      margin-left: auto;
     }
 
     .hero-shift-actions .action-btn {
-      flex: 1 1 0;
-      min-width: 0;
-      flex-direction: row;
-      align-items: center;
-      justify-content: flex-start;
-      text-align: left;
-      gap: 10px;
-      padding: 11px 13px;
-      min-height: unset;
-      border-radius: 15px;
+      min-height: 32px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      gap: 2px;
     }
 
     .hero-shift-actions .action-btn .action-icon-wrap {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      background: rgba(var(--accent-rgb), .14);
-      border: 1px solid rgba(var(--accent-rgb), .3);
+      width: 15px;
+      height: 15px;
     }
 
     .hero-shift-actions .action-btn .action-icon {
-      font-size: 14px;
+      font-size: 11px;
     }
 
     .hero-shift-actions .action-btn .action-label {
-      font-size: 12.5px;
-      font-weight: 700;
-      letter-spacing: -.01em;
-      line-height: 1.2;
+      font-size: 10.5px;
     }
 
     .hero-shift-actions .action-btn .action-sub {
-      font-size: 10.5px;
-      font-weight: 600;
-      margin-top: 1px;
-      line-height: 1.25;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-size: 9px;
     }
 
     /* Pedido del usuario (v211): REVERSIÓN de v195 (ver historial: v195
@@ -6017,40 +6000,45 @@
       .summary-pill { padding: 5px 7px; font-size: 10.5px; gap: 4px; border-radius: 999px; }
       .day-nav-btn { width: 18px; height: 18px; font-size: 10px; border-radius: 6px; }
       #daySelector { max-width: 82px; }
-      /* v350 — Pedido del usuario: rediseño 100% visual del header/hero
-         (mockup aprobado, mockup_header_v1.html) — en mobile, cada botón
-         de Shift/Break/Lunch pasa de fila (ícono+texto en línea) a columna
-         (ícono arriba, label + sub centrados debajo). El mockup original
-         ocultaba el sub-texto en mobile — el usuario, al ver que eso
-         también tapaba el CRONÓMETRO EN VIVO de Break/Lunch cuando ya
-         están activos (algo que el mockup estático no dejaba ver, porque
-         mostraba "00:00:00" fijo), pidió mantenerlo siempre visible. Se
-         deja envolver a 2 líneas (`white-space: normal`, en vez del
-         `nowrap` + ellipsis que sí tiene sentido en la fila de escritorio)
-         — mismo criterio que ya usaba el diseño anterior a v350 para este
-         mismo problema (ver comentario histórico de v195, más arriba).
-         `flex: 1 1 0` + `min-width: 0` se conservan (mismo criterio de
-         siempre para que los 3 midan igual sin desbordar). */
-      .hero-shift-actions { margin-top: 10px; }
+      /* Pedido del usuario (v192): en mobile, .chips ya envuelve (flex-wrap)
+         — width:100% fuerza que el grupo de botones chicos rompa a su
+         propia línea en vez de intentar caber junto a Estado/Día activo en
+         la misma fila angosta. margin-left:0 anula el empuje a la derecha
+         de escritorio (sin efecto útil en una línea propia de ancho
+         completo).
+         v350/v351 — Ver comentario histórico junto a `.hero-shift-actions`
+         (regla base, más arriba): se probó un rediseño en columna con el
+         sub-texto oculto, el usuario no lo quiso — revertido al original. */
+      .hero-shift-actions { width: 100%; margin-left: 0; margin-top: 2px; }
+      /* Pedido del usuario (v195): en mobile, los 3 botones (Shift/Break/
+         Lunch) seguían siendo flex sin ancho repartido — cada uno crecía
+         según su PROPIO contenido (el label más largo, "Solo disponible
+         viendo 'Hoy'", empujaba ese botón más ancho que los otros 2), así
+         que el texto se apretaba desigual entre los tres y el sub-texto se
+         partía feo en 2-3 líneas. `flex: 1 1 0` fuerza los 3 al MISMO
+         ancho (ignora el contenido para repartir el espacio, todos parten
+         de base 0 y crecen igual) — mismo criterio que ya usa
+         `.controls-grid` (3 columnas iguales) para los botones grandes de
+         Llamadas, solo que aquí con flexbox en vez de grid porque el
+         contenedor ya es flex desde escritorio. `min-width: 0` es
+         necesario para que un botón flex pueda encogerse por debajo del
+         ancho de su contenido más largo — sin esto, flex-shrink no alcanza
+         a comprimir un texto largo y el navegador lo desborda igual.
+         Fuente un poco más chica + line-height más ajustado SOLO aquí (no
+         se toca el tamaño de escritorio) para que el sub-texto de 2 líneas
+         se vea prolijo en vez de amontonado. */
       .hero-shift-actions .action-btn {
         flex: 1 1 0;
         min-width: 0;
-        flex-direction: column;
-        justify-content: center;
-        text-align: center;
-        padding: 10px 6px;
-        gap: 6px;
+        padding: 6px 4px;
       }
       .hero-shift-actions .action-btn .action-label {
-        font-size: 11px;
+        font-size: 9.5px;
         line-height: 1.15;
       }
       .hero-shift-actions .action-btn .action-sub {
-        font-size: 9px;
+        font-size: 8px;
         line-height: 1.25;
-        white-space: normal;
-        overflow: visible;
-        text-overflow: unset;
       }
       /* Pedido del usuario: los 3 botones grandes de "Llamadas"
          (.controls-grid — Iniciar llamada/Pegar Llamadas/Agregar llamada)
@@ -9412,7 +9400,6 @@
   <input id="daySelector" aria-label="Día activo" type="date"/>
   <button class="day-nav-btn" id="dayNextBtn" type="button" aria-label="Día siguiente" title="Día siguiente">›</button>
 </div>
-</div>
 <div class="hero-shift-actions">
 <button class="action-btn" id="shiftControlBtn" type="button" data-accent="cyan">
 <span class="action-ripple"></span>
@@ -9432,6 +9419,7 @@
 <span class="action-label" id="lunchControlLabel">Iniciar Lunch</span>
 <span class="action-sub" id="lunchControlTimer">00:00:00</span>
 </button>
+</div>
 </div>
 </div>
 </section>
