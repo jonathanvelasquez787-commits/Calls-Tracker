@@ -82,16 +82,30 @@
          resuelve a --primary) — el usuario pidió invertir: claro debe verse
          azul, oscuro debe verse rojo. Se crea esta variable APARTE de
          --cyan (que sigue usándose sin cambios en botones/estados que no
-         eran parte de este pedido, ej. data-accent="cyan") — en oscuro
-         (aquí, default) mismo rojo que ya usa --bad en este tema; en las 2
-         ramas de modo claro (ver --hover-flip: #2563EB) un azul real. */
-      --hover-flip: var(--bad);
+         eran parte de este pedido, ej. data-accent="cyan").
+         v352 — Pedido del usuario (pendiente "Hover rojo → morado" del
+         resumen, mockup de 2 columnas aprobado antes de tocar código):
+         en oscuro (aquí, default) el rojo (antes var(--bad)) pasa a morado
+         — se reutiliza var(--purple), ya existente en la paleta (v292),
+         en vez de inventar un tono nuevo. Todos los botones que ya usaban
+         esta variable cambian de golpe (Ajustes/Horario/Higher Rate/
+         Avisos, Editar/Editar gap, ‹›, Esta semana/Anterior/Siguiente,
+         "Día activo", "✕" de modales, botones de modales, Bronce/Silver/
+         Gold) — ninguno de ellos es un botón "siempre rojo" de peligro
+         (Reiniciar/Eliminar/Vaciar, que no usan --hover-flip y quedan
+         fuera de este cambio, ver pendiente aparte "Rediseño de botones
+         destructivos"). Las 2 ramas de modo claro (ver --hover-flip:
+         #2563EB, más abajo) no se tocan — ya eran azules, nunca fueron
+         parte de "hover rojo". */
+      --hover-flip: var(--purple);
       /* v234 — Contraparte en formato "r,g,b" de --hover-flip (mismo
          criterio que --cyan-rgb/--bad-rgb junto a sus variables hex), para
          poder usarse en `rgba(var(--accent-rgb), .XX)` — ver el nuevo
          override de `.action-btn[data-accent="cyan"]` en modo claro, más
-         abajo. En oscuro (aquí, default) mismo triplete que ya usa --bad. */
-      --hover-flip-rgb: var(--bad-rgb);
+         abajo.
+         v352 — Mismo cambio que --hover-flip arriba: en oscuro (aquí,
+         default) pasa de var(--bad-rgb) a var(--purple-rgb). */
+      --hover-flip-rgb: var(--purple-rgb);
       /* Pedido del usuario (rediseño del tema Blanco): decenas de reglas
          decorativas (brand pill, foco de inputs, tags activos, botón
          primario, etc.) usaban el triplete RGB del cian OSCURO
