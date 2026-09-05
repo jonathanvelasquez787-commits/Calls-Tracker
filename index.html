@@ -10276,6 +10276,30 @@
 <svg id="rptChartSvg" viewBox="0 0 600 140" width="100%" height="140" preserveAspectRatio="none"></svg>
 </div>
 
+<!-- v355 — Pedido del usuario (backlog): vista de largo plazo — Ganancias
+     y Adherencia agrupadas por MES calendario, navegable con ‹›, debajo de
+     la gráfica de 14 días (esa se queda igual, esto es complementario, no
+     un reemplazo). Reutiliza el mismo lenguaje visual que ya usa Reportes
+     (.rpt-chart-card/.rpt-legend, el mismo `.week-nav` que ya usan Resumen
+     semanal/Ganancias del ciclo para navegar por bloques) — ningún cálculo
+     de negocio nuevo, solo los mismos importedCallStats()/dayAdherence()/
+     dayIsEffectivelyOff() de siempre, agregados por mes en vez de por
+     ciclo/ventana de 14 días. Ver reportsMonthlySeries()/
+     renderReportsMonthlyChart() en el JS. -->
+<div class="rpt-section-head">
+<div class="rpt-section-title" id="rptSecMonthly"></div>
+<div class="week-nav" style="margin:0;">
+<button id="rptMonthlyPrevBtn" type="button">‹ Anterior</button>
+<button id="rptMonthlyTodayBtn" type="button">Recientes</button>
+<button id="rptMonthlyNextBtn" type="button">Siguiente ›</button>
+</div>
+</div>
+<div class="rpt-chart-card">
+<div class="rpt-legend"><span><i class="solid" style="background:var(--rpt-blue);"></i>Ganancias</span><span><i class="dashed" style="background:repeating-linear-gradient(90deg, var(--rpt-purple) 0 4px, transparent 4px 8px);"></i>Adherencia promedio</span></div>
+<p class="sched-hint" id="rptMonthlyRangeLabel" style="margin:0 0 8px;">—</p>
+<svg id="rptMonthlyChartSvg" viewBox="0 0 600 170" width="100%" height="170" preserveAspectRatio="none"></svg>
+</div>
+
 <div class="rpt-section-head">
 <div class="rpt-section-title" id="rptSecHours"></div>
 <div class="rpt-sel-pill">14 días</div>
@@ -15054,6 +15078,12 @@ let weekViewOffset = 0; // 0 = semana actual, -1 = semana pasada, +1 = próxima
 // activo", igual que weekViewOffset es independiente de él.
 let cycleViewOffset = 0;
 
+// v355 — Página actual de la gráfica mensual de Reportes (Ganancias +
+// Adherencia por mes) — mismo criterio que weekViewOffset/cycleViewOffset:
+// vive en memoria, no en localStorage (vista de sesión, no preferencia
+// persistida). 0 = los REPORTS_MONTHLY_PAGE_SIZE meses más recientes.
+let reportsMonthlyOffset = 0;
+
 // v334 — Pedido del usuario: pastilla "Hoy / Ciclo" dentro de "Ganancias de
 // hoy" (mockup aprobado) — alterna entre #earningsDayView/#earningsCycleView
 // sin animación. Vive en memoria (no en localStorage) — arranca en 'day' en
@@ -15316,6 +15346,137 @@ function reportsDailySeries(days = 14) {
     });
   }
   return rows;
+}
+
+// v355 — Pedido del usuario (backlog "Vista de largo plazo"): Ganancias y
+// Adherencia agrupadas por MES calendario, en vez de la ventana móvil de 14
+// días de arriba — misma filosofía que reportsDailySeries() (ningún cálculo
+// nuevo, solo día por día con importedCallStats()/dayAdherence()/
+// dayIsEffectivelyOff(), sumado/promediado por mes). `offset` navega de a
+// `monthsCount` meses por página (0 = los `monthsCount` meses más recientes,
+// terminando en el mes actual; -1 = la página anterior de `monthsCount`
+// meses, etc.) — offset > 0 no debería pedirse desde la UI (no hay meses
+// futuros que mostrar), pero la función no lo bloquea, solo devuelve datos
+// vacíos para esos meses.
+const REPORTS_MONTHLY_PAGE_SIZE = 6;
+
+function reportsMonthlySeries(offset = 0, monthsCount = REPORTS_MONTHLY_PAGE_SIZE) {
+  const today = todayRange();
+  const endMonthAnchor = new Date(today.getFullYear(), today.getMonth() + offset * monthsCount, 1);
+  const months = [];
+  for (let i = monthsCount - 1; i >= 0; i--) {
+    months.push(new Date(endMonthAnchor.getFullYear(), endMonthAnchor.getMonth() - i, 1));
+  }
+
+  return months.map(monthDate => {
+    const year = monthDate.getFullYear();
+    const month = monthDate.getMonth();
+    const isCurrentMonth = year === today.getFullYear() && month === today.getMonth();
+    const isFutureMonth = new Date(year, month, 1) > today;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const lastDay = isCurrentMonth ? today.getDate() : daysInMonth;
+
+    let earnings = 0;
+    let workedDays = 0;
+    const adherencePcts = [];
+
+    if (!isFutureMonth) {
+      for (let day = 1; day <= lastDay; day++) {
+        const d = new Date(year, month, day);
+        if (d > today) break;
+        const dayKey = todayCallDateKey(d);
+        const dayCalls = callsForDay(dayKey);
+        earnings += importedCallStats(dayCalls, dayKey).earnings;
+        const isOff = dayIsEffectivelyOff(dayKey);
+        if (!isOff) {
+          workedDays++;
+          const adherence = dayAdherence(dayKey);
+          if (adherence) adherencePcts.push(adherence.scorePct);
+        }
+      }
+    }
+
+    const avgAdherencePct = adherencePcts.length
+      ? Math.round(adherencePcts.reduce((a, b) => a + b, 0) / adherencePcts.length)
+      : null;
+
+    return {
+      year, month, isCurrentMonth, isFutureMonth, workedDays, earnings,
+      adherencePct: avgAdherencePct,
+      shortLabel: new Intl.DateTimeFormat('es-MX', { month: 'short' }).format(monthDate),
+      fullLabel: new Intl.DateTimeFormat('es-MX', { month: 'long', year: 'numeric' }).format(monthDate),
+    };
+  });
+}
+
+// v355 — Pinta la gráfica de barras (Ganancias, eje izquierdo) + línea
+// (Adherencia promedio, eje derecho 0-100%) para la página actual de
+// reportsMonthlySeries(). Reutiliza el mismo lenguaje SVG a mano que ya usa
+// el resto de Reportes (rptChartSvg/rptHourBars) — sin librería de
+// gráficas. Meses sin ningún día trabajado (workedDays===0, ej. un mes
+// futuro o uno donde no se usó la app) no dibujan punto de adherencia — la
+// línea se corta ahí en vez de inventar un 0% engañoso, mismo criterio que
+// ya usa la gráfica de 14 días con `adherencePct: null`.
+function renderReportsMonthlyChart() {
+  const svg = document.getElementById('rptMonthlyChartSvg');
+  const rangeLabel = document.getElementById('rptMonthlyRangeLabel');
+  const nextBtn = document.getElementById('rptMonthlyNextBtn');
+  if (!svg) return;
+
+  const series = reportsMonthlySeries(reportsMonthlyOffset, REPORTS_MONTHLY_PAGE_SIZE);
+  if (rangeLabel) {
+    const first = series[0], last = series[series.length - 1];
+    rangeLabel.textContent = `${first.fullLabel} – ${last.fullLabel}`;
+  }
+  if (nextBtn) nextBtn.disabled = reportsMonthlyOffset >= 0;
+
+  const w = 600, h = 170;
+  const padTop = 22, padBottom = 24, padSide = 8, gap = 10;
+  const n = series.length;
+  const barWidth = Math.max(4, (w - padSide * 2 - gap * (n - 1)) / n);
+  const maxEarnings = Math.max(1, ...series.map(m => m.earnings));
+  const plotH = h - padTop - padBottom;
+
+  const barsHtml = series.map((m, i) => {
+    const x = padSide + i * (barWidth + gap);
+    const barH = maxEarnings > 0 ? (m.earnings / maxEarnings) * plotH : 0;
+    const y = h - padBottom - barH;
+    const opacity = m.isFutureMonth ? 0 : (m.isCurrentMonth ? 1 : .75);
+    const amountLabel = m.earnings > 0 ? money(m.earnings) : '';
+    return `
+      <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${barH.toFixed(1)}" rx="4" fill="var(--rpt-blue)" opacity="${opacity}"/>
+      ${amountLabel ? `<text x="${(x + barWidth / 2).toFixed(1)}" y="${(y - 5).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="700" fill="var(--text)">${escapeHtml(amountLabel)}</text>` : ''}
+      <text x="${(x + barWidth / 2).toFixed(1)}" y="${h - 7}" text-anchor="middle" font-size="10" fill="var(--muted)">${escapeHtml(m.shortLabel)}</text>
+    `;
+  }).join('');
+
+  const adherenceYFor = (pct) => padTop + (1 - pct / 100) * plotH;
+  const points = series.map((m, i) => {
+    if (m.adherencePct === null) return null;
+    const x = padSide + i * (barWidth + gap) + barWidth / 2;
+    return { x, y: adherenceYFor(m.adherencePct), pct: m.adherencePct };
+  });
+
+  // La línea se dibuja en tramos continuos — se corta en cualquier mes sin
+  // dato (null), en vez de saltarlo como si fuera un punto más de la línea.
+  const segments = [];
+  let current = [];
+  points.forEach(p => {
+    if (p) { current.push(p); }
+    else if (current.length) { segments.push(current); current = []; }
+  });
+  if (current.length) segments.push(current);
+
+  const lineHtml = segments
+    .filter(seg => seg.length > 1)
+    .map(seg => `<polyline points="${seg.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}" fill="none" stroke="var(--rpt-purple)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 4"/>`)
+    .join('');
+  const dotsHtml = points.filter(Boolean).map(p => `
+    <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="var(--rpt-purple)"/>
+    <text x="${p.x.toFixed(1)}" y="${(p.y - 8).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="700" fill="var(--rpt-purple)">${p.pct}%</text>
+  `).join('');
+
+  svg.innerHTML = `${barsHtml}${lineHtml}${dotsHtml}`;
 }
 
 // KPIs del día activo vs el día calendario anterior (mismo criterio que el
@@ -15767,6 +15928,12 @@ function renderReportsDashboard() {
       <polyline points="0,${goalY} ${w},${goalY}" fill="none" stroke="var(--rpt-purple)" stroke-width="2" stroke-dasharray="6 5"/>
     `;
   }
+
+  // v355 — Ganancias + Adherencia por mes calendario (backlog "Vista de
+  // largo plazo") — reutiliza reportsMonthlySeries(), navegable con
+  // reportsMonthlyOffset (ver los 3 botones wireados más abajo).
+  setSecTitle('rptSecMonthly', `${iconHtml('chart')} Ganancias y adherencia por mes`);
+  renderReportsMonthlyChart();
 
   // v327 — Llamadas por hora del día (nuevo, pedido del usuario) — mismas
   // llamadas reales de los últimos 14 días, agrupadas por hora
@@ -21489,6 +21656,13 @@ function render() {
     document.getElementById('cyclePrevBtn').addEventListener('click', () => { cycleViewOffset -= 1; renderHeader(); });
     document.getElementById('cycleNextBtn').addEventListener('click', () => { cycleViewOffset += 1; renderHeader(); });
     document.getElementById('cycleCurrentBtn').addEventListener('click', () => { cycleViewOffset = 0; renderHeader(); });
+    // v355 — Ganancias/Adherencia por mes (Reportes) — mismo patrón que
+    // weekPrevBtn/cyclePrevBtn de arriba. "Siguiente" ya viene deshabilitado
+    // por renderReportsMonthlyChart() cuando offset >= 0 (no hay meses
+    // futuros que mostrar), pero se protege igual aquí por si acaso.
+    document.getElementById('rptMonthlyPrevBtn').addEventListener('click', () => { reportsMonthlyOffset -= 1; renderReportsMonthlyChart(); });
+    document.getElementById('rptMonthlyNextBtn').addEventListener('click', () => { if (reportsMonthlyOffset < 0) { reportsMonthlyOffset += 1; renderReportsMonthlyChart(); } });
+    document.getElementById('rptMonthlyTodayBtn').addEventListener('click', () => { reportsMonthlyOffset = 0; renderReportsMonthlyChart(); });
     document.getElementById('saveGapBtn').addEventListener('click', saveGapEditor);
     document.getElementById('saveAcwGoalBtn').addEventListener('click', saveAcwGoalEditor);
     document.getElementById('saveDayNoteBtn').addEventListener('click', saveDayNoteFromModal);
