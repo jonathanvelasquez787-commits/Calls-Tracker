@@ -11018,29 +11018,40 @@ $0.72"></textarea>
 </div>
 <div aria-hidden="true" class="modal-overlay" id="dayNoteModal">
 <div aria-labelledby="dayNoteModalTitle" aria-modal="true" class="modal-card" role="dialog">
-<!-- v304 — Pedido del usuario: rediseño 100% visual de este modal (mockup
-     visual de 2 vistas — escritorio y celular — aprobado antes de tocar
-     código), mismo criterio que Horario/Bloques del día/Ajustes/Pegar
-     Llamadas/Agregar llamada/Editar hueco (v271-303): cabecera con ícono
-     cuadrito (reutiliza .mc-header-icon/.mc-modal-head, v301), secciones de
-     texto plano con línea divisoria (reutiliza .goals-section/.goals-
-     section-title/.goals-section-icon, v300), Categoría reutiliza
-     .goals-field (línea inferior en vez de caja completa, v300 — el
-     <select> real se queda igual, solo pierde su chrome de formulario en
-     reposo), Comentario reutiliza .mc-textarea-cyan (v301). CERO cambio
-     funcional: ningún id se toca (dayNoteCategoryInput/dayNoteCommentInput/
-     saveDayNoteBtn/clearDayNoteBtn) — openDayNoteModal()/
-     saveDayNoteFromModal()/clearDayNoteFromModal() siguen funcionando
-     exactamente igual, solo cambia el HTML/CSS que envuelve esos mismos
-     elementos. -->
+<!-- v304 — Rediseño 100% visual original de este modal. v354 — Pedido
+     del usuario: se agrega la sección "Estado" (Automático/Trabajado/
+     Libre) — puede forzar si este día cuenta como laboral o libre para
+     Adherencia/Reportes/Resumen semanal/Meta del ciclo/Racha, sin
+     importar el horario semanal ni la actividad real (ver
+     dayIsEffectivelyOff(), buscar "v354"). Categoría/Nota siguen siendo
+     puramente informativas — reutiliza .goals-field (v300) igual que
+     Categoría, mismo patrón. CERO cambio funcional en lo demás: ningún
+     id se toca (dayNoteCategoryInput/dayNoteCommentInput/saveDayNoteBtn/
+     clearDayNoteBtn) — openDayNoteModal()/saveDayNoteFromModal()/
+     clearDayNoteFromModal() siguen funcionando igual, solo leen/escriben
+     también el nuevo #dayNoteStatusInput. -->
 <div class="modal-head mc-modal-head">
 <div class="mc-header-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
 <div>
 <h3 id="dayNoteModalTitle">Editar día</h3>
-<p>Marca por qué este día se vio distinto de lo normal. No afecta Adherencia ni Ganancias — es solo para tu registro.</p>
+<p>Categoría y nota son solo para tu registro, no cambian nada. "Estado" sí: fuerza si este día cuenta como Trabajado o Libre — tus llamadas y turno ya registrados nunca se tocan.</p>
 </div>
 <button aria-label="Cerrar" class="modal-close" data-close-modal="dayNoteModal" type="button">×</button>
 </div>
+
+<div class="goals-section">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg good" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>Estado</div>
+<div class="goals-field">
+<label for="dayNoteStatusInput">¿Este día contó como Trabajado o Libre?</label>
+<select id="dayNoteStatusInput">
+<option value="">Automático (según tu horario)</option>
+<option value="work">Trabajado</option>
+<option value="off">Libre</option>
+</select>
+</div>
+</div>
+
+<div class="divider"></div>
 
 <div class="goals-section">
 <div class="goals-section-title"><svg class="goals-section-icon ic-svg cyan" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.59 2.59A2 2 0 0 0 11.17 2H4a2 2 0 0 0-2 2v7.17a2 2 0 0 0 .59 1.41l8.7 8.71a2.43 2.43 0 0 0 3.42 0l6.59-6.59a2.43 2.43 0 0 0 0-3.42Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>Categoría</div>
@@ -11676,7 +11687,22 @@ $0.72"></textarea>
     // Nota: depende de dayShiftBounds(), definida más abajo en el archivo —
     // en JS las declaraciones function son hoisted, así que el orden no
     // importa para las llamadas en tiempo de ejecución.
+    // v354 — Pedido del usuario: "Editar día" (Resumen semanal) gana un
+    // campo "Estado" (Automático/Trabajado/Libre, ver getDayNote()/
+    // dayNoteModal en el HTML) que puede FORZAR el resultado de esta misma
+    // función, sin importar lo que diga el horario semanal ni la actividad
+    // real. Es la ÚNICA función de la que dependen Adherencia, Reportes,
+    // Resumen semanal, Meta del ciclo automática y Racha de cumplimiento
+    // para decidir "libre/trabajado" — por eso el override se agrega AQUÍ,
+    // una sola vez, y se propaga solo a todo lo demás sin tocar ninguna
+    // otra función (cada una ya pregunta a dayIsEffectivelyOff(), nunca
+    // calcula "libre" por su cuenta — salvo 2 excepciones que tenían un
+    // AND redundante con cfg.off directo, corregidas aparte: ver
+    // weekSummaryForOffset()/reportsDailySeries(), buscar "v354").
     function dayIsEffectivelyOff(dayKey) {
+      const forced = getDayNote(dayKey)?.forcedStatus;
+      if (forced === 'work') return false;
+      if (forced === 'off') return true;
       const cfg = dayConfigFor(dayKey);
       if (!cfg || !cfg.off) return false;
       return !dayShiftBounds(dayKey).start;
@@ -14751,6 +14777,11 @@ function minuteAdherenceForDay(dayKey, bounds) {
 function isRightNowOutOfAdherence() {
   if (!state.shiftStartedAt || state.shiftEndedAt) return false;
   const dayKey = todayCallDateKey();
+  // v354 — Pedido del usuario: un día forzado a Libre desde "Editar día"
+  // (Resumen semanal) ya no exige Adherencia — mismo criterio que
+  // dayAdherence()/slotMinuteAdherence() (buscar "v354" en esa última),
+  // aplicado también a este indicador en vivo.
+  if (dayIsEffectivelyOff(dayKey)) return false;
   const plannedRaw = originalPlannedSlotsForDay(dayKey);
   if (!plannedRaw.length) return false;
 
@@ -14782,6 +14813,13 @@ function isRightNowOutOfAdherence() {
 function slotMinuteAdherence(dayKey, originalSlot, bounds) {
   const normalized = callDateKeyFromValue(dayKey);
   const isToday = normalized === todayCallDateKey();
+  // v354 — Pedido del usuario: un día forzado a Libre desde "Editar día"
+  // (Resumen semanal) ya no exige Adherencia — el bloque sigue
+  // mostrándose con normalidad en "Bloques del día" (Usado/Productividad/
+  // Meta productiva, sin cambios), solo se oculta este diagnóstico de
+  // Nivel 3 (mismo criterio que dayAdherence()/isRightNowOutOfAdherence(),
+  // buscar "v354" en esa última).
+  if (dayIsEffectivelyOff(normalized)) return null;
   // Bug reportado por el usuario: "la adherencia está mal si no he empezado
   // shift". Causa: con bounds.start null (sin turno iniciado), realStartMin
   // quedaba en null, y actualStateAt() interpretaba "null" como "sin
@@ -15127,31 +15165,41 @@ function dayNoteCategoryMeta(value) {
   return DAY_NOTE_CATEGORIES.find(c => c.value === value) || null;
 }
 
-// Devuelve { category, comment } para ese día, o null si no hay nota (ni
-// categoría ni comentario) — mismo criterio de "vacío = no existe" que ya
-// usa setGapAnnotation() para gapAnnotations.
+// Devuelve { category, comment, forcedStatus } para ese día, o null si no
+// hay nada guardado (ni categoría, ni comentario, ni Estado forzado) —
+// mismo criterio de "vacío = no existe" que ya usa setGapAnnotation() para
+// gapAnnotations.
+// v354 — Pedido del usuario: se agrega `forcedStatus` ('work'|'off'|'' =
+// Automático) — el nuevo campo "Estado" de "Editar día", que puede forzar
+// dayIsEffectivelyOff() sin importar el horario semanal ni la actividad
+// real (ver esa función, buscar "v354"). Categoría/Nota siguen siendo
+// puramente informativas, sin efecto en ningún cálculo — solo Estado
+// cambia algo.
 function getDayNote(dayKey) {
   const normalized = callDateKeyFromValue(dayKey);
   const raw = state.dayNotes && state.dayNotes[normalized];
   if (!raw || typeof raw !== 'object') return null;
   const category = String(raw.category || '');
   const comment = String(raw.comment || '').trim();
-  if (!category && !comment) return null;
-  return { category, comment };
+  const forcedStatus = ['work', 'off'].includes(raw.forcedStatus) ? raw.forcedStatus : '';
+  if (!category && !comment && !forcedStatus) return null;
+  return { category, comment, forcedStatus };
 }
 
-function setDayNote(dayKey, { category, comment }) {
+function setDayNote(dayKey, { category, comment, forcedStatus }) {
   const normalized = callDateKeyFromValue(dayKey);
   if (!normalized) return;
   if (!state.dayNotes || typeof state.dayNotes !== 'object') state.dayNotes = {};
   const cat = String(category || '');
   const note = String(comment || '').trim();
-  // Sin categoría Y sin comentario = no hay nada que guardar; se borra la
-  // entrada en vez de dejar un objeto vacío colgando en localStorage.
-  if (!cat && !note) {
+  const forced = ['work', 'off'].includes(forcedStatus) ? forcedStatus : '';
+  // Sin categoría, sin comentario Y sin Estado forzado = no hay nada que
+  // guardar; se borra la entrada en vez de dejar un objeto vacío colgando
+  // en localStorage.
+  if (!cat && !note && !forced) {
     delete state.dayNotes[normalized];
   } else {
-    state.dayNotes[normalized] = { category: cat, comment: note };
+    state.dayNotes[normalized] = { category: cat, comment: note, forcedStatus: forced };
   }
   saveStateOnly();
   render();
@@ -15169,10 +15217,18 @@ function weekSummaryForOffset(offset = weekViewOffset) {
     // dayIsEffectivelyOff) seguía apareciendo como "Libre" y sin Adherencia
     // en Resumen semanal — el mismo caso que "Bloques del día" ya blinda
     // (nota "Trabajaste en tu día libre..."), pero acá nunca se aplicó ese
-    // mismo criterio. isOff ahora exige AMBAS condiciones: que el horario lo
-    // marque libre Y que dayIsEffectivelyOff() confirme que de verdad no
-    // hubo actividad ese día.
-    const isOff = !!(cfg && cfg.off) && dayIsEffectivelyOff(dayKey);
+    // mismo criterio (resuelto originalmente exigiendo cfg.off AND
+    // dayIsEffectivelyOff — ver "v354" abajo para por qué ese AND se quitó
+    // después).
+    // v354 — Antes exigía AMBAS condiciones (cfg.off Y
+    // dayIsEffectivelyOff) — era redundante (dayIsEffectivelyOff ya
+    // exigía cfg.off internamente), pero dejó de serlo al agregar el
+    // override 'Estado' forzado (ver dayIsEffectivelyOff, buscar
+    // "v354"): un día forzado a Libre en un horario normalmente
+    // laboral (cfg.off=false) quedaba mal etiquetado "Trabajado" por
+    // el AND. Se usa dayIsEffectivelyOff() sola, la única fuente de
+    // verdad de "libre/trabajado".
+    const isOff = dayIsEffectivelyOff(dayKey);
     const isFuture = d > today;
     const dayCalls = callsForDay(dayKey);
     const bounds = dayShiftBounds(dayKey);
@@ -15235,7 +15291,15 @@ function reportsDailySeries(days = 14) {
     const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
     const dayKey = todayCallDateKey(d);
     const cfg = dayConfigFor(dayKey);
-    const isOff = !!(cfg && cfg.off) && dayIsEffectivelyOff(dayKey);
+    // v354 — Antes exigía AMBAS condiciones (cfg.off Y
+    // dayIsEffectivelyOff) — era redundante (dayIsEffectivelyOff ya
+    // exigía cfg.off internamente), pero dejó de serlo al agregar el
+    // override 'Estado' forzado (ver dayIsEffectivelyOff, buscar
+    // "v354"): un día forzado a Libre en un horario normalmente
+    // laboral (cfg.off=false) quedaba mal etiquetado "Trabajado" por
+    // el AND. Se usa dayIsEffectivelyOff() sola, la única fuente de
+    // verdad de "libre/trabajado".
+    const isOff = dayIsEffectivelyOff(dayKey);
     const dayCalls = callsForDay(dayKey);
     const bounds = dayShiftBounds(dayKey);
     const hasShift = !!bounds.start;
@@ -15331,8 +15395,13 @@ function autoCycleGoal(offset = 0) {
   let workDays = 0;
   for (let i = 0; i < CYCLE_LENGTH_DAYS; i++) {
     const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
-    const cfg = dayConfigFor(todayCallDateKey(d));
-    if (!(cfg && cfg.off)) workDays++;
+    // v354 — Antes miraba cfg.off crudo (dayConfigFor().off) — ahora usa
+    // dayIsEffectivelyOff(), que además respeta el "Estado" forzado desde
+    // "Editar día" (Resumen semanal): forzar un día futuro a Libre resta un
+    // día laboral de esta meta automática; forzarlo a Trabajado suma uno.
+    // Para un día sin override, el resultado es idéntico al de siempre
+    // (dayIsEffectivelyOff ya exige cfg.off como precondición).
+    if (!dayIsEffectivelyOff(todayCallDateKey(d))) workDays++;
   }
   return Number(settings.earningsGoal || 0) * workDays;
 }
@@ -19124,9 +19193,13 @@ function openDayNoteModal(dayKey) {
   editingDayNoteKey = normalized;
   const note = getDayNote(normalized);
   const titleEl = document.getElementById('dayNoteModalTitle');
+  const statusInput = document.getElementById('dayNoteStatusInput');
   const categoryInput = document.getElementById('dayNoteCategoryInput');
   const commentInput = document.getElementById('dayNoteCommentInput');
   if (titleEl) titleEl.textContent = `Editar día · ${formatCallDayLabel(normalized)}`;
+  // v354 — Estado forzado (Automático/Trabajado/Libre), sumado a Categoría/
+  // Nota que ya se sincronizaban aquí.
+  if (statusInput) statusInput.value = note ? (note.forcedStatus || '') : '';
   if (categoryInput) categoryInput.value = note ? note.category : '';
   if (commentInput) commentInput.value = note ? note.comment : '';
   openModal('dayNoteModal');
@@ -19134,17 +19207,23 @@ function openDayNoteModal(dayKey) {
 
 function saveDayNoteFromModal() {
   if (!editingDayNoteKey) return;
+  const statusInput = document.getElementById('dayNoteStatusInput');
   const categoryInput = document.getElementById('dayNoteCategoryInput');
   const commentInput = document.getElementById('dayNoteCommentInput');
-  setDayNote(editingDayNoteKey, { category: categoryInput?.value || '', comment: commentInput?.value || '' });
+  setDayNote(editingDayNoteKey, { category: categoryInput?.value || '', comment: commentInput?.value || '', forcedStatus: statusInput?.value || '' });
   editingDayNoteKey = null;
   closeModal('dayNoteModal');
-  toast('Nota guardada');
+  toast('Día guardado');
 }
 
 function clearDayNoteFromModal() {
   if (!editingDayNoteKey) return;
-  setDayNote(editingDayNoteKey, { category: '', comment: '' });
+  // v354 — "Quitar nota" solo limpia Categoría/Nota — el Estado forzado
+  // (si el usuario ya eligió Trabajado/Libre en el formulario) se conserva
+  // tal cual esté en ese momento; para volver a Automático, el usuario usa
+  // esa misma opción en el selector de Estado, no este botón.
+  const statusInput = document.getElementById('dayNoteStatusInput');
+  setDayNote(editingDayNoteKey, { category: '', comment: '', forcedStatus: statusInput?.value || '' });
   editingDayNoteKey = null;
   closeModal('dayNoteModal');
   toast('Nota eliminada');
@@ -19811,10 +19890,40 @@ function renderSchedule() {
       // puntual; un día libre sin actividad sigue mostrando únicamente
       // "Día libre según tu horario semanal." (sin este aviso extra) y un
       // día laboral normal tampoco lo muestra.
+      // v354 — Pedido del usuario: "Editar día" (Resumen semanal) agrega un
+      // campo "Estado" que puede forzar Trabajado/Libre sin importar el
+      // horario semanal (ver dayIsEffectivelyOff(), buscar "v354"). Este
+      // mismo aviso ahora cubre AMBAS direcciones, con texto distinto según
+      // el caso:
+      // 1. Horario dice libre (dayCfg.off) pero no es efectivamente libre
+      //    (dayIsEffectivelyOff false) — por actividad real detectada sola,
+      //    o porque el usuario forzó Estado=Trabajado a mano (texto
+      //    distinto para cada motivo, así no se confunde una detección
+      //    automática con una anulación manual).
+      // 2. Horario dice laboral (!dayCfg.off) pero SÍ es efectivamente
+      //    libre (dayIsEffectivelyOff true) — solo puede pasar si el
+      //    usuario forzó Estado=Libre a mano (la detección automática
+      //    nunca vuelve libre un día que el horario marca laboral). El
+      //    texto aclara que Adherencia no se exige ese día, aunque
+      //    "Bloques del día" se siga viendo con normalidad (respuesta ya
+      //    confirmada: getEffectiveScheduleForDay() no oculta los bloques
+      //    en este caso, ya que cfg.off sigue en false).
       const offWorkedNote = document.getElementById('scheduleOffWorkedNote');
       if (offWorkedNote) {
-        const workedOnDayOff = !!(dayCfg && dayCfg.off) && !dayIsEffectivelyOff(dayKey);
-        offWorkedNote.style.display = workedOnDayOff ? 'block' : 'none';
+        const cfgIsOff = !!(dayCfg && dayCfg.off);
+        const isOff = dayIsEffectivelyOff(dayKey);
+        const forced = getDayNote(dayKey)?.forcedStatus;
+        if (cfgIsOff && !isOff) {
+          offWorkedNote.textContent = forced === 'work'
+            ? 'Marcaste este día como Trabajado a mano (Resumen semanal → Editar día) — no aparece libre, aunque tu horario diga que sí lo es.'
+            : 'Trabajaste en tu día libre — no aparece marcado como libre, se ve igual que un día laboral normal.';
+          offWorkedNote.style.display = 'block';
+        } else if (!cfgIsOff && isOff) {
+          offWorkedNote.textContent = 'Marcaste este día como Libre a mano (Resumen semanal → Editar día) — no se exige Adherencia, aunque tenías turno planeado.';
+          offWorkedNote.style.display = 'block';
+        } else {
+          offWorkedNote.style.display = 'none';
+        }
       }
 
       if (!plannedSlots.length) {
