@@ -9775,6 +9775,12 @@
 <span class="tag" id="cycleWeek2ProductiveTag">Semana 2: 00:00:00</span>
 <span class="tag good" id="cycleTotalProductiveTag">Total: 00:00:00</span>
 </div>
+<!-- v359 — Pedido del usuario: desglose por nivel (Bronce/Silver/Gold) del
+     bono de Higher Rate del ciclo — mismo chip/patrón que ya usa
+     "Ganancias de hoy" desde v347 (ver #earningsBonusRow/
+     higherRateBonusChipsHtml()), aquí alimentado por
+     cycle.higherRateBreakdown (nuevo en cycleEarningsForBounds(), v359). -->
+<div id="cycleBonusRow"></div>
 </div>
 </div>
 </details>
@@ -12464,6 +12470,13 @@ $0.72"></textarea>
       // reportadas por Propio, ya que Propio no lo expone en los datos que
       // la app importa.
       const higherRateBonus = higherRateBonusForCalls(inCycleCalls);
+      // v359 — Pedido del usuario: mismo desglose por nivel (Bronce/Silver/
+      // Gold) que ya tiene "Ganancias de hoy" desde v347
+      // (higherRateBonusChipsHtml()/stats.higherRateBreakdown) — antes esta
+      // función solo exponía el TOTAL del bono (higherRateBonus), sin decir
+      // de qué niveles venía. Reutiliza higherRateBonusBreakdownForCalls(),
+      // ya existente, sin ningún cálculo nuevo.
+      const higherRateBreakdown = higherRateBonusBreakdownForCalls(inCycleCalls);
       const earnings = inCycleCalls.reduce((a, c) => a + parseMoney(c.pay), 0) + higherRateBonus;
 
       // Pedido del usuario: horas productivas de cada semana del ciclo (el
@@ -12484,7 +12497,7 @@ $0.72"></textarea>
       }
 
       return {
-        start, end, payDate, earnings, higherRateBonus, callCount: inCycleCalls.length,
+        start, end, payDate, earnings, higherRateBonus, higherRateBreakdown, callCount: inCycleCalls.length,
         week1ProductiveMin, week2ProductiveMin,
         totalProductiveMin: week1ProductiveMin + week2ProductiveMin,
       };
@@ -19359,6 +19372,11 @@ function renderHeader() {
   if (cycleWeek2El) cycleWeek2El.textContent = `Semana 2: ${formatDuration(cycle.week2ProductiveMin * 60000)}`;
   const cycleTotalEl = document.getElementById('cycleTotalProductiveTag');
   if (cycleTotalEl) cycleTotalEl.textContent = `Total: ${formatDuration(cycle.totalProductiveMin * 60000)}`;
+  // v359 — Mismo chip de bono por nivel que ya usa "Ganancias de hoy"
+  // (higherRateBonusChipsHtml()), ahora también en "Ganancias del ciclo" —
+  // ver cycleEarningsForBounds() para el nuevo cycle.higherRateBreakdown.
+  const cycleBonusRowEl = document.getElementById('cycleBonusRow');
+  if (cycleBonusRowEl) cycleBonusRowEl.innerHTML = higherRateBonusChipsHtml(cycle.higherRateBreakdown);
   // v347 — Pedido del usuario (rediseño 100% visual + mockup aprobado): se
   // agrega comparación contra la Meta del ciclo también aquí, en "Ganancias
   // del ciclo" de Inicio — antes esta comparación SOLO vivía en la tarjeta
