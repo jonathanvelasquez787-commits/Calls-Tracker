@@ -10773,6 +10773,44 @@
 <div class="note" style="margin:0;">"Exportar JSON" descarga un respaldo de tus llamadas, turnos y pausas. "Importar JSON" restaura un backup ya exportado (reemplaza llamadas/turnos/pausas actuales — tu horario y metas no se tocan).</div>
 </div>
 
+<div class="divider"></div>
+
+<!-- v356 — Pedido del usuario: pendiente funcional "Exportación para
+     contabilidad/impuestos" (ver PENDIENTES FUNCIONALES, ahora resuelto).
+     Distinto de "Exportar JSON" de arriba (backup completo pensado para
+     restaurar la app) — este exporta las GANANCIAS de un período elegido,
+     en CSV o PDF, con una hoja/sección resumen por día + el detalle de
+     cada llamada debajo. Confirmado con el usuario (3 preguntas puntuales:
+     formato, período, nivel de detalle) antes de escribir código. -->
+<div class="goals-section">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg good" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>Exportación para contabilidad</div>
+<div class="table-filter-row" id="accountingExportPeriodRow" role="group" aria-label="Período a exportar">
+<button class="table-filter-btn active" data-accounting-period="cycle" type="button">Ciclo actual</button>
+<button class="table-filter-btn" data-accounting-period="month" type="button">Mes actual</button>
+<button class="table-filter-btn" data-accounting-period="custom" type="button">Rango</button>
+</div>
+<select id="accountingExportPeriodInput" style="display:none;">
+<option value="cycle">Ciclo actual</option>
+<option value="month">Mes actual</option>
+<option value="custom">Rango personalizado</option>
+</select>
+<div class="goals-field-row" id="accountingExportCustomRow" style="display:none;">
+<div class="goals-field">
+<label for="accountingExportFromInput">Desde</label>
+<input id="accountingExportFromInput" type="date"/>
+</div>
+<div class="goals-field">
+<label for="accountingExportToInput">Hasta</label>
+<input id="accountingExportToInput" type="date"/>
+</div>
+</div>
+<div class="goals-backup-row">
+<button id="accountingExportCsvBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M4 19h16"/></svg> Exportar CSV</button>
+<button id="accountingExportPdfBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/></svg> Exportar PDF</button>
+</div>
+<div class="note" style="margin:0;">Un resumen por día (llamadas, minutos productivos, adherencia, ganancias) más el detalle de cada llamada del período — pensado para declarar ingresos, no reemplaza el respaldo JSON de arriba. El PDF se abre listo para "Imprimir → Guardar como PDF" desde tu navegador.</div>
+</div>
+
 <div class="modal-actions mc-action-row">
 <button class="mc-btn-primary cyan" data-close-modal="goalsModal" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="5 12 10 17 19 6"/></svg> Listo</button>
 </div>
@@ -17220,6 +17258,178 @@ function renderWeekSummary() {
       URL.revokeObjectURL(url);
     }
 
+    // ---- v356 — Exportación para contabilidad/impuestos (pedido del
+    // usuario, ver PENDIENTES FUNCIONALES) ----
+    // Distinta de exportJSON() (backup completo de state+calls, pensado
+    // para restaurar la app) — esto exporta las GANANCIAS de un período
+    // elegido (ciclo actual / mes actual / rango personalizado), en CSV o
+    // PDF, con un resumen por día + el detalle de cada llamada debajo.
+    // Reutiliza los mismos cálculos ya existentes por día (callsForDay()/
+    // importedCallStats()/productiveMinutesForDay()/dayAdherence()/
+    // cycleBoundsForOffset()) — ningún cálculo de negocio nuevo.
+    let accountingExportPeriod = 'cycle';
+
+    function accountingExportRange() {
+      if (accountingExportPeriod === 'month') {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        const label = new Intl.DateTimeFormat('es-MX', { month: 'long', year: 'numeric' }).format(now);
+        return { start, end, label: label.charAt(0).toUpperCase() + label.slice(1) };
+      }
+      if (accountingExportPeriod === 'custom') {
+        const fromInput = document.getElementById('accountingExportFromInput');
+        const toInput = document.getElementById('accountingExportToInput');
+        const fromKey = dayKeyFromIsoDate(fromInput?.value);
+        const toKey = dayKeyFromIsoDate(toInput?.value);
+        const start = callDateToDate(fromKey) || todayRange();
+        const end = callDateToDate(toKey) || todayRange();
+        return {
+          start: start <= end ? start : end,
+          end: start <= end ? end : start,
+          label: `${formatCallDayLabel(todayCallDateKey(start <= end ? start : end))} – ${formatCallDayLabel(todayCallDateKey(start <= end ? end : start))}`,
+        };
+      }
+      // 'cycle' (default)
+      const { start, end } = cycleBoundsForOffset(0);
+      return { start, end, label: `Ciclo ${formatCallDayLabel(todayCallDateKey(start))} – ${formatCallDayLabel(todayCallDateKey(end))}` };
+    }
+
+    // Un objeto por día del rango (inclusive), con las mismas cifras que ya
+    // se ven en Reportes/Resumen semanal para ese día — nada calculado de
+    // nuevo aquí, solo recopilado día por día para el período pedido.
+    function accountingExportDays(range) {
+      const days = [];
+      const cursor = new Date(range.start.getFullYear(), range.start.getMonth(), range.start.getDate());
+      const endDate = new Date(range.end.getFullYear(), range.end.getMonth(), range.end.getDate());
+      let guard = 0;
+      while (cursor <= endDate && guard < 400) {
+        const dayKey = todayCallDateKey(cursor);
+        const dayCalls = [...callsForDay(dayKey)].sort((a, b) => new Date(a.startISO) - new Date(b.startISO));
+        const stats = importedCallStats(dayCalls, dayKey);
+        const adherence = dayIsEffectivelyOff(dayKey) ? null : dayAdherence(dayKey);
+        days.push({ dayKey, dayCalls, stats, adherence, productive: productiveMinutesForDay(dayKey) });
+        cursor.setDate(cursor.getDate() + 1);
+        guard++;
+      }
+      return days;
+    }
+
+    function csvField(value) {
+      const s = String(value ?? '');
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    }
+
+    function exportAccountingCsv() {
+      const range = accountingExportRange();
+      const days = accountingExportDays(range);
+      if (!days.length) {
+        toast('Elige un rango de fechas válido primero.');
+        return;
+      }
+      const rows = [];
+      rows.push(['Resumen por día', range.label].map(csvField).join(','));
+      rows.push(['Fecha', 'Llamadas', 'Productivo (min)', 'Adherencia (%)', 'Ganancias ($)'].map(csvField).join(','));
+      let totalCalls = 0, totalProductive = 0, totalEarnings = 0;
+      days.forEach(d => {
+        totalCalls += d.dayCalls.length;
+        totalProductive += d.productive;
+        totalEarnings += d.stats.earnings;
+        rows.push([
+          formatCallDayLabel(d.dayKey),
+          d.dayCalls.length,
+          formatMinutes(d.productive),
+          d.adherence ? d.adherence.scorePct : '',
+          d.stats.earnings.toFixed(2),
+        ].map(csvField).join(','));
+      });
+      rows.push(['Total', totalCalls, formatMinutes(totalProductive), '', totalEarnings.toFixed(2)].map(csvField).join(','));
+      rows.push('');
+      rows.push(['Detalle de llamadas'].map(csvField).join(','));
+      rows.push(['Fecha', 'Customer ID', 'Inicio', 'Duración (min)', 'Billable', 'Dropped', 'Pago ($)'].map(csvField).join(','));
+      days.forEach(d => {
+        d.dayCalls.forEach(c => {
+          rows.push([d.dayKey, c.customerId, c.callStart, c.durationMin, c.billable, c.dropped, parseMoney(c.pay).toFixed(2)].map(csvField).join(','));
+        });
+      });
+      // BOM al inicio para que Excel abra los acentos (á/é/ó...) sin romperlos.
+      const csvContent = '\uFEFF' + rows.join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ganancias_${range.label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast('CSV exportado');
+    }
+
+    // Sin librerías externas (mismo criterio "cero dependencias" que ya usa
+    // el resto de la app — SVG inline en vez de fuentes de íconos, Web
+    // Audio sintetizado en vez de archivos de sonido): el "PDF" se genera
+    // como una página HTML imprimible en una pestaña nueva, lista para que
+    // el usuario use "Imprimir → Guardar como PDF" del propio navegador.
+    function exportAccountingPdf() {
+      const range = accountingExportRange();
+      const days = accountingExportDays(range);
+      if (!days.length) {
+        toast('Elige un rango de fechas válido primero.');
+        return;
+      }
+      let totalCalls = 0, totalProductive = 0, totalEarnings = 0;
+      const summaryRowsHtml = days.map(d => {
+        totalCalls += d.dayCalls.length;
+        totalProductive += d.productive;
+        totalEarnings += d.stats.earnings;
+        return `<tr><td>${escapeHtml(formatCallDayLabel(d.dayKey))}</td><td>${d.dayCalls.length}</td><td>${escapeHtml(formatMinutes(d.productive))}</td><td>${d.adherence ? d.adherence.scorePct + '%' : '—'}</td><td>${escapeHtml(money(d.stats.earnings))}</td></tr>`;
+      }).join('');
+      const detailRowsHtml = days.map(d => d.dayCalls.map(c => `<tr><td>${escapeHtml(d.dayKey)}</td><td>${escapeHtml(c.customerId)}</td><td>${escapeHtml(c.callStart)}</td><td>${c.durationMin}</td><td>${escapeHtml(c.billable)}</td><td>${escapeHtml(c.dropped)}</td><td>${escapeHtml(money(parseMoney(c.pay)))}</td></tr>`).join('')).join('') || '<tr><td colspan="7" style="text-align:center;color:#777;">Sin llamadas en este período.</td></tr>';
+      const html = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"/><title>Reporte de ganancias — ${escapeHtml(range.label)}</title>
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; padding: 28px; color: #171717; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .sub { color: #555; font-size: 12px; margin: 0 0 18px; }
+  h2 { font-size: 13.5px; margin: 22px 0 6px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #ccc; padding: 6px 8px; font-size: 11px; text-align: left; }
+  th { background: #f0f0f0; }
+  tfoot td { font-weight: 800; background: #fafafa; }
+  .print-btn { margin: 8px 0 4px; padding: 9px 16px; border-radius: 8px; border: 1px solid #999; background: #fff; font-weight: 700; cursor: pointer; }
+  @media print { .print-btn { display: none; } }
+</style></head><body>
+<h1>Reporte de ganancias</h1>
+<p class="sub">${escapeHtml(range.label)} · generado el ${escapeHtml(fmtDate(new Date()))}</p>
+<button class="print-btn" onclick="window.print()">Imprimir / Guardar como PDF</button>
+<h2>Resumen por día</h2>
+<table><thead><tr><th>Fecha</th><th>Llamadas</th><th>Productivo</th><th>Adherencia</th><th>Ganancias</th></tr></thead>
+<tbody>${summaryRowsHtml}</tbody>
+<tfoot><tr><td>Total</td><td>${totalCalls}</td><td>${escapeHtml(formatMinutes(totalProductive))}</td><td></td><td>${escapeHtml(money(totalEarnings))}</td></tr></tfoot>
+</table>
+<h2>Detalle de llamadas</h2>
+<table><thead><tr><th>Fecha</th><th>Customer ID</th><th>Inicio</th><th>Min</th><th>Billable</th><th>Dropped</th><th>Pago</th></tr></thead>
+<tbody>${detailRowsHtml}</tbody></table>
+</body></html>`;
+      const win = window.open('', '_blank');
+      if (!win) {
+        toast('El navegador bloqueó la ventana nueva — habilita ventanas emergentes para exportar a PDF.');
+        return;
+      }
+      win.document.write(html);
+      win.document.close();
+      toast('Reporte listo — usa "Imprimir / Guardar como PDF" en la pestaña nueva');
+    }
+
+    function syncAccountingExportPeriodUI() {
+      const row = document.getElementById('accountingExportPeriodRow');
+      const customRow = document.getElementById('accountingExportCustomRow');
+      const select = document.getElementById('accountingExportPeriodInput');
+      if (row) row.querySelectorAll('[data-accounting-period]').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-accounting-period') === accountingExportPeriod);
+      });
+      if (customRow) customRow.style.display = accountingExportPeriod === 'custom' ? '' : 'none';
+      if (select) select.value = accountingExportPeriod;
+    }
+
     // Contraparte de exportJSON(): valida que el JSON tenga la forma exacta
     // que exportJSON() produce ({ state: {...}, calls: [...], exportedAt }).
     // No exige exportedAt (no lo usa nadie para decidir si es válido, solo
@@ -21394,6 +21604,15 @@ function render() {
     document.getElementById('exportBtn').addEventListener('click', exportJSON);
     document.getElementById('importJsonBtn').addEventListener('click', () => document.getElementById('importJsonFile').click());
     document.getElementById('importJsonFile').addEventListener('change', handleImportJsonFile);
+    document.getElementById('accountingExportPeriodRow').addEventListener('click', (e) => {
+      const btn = e.target instanceof Element ? e.target.closest('[data-accounting-period]') : null;
+      if (!btn) return;
+      accountingExportPeriod = btn.getAttribute('data-accounting-period') || 'cycle';
+      syncAccountingExportPeriodUI();
+    });
+    document.getElementById('accountingExportCsvBtn').addEventListener('click', exportAccountingCsv);
+    document.getElementById('accountingExportPdfBtn').addEventListener('click', exportAccountingPdf);
+    syncAccountingExportPeriodUI();
     document.getElementById('callInput').addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') importCalls();
     });
