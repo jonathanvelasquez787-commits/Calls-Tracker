@@ -5358,9 +5358,31 @@
        Tabla de llamadas — pasa a rojo en modo claro) sin pelear contra la
        especificidad de un `style=""` inline. Mismo valor exacto que ya
        tenía en modo oscuro — cero cambio visual ahí. */
+    /* v353 — Pedido del usuario: rediseño de botones destructivos/de
+       limpieza (mockup de 2 vistas aprobado, ver resumen_v353.md). Pasa de
+       pastilla con fondo rosado plano a borde PUNTEADO + fondo tenue rojo
+       (--bad, no --pink) — mismo lenguaje que ya usa "+ Agregar bloque"
+       (.sched-add-block-btn) para distinguirse como una acción "aparte",
+       aplicado aquí a acciones destructivas de limpieza masiva (Vaciar
+       llamadas del día / Vaciar historial de Higher Rate, ambas comparten
+       esta clase). Se agrega un `:hover` propio (misma especificidad que
+       `.gap-edit-btn:not([data-call-delete]):hover` de arriba, pero
+       DESPUÉS en la hoja — gana por orden) para que el texto ya no cambie
+       a --hover-flip al pasar el mouse (quedaba inconsistente con el
+       fondo/borde rojo fijo) — se queda en --bad todo el tiempo, solo el
+       fondo/borde se intensifican. CERO cambios funcionales: mismos ids
+       de siempre (clearDayCallsBtn/purgeHigherRateWindowsBtn). */
     .gap-edit-btn.call-delete-btn {
-      background: rgba(255,111,143,.12);
-      border-color: rgba(255,111,143,.3);
+      border: 1.5px dashed rgba(var(--bad-rgb), .5);
+      background: rgba(var(--bad-rgb), .07);
+      border-radius: 12px;
+      color: var(--bad);
+    }
+    .gap-edit-btn.call-delete-btn:hover {
+      background: rgba(var(--bad-rgb), .16);
+      border-color: rgba(var(--bad-rgb), .85);
+      color: var(--bad);
+      filter: none;
     }
 
     /* v246 — Pedido del usuario (con captura): "Vaciar llamadas del día" se
@@ -5798,13 +5820,25 @@
       background: rgba(255,255,255,.08);
       color: var(--text);
     }
+    /* v353 — Pedido del usuario: rediseño de botones destructivos/de
+       limpieza (mockup de 2 vistas aprobado antes de tocar código, ver
+       resumen_v353.md). "Eliminar llamada" pasa de cuadrado tenue rosado a
+       círculo con borde rojo (--bad, no --pink — mismo tono que el resto
+       de este rediseño) en reposo; al hover el fondo se llena sólido y el
+       ícono pasa a blanco — mismo lenguaje que se aplica también a
+       .hr-window-remove-btn/.sched-tl-remove (ver esas reglas, buscar
+       "v353"). CERO cambios funcionales: mismo id/data-call-delete de
+       siempre, mismo listener delegado. */
     .tbl-icon-btn.bad {
-      border-color: rgba(var(--pink-rgb), .3);
-      background: rgba(var(--pink-rgb), .1);
-      color: var(--pink);
+      border-radius: 50%;
+      border-color: rgba(var(--bad-rgb), .4);
+      background: transparent;
+      color: var(--bad);
     }
     .tbl-icon-btn.bad:hover {
-      background: rgba(var(--pink-rgb), .2);
+      background: rgb(var(--bad-rgb));
+      border-color: rgb(var(--bad-rgb));
+      color: #fff;
     }
     @media (max-width: 760px) {
       .tbl-row { padding: 9px 10px; gap: 9px; }
@@ -6785,6 +6819,12 @@
        `.sched-tl-remove` suelto) — sin esto, height:40px/align-items:
        flex-end de esa regla vieja seguiría ganando pese a venir antes en
        la hoja, por empate de especificidad. */
+    /* v353 — Ver comentario junto a .tbl-icon-btn.bad (buscar "v353") —
+       mismo lenguaje unificado de botones destructivos: círculo, borde
+       --bad en reposo, se llena sólido al hover propio. El fade-in al
+       pasar el mouse sobre TODA la tarjeta (opacity .5→1, ver la regla
+       `.sched-tl-item:hover .sched-tl-remove` justo debajo, sin tocar) se
+       conserva igual — solo cambia la forma/color del botón en sí. */
     .sched-tl-item .block-remove-btn.sched-tl-remove {
       flex: 0 0 auto;
       width: 26px;
@@ -6794,10 +6834,17 @@
       align-items: center;
       justify-content: center;
       align-self: center;
-      background: rgba(255,111,143,.10);
-      border-color: rgba(255,111,143,.26);
+      border-radius: 50%;
+      border: 1.5px solid rgba(var(--bad-rgb), .4);
+      background: transparent;
+      color: var(--bad);
       opacity: .5;
-      transition: opacity .14s ease;
+      transition: opacity .14s ease, background .14s ease, color .14s ease, border-color .14s ease;
+    }
+    .sched-tl-item .block-remove-btn.sched-tl-remove:hover {
+      background: rgb(var(--bad-rgb));
+      border-color: rgb(var(--bad-rgb));
+      color: #fff;
     }
     .sched-tl-item:hover .sched-tl-remove,
     .sched-tl-remove:focus-visible {
@@ -8642,6 +8689,75 @@
     .mc-btn-solid-full.bad { background: var(--bad); }
     .mc-btn-solid-full .ic-svg { width: 16px; height: 16px; color: #07101f; stroke: #07101f; }
 
+    /* v353 — Pedido del usuario: rediseño de botones destructivos/de
+       limpieza — dentro de #resetModal, "Reiniciar un día"/"Zona de
+       peligro" pasan de `.goals-section` plano (mismo look que cualquier
+       otra sección de Ajustes) a tarjetas propias con borde/fondo tenue
+       del tono de su severidad — así se distinguen de un vistazo del
+       resto del modal, sin esperar a leer el título. Mockup de 2 vistas
+       aprobado antes de tocar código (ver resumen_v353.md). CERO cambios
+       funcionales: mismos ids de siempre (resetDayLabel/resetDayBtn/
+       eraseAllDataBtn), mismo `.mc-btn-solid-full` de siempre para el
+       botón en sí (sin tocar esa clase) — solo cambia el HTML/CSS que lo
+       envuelve. `.tone-warn` (Reiniciar día, ámbar — acotado a un solo
+       día) y `.tone-bad` (Borrar todo, rojo — irreversible, con badge)
+       reutilizan --warn/--bad de siempre, ningún color nuevo. */
+    .danger-card {
+      border-radius: 16px;
+      padding: 14px 16px;
+      border: 1px solid rgba(var(--warn-rgb), .32);
+      background: rgba(var(--warn-rgb), .05);
+    }
+    .danger-card.tone-bad {
+      border-color: rgba(var(--bad-rgb), .4);
+      background: rgba(var(--bad-rgb), .07);
+    }
+    .danger-card-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .danger-card-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      background: rgba(var(--warn-rgb), .16);
+      color: var(--warn);
+    }
+    .danger-card.tone-bad .danger-card-icon {
+      background: rgba(var(--bad-rgb), .18);
+      color: var(--bad);
+    }
+    .danger-card-icon .ic-svg { width: 15px; height: 15px; }
+    .danger-card-title {
+      font-weight: 900;
+      font-size: 13.5px;
+    }
+    .danger-card.tone-bad .danger-card-title { color: var(--bad); }
+    .danger-card-desc {
+      margin: 0 0 10px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .danger-card-badge {
+      display: inline-block;
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--bad);
+      background: rgba(var(--bad-rgb), .16);
+      border-radius: 999px;
+      padding: 3px 9px;
+      margin: 0 0 10px;
+    }
+
     /* ==========================================================
        v321 — Rediseño 100% visual de "Resumen del día"/"Estadísticas del
        día" (mockup aprobado por el usuario — resumen_dia_desktop.html,
@@ -9054,22 +9170,28 @@
       cursor: pointer;
       max-width: 118px;
     }
+    /* v353 — Ver comentario junto a .tbl-icon-btn.bad (buscar "v353") —
+       mismo lenguaje unificado de botones destructivos: círculo, borde
+       --bad en reposo, se llena sólido al hover. */
     .hr-window-remove-btn {
       width: 26px;
       height: 26px;
-      border-radius: 8px;
-      border: 1px solid rgba(var(--pink-rgb), .28);
-      background: rgba(var(--pink-rgb), .08);
-      color: var(--pink);
+      border-radius: 50%;
+      border: 1.5px solid rgba(var(--bad-rgb), .4);
+      background: transparent;
+      color: var(--bad);
       display: flex;
       align-items: center;
       justify-content: center;
       flex: 0 0 auto;
       cursor: pointer;
       padding: 0;
+      transition: background .14s ease, color .14s ease, border-color .14s ease;
     }
     .hr-window-remove-btn:hover {
-      background: rgba(var(--pink-rgb), .2);
+      background: rgb(var(--bad-rgb));
+      border-color: rgb(var(--bad-rgb));
+      color: #fff;
     }
     .hr-window-remove-btn .ic-svg { width: 12px; height: 12px; }
     .hr-window-time {
@@ -10635,17 +10757,16 @@
 </div>
 <div aria-hidden="true" class="modal-overlay" id="resetModal">
 <div aria-labelledby="resetModalTitle" aria-modal="true" class="modal-card" role="dialog">
-<!-- v307 — Pedido del usuario: rediseño 100% visual de este modal (mockup
-     visual de 2 vistas — escritorio y celular — aprobado antes de tocar
-     código), mismo criterio que Horario/Bloques del día/Ajustes/Pegar
-     Llamadas/Agregar llamada/Editar hueco/Editar día/Editar llamada/Meta
-     máxima de ACW (v271-306): cabecera con ícono cuadrito (reutiliza
-     .mc-header-icon/.mc-modal-head, v301), cada sección con ícono+título
-     propio (reutiliza .goals-section-title/.goals-section-icon, v300),
-     botón sólido de ancho completo por sección (.mc-btn-solid-full, CSS
-     nuevo — ver comentario junto a esa clase). CERO cambio funcional:
+<!-- v307 — Rediseño 100% visual original de este modal (cabecera con
+     ícono cuadrito). v353 — Pedido del usuario: rediseño de botones
+     destructivos/de limpieza (mockup de 2 vistas aprobado, ver
+     resumen_v353.md) — "Reiniciar un día"/"Zona de peligro" pasan de
+     `.goals-section` plano a `.danger-card` (borde/fondo tenue por
+     severidad + ícono en círculo, ver CSS "v353"). CERO cambio funcional:
      ningún id se toca (resetModalTitle/resetDayLabel/resetDayBtn/
-     eraseAllDataBtn). -->
+     eraseAllDataBtn) — resetDay()/eraseAllData() siguen funcionando
+     exactamente igual, solo cambia el HTML/CSS que envuelve esos mismos
+     elementos. -->
 <div class="modal-head mc-modal-head">
 <div class="mc-header-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg></div>
 <div>
@@ -10655,17 +10776,16 @@
 <button aria-label="Cerrar" class="modal-close" data-close-modal="resetModal" type="button">×</button>
 </div>
 
-<div class="goals-section">
-<div class="goals-section-title"><svg class="goals-section-icon ic-svg warn" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Reiniciar un día</div>
-<p class="alert-hint" style="margin:0;">Borra llamadas, pausas, huecos, la nota y el log SOLO del día activo (<strong id="resetDayLabel">—</strong>). Tu horario, metas y el resto de tus días no se tocan.</p>
+<div class="danger-card tone-warn">
+<div class="danger-card-head"><span class="danger-card-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg></span><span class="danger-card-title">Reiniciar día</span></div>
+<p class="danger-card-desc">Borra llamadas, pausas, huecos, la nota y el log SOLO del día activo (<strong id="resetDayLabel">—</strong>). Tu horario, metas y el resto de tus días no se tocan.</p>
 <button class="mc-btn-solid-full warn" id="resetDayBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/></svg> Reiniciar día activo</button>
 </div>
 
-<div class="divider"></div>
-
-<div class="goals-section">
-<div class="goals-section-title"><svg class="goals-section-icon ic-svg bad" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg>Zona de peligro</div>
-<p class="alert-hint" style="margin:0;">Borra TODO lo guardado por la app en este navegador: llamadas, turnos, pausas, horario semanal, metas, nombre/emoji — de TODOS los días, no solo el activo. No se puede deshacer.</p>
+<div class="danger-card tone-bad" style="margin-top:12px;">
+<div class="danger-card-head"><span class="danger-card-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg></span><span class="danger-card-title">Zona de peligro</span></div>
+<p class="danger-card-desc">Borra TODO lo guardado por la app en este navegador: llamadas, turnos, pausas, horario semanal, metas, nombre/emoji — de TODOS los días, no solo el activo.</p>
+<span class="danger-card-badge">Irreversible</span>
 <button class="mc-btn-solid-full bad" id="eraseAllDataBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><path d="M6 7V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v3"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> Borrar todos los datos</button>
 </div>
 </div>
