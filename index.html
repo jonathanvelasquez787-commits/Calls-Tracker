@@ -8009,23 +8009,6 @@
     /* v327 — Racha de cumplimiento (nuevo). Reutiliza el mismo lenguaje que
        `.rpt-mini-card`/`.sched-checkbox-row` en vez de inventar clases
        sueltas para cada pieza. */
-    /* v357 — Pedido del usuario: racha NUEVA y separada, solo de
-       Adherencia (no toca computeComplianceStreak(), que sigue exigiendo
-       Adherencia Y Productividad juntas) — confirmado que vive en la MISMA
-       sección de Reportes que la racha de cumplimiento, con su propio
-       toggle independiente. Envuelve ambas tarjetas (#rptStreakCard,
-       #rptAdherenceStreakCard) en un grid de 2 columnas en escritorio, 1 en
-       mobile — mismo breakpoint que ya usa el resto de grids de Reportes
-       (.rpt-goals-grid). Ninguna clase de .rpt-streak-card se toca. */
-    .rpt-streak-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    @media (max-width: 760px) {
-      .rpt-streak-grid { grid-template-columns: 1fr; }
-    }
-
     .rpt-streak-card {
       background: var(--panel-navy);
       border: 1px solid var(--line);
@@ -10282,13 +10265,7 @@
 <div class="rpt-section-head">
 <div class="rpt-section-title" id="rptSecStreak"></div>
 </div>
-<!-- v357 — Pedido del usuario: racha de Adherencia, nueva y separada de
-     la racha de cumplimiento (Adherencia + Productividad) de siempre —
-     vive en esta misma sección, en su propia tarjeta al lado. -->
-<div class="rpt-streak-grid">
 <div id="rptStreakCard"></div>
-<div id="rptAdherenceStreakCard"></div>
-</div>
 
 <div class="rpt-section-head">
 <div class="rpt-section-title" id="rptSecChart"></div>
@@ -12179,11 +12156,6 @@ $0.72"></textarea>
         // (#streakSkipOffToggle) y computeComplianceStreak(). true = saltar
         // (default, menos castigo por un día libre legítimo).
         streakSkipOffDays: true,
-        // v357 — Pedido del usuario: toggle INDEPENDIENTE del de arriba
-        // (streakSkipOffDays, usado por la racha de cumplimiento) — esta
-        // racha nueva es solo de Adherencia, con su propia elección de si
-        // un día libre/sin turno la corta o se salta.
-        streakAdherenceSkipOffDays: true,
         // v328 — Pedido del usuario: "Meta" de Ganancias del ciclo (antes
         // SIEMPRE calculada sola: tu meta diaria × días laborales del
         // ciclo) pasa a ser editable — tanto con el ✎ en la tarjeta de
@@ -12227,8 +12199,6 @@ $0.72"></textarea>
       if (typeof settings.collapseCompletedBlocks !== 'boolean') settings.collapseCompletedBlocks = false;
       // v327 — Ver comentario junto a streakSkipOffDays en defaultSettings().
       if (typeof settings.streakSkipOffDays !== 'boolean') settings.streakSkipOffDays = true;
-      // v357 — Ver comentario junto a streakAdherenceSkipOffDays en defaultSettings().
-      if (typeof settings.streakAdherenceSkipOffDays !== 'boolean') settings.streakAdherenceSkipOffDays = true;
       if (!Number.isFinite(Number(settings.productiveBreakEarnMin)) || Number(settings.productiveBreakEarnMin) <= 0) settings.productiveBreakEarnMin = fallback.productiveBreakEarnMin;
       if (!Number.isFinite(Number(settings.productiveBreakAwardMin)) || Number(settings.productiveBreakAwardMin) < 0) settings.productiveBreakAwardMin = fallback.productiveBreakAwardMin;
       if (!['classic', 'chime', 'custom'].includes(settings.productiveBreakSound)) settings.productiveBreakSound = fallback.productiveBreakSound;
@@ -15870,52 +15840,6 @@ function updateStreakSkipOffSetting(checked) {
   renderReportsDashboard();
 }
 
-// v357 — Pedido del usuario: racha NUEVA y SEPARADA, solo de Adherencia —
-// a diferencia de dayComplianceStatus()/computeComplianceStreak() (que
-// exigen Adherencia Y Productividad juntas, sin tocarse en absoluto), esta
-// solo mira dayAdherence().scorePct contra settings.adherenceGoalPct
-// (mismo umbral que ya usa la racha de cumplimiento, confirmado por el
-// usuario). Mismo criterio de 'off'/'pending' que dayComplianceStatus()
-// (día libre reconoce "trabajaste en tu día libre" vía dayIsEffectivelyOff;
-// hoy sin turno arrancado todavía no se puede juzgar).
-function dayAdherenceStreakStatus(dayKey) {
-  if (dayIsEffectivelyOff(dayKey)) return 'off';
-  const isToday = dayKey === todayCallDateKey();
-  const adherence = dayAdherence(dayKey);
-  if (!adherence) return isToday ? 'pending' : 'off';
-  const goalPct = Number(settings.adherenceGoalPct) || 95;
-  return adherence.scorePct >= goalPct ? 'compliant' : 'failed';
-}
-
-// Racha hacia atrás desde hoy — mismo algoritmo que computeComplianceStreak(),
-// pero con su propio toggle independiente (settings.streakAdherenceSkipOffDays)
-// para decidir si un día libre CORTA la racha o se SALTA.
-function computeAdherenceStreak() {
-  const skipOff = settings.streakAdherenceSkipOffDays !== false;
-  let streak = 0;
-  let cursor = todayRange();
-  for (let i = 0; i < 400; i++) {
-    const dayKey = todayCallDateKey(cursor);
-    const status = dayAdherenceStreakStatus(dayKey);
-    if (status === 'pending') { cursor = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() - 1); continue; }
-    if (status === 'off') {
-      if (skipOff) { cursor = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() - 1); continue; }
-      break;
-    }
-    if (status === 'compliant') { streak++; cursor = new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate() - 1); continue; }
-    break; // 'failed'
-  }
-  return { days: streak };
-}
-
-// Toggle propio de esta tarjeta — mismo patrón de auto-guardado que
-// updateStreakSkipOffSetting(), sin tocar esa función ni su setting.
-function updateAdherenceStreakSkipOffSetting(checked) {
-  settings.streakAdherenceSkipOffDays = !!checked;
-  saveSettingsOnly();
-  renderReportsDashboard();
-}
-
 // ---- Render del panel completo ----
 function trendChipHtml(label, pct, opts = {}) {
   const invertGood = !!opts.invertGood; // ACW: bajar es bueno, subir es malo
@@ -16024,33 +15948,6 @@ function renderReportsDashboard() {
     `;
     const toggle = document.getElementById('streakSkipOffToggle');
     if (toggle) toggle.addEventListener('change', (e) => updateStreakSkipOffSetting(e.target.checked));
-  }
-
-  // v357 — Racha de Adherencia (nueva, separada de la de arriba) — mismo
-  // markup/lenguaje visual que `.rpt-streak-card`, solo con acento cian en
-  // vez de ámbar para distinguirla de un vistazo de la de cumplimiento.
-  const adherenceStreakCard = document.getElementById('rptAdherenceStreakCard');
-  if (adherenceStreakCard) {
-    const adherenceStreak = computeAdherenceStreak();
-    const skipOffAdherence = settings.streakAdherenceSkipOffDays !== false;
-    const goalPctForStreak = Number(settings.adherenceGoalPct) || 95;
-    adherenceStreakCard.innerHTML = `
-      <div class="rpt-streak-card">
-        <div class="rpt-streak-main">
-          <span class="rpt-streak-icon" style="background: rgba(var(--cyan-rgb), .16); color: var(--cyan);">${iconHtml('target')}</span>
-          <div>
-            <div class="rpt-streak-num">${adherenceStreak.days} ${adherenceStreak.days === 1 ? 'día' : 'días'}</div>
-            <div class="rpt-streak-sub">Cumpliendo tu meta de Adherencia (≥ ${goalPctForStreak}%), seguidos</div>
-          </div>
-        </div>
-        <label class="sched-checkbox-row rpt-streak-toggle">
-          <input type="checkbox" id="adherenceStreakSkipOffToggle" ${skipOffAdherence ? 'checked' : ''}/>
-          Un día libre/sin turno no corta la racha (se salta)
-        </label>
-      </div>
-    `;
-    const adherenceToggle = document.getElementById('adherenceStreakSkipOffToggle');
-    if (adherenceToggle) adherenceToggle.addEventListener('change', (e) => updateAdherenceStreakSkipOffSetting(e.target.checked));
   }
 
   // Gráfica de 14 días (productivo real vs meta diaria constante)
