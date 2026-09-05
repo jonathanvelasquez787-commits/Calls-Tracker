@@ -16212,7 +16212,7 @@ function renderWeekSummary() {
     } else {
       badgeText = 'Trabajado'; badgeTone = 'good'; iconName = 'check'; iconTone = 'good';
     }
-    if (r.isToday) { badgeText = 'Hoy'; badgeTone = 'cyan'; iconTone = 'cyan'; }
+    if (r.isToday && !r.isOff && !noteMeta) { badgeText = 'Hoy'; badgeTone = 'cyan'; iconTone = 'cyan'; }
 
     const worked = !r.isFuture && (r.hasShift || r.calls);
     const rowClasses = ['wk-row', r.isToday ? 'is-today' : '', r.isFuture ? 'is-future' : ''].filter(Boolean).join(' ');
