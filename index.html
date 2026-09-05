@@ -7917,11 +7917,32 @@
       color: var(--muted);
       margin-top: 4px;
     }
+    /* v360 — Pedido del usuario: rediseño 100% visual de "Reportes"
+       (mockup de 2 vistas — escritorio y celular — aprobado antes de tocar
+       código, reportes_rediseno_mockup.html). Cabecera gana un ícono
+       cuadrito en degradado (mismo lenguaje que ".mc-header-icon.hr-
+       gradient" de Higher Rate, aquí con el degradado propio de Reportes
+       --rpt-blue→--rpt-purple, ya usado por ".rpt-hour-bar"/".head-icon"
+       del mockup) — antes esta cabecera era el único lugar de la app con
+       un título/subtítulo sin ícono, distinto del resto de modales/
+       secciones ya rediseñadas. */
+    .rpt-header-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 13px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      background: linear-gradient(135deg, var(--rpt-blue), var(--rpt-purple));
+      color: #07101f;
+    }
+    .rpt-header-icon .ic-svg { width: 21px; height: 21px; color: #07101f; stroke: #07101f; }
     .rpt-date-pill {
       background: var(--panel-navy);
       border: 1px solid var(--line);
       padding: 8px 13px;
-      border-radius: 10px;
+      border-radius: 999px;
       font-size: 12px;
       color: var(--muted);
       font-weight: 700;
@@ -7939,10 +7960,14 @@
       flex-wrap: wrap;
       margin: 20px 0 12px;
     }
+    /* v360 — Título de sección pasa de mayúsculas/letter-spacing chico
+       (look de label de formulario viejo) al mismo tratamiento que
+       ".goals-section-title" (v300, ya usado en Ajustes/Pegar Llamadas/
+       Editar hueco/etc.) — texto normal, más grande, en negrita. */
     .rpt-section-title {
-      font-size: 12.5px;
-      font-weight: 800;
-      letter-spacing: .03em;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: -.01em;
       color: var(--text);
       display: flex;
       align-items: center;
@@ -7955,7 +7980,7 @@
       color: var(--muted);
       font-size: 11px;
       padding: 6px 11px;
-      border-radius: 8px;
+      border-radius: 999px;
       font-weight: 700;
     }
 
@@ -7967,7 +7992,7 @@
     .rpt-goal-card {
       background: var(--panel-navy);
       border: 1px solid var(--line);
-      border-radius: 14px;
+      border-radius: 18px;
       padding: 14px;
     }
     .rpt-goal-top {
@@ -8012,7 +8037,7 @@
     .rpt-streak-card {
       background: var(--panel-navy);
       border: 1px solid var(--line);
-      border-radius: 14px;
+      border-radius: 18px;
       padding: 16px;
       display: flex;
       flex-wrap: wrap;
@@ -8125,7 +8150,7 @@
     .rpt-mini-card {
       background: var(--panel-navy);
       border: 1px solid var(--line);
-      border-radius: 14px;
+      border-radius: 18px;
       padding: 14px;
     }
     .rpt-mini-title {
@@ -8190,8 +8215,8 @@
     .rpt-trend-chip {
       background: var(--panel-navy);
       border: 1px solid var(--line);
-      border-radius: 20px;
-      padding: 7px 13px;
+      border-radius: 999px;
+      padding: 6px 12px;
       font-size: 11.5px;
       font-weight: 700;
       display: flex;
@@ -10256,9 +10281,12 @@
      renderReportsDashboard(), llamada desde render(). -->
 <div class="rpt-dashboard" id="rptDashboard">
 <div class="rpt-topbar">
+<div style="display:flex; align-items:center; gap:14px;">
+<div class="rpt-header-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="20" x2="4" y2="10"/><line x1="10" y1="20" x2="10" y2="4"/><line x1="16" y1="20" x2="16" y2="14"/><line x1="21" y1="20" x2="3" y2="20"/></svg></div>
 <div>
 <div class="rpt-title">Reportes</div>
 <div class="rpt-sub">Resumen completo de tu rendimiento</div>
+</div>
 </div>
 <div class="rpt-date-pill" id="rptDatePill"></div>
 </div>
@@ -15915,22 +15943,22 @@ function renderReportsDashboard() {
       return `<div class="rpt-goal-delta ${up ? 'up' : 'down'}">${up ? '↑' : '↓'} ${text} vs ayer</div>`;
     };
     goalsGrid.innerHTML = `
-      <div class="rpt-goal-card">
-        <div class="rpt-goal-top"><span>Productividad</span><span>${formatMinutes(kpi.productiveMin)}/${formatMinutes(goalMin)} min</span></div>
+      <div class="rpt-goal-card gh-goal-card" style="margin-top:0;">
+        <div class="gh-goal-top"><span>Productividad</span><b>${formatMinutes(kpi.productiveMin)}/${formatMinutes(goalMin)} min</b></div>
         <div class="rpt-goal-bar blue"><div style="width:${productivePct}%;"></div></div>
-        <div class="rpt-goal-foot">${kpi.productiveMin >= goalMin ? '¡Meta alcanzada!' : `Faltan ${formatMinutes(Math.max(0, goalMin - kpi.productiveMin))} min`}</div>
+        <div class="gh-goal-foot">${kpi.productiveMin >= goalMin ? '¡Meta alcanzada!' : `Faltan ${formatMinutes(Math.max(0, goalMin - kpi.productiveMin))} min`}</div>
         ${deltaLine(kpi.productiveDeltaMin, ' min')}
       </div>
-      <div class="rpt-goal-card">
-        <div class="rpt-goal-top"><span>Adherencia</span><span>${kpi.adherencePct === null ? '—' : kpi.adherencePct}/${goalAdherence}%</span></div>
+      <div class="rpt-goal-card gh-goal-card" style="margin-top:0;">
+        <div class="gh-goal-top"><span>Adherencia</span><b>${kpi.adherencePct === null ? '—' : kpi.adherencePct}/${goalAdherence}%</b></div>
         <div class="rpt-goal-bar good"><div style="width:${adherencePct}%;"></div></div>
-        <div class="rpt-goal-foot">${kpi.adherencePct !== null && kpi.adherencePct >= goalAdherence ? '¡Meta alcanzada!' : `Faltan ${kpi.adherencePct === null ? goalAdherence : Math.max(0, goalAdherence - kpi.adherencePct)}%`}</div>
+        <div class="gh-goal-foot">${kpi.adherencePct !== null && kpi.adherencePct >= goalAdherence ? '¡Meta alcanzada!' : `Faltan ${kpi.adherencePct === null ? goalAdherence : Math.max(0, goalAdherence - kpi.adherencePct)}%`}</div>
         ${deltaLine(kpi.adherenceDeltaPts, '%')}
       </div>
-      <div class="rpt-goal-card">
-        <div class="rpt-goal-top"><span>Ganancias</span><span>${money(kpi.earnings)}/${money(goalUsd)}</span></div>
+      <div class="rpt-goal-card gh-goal-card" style="margin-top:0;">
+        <div class="gh-goal-top"><span>Ganancias</span><b>${money(kpi.earnings)}/${money(goalUsd)}</b></div>
         <div class="rpt-goal-bar purple"><div style="width:${earningsPct}%;"></div></div>
-        <div class="rpt-goal-foot">${kpi.earnings >= goalUsd ? '¡Meta alcanzada!' : `Faltan ${money(Math.max(0, goalUsd - kpi.earnings))}`}</div>
+        <div class="gh-goal-foot">${kpi.earnings >= goalUsd ? '¡Meta alcanzada!' : `Faltan ${money(Math.max(0, goalUsd - kpi.earnings))}`}</div>
         ${deltaLine(kpi.earningsDelta, '$')}
       </div>
     `;
@@ -16083,18 +16111,24 @@ function renderReportsDashboard() {
     const projTone = projDelta >= 0 ? 'good' : 'pink';
     cycleGrid.innerHTML = `
       <div class="rpt-mini-card rpt-cycle-card">
-        <div class="rpt-cycle-top">
-          <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+        <div class="gh-ring-wrap" style="flex-direction:row; justify-content:flex-start; gap:12px; margin-bottom:12px;">
+          <div class="gh-ring" style="--ring-pct:${c.pctOfGoal};"><span class="gh-ring-value">${Math.round(c.pctOfGoal)}%</span></div>
+          <div style="min-width:0;">
             <div class="rpt-cycle-amt">${money(c.amount)}</div>
-            <div class="rpt-cycle-pct">${Math.round(c.pctOfGoal)}%</div>
+            <div class="gh-ring-label" style="text-align:left; white-space:normal;">de tu meta ${money(c.goal)}${c.isCustomGoal ? '' : ' (auto)'}</div>
           </div>
-          <button class="tbl-icon-btn" type="button" data-edit-card="cycle-goal" aria-label="Editar meta del ciclo" title="Editar meta del ciclo">${iconHtml('edit')}</button>
         </div>
-        <div class="rpt-goal-bar purple"><div style="width:${c.pctOfGoal}%;"></div></div>
-        <div class="rpt-mini-stats">
+        <div class="gh-goal-card" style="margin-top:0;">
+          <div class="gh-goal-top"><span>Progreso del ciclo</span><b>${Math.round(c.pctOfGoal)}%</b></div>
+          <div class="progress"><div style="width:${c.pctOfGoal}%; background: linear-gradient(90deg, var(--teal), var(--blue));"></div></div>
+          <div class="gh-goal-foot">
+            <span>${c.isCustomGoal ? 'Meta personalizada' : 'Sugerida automáticamente'}</span>
+            <button class="tbl-icon-btn" type="button" data-edit-card="cycle-goal" aria-label="Editar meta del ciclo" title="Editar meta del ciclo">${iconHtml('edit')}</button>
+          </div>
+        </div>
+        <div class="rpt-mini-stats" style="margin-top:10px;">
           <div>Trabajo<b>${money(c.trabajo)}</b></div>
           <div>Higher Rate<b>${money(c.higherRate)}</b></div>
-          <div>Meta<b>${money(c.goal)}</b>${c.isCustomGoal ? '' : ' <span style="font-weight:600;color:var(--muted);font-size:9.5px;">(auto)</span>'}</div>
         </div>
       </div>
       <div class="rpt-mini-card">
