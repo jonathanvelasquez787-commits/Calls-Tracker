@@ -21441,11 +21441,38 @@ function render() {
     }
 
 
+    // BUG-008 (QA v361) — Sin trampa de foco en modales: la navegación por
+    // teclado podía "escaparse" de un modal abierto (incluso durante
+    // confirmaciones destructivas, ej. "Reiniciar" → "Borrar todos los
+    // datos" → appConfirm) y llegar a controles de fondo, con el modal
+    // técnicamente seguía abierto. `openModalStack` guarda, en orden, los
+    // ids de los modales abiertos ahora mismo — casi siempre uno solo, pero
+    // #confirmModal puede abrirse ENCIMA de otro modal ya abierto (ej.
+    // resetModal → appConfirm), así que se necesita saber cuál es el más
+    // reciente (el de arriba de todo) para atraparle el foco a ÉL, no al
+    // primero. El Tab-trap en sí vive en el listener de keydown de más
+    // abajo (junto al de Escape, mismo criterio de "un solo listener
+    // central" que ya usa la app).
+    let openModalStack = [];
+
+    // Elementos que pueden recibir foco por teclado dentro de un modal —
+    // mismo criterio estándar (enlaces con href, controles no
+    // deshabilitados, cualquier cosa con tabindex explícito) — y se filtran
+    // los que están ocultos (`offsetParent === null`, ej. los <select>
+    // reales detrás de las pills Sí/No de Billable/Dropped, que viven con
+    // `display:none` a propósito) para no dejar el foco "atrapado" en un
+    // control invisible que el usuario nunca ve.
+    function getModalFocusableElements(container) {
+      const selector = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+      return Array.from(container.querySelectorAll(selector)).filter(el => el.offsetParent !== null);
+    }
+
     function openModal(id) {
       const modal = document.getElementById(id);
       if (!modal) return;
       modal.classList.add('open');
       modal.setAttribute('aria-hidden', 'false');
+      if (!openModalStack.includes(id)) openModalStack.push(id);
       const focusTarget = modal.querySelector('input, textarea, button');
       if (focusTarget) {
         setTimeout(() => focusTarget.focus(), 0);
@@ -21457,6 +21484,7 @@ function render() {
       if (!modal) return;
       modal.classList.remove('open');
       modal.setAttribute('aria-hidden', 'true');
+      openModalStack = openModalStack.filter(m => m !== id);
     }
 
     function closeAllModals() {
@@ -21471,6 +21499,7 @@ function render() {
       closeModal('acwGoalModal');
       closeModal('higherRateModal');
       closeModal('notificationsModal');
+      openModalStack = [];
     }
 
     // ---- v238 — Menú lateral / ruteo entre páginas ----
@@ -21853,6 +21882,36 @@ function render() {
         // ancho de pantalla, no solo la clase (ver ese comentario para el
         // detalle completo del bug).
         if (!(document.body.classList.contains('sidebar-pinned') && window.matchMedia('(min-width: 901px)').matches)) closeSidebar();
+        return;
+      }
+      // BUG-008 — Trampa de foco básica: mientras haya al menos un modal
+      // abierto, Tab/Shift+Tab quedan contenidos dentro del modal MÁS
+      // RECIENTE (el de arriba de todo, ver openModalStack) — sin esto, el
+      // foco podía "escaparse" hacia controles de fondo (ej. otro botón
+      // destructivo) mientras un diálogo de confirmación crítico seguía
+      // técnicamente abierto.
+      if (e.key === 'Tab' && openModalStack.length) {
+        const topModalId = openModalStack[openModalStack.length - 1];
+        const topModal = document.getElementById(topModalId);
+        if (!topModal) return;
+        const scope = topModal.querySelector('.modal-card') || topModal;
+        const focusables = getModalFocusableElements(scope);
+        if (!focusables.length) { e.preventDefault(); return; }
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const active = document.activeElement;
+        const activeIsInsideScope = scope.contains(active);
+        if (e.shiftKey) {
+          if (!activeIsInsideScope || active === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (!activeIsInsideScope || active === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
       }
     });
 
