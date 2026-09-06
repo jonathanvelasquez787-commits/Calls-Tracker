@@ -9924,6 +9924,7 @@
 </div>
 <div class="gh-goal-card">
 <div class="gh-goal-top"><span>Meta del ciclo</span><b id="cycleGoalAmountBadge">Meta $0.00</b></div>
+<span class="gh-goal-subitem" id="cycleGoalAmountConvertedText"></span>
 <div class="progress" style="margin-top: 4px;"><div id="cycleGoalBar" style="width:0%; background: linear-gradient(90deg, var(--teal), var(--blue));"></div></div>
 <div class="gh-goal-foot">
 <span id="cycleGoalFootText">Sugerida automáticamente</span>
@@ -20159,6 +20160,25 @@ function renderHeader() {
   if (cycleGoalPctBadgeEl) cycleGoalPctBadgeEl.textContent = `${Math.round(cycleGoalPct)}%`;
   const cycleGoalAmountBadgeEl = document.getElementById('cycleGoalAmountBadge');
   if (cycleGoalAmountBadgeEl) cycleGoalAmountBadgeEl.textContent = `Meta ${money(cycleGoalAmount)}`;
+  // v382 — Pedido del usuario: mismo equivalente en moneda secundaria que ya
+  // muestra "Meta diaria" (#goalAmountConvertedText, ver ese bloque más
+  // arriba) — se replica aquí tal cual para "Meta del ciclo", cambiando solo
+  // goalUsd por cycleGoalAmount. Ningún cálculo nuevo: mismo
+  // settings.exchangeRate/settings.currencyLabel de siempre.
+  const cycleGoalAmountConvertedEl = document.getElementById('cycleGoalAmountConvertedText');
+  if (cycleGoalAmountConvertedEl) {
+    const cycleExchangeRate = Number(settings.exchangeRate);
+    const cycleCurrencyLabelTrimmed = String(settings.currencyLabel || '').trim();
+    const cycleHasCurrency = Number.isFinite(cycleExchangeRate) && cycleExchangeRate > 0 && !!cycleCurrencyLabelTrimmed;
+    if (cycleHasCurrency) {
+      const cycleConvertedValue = (cycleGoalAmount * cycleExchangeRate).toFixed(2);
+      cycleGoalAmountConvertedEl.innerHTML = `<span class="gp-label">≈</span><span class="gp-value">${escapeHtml(cycleCurrencyLabelTrimmed)} ${cycleConvertedValue}</span>`;
+      cycleGoalAmountConvertedEl.style.display = '';
+    } else {
+      cycleGoalAmountConvertedEl.innerHTML = '';
+      cycleGoalAmountConvertedEl.style.display = 'none';
+    }
+  }
   const cycleGoalBarEl = document.getElementById('cycleGoalBar');
   if (cycleGoalBarEl) cycleGoalBarEl.style.width = `${cycleGoalPct}%`;
   const isCustomCycleGoal = getCycleGoalOverride(cycleViewOffset) !== null;
