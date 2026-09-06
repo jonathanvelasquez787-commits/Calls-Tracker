@@ -10909,7 +10909,11 @@
 <div class="goals-pill-row">
 <span class="goals-pill-field">
 <label for="cycleAnchorInput">Ancla:</label>
-<input id="cycleAnchorInput" type="date"/>
+<!-- BUG-026 (QA v381) — Mismo min/max que #daySelector/#manualCallDateInput/
+     .hr-window-date-input (fix de BUG-016 en v377) — este campo existía
+     desde antes de ese fix y nunca lo recibió, permitiendo teclear un año
+     absurdo (ej. 0999/9999) que se colaba a cycleAnchorDate. -->
+<input id="cycleAnchorInput" type="date" min="1970-01-01" max="2099-12-31"/>
 </span>
 <span class="goals-pill-field">
 <label for="cyclePayOffsetInput">Pago, días después:</label>
@@ -10971,11 +10975,14 @@
 <div class="goals-field-row" id="accountingExportCustomRow" style="display:none;">
 <div class="goals-field">
 <label for="accountingExportFromInput">Desde</label>
-<input id="accountingExportFromInput" type="date"/>
+<!-- BUG-026 (QA v381) — Mismo min/max que #daySelector/#manualCallDateInput/
+     .hr-window-date-input (fix de BUG-016 en v377) — estos 2 campos se
+     agregaron en v356, antes de ese fix, y nunca lo recibieron. -->
+<input id="accountingExportFromInput" type="date" min="1970-01-01" max="2099-12-31"/>
 </div>
 <div class="goals-field">
 <label for="accountingExportToInput">Hasta</label>
-<input id="accountingExportToInput" type="date"/>
+<input id="accountingExportToInput" type="date" min="1970-01-01" max="2099-12-31"/>
 </div>
 </div>
 <div class="goals-backup-row">
