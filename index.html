@@ -12599,19 +12599,50 @@ $0.72"></textarea>
       return defaultSettings();
     }
 
+    // BUG-002 (QA v361) — `localStorage.setItem` puede lanzar (típicamente
+    // `QuotaExceededError`) si el navegador ya no tiene espacio — fácil de
+    // alcanzar con meses de llamadas + varios sonidos personalizados de
+    // ~300KB cada uno. Sin manejo de errores, esa excepción interrumpía
+    // saveAll() A MEDIAS: podía guardar `state` pero nunca llegar a
+    // `calls`/`settings` (o ninguno de los tres), dejando los stores
+    // desincronizados entre sí — y como casi CUALQUIER botón de la app
+    // termina llamando a saveAll(), la app se volvía disfuncional en
+    // silencio justo cuando más historial tenía el usuario (el peor
+    // momento para perder datos). `safeLocalStorageSet()` centraliza el
+    // try/catch (mismo patrón que ya usan handleProductiveBreakSoundFile()/
+    // handleAlarmSoundFile() para su propio guardado) — devuelve
+    // true/false en vez de dejar que la excepción se propague, así cada
+    // función de guardado puede seguir intentando las OTRAS llaves aunque
+    // una falle, y avisar con un toast en vez de fallar mudo. Los datos en
+    // MEMORIA (`state`/`calls`/`settings`) nunca se tocan/revierten aquí —
+    // ya fueron actualizados por quien llamó a save*() antes de este punto,
+    // así que un fallo de cuota no pierde el cambio que el usuario acaba
+    // de hacer, solo impide que quede guardado hasta liberar espacio.
+    function safeLocalStorageSet(key, jsonValue) {
+      try {
+        localStorage.setItem(key, jsonValue);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    const STORAGE_QUOTA_TOAST = '⚠️ No se pudo guardar — el almacenamiento del navegador está lleno. Tu cambio se mantiene en esta sesión, pero no quedará guardado hasta que liberes espacio (borra llamadas muy viejas o un sonido personalizado en Avisos).';
+
     function saveAll() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      localStorage.setItem(CALLS_KEY, JSON.stringify(calls));
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      const stateOk = safeLocalStorageSet(STORAGE_KEY, JSON.stringify(state));
+      const callsOk = safeLocalStorageSet(CALLS_KEY, JSON.stringify(calls));
+      const settingsOk = safeLocalStorageSet(SETTINGS_KEY, JSON.stringify(settings));
+      if (!stateOk || !callsOk || !settingsOk) toast(STORAGE_QUOTA_TOAST);
       render();
     }
 
     function saveStateOnly() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      if (!safeLocalStorageSet(STORAGE_KEY, JSON.stringify(state))) toast(STORAGE_QUOTA_TOAST);
     }
 
     function saveSettingsOnly() {
-      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      if (!safeLocalStorageSet(SETTINGS_KEY, JSON.stringify(settings))) toast(STORAGE_QUOTA_TOAST);
     }
 
     function pad(n) { return String(n).padStart(2, '0'); }
@@ -14053,7 +14084,26 @@ function dayShiftBounds(dayKey = getActiveDayKey()) {
   let end = endEvent ? new Date(endEvent.ts) : null;
   let estimated = false;
 
-  if (isToday && state.shiftStartedAt && sameCallDay(state.shiftStartedAt, normalized)) {
+  // BUG-001 (QA v361) — Turno que cruza la medianoche. Antes esta rama
+  // exigía `sameCallDay(state.shiftStartedAt, normalized)` — si el turno
+  // arrancó AYER (ej. 23:30) y sigue sin cerrarse (o recién se cerró pasada
+  // la medianoche), esa comparación da `false` contra el día de HOY y la
+  // app perdía el turno por completo: `dayShiftBounds()` devolvía
+  // `{start: null}`, así que `currentStateLabel()` marcaba "No iniciado",
+  // "Bloques del día" salía vacío, y `dayAdherence()`/`minuteAdherenceForDay()`
+  // devolvían null — aunque el turno siguiera activo (o hubiera cerrado) de
+  // verdad. `belongsToToday` reconoce el turno actual (state.shiftStartedAt/
+  // shiftEndedAt — solo existe uno a la vez) como "el turno de hoy" en 3
+  // casos: (1) sigue abierto — mientras `isToday`, es el único candidato
+  // posible, sin importar qué día empezó; (2) empezó hoy (haya cerrado o
+  // no, mismo criterio de siempre); (3) cerró hoy, aunque haya empezado
+  // ayer (turno nocturno ya finalizado poco después de medianoche).
+  const belongsToToday = isToday && !!state.shiftStartedAt && (
+    !state.shiftEndedAt ||
+    sameCallDay(state.shiftStartedAt, normalized) ||
+    sameCallDay(state.shiftEndedAt, normalized)
+  );
+  if (belongsToToday) {
     start = new Date(state.shiftStartedAt);
     // Bug documentado en investigación (v101, "2 turnos el mismo día"):
     // antes, mientras el turno ACTUAL seguía activo (state.shiftEndedAt aún
@@ -14262,6 +14312,19 @@ function totalConnectedMinutesAcrossShiftsToday(dayKey = getActiveDayKey()) {
     const bounds = dayShiftBounds(normalized);
     if (normalized === todayCallDateKey() && bounds.live) {
       total += Math.max(0, (new Date().getTime() - openStart.getTime()) / 60000);
+    }
+  } else if (normalized === todayCallDateKey()) {
+    // BUG-001 (QA v361) — Turno que cruza la medianoche: su evento "Shift
+    // iniciado" quedó fechado AYER, así que `dayEvents(normalized)` (solo
+    // eventos de HOY) nunca lo ve — `openStart` nunca se llena y este turno
+    // quedaba invisible para este acumulado, aunque `dayShiftBounds()` ya
+    // lo reconoce como en curso (ver el fix de esa función). Se suma
+    // directo desde `dayShiftBounds().start` — mismo criterio que ya usa
+    // `connectedMinutesForDay()` para "Conectado": tiempo real desde el
+    // inicio real del turno, sin recortar a medianoche.
+    const bounds = dayShiftBounds(normalized);
+    if (bounds.live && bounds.start) {
+      total += Math.max(0, (new Date().getTime() - bounds.start.getTime()) / 60000);
     }
   }
 
@@ -14860,7 +14923,17 @@ function minuteAdherenceForDay(dayKey, bounds) {
   // trate como "no presente" (ver computeMinuteAdherence/actualStateAt),
   // reflejando el mismo fallo que ya marca dayAdherence() para el día
   // completo (0%) en vez de asumir trabajo por defecto.
-  const realStartMin = bounds.start ? minuteOfDay(bounds.start) : Infinity;
+  // BUG-001 (QA v361) — Turno que cruza la medianoche: `bounds.start` puede
+  // venir de AYER (ver el fix de dayShiftBounds()) — convertirlo con
+  // `minuteOfDay()` daba un minuto altísimo (ej. 23:30 → 1410) que, comparado
+  // contra los minutos planeados de HOY (0-1439), marcaba como "ausente"
+  // (`actualStateAt()` → 'none') casi todo el día, aunque el turno siguiera
+  // realmente en curso desde antes de medianoche. Si el turno empezó un día
+  // distinto al que se está evaluando, se trata como presente desde el
+  // minuto 0 de este día (ya estabas conectado desde antes de que empezara).
+  const realStartMin = bounds.start
+    ? (dateKey(bounds.start) === normalized ? minuteOfDay(bounds.start) : 0)
+    : Infinity;
   const realEndMin = bounds.end ? minuteOfDay(bounds.end) : null;
 
   const rangeStart = plannedSlots[0].startMin;
@@ -14891,7 +14964,12 @@ function isRightNowOutOfAdherence() {
   const plannedSlots = plannedRaw.map(s => ({ type: s.type.toLowerCase(), startMin: toMinutes(s.start), endMin: toMinutes(s.end) }));
   const minuteOfDay = (date) => date.getHours() * 60 + date.getMinutes();
   const actualIntervals = actualPauseIntervalsForDay(dayKey).map(p => ({ type: p.type, startMin: minuteOfDay(p.start), endMin: minuteOfDay(p.end) }));
-  const realStartMin = minuteOfDay(new Date(state.shiftStartedAt));
+  // BUG-001 (QA v361) — Mismo criterio que minuteAdherenceForDay(): si el
+  // turno empezó AYER (cruzó medianoche) y sigue abierto, se trata como
+  // presente desde el minuto 0 de hoy — usar la hora cruda de
+  // state.shiftStartedAt (ej. 23:30 → minuto 1410) marcaba "fuera de
+  // adherencia ahora mismo" de forma falsa durante casi todo el día.
+  const realStartMin = sameCallDay(state.shiftStartedAt, dayKey) ? minuteOfDay(new Date(state.shiftStartedAt)) : 0;
   const nowMin = minuteOfDay(new Date());
   const graceMin = Number.isFinite(Number(settings.adherenceGraceMin)) && Number(settings.adherenceGraceMin) >= 0 ? Number(settings.adherenceGraceMin) : 3;
 
@@ -14954,7 +15032,12 @@ function slotMinuteAdherence(dayKey, originalSlot, bounds) {
   const minuteOfDay = (date) => date.getHours() * 60 + date.getMinutes();
 
   const actualIntervals = actualPauseIntervalsForDay(normalized).map(p => ({ type: p.type, startMin: minuteOfDay(p.start), endMin: minuteOfDay(p.end) }));
-  const realStartMin = bounds.start ? minuteOfDay(bounds.start) : Infinity;
+  // BUG-001 (QA v361) — Mismo ajuste que minuteAdherenceForDay(): un turno
+  // que cruzó medianoche (bounds.start de ayer) se trata como presente
+  // desde el minuto 0 de este día, no desde la hora cruda de ayer.
+  const realStartMin = bounds.start
+    ? (dateKey(bounds.start) === normalized ? minuteOfDay(bounds.start) : 0)
+    : Infinity;
   const realEndMin = bounds.end ? minuteOfDay(bounds.end) : null;
 
   const slotStartMin = toMinutes(originalSlot.start);
