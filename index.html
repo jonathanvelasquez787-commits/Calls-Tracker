@@ -21096,7 +21096,31 @@ function renderSchedule() {
         ...manualGapPauseIntervals(dayKey, 'break'),
         ...manualGapPauseIntervals(dayKey, 'lunch'),
       ].map(p => ({ type: p.type, start: new Date(p.startedAt || p.start), end: new Date(p.endedAt || p.end) }));
-      const { start: shiftStart, end: shiftEnd, live, estimated } = dayShiftBounds(dayKey);
+      // BUG-023 (QA v381) — Antes, shiftStart/shiftEnd (usados más abajo
+      // como extendStart/extendEnd para ampliar la ventana de conteo de
+      // llamadas del primer/último bloque de Trabajo, ver slotStats()) se
+      // obtenían de dayShiftBounds(dayKey) — que solo reconstruye el turno
+      // MÁS RECIENTE del día, mismo problema de fondo que BUG-004/BUG-021/
+      // BUG-022. Con 2+ sesiones de turno el mismo día, si el turno #1 (más
+      // temprano) era el que en realidad debía extender la ventana hacia
+      // atrás (llamadas tomadas antes de la hora planeada, durante el
+      // turno #1), dayShiftBounds() devolvía en su lugar el inicio del
+      // turno #2 (más tarde) — esas llamadas quedaban sin contar en el
+      // desglose "Usado/ACW/Productividad" del bloque de Trabajo
+      // correspondiente. Se calcula ahora dayShiftSessions(dayKey) (TODAS
+      // las sesiones del día, ya arreglada para este mismo problema en
+      // BUG-004 y usada por connectedMinutesForDay()/dayAdherence()/
+      // slotMinuteAdherence()) — movida aquí arriba, antes solo se
+      // calculaba más abajo para BUG-004 — y se deriva shiftStart del
+      // inicio de la PRIMERA sesión, shiftEnd del fin de la ÚLTIMA sesión
+      // (null si esa última sigue en curso — mismo criterio que ya usaba
+      // dayShiftBounds().end para un turno en vivo, sin extender la
+      // ventana contra un fin que todavía no existe).
+      const shiftSessions = dayShiftSessions(dayKey);
+      const shiftStart = shiftSessions[0]?.start || null;
+      const lastShiftSessionForBounds = shiftSessions[shiftSessions.length - 1] || null;
+      const shiftEnd = lastShiftSessionForBounds && !lastShiftSessionForBounds.live ? lastShiftSessionForBounds.end : null;
+      const live = !!(lastShiftSessionForBounds && lastShiftSessionForBounds.live);
       const now = new Date();
       const t = now.getHours() * 60 + now.getMinutes();
       const wrap = document.getElementById('scheduleList');
@@ -21106,13 +21130,8 @@ function renderSchedule() {
       // Slots ORIGINALES (sin correr) para la adherencia por bloque — mismo
       // orden que plannedSlots (getEffectiveScheduleForDay preserva orden e
       // índices, solo corre horarios en modo 'shift'), así que se pueden
-      // emparejar por posición (slotIdx) más abajo. bounds se arma una sola
-      // vez aquí para no llamar dayShiftBounds() de nuevo (ya se desestructuró
-      // arriba en shiftStart/shiftEnd/live/estimated).
+      // emparejar por posición (slotIdx) más abajo.
       const originalPlannedSlots = originalPlannedSlotsForDay(dayKey);
-      // BUG-004 — slotMinuteAdherence() ahora necesita TODAS las sesiones
-      // del día (no solo la más reciente), ver dayShiftSessions().
-      const shiftSessions = dayShiftSessions(dayKey);
       if (subtitle) {
         subtitle.textContent = dayIsEffectivelyOff(dayKey)
           ? 'Día libre según tu horario semanal.'
