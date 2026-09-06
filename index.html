@@ -19962,6 +19962,23 @@ let manualCallPayDirty = false;
 // resultado que el estimado de siempre, tasa base sin bono).
 let manualCallSelectedRateTile = 'normal';
 
+// BUG-003 (QA v361) — Pedido del usuario: cuando #manualCallModal se abre
+// como RESPALDO de una llamada en vivo que acaba de colgarse (ver
+// openManualCallModalFromLiveCall(), llamada desde autoSaveLiveCall() si
+// el guardado automático falla por traslape/duplicado), cerrar el modal
+// con "×" o tocando fuera lo descartaba en silencio — sin ningún otro
+// registro de esa llamada en ningún lado, se perdía por completo tiempo de
+// trabajo/pago real. Esta bandera marca "el modal abierto ahora mismo es
+// ese respaldo, no un 'Agregar llamada manual' normal" — mientras esté en
+// true, cualquier intento de cerrar el modal (× / click afuera / Escape)
+// pasa por requestCloseManualCallModal(), que exige confirmación explícita
+// antes de descartar, igual que ya exige discardActiveCall(). Se apaga
+// (false) al abrir el modal para un "Agregar llamada manual" normal (ahí
+// cerrar sin guardar es una acción sin riesgo, nunca hubo una llamada real
+// ya colgada de por medio) y al guardar exitosamente desde cualquiera de
+// los 2 flujos.
+let manualCallLiveBackupPending = false;
+
 // Convierte "HH:MM" (24h, valor crudo de <input type="time">) al formato
 // "h:mm AM/PM" que usa internamente callStart (el mismo formato que
 // toDateFromInputs()/parseCalls() esperan al leer la exportación real de
@@ -20033,6 +20050,10 @@ function syncManualCallPillsUI(containerId = 'manualCallModal') {
 
 function openManualCallModal() {
   manualCallPayDirty = false;
+  // BUG-003 — Este es un "Agregar llamada manual" normal, no un respaldo
+  // de llamada en vivo — cerrar sin guardar aquí nunca pierde tiempo de
+  // trabajo ya registrado, así que no exige confirmación.
+  manualCallLiveBackupPending = false;
   const title = document.getElementById('manualCallModalTitle');
   const subtitle = document.getElementById('manualCallModalSubtitle');
   if (title) title.textContent = 'Agregar llamada manual';
@@ -20052,6 +20073,12 @@ function openManualCallModal() {
 // "+ Agregar" de siempre.
 function openManualCallModalFromLiveCall(startedAtISO, endedAtISO) {
   manualCallPayDirty = false;
+  // BUG-003 — Este modal SÍ representa una llamada real que ya se colgó y
+  // cuyo guardado automático falló (traslape/duplicado) — mientras esta
+  // bandera esté encendida, cerrar el modal (× / click afuera / Escape)
+  // exige confirmación explícita (ver requestCloseManualCallModal()) en
+  // vez de descartar la llamada en silencio.
+  manualCallLiveBackupPending = true;
   const start = new Date(startedAtISO);
   const end = new Date(endedAtISO);
   const durationMin = Math.max(1, Math.round((end.getTime() - start.getTime()) / 60000));
@@ -20061,6 +20088,25 @@ function openManualCallModalFromLiveCall(startedAtISO, endedAtISO) {
   if (subtitle) subtitle.textContent = `Llamada terminada: ${timeLabelFromDate(start)} – ${timeLabelFromDate(end)} (${formatDuration(durationMin * 60000)}). Ajusta lo que haga falta antes de guardarla.`;
   prefillManualCallForm({ dayKey: todayCallDateKey(start), startDate: start, durationMin });
   openModal('manualCallModal');
+}
+
+// BUG-003 — Punto único de salida para cerrar #manualCallModal desde
+// cualquier camino (botón "×", click fuera del modal, tecla Escape). Si el
+// modal está mostrando el respaldo de una llamada en vivo
+// (manualCallLiveBackupPending), pedir confirmación explícita antes de
+// descartar — mismo criterio/mismo texto de advertencia que ya usa
+// discardActiveCall() para el mismo tipo de acción destructiva. Si es un
+// "Agregar llamada manual" normal (o ya se guardó), cierra sin preguntar,
+// como siempre.
+function requestCloseManualCallModal() {
+  if (!manualCallLiveBackupPending) {
+    closeModal('manualCallModal');
+    return;
+  }
+  appConfirm('¿Descartar esta llamada sin guardarla? La llamada que acabas de colgar se perderá por completo — no quedará ningún registro de ese tiempo trabajado.', () => {
+    manualCallLiveBackupPending = false;
+    closeModal('manualCallModal');
+  });
 }
 
 // Aplica el tile elegido en Agregar llamada manual — mismo criterio que
@@ -20229,6 +20275,10 @@ function saveManualCall() {
     toast(result.reason);
     return;
   }
+  // BUG-003 — Guardado exitoso (sea "Agregar llamada manual" normal o el
+  // respaldo de una llamada en vivo): ya no hay nada que perder al cerrar,
+  // se apaga la bandera antes de cerrar sin preguntar.
+  manualCallLiveBackupPending = false;
   closeModal('manualCallModal');
   saveAll();
   toast('Llamada agregada');
@@ -21451,8 +21501,17 @@ function render() {
       btn.addEventListener('click', () => openModal(btn.getAttribute('data-open-modal')));
     });
 
+    // BUG-003 — El botón "×" (data-close-modal="manualCallModal") ya no
+    // llama a closeModal() directo: pasa por requestCloseManualCallModal(),
+    // que exige confirmación si el modal está mostrando el respaldo de una
+    // llamada en vivo sin guardar. Cualquier otro modal se sigue cerrando
+    // exactamente igual que siempre.
     document.querySelectorAll('[data-close-modal]').forEach(btn => {
-      btn.addEventListener('click', () => closeModal(btn.getAttribute('data-close-modal')));
+      btn.addEventListener('click', () => {
+        const modalId = btn.getAttribute('data-close-modal');
+        if (modalId === 'manualCallModal') { requestCloseManualCallModal(); return; }
+        closeModal(modalId);
+      });
     });
 
     document.querySelectorAll('.modal-overlay').forEach(modal => {
@@ -21463,7 +21522,14 @@ function render() {
         // se pregunte una vez y no quede a medias por un tap accidental fuera
         // de la tarjeta.
         if (modal.id === 'onboardingModal') return;
-        if (e.target === modal) closeModal(modal.id);
+        if (e.target !== modal) return;
+        // BUG-003 — Click en el fondo de #manualCallModal (fuera de la
+        // tarjeta) también pasa por el mismo guard que el botón "×" — antes
+        // cerraba con un solo click sin ningún aviso, perdiendo en
+        // silencio una llamada real ya colgada si el guardado automático
+        // había fallado.
+        if (modal.id === 'manualCallModal') { requestCloseManualCallModal(); return; }
+        closeModal(modal.id);
       });
     });
 
@@ -21563,6 +21629,15 @@ function render() {
 
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
+        // BUG-003 — Si #manualCallModal está abierto mostrando el respaldo
+        // de una llamada en vivo sin guardar, Escape pasa por el mismo
+        // guard que el botón "×"/click afuera, en vez de cerrar todo de
+        // golpe vía closeAllModals() sin preguntar.
+        const manualCallModalEl = document.getElementById('manualCallModal');
+        if (manualCallModalEl && manualCallModalEl.classList.contains('open') && manualCallLiveBackupPending) {
+          requestCloseManualCallModal();
+          return;
+        }
         closeAllModals();
         // v238 — Escape también cierra el sidebar cuando está abierto en
         // modo overlay (mobile, o escritorio sin fijar) — mismo criterio
