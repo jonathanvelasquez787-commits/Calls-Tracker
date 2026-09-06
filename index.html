@@ -14612,37 +14612,35 @@ function dayShiftSessions(dayKey = getActiveDayKey()) {
   const normalized = callDateKeyFromValue(dayKey);
   const isToday = normalized === todayCallDateKey();
 
-  const events = dayEvents(normalized)
+  // BUG-021 (QA v382) — Antes, el cruce de medianoche se detectaba
+  // comparando `state.shiftStartedAt`/`state.shiftEndedAt` (el turno
+  // GLOBAL ACTUAL) contra `normalized` — pero ese estado se sobreescribe
+  // en cuanto se inicia un segundo turno el mismo día (ver startShift()),
+  // así que para cuando se evalúa `dayShiftSessions('hoy')` después de
+  // ese 2do turno, ya no queda ningún rastro de que el turno #1 cruzó
+  // medianoche, y su "Shift terminado" (fechado hoy) quedaba huérfano —
+  // sin su "Shift iniciado" pareja (fechado ayer, fuera de
+  // `dayEvents('hoy')`) para emparejar, se descartaba en silencio.
+  // Ahora no se depende de ningún estado global mutable: se toman los
+  // eventos de "shift" de AYER + `normalized` juntos y se emparejan
+  // cronológicamente de una sola pasada (iniciado abre, el siguiente
+  // terminado cierra) — así una sesión que cruza medianoche entre ambos
+  // días se reconstruye completa sin importar qué turno esté activo
+  // ahora mismo. Al final solo se conservan las sesiones que de verdad
+  // tocan `normalized` (empiezan o terminan ese día).
+  const prevDayKey = todayCallDateKey(new Date((callDateToDate(normalized) || new Date()).getTime() - 86400000));
+  const combinedEvents = [...dayEvents(prevDayKey), ...dayEvents(normalized)]
     .filter(e => e && e.type === 'shift' && (/iniciado/i.test(e.title || '') || /terminado/i.test(e.title || '')))
     .map(e => ({ ts: new Date(e.ts), isStart: /iniciado/i.test(e.title || '') }))
     .sort((a, b) => a.ts.getTime() - b.ts.getTime());
 
-  // Ver comentario arriba: solo se activa cuando el turno GLOBAL actual
-  // arrancó en un día distinto a `normalized` (cruce de medianoche) — si
-  // arrancó el mismo día, ya está bien representado por el emparejamiento
-  // cronológico normal de abajo, y NO hay que inyectarlo aparte (evita
-  // duplicar la sesión del caso normal, que es la mayoría de las veces).
-  const crossesMidnightIntoToday = isToday && !!state.shiftStartedAt
-    && !sameCallDay(state.shiftStartedAt, normalized)
-    && (!state.shiftEndedAt || sameCallDay(state.shiftEndedAt, normalized));
-
-  // Si el turno cruza medianoche y ya se cerró HOY, su evento "terminado"
-  // sí aparece en dayEvents(hoy) pero quedaría huérfano (sin "iniciado"
-  // que emparejar, ya que ese quedó fechado ayer) — se filtra para no
-  // dejarlo flotando en el loop de abajo; la sesión completa se inyecta
-  // aparte, más abajo.
-  const liveEndTs = crossesMidnightIntoToday && state.shiftEndedAt ? new Date(state.shiftEndedAt).getTime() : null;
-  const filteredEvents = liveEndTs !== null
-    ? events.filter(ev => !(!ev.isStart && ev.ts.getTime() === liveEndTs))
-    : events;
-
-  const sessions = [];
+  const allSessions = [];
   let openStart = null;
-  filteredEvents.forEach(ev => {
+  combinedEvents.forEach(ev => {
     if (ev.isStart) {
       if (!openStart) openStart = ev.ts;
     } else if (openStart) {
-      sessions.push({ start: openStart, end: ev.ts, live: false });
+      allSessions.push({ start: openStart, end: ev.ts, live: false });
       openStart = null;
     }
   });
@@ -14650,7 +14648,7 @@ function dayShiftSessions(dayKey = getActiveDayKey()) {
   if (openStart) {
     if (isToday && !state.shiftEndedAt) {
       // Turno en curso hoy, sin cerrar todavía.
-      sessions.push({ start: openStart, end: new Date(), live: true });
+      allSessions.push({ start: openStart, end: new Date(), live: true });
     } else if (!isToday) {
       // Turno de un día pasado que nunca se cerró — estimar fin desde la
       // última llamada real de ese día (mismo fallback que dayShiftBounds()).
@@ -14659,7 +14657,7 @@ function dayShiftSessions(dayKey = getActiveDayKey()) {
         const orderedOrphan = [...dayCallsForOrphan].sort((a, b) => new Date(a.startISO) - new Date(b.startISO));
         const lastCallEnd = new Date(orderedOrphan[orderedOrphan.length - 1].endISO);
         if (lastCallEnd.getTime() > openStart.getTime()) {
-          sessions.push({ start: openStart, end: lastCallEnd, live: false });
+          allSessions.push({ start: openStart, end: lastCallEnd, live: false });
         }
       }
       // Sin llamadas para estimar: se descarta esta sesión huérfana —
@@ -14669,14 +14667,12 @@ function dayShiftSessions(dayKey = getActiveDayKey()) {
     // descarta en vez de inventar un cierre.
   }
 
-  if (crossesMidnightIntoToday) {
-    sessions.push({
-      start: new Date(state.shiftStartedAt),
-      end: state.shiftEndedAt ? new Date(state.shiftEndedAt) : new Date(),
-      live: !state.shiftEndedAt,
-    });
-    sessions.sort((a, b) => a.start.getTime() - b.start.getTime());
-  }
+  // Se filtran solo las sesiones que de verdad tocan `normalized` — las
+  // que arrancan ese día, o las que TERMINAN ese día (cubre el cruce de
+  // medianoche desde `prevDayKey`). Una sesión completamente contenida en
+  // `prevDayKey` (no toca `normalized` en ningún extremo) se descarta aquí
+  // — sigue apareciendo normal al evaluar `prevDayKey` por su cuenta.
+  const sessions = allSessions.filter(s => dateKey(s.start) === normalized || dateKey(s.end) === normalized);
 
   if (sessions.length) {
     const dayCallsForReconciliation = callsForDay(normalized);
