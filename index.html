@@ -12691,7 +12691,11 @@ $0.72"></textarea>
     // INICIO de la llamada — hasta 5 min antes del inicio de la ventana, o
     // en cualquier momento antes de que termine — nunca dónde termina la
     // llamada. Ventanas con fin <= inicio se tratan como inválidas (0
-    // elegibilidad) en vez de romper el cálculo.
+    // elegibilidad) en vez de romper el cálculo. BUG-005 (QA v361): esto
+    // significa que una ventana que cruza medianoche (ej. 22:00–02:00)
+    // nunca califica a ninguna llamada — ver
+    // notifyHigherRateMidnightCrossingWindows(), que avisa de este caso al
+    // guardar la ventana en vez de dejarlo pasar en silencio.
     function callQualifiesForHigherRateWindow(callStartISO, window) {
       const callStart = new Date(callStartISO);
       const winStart = toDateFromInputs(window.date, timeLabel(window.start));
@@ -14243,92 +14247,173 @@ function dayShiftBounds(dayKey = getActiveDayKey()) {
   };
 }
 
-// Pedido del usuario (histórico): "Tiempo conectado debe ser el tiempo
-// transcurrido de inicio a fin de shift." Antes esta función restaba las
-// pausas reales (dayPauseIntervals) Y los minutos de Break/Lunch/Other
-// clasificados en huecos (dayGapTotals) del tiempo transcurrido — es decir,
-// "Conectado" era en realidad "shift menos breaks y lunch", no el tiempo
-// conectado real. Break/Lunch siguen contando como tiempo conectado a la
-// plataforma (solo que no productivo). "Conectado" es el tiempo real
-// transcurrido de inicio a fin de shift, sin restar nada.
-function connectedMinutesForDay(dayKey = getActiveDayKey()) {
-  const bounds = dayShiftBounds(dayKey);
-  if (!bounds.start) return 0;
-  const end = bounds.end || (bounds.live ? new Date() : null);
-  if (!end) return 0;
-  return Math.max(0, msBetween(bounds.start, end) / 60000);
-}
-
-// v326 — BUG reportado por el usuario (pendiente desde v325, "no asumir la
-// causa sin revisar el código antes"): dar click en "Iniciar shift" DESPUÉS
-// de haber terminado el turno (un 2do shift el mismo día) dejaba la barra de
-// la tarjeta de "Shift" en "Bloques del día" pegada cerca de 0% durante
-// mucho rato. La sospecha original (que el % comparaba contra una ventana de
-// reloj ya "pasada") se investigó y descartada — se confirmó con una
-// simulación aparte que `connectedMinutesForDay()` sí crece con normalidad
-// minuto a minuto para un turno en curso. La causa real es otra: esa
-// función (y `dayShiftBounds()`, de la que depende) solo conocen la ventana
-// [inicio, fin] del turno MÁS RECIENTE del día — al iniciar un 2do shift,
-// `state.shiftStartedAt` se reemplaza por la hora de ESE click (ver
-// startShift()), así que el tiempo ya conectado durante el 1er turno queda
-// fuera del cálculo por completo. La tarjeta de Shift divide ese tiempo
-// (reiniciado a ~0) entre la duración PLANEADA COMPLETA del turno
-// (`plannedShiftMin`, ej. 9h) — con un denominador tan grande, el resultado
-// se queda pegado cerca de 0% durante un buen rato del 2do turno, sintiéndose
-// "atascado" aunque en realidad sí esté avanzando (muy lento en apariencia).
-// Esta función suma el tiempo Conectado de TODOS los turnos del día (cada
-// par "Shift iniciado"→"Shift terminado" del log de eventos, más el tramo
-// en curso si el turno sigue activo) — a diferencia de
-// `connectedMinutesForDay()`/`dayShiftBounds()`, que solo ven el turno más
-// reciente. Se usa SOLO en la tarjeta de "Shift" (ver
-// renderBlockSummaryStrip/renderSchedule) — el resto de la app (Adherencia,
-// "Conectado" del header, etc.) sigue usando dayShiftBounds() sin cambios,
-// ya que ahí el criterio de "un solo turno por día" no generó ningún reporte
-// de bug.
-function totalConnectedMinutesAcrossShiftsToday(dayKey = getActiveDayKey()) {
+// BUG-004 (QA v361) — dayShiftBounds() solo reconstruye el turno MÁS
+// RECIENTE del día (usa `.find()` sobre state.events, que con `unshift()`
+// deja los eventos más nuevos primero). Con 2+ sesiones de turno el mismo
+// día ("Iniciar shift" → "Finalizar shift" → "Iniciar shift" de nuevo),
+// connectedMinutesForDay()/dayAdherence() subestimaban el tiempo real
+// conectado — inconsistente con la tarjeta "Shift" de "Bloques del día",
+// que desde v326 ya sumaba todas las sesiones (ver
+// totalConnectedMinutesAcrossShiftsToday(), ahora fusionada en
+// connectedMinutesForDay() más abajo).
+//
+// Esta función reconstruye TODAS las sesiones del día: cada "Shift
+// iniciado"→"Shift terminado" (emparejados cronológicamente, no por orden
+// de arreglo) es una sesión propia. Devuelve [{start, end, live}, ...]
+// ordenado por inicio.
+//
+// Casos que cubre:
+// - Varias sesiones cerradas el mismo día → cada una su propio {start,end}.
+// - Sesión en curso ahora mismo (turno de hoy sin "Finalizar shift" aún) →
+//   {live: true}, con `end` implícito en "ahora" (quien la consuma debe
+//   recalcularlo cada vez, no cachear el Date).
+// - BUG-001 (turno que cruza medianoche): la sesión GLOBAL actual
+//   (state.shiftStartedAt/shiftEndedAt) puede pertenecer a "hoy" aunque su
+//   evento "Shift iniciado" haya quedado fechado AYER — en ese caso su
+//   "iniciado" no aparece en dayEvents(hoy) y el emparejamiento
+//   cronológico normal la perdería. Se detecta aparte
+//   (`crossesMidnightIntoToday`) y se inyecta directo desde el estado
+//   global, sin duplicar la sesión si su "iniciado" SÍ es de hoy (caso
+//   normal, la mayoría de las veces).
+// - Turno de un día PASADO que nunca se cerró (huérfano, sin "Finalizar
+//   shift"): se estima su fin desde la última llamada real de ese día,
+//   igual que ya hacía dayShiftBounds(). Si tampoco hay llamadas ese día,
+//   la sesión se descarta por completo — no hay forma confiable de saber
+//   cuándo terminó. (Limitación conocida: esto pierde el matiz que antes
+//   tenía dayShiftBounds() de "Entrada registrada, Salida no" para ese
+//   caso extremo — un turno con botón dado pero CERO llamadas en todo el
+//   día y jamás cerrado. Se acepta esta pérdida de detalle por ser un
+//   caso ya de por sí raro.)
+// - Sin ningún evento de shift ese día (nunca se dio click al botón) →
+//   fallback total: reutiliza dayShiftBounds() (que ya estima desde
+//   primera/última llamada real) como sesión única.
+// - Reconciliación con llamadas reales: si la PRIMERA sesión empezó
+//   después de tu primera llamada real del día, se extiende hacia atrás;
+//   si la ÚLTIMA sesión (ya cerrada) terminó antes de tu última llamada
+//   real, se extiende hacia adelante — mismo criterio que ya usa
+//   dayShiftBounds() para una sola sesión.
+function dayShiftSessions(dayKey = getActiveDayKey()) {
   const normalized = callDateKeyFromValue(dayKey);
-  const sessions = dayEvents(normalized)
+  const isToday = normalized === todayCallDateKey();
+
+  const events = dayEvents(normalized)
     .filter(e => e && e.type === 'shift' && (/iniciado/i.test(e.title || '') || /terminado/i.test(e.title || '')))
     .map(e => ({ ts: new Date(e.ts), isStart: /iniciado/i.test(e.title || '') }))
     .sort((a, b) => a.ts.getTime() - b.ts.getTime());
 
-  let total = 0;
+  // Ver comentario arriba: solo se activa cuando el turno GLOBAL actual
+  // arrancó en un día distinto a `normalized` (cruce de medianoche) — si
+  // arrancó el mismo día, ya está bien representado por el emparejamiento
+  // cronológico normal de abajo, y NO hay que inyectarlo aparte (evita
+  // duplicar la sesión del caso normal, que es la mayoría de las veces).
+  const crossesMidnightIntoToday = isToday && !!state.shiftStartedAt
+    && !sameCallDay(state.shiftStartedAt, normalized)
+    && (!state.shiftEndedAt || sameCallDay(state.shiftEndedAt, normalized));
+
+  // Si el turno cruza medianoche y ya se cerró HOY, su evento "terminado"
+  // sí aparece en dayEvents(hoy) pero quedaría huérfano (sin "iniciado"
+  // que emparejar, ya que ese quedó fechado ayer) — se filtra para no
+  // dejarlo flotando en el loop de abajo; la sesión completa se inyecta
+  // aparte, más abajo.
+  const liveEndTs = crossesMidnightIntoToday && state.shiftEndedAt ? new Date(state.shiftEndedAt).getTime() : null;
+  const filteredEvents = liveEndTs !== null
+    ? events.filter(ev => !(!ev.isStart && ev.ts.getTime() === liveEndTs))
+    : events;
+
+  const sessions = [];
   let openStart = null;
-  sessions.forEach(ev => {
+  filteredEvents.forEach(ev => {
     if (ev.isStart) {
       if (!openStart) openStart = ev.ts;
     } else if (openStart) {
-      total += Math.max(0, (ev.ts.getTime() - openStart.getTime()) / 60000);
+      sessions.push({ start: openStart, end: ev.ts, live: false });
       openStart = null;
     }
   });
 
   if (openStart) {
-    // El tramo abierto (turno en curso) reutiliza el mismo criterio de
-    // "en vivo" que ya usa dayShiftBounds()/connectedMinutesForDay() — si
-    // por algún motivo ese turno ya no cuenta como en vivo (ej. estimado
-    // congelado por inactividad), no se suma tiempo "hasta ahora" sin
-    // fundamento.
-    const bounds = dayShiftBounds(normalized);
-    if (normalized === todayCallDateKey() && bounds.live) {
-      total += Math.max(0, (new Date().getTime() - openStart.getTime()) / 60000);
+    if (isToday && !state.shiftEndedAt) {
+      // Turno en curso hoy, sin cerrar todavía.
+      sessions.push({ start: openStart, end: new Date(), live: true });
+    } else if (!isToday) {
+      // Turno de un día pasado que nunca se cerró — estimar fin desde la
+      // última llamada real de ese día (mismo fallback que dayShiftBounds()).
+      const dayCallsForOrphan = callsForDay(normalized);
+      if (dayCallsForOrphan.length) {
+        const orderedOrphan = [...dayCallsForOrphan].sort((a, b) => new Date(a.startISO) - new Date(b.startISO));
+        const lastCallEnd = new Date(orderedOrphan[orderedOrphan.length - 1].endISO);
+        if (lastCallEnd.getTime() > openStart.getTime()) {
+          sessions.push({ start: openStart, end: lastCallEnd, live: false });
+        }
+      }
+      // Sin llamadas para estimar: se descarta esta sesión huérfana —
+      // ver nota de "limitación conocida" arriba.
     }
-  } else if (normalized === todayCallDateKey()) {
-    // BUG-001 (QA v361) — Turno que cruza la medianoche: su evento "Shift
-    // iniciado" quedó fechado AYER, así que `dayEvents(normalized)` (solo
-    // eventos de HOY) nunca lo ve — `openStart` nunca se llena y este turno
-    // quedaba invisible para este acumulado, aunque `dayShiftBounds()` ya
-    // lo reconoce como en curso (ver el fix de esa función). Se suma
-    // directo desde `dayShiftBounds().start` — mismo criterio que ya usa
-    // `connectedMinutesForDay()` para "Conectado": tiempo real desde el
-    // inicio real del turno, sin recortar a medianoche.
-    const bounds = dayShiftBounds(normalized);
-    if (bounds.live && bounds.start) {
-      total += Math.max(0, (new Date().getTime() - bounds.start.getTime()) / 60000);
-    }
+    // (isToday && state.shiftEndedAt): estado inconsistente raro — se
+    // descarta en vez de inventar un cierre.
   }
 
-  return total;
+  if (crossesMidnightIntoToday) {
+    sessions.push({
+      start: new Date(state.shiftStartedAt),
+      end: state.shiftEndedAt ? new Date(state.shiftEndedAt) : new Date(),
+      live: !state.shiftEndedAt,
+    });
+    sessions.sort((a, b) => a.start.getTime() - b.start.getTime());
+  }
+
+  if (sessions.length) {
+    const dayCallsForReconciliation = callsForDay(normalized);
+    if (dayCallsForReconciliation.length) {
+      const ordered = [...dayCallsForReconciliation].sort((a, b) => new Date(a.startISO) - new Date(b.startISO));
+      const firstCallStart = new Date(ordered[0].startISO);
+      const lastCallEnd = new Date(ordered[ordered.length - 1].endISO);
+      const firstSession = sessions[0];
+      const lastSession = sessions[sessions.length - 1];
+      if (firstCallStart.getTime() < firstSession.start.getTime()) firstSession.start = firstCallStart;
+      if (!lastSession.live && lastCallEnd.getTime() > lastSession.end.getTime()) lastSession.end = lastCallEnd;
+    }
+    return sessions;
+  }
+
+  // Fallback total: sin ningún evento de shift ni turno global vigente ese
+  // día — mismo estimado que ya usa dayShiftBounds() (primera/última
+  // llamada real).
+  const bounds = dayShiftBounds(normalized);
+  if (!bounds.start) return [];
+  const end = bounds.end || (bounds.live ? new Date() : bounds.start);
+  return [{ start: bounds.start, end, live: bounds.live }];
+}
+
+// Convierte una lista de sesiones {start,end,live} (Date objects) a
+// intervalos de "presencia" en minuto-del-día, para un `normalizedDayKey`
+// concreto — usado por computeMinuteAdherence() vía
+// minuteAdherenceForDay()/slotMinuteAdherence(). Si una sesión empezó en
+// un día distinto al que se evalúa (turno que cruza medianoche), se
+// cuenta como presente desde el minuto 0 de este día; si termina en un
+// día posterior (no debería pasar en la práctica), se cuenta hasta el
+// final del día (1440).
+function sessionsToPresenceIntervals(sessions, normalizedDayKey) {
+  const minuteOfDay = (date) => date.getHours() * 60 + date.getMinutes();
+  return sessions.map(s => {
+    const startMin = dateKey(s.start) === normalizedDayKey ? minuteOfDay(s.start) : 0;
+    const endMin = dateKey(s.end) === normalizedDayKey ? minuteOfDay(s.end) : 1440;
+    return { startMin, endMin };
+  }).filter(iv => iv.endMin > iv.startMin);
+}
+
+// BUG-004 — antes dependía de dayShiftBounds() (solo veía el turno MÁS
+// RECIENTE del día). Con 2+ sesiones de turno el mismo día subestimaba el
+// tiempo real conectado, dando un número distinto al de la tarjeta
+// "Shift" de "Bloques del día" (que sumaba todas las sesiones desde v326
+// vía totalConnectedMinutesAcrossShiftsToday() — esa función se fusiona
+// aquí, mismo resultado, una sola fuente de verdad). Break/Lunch siguen
+// contando como tiempo conectado (no se restan), igual que antes.
+function connectedMinutesForDay(dayKey = getActiveDayKey()) {
+  return dayShiftSessions(dayKey).reduce((total, s) => {
+    const end = s.live ? new Date() : s.end;
+    return total + Math.max(0, (end.getTime() - s.start.getTime()) / 60000);
+  }, 0);
 }
 
 function productiveMinutesForDay(dayKey = getActiveDayKey()) {
@@ -14831,16 +14916,25 @@ function dominantExceptionReason(reasons) {
   return { key, minutes, label: EXCEPTION_REASON_LABELS[key] || key };
 }
 
-function computeMinuteAdherence({ plannedSlots, actualIntervals, realStartMin, realEndMin, rangeStart, rangeEnd, graceMin }) {
+function computeMinuteAdherence({ plannedSlots, actualIntervals, presenceIntervals, rangeStart, rangeEnd, graceMin }) {
   if (!(rangeEnd > rangeStart)) return null; // sin minutos medibles todavía
 
   function plannedStateAt(m) {
     for (const s of plannedSlots) if (m >= s.startMin && m < s.endMin) return s.type;
     return 'none';
   }
+  // BUG-004 — antes esto recibía un solo par realStartMin/realEndMin (una
+  // sola ventana continua de presencia). Con 2+ sesiones de turno el
+  // mismo día, el hueco REAL entre la sesión 1 y la 2 (si cae dentro del
+  // horario planeado) se contaba como "trabajo" por default en vez de
+  // "ausente". `presenceIntervals` es la lista completa de sesiones
+  // (convertidas a minuto-del-día por sessionsToPresenceIntervals()) — un
+  // minuto solo cuenta como "presente" si cae DENTRO de alguna sesión.
+  function isPresent(m) {
+    return presenceIntervals.some(iv => m >= iv.startMin && m < iv.endMin);
+  }
   function actualStateAt(m) {
-    if (realStartMin !== null && m < realStartMin) return 'none';
-    if (realEndMin !== null && m >= realEndMin) return 'none';
+    if (!isPresent(m)) return 'none';
     for (const p of actualIntervals) if (m >= p.startMin && m < p.endMin) return p.type;
     return 'work'; // no estás en Break/Lunch → disponible/trabajando (no exige estar en llamada activa)
   }
@@ -14899,18 +14993,16 @@ function originalPlannedSlotsForDay(dayKey) {
 // Arma los inputs de computeMinuteAdherence() a partir del estado real de la
 // app para un día dado — separado de dayAdherence() para poder probarse (y
 // reutilizarse) sin depender de todo el flujo de checkpoints.
-function minuteAdherenceForDay(dayKey, bounds) {
+function minuteAdherenceForDay(dayKey, sessions) {
   const normalized = callDateKeyFromValue(dayKey);
   const isToday = normalized === todayCallDateKey();
-  // Bug reportado por el usuario: sin turno iniciado (bounds.start null),
-  // realStartMin quedaba en null, y actualStateAt() trataba "null" como "sin
-  // restricción" — asumiendo 'work' para CUALQUIER minuto, como si hubieras
-  // estado presente desde siempre. Debe ser lo contrario: sin dato real de
-  // inicio, no hay minutos que medir todavía (hoy) o se falló el día
-  // completo (pasado) — nunca "se asume trabajo por defecto". Hoy en la
-  // práctica dayAdherence() ya filtra este caso antes de llamar aquí, pero
-  // se blinda igual por si se reutiliza esta función en otro lado.
-  if (!bounds.start && isToday) return null;
+  // BUG-004 — antes recibía `bounds` (solo el turno MÁS RECIENTE del día,
+  // ver dayShiftBounds()). Con 2+ sesiones de turno el mismo día, el
+  // hueco real entre sesiones se contaba como "trabajo" por default en
+  // vez de "ausente". Ahora recibe `sessions` (dayShiftSessions(), TODAS
+  // las sesiones del día) y arma presenceIntervals con
+  // sessionsToPresenceIntervals() para computeMinuteAdherence().
+  if (!sessions.length && isToday) return null;
 
   const plannedRaw = originalPlannedSlotsForDay(normalized);
   if (!plannedRaw.length) return null;
@@ -14919,29 +15011,15 @@ function minuteAdherenceForDay(dayKey, bounds) {
   const minuteOfDay = (date) => date.getHours() * 60 + date.getMinutes();
 
   const actualIntervals = actualPauseIntervalsForDay(normalized).map(p => ({ type: p.type, startMin: minuteOfDay(p.start), endMin: minuteOfDay(p.end) }));
-  // Infinity (no null) cuando no hay turno real: fuerza que TODO minuto se
-  // trate como "no presente" (ver computeMinuteAdherence/actualStateAt),
-  // reflejando el mismo fallo que ya marca dayAdherence() para el día
-  // completo (0%) en vez de asumir trabajo por defecto.
-  // BUG-001 (QA v361) — Turno que cruza la medianoche: `bounds.start` puede
-  // venir de AYER (ver el fix de dayShiftBounds()) — convertirlo con
-  // `minuteOfDay()` daba un minuto altísimo (ej. 23:30 → 1410) que, comparado
-  // contra los minutos planeados de HOY (0-1439), marcaba como "ausente"
-  // (`actualStateAt()` → 'none') casi todo el día, aunque el turno siguiera
-  // realmente en curso desde antes de medianoche. Si el turno empezó un día
-  // distinto al que se está evaluando, se trata como presente desde el
-  // minuto 0 de este día (ya estabas conectado desde antes de que empezara).
-  const realStartMin = bounds.start
-    ? (dateKey(bounds.start) === normalized ? minuteOfDay(bounds.start) : 0)
-    : Infinity;
-  const realEndMin = bounds.end ? minuteOfDay(bounds.end) : null;
+  const presenceIntervals = sessionsToPresenceIntervals(sessions, normalized);
 
   const rangeStart = plannedSlots[0].startMin;
   const lastSlotEnd = plannedSlots[plannedSlots.length - 1].endMin;
-  const rangeEnd = (isToday && !bounds.end) ? Math.min(minuteOfDay(new Date()), lastSlotEnd) : lastSlotEnd;
+  const anySessionLive = sessions.some(s => s.live);
+  const rangeEnd = (isToday && anySessionLive) ? Math.min(minuteOfDay(new Date()), lastSlotEnd) : lastSlotEnd;
 
   const graceMin = Number.isFinite(Number(settings.adherenceGraceMin)) && Number(settings.adherenceGraceMin) >= 0 ? Number(settings.adherenceGraceMin) : 3;
-  return computeMinuteAdherence({ plannedSlots, actualIntervals, realStartMin, realEndMin, rangeStart, rangeEnd, graceMin });
+  return computeMinuteAdherence({ plannedSlots, actualIntervals, presenceIntervals, rangeStart, rangeEnd, graceMin });
 }
 
 // Pedido del usuario (mejora B): saber si AHORA MISMO (este minuto) estás
@@ -14969,11 +15047,18 @@ function isRightNowOutOfAdherence() {
   // presente desde el minuto 0 de hoy — usar la hora cruda de
   // state.shiftStartedAt (ej. 23:30 → minuto 1410) marcaba "fuera de
   // adherencia ahora mismo" de forma falsa durante casi todo el día.
+  // BUG-004 — computeMinuteAdherence() ahora recibe presenceIntervals en
+  // vez de un solo par realStartMin/realEndMin (ver comentario ahí). Para
+  // este indicador puntual ("¿estoy fuera de adherencia AHORA MISMO?")
+  // basta un solo intervalo abierto desde el inicio del turno actual —
+  // esta función ya garantiza arriba que hay un turno en curso sin cerrar
+  // (`!state.shiftStartedAt || state.shiftEndedAt) return false;`).
   const realStartMin = sameCallDay(state.shiftStartedAt, dayKey) ? minuteOfDay(new Date(state.shiftStartedAt)) : 0;
   const nowMin = minuteOfDay(new Date());
   const graceMin = Number.isFinite(Number(settings.adherenceGraceMin)) && Number(settings.adherenceGraceMin) >= 0 ? Number(settings.adherenceGraceMin) : 3;
+  const presenceIntervals = [{ startMin: realStartMin, endMin: 1440 }];
 
-  const result = computeMinuteAdherence({ plannedSlots, actualIntervals, realStartMin, realEndMin: null, rangeStart: nowMin, rangeEnd: nowMin + 1, graceMin });
+  const result = computeMinuteAdherence({ plannedSlots, actualIntervals, presenceIntervals, rangeStart: nowMin, rangeEnd: nowMin + 1, graceMin });
   return !!(result && result.exceptionMinutes > 0);
 }
 
@@ -14991,7 +15076,7 @@ function isRightNowOutOfAdherence() {
 // que el slot mostrado en pantalla desde getEffectiveScheduleForDay() — ver
 // renderSchedule(), que empareja ambas listas por posición ya que
 // getEffectiveScheduleForDay() preserva el orden y solo corre los horarios).
-function slotMinuteAdherence(dayKey, originalSlot, bounds) {
+function slotMinuteAdherence(dayKey, originalSlot, sessions) {
   const normalized = callDateKeyFromValue(dayKey);
   const isToday = normalized === todayCallDateKey();
   // v354 — Pedido del usuario: un día forzado a Libre desde "Editar día"
@@ -15001,23 +15086,14 @@ function slotMinuteAdherence(dayKey, originalSlot, bounds) {
   // Nivel 3 (mismo criterio que dayAdherence()/isRightNowOutOfAdherence(),
   // buscar "v354" en esa última).
   if (dayIsEffectivelyOff(normalized)) return null;
-  // Bug reportado por el usuario: "la adherencia está mal si no he empezado
-  // shift". Causa: con bounds.start null (sin turno iniciado), realStartMin
-  // quedaba en null, y actualStateAt() interpretaba "null" como "sin
-  // restricción" en vez de "nunca estuviste presente" — así que CUALQUIER
-  // bloque cuya hora planeada ya hubiera pasado según el reloj (aunque
-  // nunca le dieras click a "Iniciar shift") se marcaba como 'work' por
-  // defecto, mostrando una adherencia buena/alta que no correspondía a la
-  // realidad. Ahora: hoy sin turno iniciado → null (nada que medir
-  // todavía, ni bueno ni malo). Día pasado sin turno → más abajo,
-  // realStartMin se vuelve Infinity en vez de null, forzando que TODO el
-  // bloque cuente como "no presente" — mismo criterio de fallo que ya usa
-  // dayAdherence() para el día completo (0%), no una asunción optimista.
-  if (!bounds.start && isToday) return null;
+  // BUG-004 — antes recibía `bounds` (solo el turno MÁS RECIENTE del día).
+  // Ahora recibe `sessions` (dayShiftSessions(), TODAS las sesiones del
+  // día) — mismo criterio de guardas, adaptado a una lista.
+  if (!sessions.length && isToday) return null;
   // Bug reportado por el usuario (barra de Adherencia con datos en un día
   // que no ha empezado): esta guarda solo cubría "hoy sin turno" — un día
-  // FUTURO (navegado a propósito con el selector) también tiene
-  // bounds.start null pero isToday false, así que ninguna de las 2 guardas
+  // FUTURO (navegado a propósito con el selector) también puede no tener
+  // sesiones pero isToday false, así que ninguna de las 2 guardas
   // aplicaba y la función seguía de largo tratándolo como "ausente" (mismo
   // camino que un día pasado sin turno). dayAdherence() ya se protege de
   // esto desde v99 (`base > todayRange()`) para el badge global — se
@@ -15032,22 +15108,17 @@ function slotMinuteAdherence(dayKey, originalSlot, bounds) {
   const minuteOfDay = (date) => date.getHours() * 60 + date.getMinutes();
 
   const actualIntervals = actualPauseIntervalsForDay(normalized).map(p => ({ type: p.type, startMin: minuteOfDay(p.start), endMin: minuteOfDay(p.end) }));
-  // BUG-001 (QA v361) — Mismo ajuste que minuteAdherenceForDay(): un turno
-  // que cruzó medianoche (bounds.start de ayer) se trata como presente
-  // desde el minuto 0 de este día, no desde la hora cruda de ayer.
-  const realStartMin = bounds.start
-    ? (dateKey(bounds.start) === normalized ? minuteOfDay(bounds.start) : 0)
-    : Infinity;
-  const realEndMin = bounds.end ? minuteOfDay(bounds.end) : null;
+  const presenceIntervals = sessionsToPresenceIntervals(sessions, normalized);
 
   const slotStartMin = toMinutes(originalSlot.start);
   const slotEndMin = toMinutes(originalSlot.end);
   const rangeStart = slotStartMin;
-  const rangeEnd = (isToday && !bounds.end) ? Math.min(minuteOfDay(new Date()), slotEndMin) : slotEndMin;
+  const anySessionLive = sessions.some(s => s.live);
+  const rangeEnd = (isToday && anySessionLive) ? Math.min(minuteOfDay(new Date()), slotEndMin) : slotEndMin;
   if (!(rangeEnd > rangeStart)) return null; // el bloque aún no empieza
 
   const graceMin = Number.isFinite(Number(settings.adherenceGraceMin)) && Number(settings.adherenceGraceMin) >= 0 ? Number(settings.adherenceGraceMin) : 3;
-  return computeMinuteAdherence({ plannedSlots, actualIntervals, realStartMin, realEndMin, rangeStart, rangeEnd, graceMin });
+  return computeMinuteAdherence({ plannedSlots, actualIntervals, presenceIntervals, rangeStart, rangeEnd, graceMin });
 }
 
 function dayAdherence(dayKey) {
@@ -15058,11 +15129,14 @@ function dayAdherence(dayKey) {
   // Adherencia, ni como cumplido ni como fallado.
   if (!cfg || dayIsEffectivelyOff(normalized)) return null;
 
-  const bounds = dayShiftBounds(normalized);
+  // BUG-004 — antes usaba dayShiftBounds() (solo el turno MÁS RECIENTE
+  // del día). Con 2+ sesiones, "Entrada" comparaba contra la sesión
+  // equivocada y "Salida" también — inconsistente con la tarjeta "Shift".
+  const sessions = dayShiftSessions(normalized);
   const isToday = normalized === todayCallDateKey();
   const base = callDateToDate(normalized) || new Date();
 
-  if (!bounds.start) {
+  if (!sessions.length) {
     if (isToday) return null; // el día aún no empieza, no cuenta todavía
     // Bug reportado por el usuario: un día FUTURO (navegado a propósito con
     // el selector de "Día activo") caía en la misma rama que un día PASADO
@@ -15077,7 +15151,8 @@ function dayAdherence(dayKey) {
 
   const checkpoints = [];
   const plannedStart = dateAtTime(base, formatHHMM(cfg.start));
-  const startDelta = (bounds.start.getTime() - plannedStart.getTime()) / 60000;
+  const firstSessionStart = sessions[0].start;
+  const startDelta = (firstSessionStart.getTime() - plannedStart.getTime()) / 60000;
   checkpoints.push({
     label: 'Entrada',
     ok: Math.abs(startDelta) <= ADHERENCE_TOLERANCE_MIN,
@@ -15098,8 +15173,9 @@ function dayAdherence(dayKey) {
   // loop de Break/Lunch) porque el checkpoint de "Salida" también lo necesita
   // ahora — ver Fix #12.
   const planned = getEffectiveScheduleForDay(normalized);
+  const lastSession = sessions[sessions.length - 1];
 
-  if (bounds.end) {
+  if (!lastSession.live) {
     // Fix #12: igual que el Fix #2 ya hizo para Break/Lunch, "Salida" debe
     // compararse contra la hora de fin EFECTIVA del día, no contra cfg.end
     // en crudo. En modo 'shift' con atraso real, getEffectiveScheduleForDay()
@@ -15113,10 +15189,11 @@ function dayAdherence(dayKey) {
     // planeados ese día, se cae de vuelta a cfg.end crudo como antes. En modo
     // 'anchor' (default) o sin atraso real, el último slot de `planned`
     // termina exactamente en cfg.end, así que no cambia nada ahí — cero
-    // regresión.
+    // regresión. BUG-004: "Salida" ahora se compara contra el fin de la
+    // ÚLTIMA sesión del día, no contra el turno más reciente por separado.
     const effectiveEnd = planned.length ? planned[planned.length - 1].end : formatHHMM(cfg.end);
     const plannedEnd = dateAtTime(base, effectiveEnd);
-    const endDelta = (bounds.end.getTime() - plannedEnd.getTime()) / 60000;
+    const endDelta = (lastSession.end.getTime() - plannedEnd.getTime()) / 60000;
     checkpoints.push({
       label: 'Salida',
       ok: Math.abs(endDelta) <= ADHERENCE_TOLERANCE_MIN,
@@ -15127,6 +15204,10 @@ function dayAdherence(dayKey) {
     // Día pasado sin hora de fin registrada (no se le dio "Finalizar shift" y
     // tampoco hay llamadas para estimarla). Antes esto simplemente se omitía
     // del checklist, así que un turno sin cerrar no bajaba tu adherencia.
+    // Nota (BUG-004): con dayShiftSessions() esta rama queda en la práctica
+    // inalcanzable (una sesión sin fin conocido en un día pasado se
+    // descarta por completo antes de llegar aquí) — se deja como
+    // salvaguarda defensiva, sin quitarle el mismo criterio de siempre.
     checkpoints.push({ label: 'Salida', ok: false, score: 0, note: 'No se registró la salida' });
   }
 
@@ -15138,7 +15219,7 @@ function dayAdherence(dayKey) {
     const actual = pauseForSlot(slot, normalized);
 
     if (!actual) {
-      const skip = !bounds.end && isToday && now_isBefore(slotEnd);
+      const skip = lastSession.live && isToday && now_isBefore(slotEnd);
       if (skip) continue; // todavía no le tocaba, no penalizar aún
       // Sin puntaje parcial aquí a propósito: "No tomado" es binario (o se
       // marcó con el botón/se clasificó el hueco, o no) — no hay una noción
@@ -15170,7 +15251,7 @@ function dayAdherence(dayKey) {
   // `checkpoints` de arriba (Entrada/Salida/Break/Lunch con sus notas de
   // texto) se conservan intactos como detalle informativo en el desplegable
   // "Detalle", sin cambios en su cálculo ni su formato.
-  const minuteResult = minuteAdherenceForDay(normalized, bounds);
+  const minuteResult = minuteAdherenceForDay(normalized, sessions);
   let scorePct;
   if (minuteResult) {
     scorePct = minuteResult.pct;
@@ -18057,12 +18138,15 @@ function renderWeekSummary() {
     // a los editores separados de Break/Lunch que había antes. Pedido del
     // usuario: la duración (`dur`) ya no se lee de un input directo, se
     // calcula sola a partir de Inicio y Fin. Si Fin no es posterior a
-    // Inicio (cruza medianoche o son iguales), dur queda en 0 — mismo
-    // criterio que ya usaba un "Min: 0" antes de este cambio: el bloque se
-    // ignora en silencio (buildPlannedSlots/validateDayConfig ya filtran
-    // dur<=0), sin bloquear el guardado con un error nuevo. El resultado
-    // pasa por normalizeBlockForCompare() para que la forma final (con o
-    // sin `goalMin` según el tipo) sea IDÉNTICA a la que usa
+    // Inicio (cruza medianoche o son iguales), dur queda en 0 — BUG-005
+    // (QA v361): antes el bloque se ignoraba en silencio (buildPlannedSlots/
+    // validateDayConfig ya filtran dur<=0) sin ningún aviso. Ahora
+    // saveShiftWindow()/copyDayToAll()/copyDayToWeekend() revisan
+    // blockRowsCrossingMidnight() ANTES de llegar a leer con esta función
+    // — si detectan un cruce, bloquean el guardado con un mensaje
+    // explícito en vez de dejar que este `dur=0` se cuele en silencio.
+    // El resultado pasa por normalizeBlockForCompare() para que la forma
+    // final (con o sin `goalMin` según el tipo) sea IDÉNTICA a la que usa
     // scheduleFormIsDirty() al comparar contra lo guardado.
     function readBlocksFromEditor() {
       const rows = document.querySelectorAll('#blocksEditorList .block-row');
@@ -18077,6 +18161,46 @@ function renderWeekSummary() {
         const dur = Math.max(0, toMinutes(end) - toMinutes(start));
         return normalizeBlockForCompare({ type, start, dur, goalMin: goalInput ? goalInput.value : 0 });
       });
+    }
+
+    // BUG-005 (QA v361) — Antes, un bloque con Fin <= Inicio (cruza
+    // medianoche, ej. 22:00–06:00, o Fin igual a Inicio por error de
+    // tecleo) se descartaba EN SILENCIO: readBlocksFromEditor() calculaba
+    // `dur = Math.max(0, ...)`, que da 0 en ese caso, y buildPlannedSlots()/
+    // validateDayConfig() ya filtran cualquier bloque con dur<=0 sin avisar
+    // nada — el usuario configuraba el bloque, guardaba, y al volver a
+    // abrir Horario el bloque simplemente ya no estaba, sin ningún mensaje
+    // de por medio. Los turnos/ventanas que cruzan medianoche siguen sin
+    // soportarse de verdad (ver recomendación de la auditoría: "como
+    // mínimo mostrar un mensaje de validación claro en vez de descartar
+    // datos en silencio") — este fix cubre esa mitad: se detecta el caso
+    // ANTES de descartar nada y se bloquea el guardado con un aviso
+    // explícito, en vez de guardar de todos modos y perder el bloque.
+    // Se lee directo del DOM (no de readBlocksFromEditor(), que ya perdió
+    // la hora de Fin al colapsarla a `dur`) para poder reportar el rango
+    // exacto que el usuario tecleó en cada fila problemática.
+    function blockRowsCrossingMidnight() {
+      const rows = document.querySelectorAll('#blocksEditorList .block-row');
+      const offenders = [];
+      Array.from(rows).forEach((row, i) => {
+        const typeInput = row.querySelector('.block-type-input');
+        const startInput = row.querySelector('.block-start-input');
+        const endInput = row.querySelector('.block-end-input');
+        if (!startInput || !endInput) return;
+        const start = formatHHMM(startInput.value);
+        const end = formatHHMM(endInput.value);
+        if (toMinutes(end) <= toMinutes(start)) {
+          const type = BLOCK_TYPE_LABELS[typeInput ? typeInput.value : ''] ? typeInput.value : 'work';
+          offenders.push({ index: i, typeLabel: BLOCK_TYPE_LABELS[type], start, end });
+        }
+      });
+      return offenders;
+    }
+
+    function blockCrossingMidnightMessage(offenders) {
+      const first = offenders[0];
+      const extra = offenders.length > 1 ? ` (y ${offenders.length - 1} más)` : '';
+      return `${first.typeLabel} ${timeLabel(first.start)}–${timeLabel(first.end)} cruza la medianoche${extra} — todavía no se soporta. Divide el bloque en dos (ej. ${timeLabel(first.start)}–11:59 PM y 12:00–${timeLabel(first.end)} AM del día siguiente) o ajusta la hora.`;
     }
 
     // "+ Agregar bloque": toma lo que ya está en el formulario (para no
@@ -18508,6 +18632,16 @@ function renderWeekSummary() {
     // copyDayToWeekend() más abajo.
     function saveShiftWindow() {
       if (scheduleViewMode === 'week' && scheduleWeekIsPast(scheduleWeekOffset)) return; // protegido, no debería llegar aquí (botón deshabilitado)
+      // BUG-005 (QA v361) — ver blockRowsCrossingMidnight(): antes de leer
+      // los bloques (y perder la hora de Fin al colapsarla a `dur`), se
+      // revisa si alguno cruza medianoche y se bloquea el guardado con un
+      // mensaje explícito, en vez de dejar que ese bloque desaparezca en
+      // silencio.
+      const midnightOffenders = blockRowsCrossingMidnight();
+      if (midnightOffenders.length) {
+        toast(blockCrossingMidnightMessage(midnightOffenders));
+        return;
+      }
       const cfg = readScheduleFormAsConfig();
       if (!cfg) return;
       const check = validateDayConfig(cfg);
@@ -18538,6 +18672,12 @@ function renderWeekSummary() {
     // botón aparte "Copiar a Sábado-Domingo", ver copyDayToWeekend()).
     function copyDayToAll() {
       if (scheduleViewMode === 'week' && scheduleWeekIsPast(scheduleWeekOffset)) return;
+      // BUG-005 — ver comentario en saveShiftWindow().
+      const midnightOffendersAll = blockRowsCrossingMidnight();
+      if (midnightOffendersAll.length) {
+        toast(blockCrossingMidnightMessage(midnightOffendersAll));
+        return;
+      }
       const cfg = readScheduleFormAsConfig();
       if (!cfg) return;
       const check = validateDayConfig(cfg);
@@ -18575,6 +18715,12 @@ function renderWeekSummary() {
     // referencia compartida.
     function copyDayToWeekend() {
       if (scheduleViewMode === 'week' && scheduleWeekIsPast(scheduleWeekOffset)) return;
+      // BUG-005 — ver comentario en saveShiftWindow().
+      const midnightOffendersWeekend = blockRowsCrossingMidnight();
+      if (midnightOffendersWeekend.length) {
+        toast(blockCrossingMidnightMessage(midnightOffendersWeekend));
+        return;
+      }
       const cfg = readScheduleFormAsConfig();
       if (!cfg) return;
       const check = validateDayConfig(cfg);
@@ -19119,6 +19265,29 @@ function renderWeekSummary() {
       saveSettingsOnly();
       render();
       notifyHigherRateRetroactiveMatches();
+      notifyHigherRateMidnightCrossingWindows();
+    }
+
+    // BUG-005 (QA v361) — callQualifiesForHigherRateWindow() construye
+    // winStart/winEnd con la MISMA fecha para ambos; si Fin <= Inicio (la
+    // ventana cruza medianoche, ej. 22:00–02:00), la función devuelve
+    // `false` incondicionalmente — la ventana queda guardada, con buena
+    // pinta en el editor, pero NUNCA aplica a ninguna llamada, sin ningún
+    // aviso al usuario. Se avisa aquí, cada vez que se guarda el editor
+    // (mismo patrón que notifyHigherRateRetroactiveMatches(), llamada
+    // justo al lado), en vez de dejar que el usuario descubra la ventana
+    // "rota" solo al notar que el bono nunca aparece. No bloquea el
+    // guardado — el editor de Higher Rate no tiene botón "Guardar" propio
+    // (auto-guarda cada campo), así que impedir guardar dejaría el campo
+    // atascado a medio editar; se prefiere avisar y dejar guardado, igual
+    // que ya hace el resto de este editor con datos incompletos.
+    function notifyHigherRateMidnightCrossingWindows() {
+      const windows = settings.higherRateWindows || [];
+      const offenders = windows.filter(w => toMinutes(formatHHMM(w.end)) <= toMinutes(formatHHMM(w.start)));
+      if (!offenders.length) return;
+      const first = offenders[0];
+      const extra = offenders.length > 1 ? ` (y ${offenders.length - 1} más)` : '';
+      toast(`⚠️ La ventana de Higher Rate ${timeLabel(first.start)}–${timeLabel(first.end)} del ${formatCallDayLabel(first.date)}${extra} cruza la medianoche — todavía no se soporta, no aplicará a ninguna llamada. Divide en dos ventanas (ej. ${timeLabel(first.start)}–11:59 PM y una segunda 12:00–${timeLabel(first.end)} AM al día siguiente).`);
     }
 
     // Pedido del usuario: agregar un Higher Rate para un día que YA tiene
@@ -20433,7 +20602,9 @@ function renderSchedule() {
       // vez aquí para no llamar dayShiftBounds() de nuevo (ya se desestructuró
       // arriba en shiftStart/shiftEnd/live/estimated).
       const originalPlannedSlots = originalPlannedSlotsForDay(dayKey);
-      const bounds = { start: shiftStart, end: shiftEnd, live, estimated };
+      // BUG-004 — slotMinuteAdherence() ahora necesita TODAS las sesiones
+      // del día (no solo la más reciente), ver dayShiftSessions().
+      const shiftSessions = dayShiftSessions(dayKey);
       if (subtitle) {
         subtitle.textContent = dayIsEffectivelyOff(dayKey)
           ? 'Día libre según tu horario semanal.'
@@ -20624,7 +20795,7 @@ function renderSchedule() {
         // semáforo FINO, no una barra ancha del mismo peso que Usado/
         // Productividad/Meta — mismo criterio confirmado en el mockup).
         let adherenceBarHtml = '';
-        const slotAdherence = slotMinuteAdherence(dayKey, originalPlannedSlots[slotIdx] || slot, bounds);
+        const slotAdherence = slotMinuteAdherence(dayKey, originalPlannedSlots[slotIdx] || slot, shiftSessions);
         if (slotAdherence) {
           const tone = slotAdherence.pct >= 90 ? 'good' : slotAdherence.pct >= 70 ? 'warn' : 'bad';
           // Pedido del usuario (mejora A): mostrar el motivo dominante (no
@@ -20779,14 +20950,13 @@ function renderSchedule() {
       // duración TOTAL planeada del turno (getShiftWindow) — mismo criterio
       // que ya usa "Conectado" en el resto de la app, solo comparado contra
       // el plan en vez de mostrarse en crudo.
-      // v326 — Ver comentario junto a totalConnectedMinutesAcrossShiftsToday()
-      // en el JS: se reemplaza connectedMinutesForDay() (que solo conoce el
-      // turno MÁS RECIENTE del día) por esa función nueva, que suma el
-      // tiempo Conectado de TODOS los turnos de hoy — corrige el bug de "un
-      // 2do shift el mismo día deja esta tarjeta pegada cerca de 0%".
+      // v326/BUG-004 — connectedMinutesForDay() ahora suma el tiempo
+      // Conectado de TODAS las sesiones del día (ver dayShiftSessions()),
+      // no solo la más reciente — corrige el bug de "un 2do shift el mismo
+      // día deja esta tarjeta pegada cerca de 0%".
       const shiftWindowForCard = getShiftWindow(dayKey);
       const plannedShiftMin = Math.max(0, toMinutes(shiftWindowForCard.end) - toMinutes(shiftWindowForCard.start));
-      const shiftConnectedMin = shiftStart ? totalConnectedMinutesAcrossShiftsToday(dayKey) : 0;
+      const shiftConnectedMin = shiftStart ? connectedMinutesForDay(dayKey) : 0;
       const shiftPct = plannedShiftMin > 0 ? Math.min(100, (shiftConnectedMin / plannedShiftMin) * 100) : 0;
       summaryCards.push({
         name: 'Shift',
