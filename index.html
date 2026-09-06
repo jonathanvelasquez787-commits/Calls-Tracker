@@ -19260,10 +19260,44 @@ function renderWeekSummary() {
     // Persiste lo que hay ahora mismo en el editor — llamada en cada cambio
     // de campo (auto-guardado, mismo patrón que el resto de settings sueltos
     // de Horario) y al eliminar una fila.
+    // BUG-006 (QA v361) — Editar (no borrar) una ventana ya existente podía
+    // cambiar retroactivamente el bono de una llamada real que YA calificaba
+    // para ella — sin la misma protección que ya tiene el borrado (ver
+    // removeHigherRateWindowRowAt()/purgePastHigherRateWindows(), que
+    // congelan el bono ANTES de quitar la ventana). El listener 'change'
+    // sobre #higherRateModal y el click de un tier (ver los 2 listeners más
+    // abajo) llamaban a esta función directo, que sobreescribía
+    // settings.higherRateWindows con los valores YA editados del formulario
+    // — para cuando higherRateBonusForCall() volvía a evaluar una llamada
+    // "ya ganada", la ventana original (fecha/hora/nivel con la que esa
+    // llamada calificó) ya no existía, y el bono cambiaba o desaparecía en
+    // silencio. Antes de aplicar cualquier edición, se comparan las
+    // ventanas nuevas contra las YA guardadas (por `id`) — cualquier
+    // ventana cuya fecha/hora/nivel cambió se congela primero (mismo
+    // freezeHigherRateBonusesForWindowIds() de siempre, llamado mientras
+    // `settings.higherRateWindows` TODAVÍA tiene los valores viejos, para
+    // que higherRateBonusForCall() evalúe contra la definición original) —
+    // así una llamada que ya calificó conserva su bono tal como se le
+    // mostró, sin importar qué se edite después en esa ventana. Una
+    // ventana SIN cambios (mismo date/start/end/tier) no se congela — se
+    // recalcula en vivo como siempre, para que agregar una ventana nueva o
+    // no tocar las existentes se siga comportando igual que antes.
     function saveHigherRateWindowsFromEditor() {
-      settings.higherRateWindows = readHigherRateWindowsFromEditor();
-      saveSettingsOnly();
-      render();
+      const oldWindows = settings.higherRateWindows || [];
+      const newWindows = readHigherRateWindowsFromEditor();
+      const editedIds = newWindows
+        .filter(nw => {
+          const old = oldWindows.find(ow => ow.id === nw.id);
+          return old && (old.date !== nw.date || old.start !== nw.start || old.end !== nw.end || old.tier !== nw.tier);
+        })
+        .map(w => w.id);
+      if (editedIds.length) freezeHigherRateBonusesForWindowIds(editedIds);
+      settings.higherRateWindows = newWindows;
+      // saveAll() en vez de saveSettingsOnly(): freezeHigherRateBonusesForWindowIds()
+      // puede haber marcado `calls` con `frozenHigherRateBonus` nuevo — hay
+      // que persistir ambas cosas, mismo criterio que ya usan
+      // removeHigherRateWindowRowAt()/purgePastHigherRateWindows().
+      saveAll();
       notifyHigherRateRetroactiveMatches();
       notifyHigherRateMidnightCrossingWindows();
     }
