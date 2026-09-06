@@ -16765,6 +16765,25 @@ function renderWeekSummary() {
       let currencyAmount = Number(currencyInput?.value);
       if (!Number.isFinite(minutes)) minutes = settings.productiveGoalMin;
       if (!Number.isFinite(dollars)) dollars = settings.earningsGoal;
+      // BUG-020 (QA v361) — Pedido del usuario: los `<input type="number"
+      // min="0">` de este formulario (Meta en minutos/Meta en dólares/Meta
+      // en tu moneda) no bloquean por completo un valor negativo o en
+      // notación científica tecleado directo (el atributo `min` del HTML
+      // es solo una sugerencia visual del navegador, no una validación
+      // real) — a diferencia de otros campos numéricos de la app (ej.
+      // updateRate()/updateCurrencySettings(), que sí clampan explícito al
+      // leer), esta función los usaba tal cual sin ningún `Math.max(0,
+      // ...)` — un valor negativo aquí se guardaba directo en
+      // `settings.productiveGoalMin`/`earningsGoal`, ensuciando el % de
+      // meta y el resto de cálculos que asumen una meta positiva. Se
+      // clampan aquí, en el mismo punto donde ya se resuelve el fallback
+      // por valor no-numérico — mismo criterio, ahora también contra
+      // negativos. `currencyAmount` solo se clampa si es un número real
+      // (puede venir vacío/NaN si el usuario aún no tocó ese campo — ver
+      // el fallback más abajo, que sigue calculándolo desde `dollars`).
+      minutes = Math.max(0, minutes);
+      dollars = Math.max(0, dollars);
+      if (Number.isFinite(currencyAmount)) currencyAmount = Math.max(0, currencyAmount);
       // Antes usaba la constante fija RATE (0.12 quemado en el código). Pedido
       // del usuario: si su tasa por minuto sube, debe poder editarla en Metas
       // — ahora la conversión de la meta usa settings.rate (editable, ver
@@ -16783,6 +16802,15 @@ function renderWeekSummary() {
         dollars = currencyAmount / exchangeRate;
         minutes = dollars / rate;
       }
+      // BUG-020 — Segundo clamp, justo antes de guardar: los 3 renglones de
+      // arriba (source==='minutes'/'dollars'/'currency') recalculan
+      // minutes/dollars a partir de otro campo — si esa fuente ya venía
+      // clampada a >=0 (ver arriba) el resultado siempre es >=0 también,
+      // pero se refuerza aquí igual, en el punto de guardado, para que
+      // ningún camino nuevo que se agregue después pueda colar un negativo
+      // sin pasar por este mismo filtro.
+      minutes = Math.max(0, minutes);
+      dollars = Math.max(0, dollars);
       settings.productiveGoalMin = Number(minutes);
       settings.earningsGoal = Number(dollars);
       state.productiveGoalMin = settings.productiveGoalMin;
