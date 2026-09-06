@@ -17910,8 +17910,23 @@ function renderWeekSummary() {
         const toInput = document.getElementById('accountingExportToInput');
         const fromKey = dayKeyFromIsoDate(fromInput?.value);
         const toKey = dayKeyFromIsoDate(toInput?.value);
-        const start = callDateToDate(fromKey) || todayRange();
-        const end = callDateToDate(toKey) || todayRange();
+        // BUG-024 (QA v381) — Pedido del usuario: antes, con los campos
+        // Desde/Hasta vacíos, `callDateToDate('')` devolvía `null` y ambos
+        // `start`/`end` caían al fallback `todayRange()` — el "rango
+        // personalizado" se convertía en silencio en un rango de un solo
+        // día (hoy), sin ningún aviso de que el usuario olvidó llenar las
+        // fechas. Riesgo real para un reporte pensado para declarar
+        // ingresos/impuestos: el usuario podía creer que exportó un mes
+        // completo y en realidad recibía solo el día de hoy. Ahora, si
+        // falta cualquiera de las 2 fechas (o no se pueden interpretar),
+        // se devuelve `null` en vez de un fallback silencioso —
+        // exportAccountingCsv()/exportAccountingPdf() revisan este `null`
+        // y avisan con un toast explícito antes de proceder, sin exportar
+        // nada.
+        if (!fromKey || !toKey) return null;
+        const start = callDateToDate(fromKey);
+        const end = callDateToDate(toKey);
+        if (!start || !end) return null;
         return {
           start: start <= end ? start : end,
           end: start <= end ? end : start,
@@ -17950,6 +17965,15 @@ function renderWeekSummary() {
 
     function exportAccountingCsv() {
       const range = accountingExportRange();
+      // BUG-024 — Ver comentario junto a accountingExportRange(): en modo
+      // 'custom' sin ambas fechas llenas, la función devuelve `null` en vez
+      // de un fallback silencioso a "hoy" — se avisa explícitamente y no se
+      // exporta nada, en vez de generar un CSV que parece completo pero en
+      // realidad solo cubre el día de hoy.
+      if (!range) {
+        toast('Elige las fechas Desde y Hasta antes de exportar');
+        return;
+      }
       const days = accountingExportDays(range);
       if (!days.length) {
         toast('Elige un rango de fechas válido primero.');
@@ -17999,6 +18023,13 @@ function renderWeekSummary() {
     // el usuario use "Imprimir → Guardar como PDF" del propio navegador.
     function exportAccountingPdf() {
       const range = accountingExportRange();
+      // BUG-024 — Ver comentario junto a accountingExportRange() y en
+      // exportAccountingCsv(): mismo aviso explícito en vez de un fallback
+      // silencioso a "hoy" en modo 'custom' sin fechas.
+      if (!range) {
+        toast('Elige las fechas Desde y Hasta antes de exportar');
+        return;
+      }
       const days = accountingExportDays(range);
       if (!days.length) {
         toast('Elige un rango de fechas válido primero.');
