@@ -12302,6 +12302,33 @@ $0.72"></textarea>
       };
     }
 
+    // BUG-012 (QA v361) — Pedido del usuario: una fecha NO acolchada (ej.
+    // "1/5/2026" en vez de "01/05/2026" en higherRateWindows.date, o
+    // "2026-1-5" en vez de "2026-01-05" en una clave de
+    // scheduleOverridesByWeek) — típica de un JSON importado de otra fuente,
+    // o tecleada a mano — es un dato perfectamente válido al que solo le
+    // falta el cero a la izquierda, pero la validación de más abajo exigía
+    // coincidencia EXACTA contra /^\d{2}\/\d{2}\/\d{4}$/ (o
+    // /^\d{4}-\d{2}-\d{2}$/), así que se descartaba en silencio, igual que
+    // una fecha de verdad inválida. Estas 2 funciones acolchan el valor
+    // ANTES de validar — si tras acolchar sigue sin calzar el patrón (fecha
+    // realmente rota, no solo mal formada), se sigue descartando exactamente
+    // igual que antes; lo único que cambia es que un dato válido pero sin
+    // padding ya no se pierde.
+    function normalizeSlashDate(value) {
+      const raw = String(value ?? '').trim();
+      const match = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (!match) return raw;
+      return `${pad(Number(match[1]))}/${pad(Number(match[2]))}/${match[3]}`;
+    }
+
+    function normalizeIsoDateKey(value) {
+      const raw = String(value ?? '').trim();
+      const match = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (!match) return raw;
+      return `${match[1]}-${pad(Number(match[2]))}-${pad(Number(match[3]))}`;
+    }
+
     // Parche de compatibilidad para settings guardados antes de que
     // existieran rate/currencyLabel/exchangeRate/cycleAnchorDate/
     // cyclePayOffsetDays (mismo patrón que ensureWeeklySchedule() ya usa).
@@ -12371,16 +12398,37 @@ $0.72"></textarea>
       if (!settings.scheduleOverridesByWeek || typeof settings.scheduleOverridesByWeek !== 'object' || Array.isArray(settings.scheduleOverridesByWeek)) {
         settings.scheduleOverridesByWeek = {};
       }
-      Object.keys(settings.scheduleOverridesByWeek).forEach((weekKey) => {
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(weekKey)) { delete settings.scheduleOverridesByWeek[weekKey]; return; }
-        const weekObj = settings.scheduleOverridesByWeek[weekKey];
-        if (!weekObj || typeof weekObj !== 'object' || Array.isArray(weekObj)) { delete settings.scheduleOverridesByWeek[weekKey]; return; }
-        WEEKDAYS.forEach((wd) => {
-          if (!weekObj[wd]) return;
-          weekObj[wd] = migrateDayConfigToBlocks(weekObj[wd]);
-          weekObj[wd] = ensureBlockProductivityGoals(weekObj[wd]);
+      // BUG-012 — Se acolcha cada clave (ver normalizeIsoDateKey()) ANTES de
+      // validar contra /^\d{4}-\d{2}-\d{2}$/ — una clave como "2026-1-5"
+      // (válida, solo sin ceros) ya no se pierde solo por eso. Se arma un
+      // objeto nuevo (en vez de borrar in-place con `delete` mientras se
+      // itera) para poder además fusionar sin pisar si, por una coincidencia
+      // rarísima, la versión acolchada y la sin acolchar de la misma semana
+      // llegaran a convivir en el mismo JSON — se conserva la que se procese
+      // primero, sin perder ninguna semana real por un choque de claves.
+      {
+        const rawOverrides = settings.scheduleOverridesByWeek;
+        const normalizedOverrides = {};
+        let discardedWeekCount = 0;
+        Object.keys(rawOverrides).forEach((weekKey) => {
+          const normalizedKey = normalizeIsoDateKey(weekKey);
+          const weekObj = rawOverrides[weekKey];
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedKey) || !weekObj || typeof weekObj !== 'object' || Array.isArray(weekObj)) {
+            discardedWeekCount++;
+            return;
+          }
+          WEEKDAYS.forEach((wd) => {
+            if (!weekObj[wd]) return;
+            weekObj[wd] = migrateDayConfigToBlocks(weekObj[wd]);
+            weekObj[wd] = ensureBlockProductivityGoals(weekObj[wd]);
+          });
+          if (!normalizedOverrides[normalizedKey]) normalizedOverrides[normalizedKey] = weekObj;
         });
-      });
+        settings.scheduleOverridesByWeek = normalizedOverrides;
+        if (discardedWeekCount > 0) {
+          toast(`⚠️ ${discardedWeekCount} semana(s) personalizada(s) de Horario con datos inválidos se descartaron al cargar.`);
+        }
+      }
       // v328 — Ver comentario junto a cycleGoalOverrides en
       // defaultSettings(): se descarta cualquier clave que no sea una
       // fecha "YYYY-MM-DD" o cualquier valor que no sea un número > 0 —
@@ -12394,15 +12442,36 @@ $0.72"></textarea>
         else settings.cycleGoalOverrides[key] = val;
       });
       if (!Array.isArray(settings.higherRateWindows)) settings.higherRateWindows = [];
-      settings.higherRateWindows = settings.higherRateWindows
-        .filter(w => w && typeof w === 'object' && /^\d{2}\/\d{2}\/\d{4}$/.test(String(w.date || '')) && HIGHER_RATE_TIERS[w.tier])
-        .map(w => ({
-          id: w.id || makeLocalId(),
-          date: String(w.date),
-          start: formatHHMM(w.start),
-          end: formatHHMM(w.end),
-          tier: w.tier,
-        }));
+      // BUG-012 — Se acolcha `w.date` (ver normalizeSlashDate()) ANTES de
+      // validar contra /^\d{2}\/\d{2}\/\d{4}$/ — una fecha como "1/5/2026"
+      // (válida, solo sin ceros) ya no se pierde solo por eso. Cualquier
+      // ventana que SIGA sin calzar tras acolchar (fecha realmente inválida,
+      // tier desconocido, o no es un objeto) se sigue descartando igual que
+      // antes — solo que ahora se avisa cuántas se perdieron en vez de
+      // hacerlo en silencio.
+      {
+        const rawWindows = settings.higherRateWindows;
+        const validWindows = [];
+        let discardedWindowCount = 0;
+        rawWindows.forEach(w => {
+          const normalizedDate = w && typeof w === 'object' ? normalizeSlashDate(w.date) : '';
+          if (!w || typeof w !== 'object' || !/^\d{2}\/\d{2}\/\d{4}$/.test(normalizedDate) || !HIGHER_RATE_TIERS[w.tier]) {
+            discardedWindowCount++;
+            return;
+          }
+          validWindows.push({
+            id: w.id || makeLocalId(),
+            date: normalizedDate,
+            start: formatHHMM(w.start),
+            end: formatHHMM(w.end),
+            tier: w.tier,
+          });
+        });
+        settings.higherRateWindows = validWindows;
+        if (discardedWindowCount > 0) {
+          toast(`⚠️ ${discardedWindowCount} ventana(s) de Higher Rate con datos inválidos se descartaron al cargar.`);
+        }
+      }
     }
 
     // Pedido del usuario: modo claro/oscuro — 'auto' (default) sigue el
