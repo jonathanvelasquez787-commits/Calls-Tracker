@@ -11883,7 +11883,15 @@ $0.72"></textarea>
         }
         const dur = Number(b.dur) || 0;
         const goalMin = Number(b.goalMin);
-        if (Number.isFinite(goalMin) && goalMin > 0) return b;
+        // BUG-025 (QA v381) — Pedido del usuario: `goalMin > 0` trataba un
+        // 0 configurado A PROPÓSITO (para desactivar la meta de ese bloque)
+        // igual que "sin valor" — esta función se ejecuta en cada
+        // ensureWeeklySchedule()/ensureCurrencySettings() (o sea, en cada
+        // carga de la app), así que el 0 explícito se revertía solo a la
+        // duración completa del bloque una y otra vez. `goalMin >= 0`
+        // distingue "0 a propósito" (se conserva tal cual) de "ausente/
+        // inválido" (NaN, o cualquier negativo — cae al default de dur).
+        if (Number.isFinite(goalMin) && goalMin >= 0) return b;
         return { ...b, goalMin: dur };
       });
       return dayCfg;
@@ -18550,7 +18558,14 @@ function renderWeekSummary() {
         // ensureBlockProductivityGoals() usa para configs migradas), así
         // "pide" un valor de entrada razonable en vez de arrancar en 0 —
         // el usuario lo ajusta a la baja si quiere una meta más realista.
-        const goalVal = Number(b?.goalMin) || durVal;
+        // BUG-025 (QA v381) — Mismo problema que en ensureBlockProductivityGoals():
+        // `|| durVal` trataba un `goalMin: 0` guardado a propósito igual
+        // que "sin valor", mostrando la duración completa del bloque en vez
+        // del 0 real. Se distingue explícitamente "número finito y >= 0"
+        // (se muestra tal cual, incluido 0) de "ausente/inválido" (cae a
+        // durVal como default razonable).
+        const rawGoalMin = Number(b?.goalMin);
+        const goalVal = (Number.isFinite(rawGoalMin) && rawGoalMin >= 0) ? rawGoalMin : durVal;
         // v271 — Ver comentario junto a BLOCK_TIMELINE_META/
         // formatBlockDurationLabel arriba: `meta`/`durationLabel` son solo
         // para pintar la tarjeta (ícono, subtítulo, píldora de duración) —
