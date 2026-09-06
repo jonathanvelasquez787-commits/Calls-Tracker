@@ -18018,6 +18018,20 @@ function renderWeekSummary() {
     // semana o después de aplicarlo (ver syncShiftModalFields()/
     // applyScheduleOffset()).
     let scheduleOffsetMin = 0;
+    // BUG-013 (QA v361) — Pedido del usuario: el stepper "Ajustar turno
+    // completo" no tenía límite superior/inferior — hacer click muchas
+    // veces en "+" (o "-") podía acumular un offset enorme (ej. +30h) sin
+    // ningún aviso. `minutesToHHMM()` aplica `% 1440` (envuelve a un día de
+    // 24h), así que ese +30h se aplicaba en silencio como si fuera +6h —
+    // el usuario solo veía el error genérico de "bloques que se cruzan" al
+    // guardar, sin relacionarlo con el ajuste recién hecho. Se limita el
+    // offset a ±12h (720 min) por ajuste — de sobra para cualquier
+    // corrección real de horario (llegar unas horas tarde/temprano), y al
+    // ser menos de medio día nunca puede "envolver" sobre sí mismo sin que
+    // sea obvio. Ver los 2 listeners de scheduleOffsetMinusBtn/
+    // scheduleOffsetPlusBtn más abajo, que hacen cumplir este límite con un
+    // aviso explícito en vez de dejar que el offset crezca sin control.
+    const SCHEDULE_OFFSET_LIMIT_MIN = 720;
 
     // "+1:00" / "-0:30" / "+0:00" — mismo formato que ya usa el resto de la
     // app para horas (ver formatDuration()), pero con signo explícito y sin
@@ -22371,10 +22385,20 @@ function render() {
     // min (sin límite de rango — el usuario puede acumular varias horas si
     // hace falta), "Aplicar a todos" dispara applyScheduleOffset().
     document.getElementById('scheduleOffsetMinusBtn').addEventListener('click', () => {
+      // BUG-013 — ver comentario junto a SCHEDULE_OFFSET_LIMIT_MIN arriba.
+      if (scheduleOffsetMin - 15 < -SCHEDULE_OFFSET_LIMIT_MIN) {
+        toast(`El ajuste no puede pasar de -12h de una sola vez.`);
+        return;
+      }
       scheduleOffsetMin -= 15;
       syncScheduleOffsetUI();
     });
     document.getElementById('scheduleOffsetPlusBtn').addEventListener('click', () => {
+      // BUG-013 — ver comentario junto a SCHEDULE_OFFSET_LIMIT_MIN arriba.
+      if (scheduleOffsetMin + 15 > SCHEDULE_OFFSET_LIMIT_MIN) {
+        toast(`El ajuste no puede pasar de +12h de una sola vez.`);
+        return;
+      }
       scheduleOffsetMin += 15;
       syncScheduleOffsetUI();
     });
