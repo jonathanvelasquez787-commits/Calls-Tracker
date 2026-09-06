@@ -5965,6 +5965,89 @@
 
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+    /* BUG-010 (QA v361) — Pedido del usuario: sin sincronización entre
+       pestañas, la app no tenía forma de avisar que otra pestaña/ventana
+       del mismo navegador (o dos dispositivos con el mismo perfil
+       sincronizado) acababa de guardar datos más nuevos — la primera
+       pestaña que llamara a saveAll() después ganaba en silencio,
+       sobrescribiendo lo que la otra acababa de guardar (incluida una
+       llamada en curso). Mergear automáticamente dos estados de la app
+       (turnos/llamadas/pausas/horario) de forma segura no es viable sin
+       arriesgar corromper datos — se opta por AVISAR de inmediato en vez
+       de intentar una fusión silenciosa: un banner persistente (no un
+       `toast()` normal, que desaparece solo a los 2.2s y no tiene botón)
+       que se queda visible hasta que el usuario recargue o lo cierre a
+       mano, con un botón directo de "Recargar" para traer la versión más
+       reciente. Mismo lenguaje visual que `.toast` (panel navy, sombra,
+       borde) pero con acento de advertencia (--warn) y sin auto-ocultarse. */
+    .storage-conflict-banner {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%) translateY(18px);
+      opacity: 0;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      background: var(--panel-navy);
+      border: 1px solid rgba(var(--warn-rgb), .4);
+      padding: 12px 14px;
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      transition: opacity .2s ease, transform .2s ease;
+      color: var(--text);
+      font-size: 13px;
+      max-width: calc(100vw - 24px);
+      text-align: center;
+      z-index: 101;
+    }
+    .storage-conflict-banner.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+    .storage-conflict-banner-icon {
+      flex: 0 0 auto;
+      color: var(--warn);
+      display: inline-flex;
+    }
+    .storage-conflict-banner-text {
+      flex: 1 1 240px;
+      min-width: 0;
+      text-align: left;
+      line-height: 1.4;
+    }
+    .storage-conflict-banner-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 0 0 auto;
+    }
+    .storage-conflict-reload-btn {
+      border: 1px solid rgba(var(--warn-rgb), .4);
+      background: rgba(var(--warn-rgb), .16);
+      color: var(--warn);
+      border-radius: 10px;
+      padding: 8px 13px;
+      font-weight: 800;
+      font-size: 12.5px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .storage-conflict-reload-btn:hover { filter: brightness(1.08); }
+    .storage-conflict-dismiss-btn {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: var(--muted);
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+    .storage-conflict-dismiss-btn:hover { background: rgba(255,255,255,.09); color: var(--text); }
+
     @media (max-width: 1200px) {
       .hero { grid-template-columns: 1fr; }
       .slot, .event { grid-template-columns: 1fr; }
@@ -11448,6 +11531,18 @@ $0.72"></textarea>
 </div>
 </div>
 <div class="toast" id="toast" aria-live="polite" role="status"></div>
+<!-- BUG-010 (QA v361) — Ver comentario junto a ".storage-conflict-banner"
+     en el CSS. Oculto por default; se muestra solo cuando el evento nativo
+     `storage` detecta que OTRA pestaña/ventana guardó datos nuevos en
+     alguna de las 3 llaves de localStorage que usa esta app. -->
+<div class="storage-conflict-banner" id="storageConflictBanner" role="alert" aria-live="assertive">
+  <span class="storage-conflict-banner-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17.01"/></svg></span>
+  <span class="storage-conflict-banner-text">Otra pestaña/ventana guardó cambios más recientes aquí. Si sigues usando esta pestaña, tu próximo cambio podría sobrescribirlos.</span>
+  <span class="storage-conflict-banner-actions">
+    <button class="storage-conflict-reload-btn" id="storageConflictReloadBtn" type="button">Recargar</button>
+    <button class="storage-conflict-dismiss-btn" id="storageConflictDismissBtn" type="button" aria-label="Cerrar aviso">×</button>
+  </span>
+</div>
 <script>
     const STORAGE_KEY = 'propio_shift_tracker_state_es_v4';
     const CALLS_KEY = 'propio_shift_tracker_calls_es_v4';
@@ -21938,6 +22033,37 @@ function render() {
     window.addEventListener('resize', () => {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => renderTable(), 120);
+    });
+
+    // BUG-010 (QA v361) — Pedido del usuario: detectar cambios externos vía
+    // evento `storage` y avisar en vez de dejar que la última pestaña que
+    // guarde gane en silencio. El evento nativo `storage` solo se dispara
+    // en pestañas/ventanas DISTINTAS a la que hizo el cambio (nunca en la
+    // que llamó a localStorage.setItem), así que es la señal exacta que
+    // hace falta: "algo más, en otro lado, ya modificó estos datos".
+    // `e.key === null` (localStorage.clear(), ver eraseAllData()) también
+    // cuenta como cambio relevante — cualquiera de las 3 llaves de esta app
+    // pudo haberse vaciado. `storageConflictShown` evita mostrar el banner
+    // más de una vez por sesión: saveAll() en la otra pestaña dispara HASTA
+    // 3 eventos 'storage' casi seguidos (uno por cada llave que cambia), y
+    // no tiene sentido apilar el mismo aviso 3 veces.
+    let storageConflictShown = false;
+    function showStorageConflictBanner() {
+      const banner = document.getElementById('storageConflictBanner');
+      if (banner) banner.classList.add('show');
+    }
+    window.addEventListener('storage', (e) => {
+      if (e.key !== null && ![STORAGE_KEY, CALLS_KEY, SETTINGS_KEY].includes(e.key)) return;
+      if (storageConflictShown) return;
+      storageConflictShown = true;
+      showStorageConflictBanner();
+    });
+    const storageConflictReloadBtn = document.getElementById('storageConflictReloadBtn');
+    if (storageConflictReloadBtn) storageConflictReloadBtn.addEventListener('click', () => window.location.reload());
+    const storageConflictDismissBtn = document.getElementById('storageConflictDismissBtn');
+    if (storageConflictDismissBtn) storageConflictDismissBtn.addEventListener('click', () => {
+      const banner = document.getElementById('storageConflictBanner');
+      if (banner) banner.classList.remove('show');
     });
 
     document.getElementById('shiftControlBtn').addEventListener('click', toggleShift);
