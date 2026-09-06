@@ -21901,7 +21901,22 @@ function render() {
       modal.classList.add('open');
       modal.setAttribute('aria-hidden', 'false');
       if (!openModalStack.includes(id)) openModalStack.push(id);
-      const focusTarget = modal.querySelector('input, textarea, button');
+      // BUG-019 (QA v361) — Pedido del usuario: antes se enfocaba el
+      // primer `input, textarea, button` en orden de DOM — como el botón
+      // "×" de cerrar suele venir ANTES que los campos reales dentro de
+      // `.modal-head`, terminaba llevándose el foco inicial en vez de un
+      // campo útil (ej. el `<h3>`/`<p>` del título va antes que los inputs
+      // reales en varios modales). Se prefiere explícitamente el primer
+      // input/select/textarea VISIBLE (reutiliza getModalFocusableElements(),
+      // que ya filtra ocultos/deshabilitados — mismo criterio que ya usa la
+      // trampa de foco de BUG-008, sin duplicar esa lógica) — solo se cae de
+      // vuelta a cualquier otro elemento enfocable (button incluido) si el
+      // modal no tiene ningún campo de texto/selección (ej. #confirmModal,
+      // que solo tiene botones).
+      const scope = modal.querySelector('.modal-card') || modal;
+      const focusables = getModalFocusableElements(scope);
+      const preferredTarget = focusables.find(el => ['INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName));
+      const focusTarget = preferredTarget || focusables[0];
       if (focusTarget) {
         setTimeout(() => focusTarget.focus(), 0);
       }
