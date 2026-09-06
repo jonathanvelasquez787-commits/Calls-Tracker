@@ -20586,7 +20586,13 @@ function saveCallEditor() {
     toast('La duración debe ser un número mayor a 0');
     return;
   }
-  const pay = parseMoney(payInput?.value).toFixed(2);
+  // BUG-027 (QA v381) — parseMoney() preserva el signo '-' a propósito
+  // (para poder leer valores ya negativos de datos viejos/importados), así
+  // que un valor negativo tecleado a mano se guardaba tal cual — mismo
+  // riesgo de integridad financiera que ya motivó el clamp de BUG-020,
+  // aquí en un campo que quedó fuera de esa auditoría. `min="0"` en el
+  // HTML es solo una sugerencia visual del navegador, no basta.
+  const pay = Math.max(0, parseMoney(payInput?.value)).toFixed(2);
   const billable = billableInput?.value === 'Yes' ? 'Yes' : 'No';
   const dropped = droppedInput?.value === 'Yes' ? 'Yes' : 'No';
 
@@ -20996,7 +21002,10 @@ function saveManualCall() {
   const callStart = callStartLabelFromHHMM(startInput?.value);
   const billable = billableInput?.value === 'Yes' ? 'Yes' : 'No';
   const dropped = droppedInput?.value === 'Yes' ? 'Yes' : 'No';
-  const pay = parseMoney(payInput?.value || manualCallEstimatedPay(duration)).toFixed(2);
+  // BUG-027 (QA v381) — Ver comentario junto al mismo fix en
+  // saveCallEditor(): mismo clamp explícito contra negativos, ya que
+  // parseMoney() preserva el signo '-' a propósito.
+  const pay = Math.max(0, parseMoney(payInput?.value || manualCallEstimatedPay(duration))).toFixed(2);
   const customerId = customerIdInput?.value || '';
 
   const candidate = buildManualCallCandidate({ customerId, callDate, callStart, durationMin: duration, billable, dropped, pay });
