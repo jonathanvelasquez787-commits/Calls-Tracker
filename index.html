@@ -11077,6 +11077,21 @@ $0.72"></textarea>
 <button class="mc-btn-warn-pill" id="clearCallsBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><path d="M6 7V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v3"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/></svg> Limpiar</button>
 </div>
 <div class="note">Después de importar, el campo se vacía y las filas se guardan localmente en el navegador.</div>
+<!-- BUG-017 (QA v361) — Pedido del usuario: antes, las filas omitidas al
+     importar (por duplicado exacto o por traslape con una llamada ya
+     guardada) solo se resumían como un número en el toast ("· 2
+     traslapada(s) omitida(s)"), sin ninguna forma de revisar CUÁLES filas
+     se descartaron — si `callDedupeKey()` trataba por coincidencia dos
+     llamadas reales distintas como la misma (mismo cliente/fecha/hora/
+     duración/pago/billable/dropped, posible con datos truncados/redondeados
+     de Propio), la segunda se perdía sin ningún rastro auditable. Este
+     bloque (oculto por default, solo aparece tras un import con al menos
+     una fila omitida — ver renderImportSkippedSummary() en el JS) lista
+     cada fila descartada con su motivo (Duplicado exacto / Traslapa con
+     #cliente ya guardado) para que el usuario pueda revisar y decidir si
+     de verdad eran la misma llamada o no — reutiliza el mismo `.note` de
+     arriba, sin ningún lenguaje visual nuevo. -->
+<div class="note" id="importSkippedSummary" style="display:none;"></div>
 
 </div>
 </div>
@@ -17659,6 +17674,30 @@ function renderWeekSummary() {
       return new Date(a.startISO) < new Date(b.endISO) && new Date(b.startISO) < new Date(a.endISO);
     }
 
+    // BUG-017 (QA v361) — Pinta el resumen de filas omitidas al importar
+    // (duplicados exactos + traslapes), cada una con su motivo, dentro de
+    // #importSkippedSummary — reemplaza el toast-solo-conteo de antes.
+    // Oculto por completo si no se omitió ninguna fila.
+    function renderImportSkippedSummary(duplicates, overlaps) {
+      const el = document.getElementById('importSkippedSummary');
+      if (!el) return;
+      const total = duplicates.length + overlaps.length;
+      if (!total) {
+        el.style.display = 'none';
+        el.innerHTML = '';
+        return;
+      }
+      const rowsHtml = [];
+      duplicates.forEach(c => {
+        rowsHtml.push(`<li>#${escapeHtml(c.customerId)} · ${escapeHtml(c.callDate)} ${escapeHtml(c.callStart)} — Duplicado exacto de una llamada ya guardada (mismo cliente/fecha/hora/duración/pago/billable/dropped)</li>`);
+      });
+      overlaps.forEach(o => {
+        rowsHtml.push(`<li>#${escapeHtml(o.customerId)} · ${escapeHtml(o.callDate)} ${escapeHtml(o.callStart)} — Traslapa con la llamada #${escapeHtml(o.withCustomerId)} (${escapeHtml(o.withCallStart)}) ya guardada</li>`);
+      });
+      el.innerHTML = `<strong>${total} fila(s) omitida(s) al importar — revisa si de verdad son la misma llamada:</strong><ul style="margin:6px 0 0; padding-left:18px;">${rowsHtml.join('')}</ul>`;
+      el.style.display = '';
+    }
+
     function importCalls() {
       const ta = document.getElementById('callInput');
       const parsed = parseCalls(ta.value);
@@ -17668,8 +17707,17 @@ function renderWeekSummary() {
       }
       const existing = new Set(calls.map(callDedupeKey));
       const importTs = new Date().toISOString();
+      // BUG-017 — Se conservan las filas descartadas por coincidencia exacta
+      // de callDedupeKey() (no solo su conteo) para poder listarlas después.
+      const skippedDuplicates = [];
       const deduped = parsed
-        .filter(c => !existing.has(callDedupeKey(c)))
+        .filter(c => {
+          if (existing.has(callDedupeKey(c))) {
+            skippedDuplicates.push(c);
+            return false;
+          }
+          return true;
+        })
         .sort((a, b) => new Date(a.startISO) - new Date(b.startISO));
 
       // No se permite importar una fila que se traslape en el tiempo con una
@@ -17684,10 +17732,15 @@ function renderWeekSummary() {
       // cumplimiento 70/60 y ganancias sin ningún aviso.
       const overlapCheckSet = [...calls];
       const accepted = [];
+      // BUG-017 — Igual que skippedDuplicates arriba: se guarda con qué
+      // llamada ya guardada se traslapó cada fila, no solo el conteo.
+      const skippedOverlaps = [];
       let overlapSkipped = 0;
       for (const c of deduped) {
-        if (overlapCheckSet.some(existingCall => callsOverlap(existingCall, c))) {
+        const overlapsWith = overlapCheckSet.find(existingCall => callsOverlap(existingCall, c));
+        if (overlapsWith) {
           overlapSkipped++;
+          skippedOverlaps.push({ ...c, withCustomerId: overlapsWith.customerId, withCallStart: overlapsWith.callStart });
           continue;
         }
         overlapCheckSet.push(c);
@@ -17714,12 +17767,18 @@ function renderWeekSummary() {
         ? [lateCount ? `${lateCount} tarde(s)` : '', historicCount ? `${historicCount} histórica(s)` : ''].filter(Boolean).join(' · ')
         : 'a tiempo';
       const overlapNote = overlapSkipped ? ` · ${overlapSkipped} traslapada(s) omitida(s)` : '';
-      setEvent('import', 'Llamadas importadas', `${unique.length} fila(s) · ${importNote}${overlapNote}`, 'Propio');
+      const duplicateNote = skippedDuplicates.length ? ` · ${skippedDuplicates.length} duplicada(s) omitida(s)` : '';
+      setEvent('import', 'Llamadas importadas', `${unique.length} fila(s) · ${importNote}${overlapNote}${duplicateNote}`, 'Propio');
       saveAll();
-      if (!unique.length && overlapSkipped) {
-        toast(`Todas las filas se traslapaban con llamadas existentes (${overlapSkipped} omitida(s))`);
+      // BUG-017 — El resumen detallado (con motivo por fila) queda visible
+      // dentro del modal en vez de depender solo del toast, que ya
+      // desaparece solo — así el usuario puede revisar con calma cuáles
+      // filas se omitieron y por qué, antes de cerrar "Pegar Llamadas".
+      renderImportSkippedSummary(skippedDuplicates, skippedOverlaps);
+      if (!unique.length && (overlapSkipped || skippedDuplicates.length)) {
+        toast(`Ninguna fila nueva — todas se omitieron por duplicado o traslape (${overlapSkipped + skippedDuplicates.length}). Revisa el detalle debajo del cuadro de texto.`);
       } else {
-        toast(`${unique.length} llamada(s) importada(s)${overlapNote}`);
+        toast(`${unique.length} llamada(s) importada(s)${overlapNote}${duplicateNote}`);
       }
     }
 
@@ -22412,7 +22471,13 @@ function render() {
       syncNotificationsModalFields();
       openModal('notificationsModal');
     });
-    document.getElementById('pasteCallsBtn').addEventListener('click', () => openModal('callsModal'));
+    document.getElementById('pasteCallsBtn').addEventListener('click', () => {
+      // BUG-017 — El resumen de filas omitidas es del ÚLTIMO import — se
+      // limpia al reabrir el modal para no mostrar un detalle viejo como si
+      // fuera del pegado que se está por hacer ahora.
+      renderImportSkippedSummary([], []);
+      openModal('callsModal');
+    });
     document.getElementById('addCallManualBtn').addEventListener('click', openManualCallModal);
     document.getElementById('manualCallDurationInput').addEventListener('input', updateManualCallPreview);
     document.getElementById('manualCallPayInput').addEventListener('input', () => { manualCallPayDirty = true; });
