@@ -1793,6 +1793,47 @@
       outline-offset: 2px;
     }
 
+    /* BUG-018 (QA v361) — Pedido del usuario: el switch "Modo oscuro" se
+       veía y se comportaba como cualquier otro toggle activo — solo al
+       soltarlo (apagarlo) se revertía solo y aparecía un toast explicando
+       por qué (ver setThemeFromSidebarSwitch()) — nada en el propio
+       control avisaba DE ANTEMANO que está bloqueado, así que se sentía
+       como un bug del switch en sí hasta leer ese toast. Se agrega un
+       badge "Próximamente" (mismo lenguaje visual que ya usa
+       `.imported-historic` en Tabla de llamadas: pill neutro, borde
+       var(--line), texto var(--muted) — ningún color/patrón nuevo) junto a
+       la etiqueta, y se atenúa el switch completo (mismo criterio de
+       opacidad reducida que ya usa `.action-btn:disabled` en el resto de
+       la app para comunicar "esto no se puede tocar"). CERO cambios
+       funcionales: `setThemeFromSidebarSwitch()`/`isEffectivelyDark()` no
+       se tocan — el switch se sigue reflejando/togglear exactamente igual
+       (sigue "encendido" siempre, ya que el modo oscuro es el único
+       disponible); esto solo cambia cómo se ve en reposo, antes de que el
+       usuario intente apagarlo. */
+    .sidebar-darkmode-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 7px;
+      margin-left: 6px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: var(--muted);
+      font-size: 9.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+      white-space: nowrap;
+      vertical-align: 1px;
+    }
+    .sidebar-switch.is-locked {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+    .sidebar-switch.is-locked input {
+      cursor: not-allowed;
+    }
+
     /* Escritorio con el sidebar FIJADO (pedido del usuario: "colapsado
        pero con opción de fijar abierto"): el sidebar deja de flotar sobre
        el contenido y en vez empuja `.app` hacia la derecha — mismo ancho
@@ -9555,8 +9596,8 @@
 <div class="sidebar-footer">
 <div class="sidebar-darkmode-row">
 <span class="sidebar-darkmode-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/></svg></span>
-<span>Modo oscuro</span>
-<label class="sidebar-switch" title="Estamos trabajando en mejorar el modo claro — disponible pronto.">
+<span>Modo oscuro <span class="sidebar-darkmode-badge">Próximamente</span></span>
+<label class="sidebar-switch is-locked" title="Estamos trabajando en mejorar el modo claro — disponible pronto.">
 <input aria-label="Modo oscuro" id="sidebarDarkModeInput" type="checkbox"/>
 <span class="sidebar-switch-track"><span class="sidebar-switch-thumb"></span></span>
 </label>
