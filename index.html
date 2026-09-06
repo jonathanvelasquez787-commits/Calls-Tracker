@@ -16943,6 +16943,24 @@ function renderWeekSummary() {
         return;
       }
       if (shiftWouldStartNew()) return startShift();
+      // BUG-014 (QA v361) — Pedido del usuario: si hay una llamada activa
+      // al momento de finalizar el turno, endShift() no la tocaba ni
+      // advertía nada — el turno quedaba "cerrado" en shiftEndedAt, y al
+      // guardarse esa llamada más tarde (al colgarla), la reconciliación de
+      // dayShiftBounds() podía extender el fin del turno retroactivamente
+      // para cubrirla, contradiciendo el momento real en que se pulsó
+      // "Finalizar". Se advierte antes de proceder — si el usuario
+      // confirma, se cuelga/guarda la llamada de inmediato (endCall(),
+      // mismo flujo de guardado automático de siempre) y RECIÉN DESPUÉS se
+      // cierra el turno, para que shiftEndedAt quede fijado con la llamada
+      // ya resuelta, sin extensión retroactiva posterior.
+      if (state.activeCall) {
+        appConfirm('Tienes una llamada en curso. Al finalizar el turno se guardará esa llamada con la duración transcurrida hasta ahora y luego se cerrará el turno. ¿Finalizar de todos modos?', () => {
+          endCall();
+          endShift();
+        });
+        return;
+      }
       return endShift();
     }
 
