@@ -9562,6 +9562,21 @@
     }
 
     @media (max-width: 760px) {
+      /* v391 — Pedido del usuario: vista mobile de "Fechas de pago"
+         (mockup fechas_pago_mockup_mobile.html, aprobado en otra sesión).
+         Solo ajusta la tarjeta destacada de "Próximo pago" (.pd-next-*,
+         ver "v390" más arriba en este mismo archivo para las reglas base) —
+         la lista de ciclos (.wk-list/.wk-row/etc., justo debajo) ya
+         reutiliza el @media de esta misma sección sin cambios. CERO
+         cambios de HTML/JS: renderPayDatesSection() no se toca, solo
+         tamaños/padding para el ancho angosto. */
+      .pd-next-card { padding: 12px 13px; border-radius: 14px; }
+      .pd-next-label { font-size: 10px; }
+      .pd-next-date { font-size: 17px; }
+      .pd-next-sub { font-size: 11px; margin-top: 4px; }
+      .pd-next-days { font-size: 22px; }
+      .pd-next-days-label { font-size: 9px; }
+
       .wk-row { gap: 9px; padding: 9px 2px; }
       .wk-row.is-today { padding-left: 6px; padding-right: 6px; }
       .wk-row-icon { width: 28px; height: 28px; border-radius: 8px; }
