@@ -21415,7 +21415,20 @@ function render() {
       renderHeader();
       renderSchedule();
       renderWeekSummary();
-      renderReportsDashboard();
+      // BUG-009 (QA v361) — renderReportsDashboard() (KPIs, gráfica de 14
+      // días, gráfica mensual, racha de cumplimiento, etc.) recalculaba
+      // meses de historial día por día (reportsDailySeries()/
+      // reportsMonthlySeries(), cada uno llamando a dayAdherence()/
+      // dayIsEffectivelyOff()/importedCallStats() por cada día) sin
+      // importar si la página "Reportes" estaba siquiera visible — este
+      // render() se dispara desde CASI CUALQUIER acción del usuario
+      // (importar llamadas, guardar ajustes, tocar Break/Lunch...), así
+      // que el costo se repetía todo el tiempo, incluso viendo Inicio u
+      // Horario, y crecía con la antigüedad de la cuenta. Se recalcula
+      // solo cuando esa página está activa — navigateToPage() ya se
+      // encarga de refrescarla al entrar a Reportes (ver ahí), así que
+      // los datos nunca quedan obsoletos para quien sí la está viendo.
+      if (currentPage === 'reports') renderReportsDashboard();
       renderTable();
       renderDayStatsCards();
       updateLiveActivityBar();
@@ -21560,6 +21573,12 @@ function render() {
       const pages = ['home', 'schedule', 'reports'];
       if (!pages.includes(page)) page = 'home';
       currentPage = page;
+      // BUG-009 — render() ya no recalcula renderReportsDashboard() salvo
+      // que currentPage === 'reports' (ver esa función) — así que, si la
+      // página estuvo en pausa mientras el usuario veía Inicio/Horario,
+      // hace falta refrescarla explícitamente justo al entrar, para que
+      // los datos no se vean atrasados el instante en que se abre.
+      if (page === 'reports') renderReportsDashboard();
       relocateCallsSection(page);
       document.querySelectorAll('.app-page').forEach(el => {
         el.hidden = el.getAttribute('data-page') !== page;
