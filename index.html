@@ -6048,6 +6048,16 @@
     }
     .storage-conflict-dismiss-btn:hover { background: rgba(255,255,255,.09); color: var(--text); }
 
+    /* BUG-015 (QA v361) — Pedido del usuario: mismo lenguaje visual que
+       `.storage-conflict-banner` (reutilizada tal cual como clase base, ver
+       el HTML) para el aviso de "sonido bloqueado por el navegador" — solo
+       se le da un `bottom` distinto para que, si ambos banners llegaran a
+       estar visibles a la vez (caso raro pero posible), no queden
+       exactamente encimados uno sobre el otro. */
+    #audioBlockedBanner {
+      bottom: 84px;
+    }
+
     @media (max-width: 1200px) {
       .hero { grid-template-columns: 1fr; }
       .slot, .event { grid-template-columns: 1fr; }
@@ -11543,6 +11553,20 @@ $0.72"></textarea>
     <button class="storage-conflict-dismiss-btn" id="storageConflictDismissBtn" type="button" aria-label="Cerrar aviso">×</button>
   </span>
 </div>
+<!-- BUG-015 (QA v361) — Ver comentario junto a "notifyAudioBlockedIfNeeded()"
+     en el JS. Oculto por default; se muestra solo cuando un intento real de
+     reproducir un aviso sonoro (turno/Break/Lunch/descanso por
+     productividad) confirma que el AudioContext sigue sin quedar 'running'
+     después de intentar reanudarlo — la política de autoplay del
+     navegador lo está bloqueando en silencio. -->
+<div class="storage-conflict-banner" id="audioBlockedBanner" role="alert" aria-live="assertive">
+  <span class="storage-conflict-banner-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polygon points="4 9 8 9 12 5 12 19 8 15 4 15"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg></span>
+  <span class="storage-conflict-banner-text">El navegador bloqueó el sonido de los avisos — toca "Activar sonido" para permitirlo mientras esta pestaña siga abierta.</span>
+  <span class="storage-conflict-banner-actions">
+    <button class="storage-conflict-reload-btn" id="audioBlockedActivateBtn" type="button">Activar sonido</button>
+    <button class="storage-conflict-dismiss-btn" id="audioBlockedDismissBtn" type="button" aria-label="Cerrar aviso">×</button>
+  </span>
+</div>
 <script>
     const STORAGE_KEY = 'propio_shift_tracker_state_es_v4';
     const CALLS_KEY = 'propio_shift_tracker_calls_es_v4';
@@ -13373,6 +13397,53 @@ let shiftAlarmFiredForDate = null;
 let shiftAlarmAudioCtx = null;
 const SHIFT_ALARM_REPEAT_MS = 6000;
 
+// BUG-015 (QA v361) — Pedido del usuario: los sonidos basados en Web Audio
+// (alarmas de turno/Break/Lunch, descanso por productividad) pueden fallar
+// silenciosamente si el navegador bloquea el audio por política de
+// autoplay — `ctx.resume()` puede no llegar nunca a 'running' sin un gesto
+// de usuario reciente, y hasta ahora eso se tragaba en silencio
+// (`.catch(() => {})`) mientras el `toast()` visual seguía apareciendo
+// igual, como si el sonido sí hubiera sonado. `notifyAudioBlockedIfNeeded()`
+// se llama justo después de cada intento de `resume()` (ver
+// playShiftAlarmBeep()/getProductiveBreakAudioCtx()) — si el contexto
+// sigue sin quedar 'running', muestra un banner persistente (mismo
+// lenguaje visual que `.storage-conflict-banner`, reutilizado tal cual)
+// con un botón "Activar sonido": un click real SÍ cuenta como gesto de
+// usuario ante el navegador, así que reanudar los contextos ahí adentro
+// tiene una chance real de funcionar, a diferencia de los intentos
+// automáticos de las alarmas. Solo se muestra UNA vez por sesión
+// (`audioBlockedShown`) — evita que el reintento cada
+// `SHIFT_ALARM_REPEAT_MS` de una alarma en curso lo vuelva a mostrar de
+// golpe apenas el usuario lo cierra con la "×".
+let audioBlockedShown = false;
+
+function notifyAudioBlockedIfNeeded(ctx) {
+  if (!ctx || ctx.state === 'running' || audioBlockedShown) return;
+  audioBlockedShown = true;
+  const banner = document.getElementById('audioBlockedBanner');
+  if (banner) banner.classList.add('show');
+}
+
+function hideAudioBlockedBanner() {
+  const banner = document.getElementById('audioBlockedBanner');
+  if (banner) banner.classList.remove('show');
+}
+
+function activateBlockedAudio() {
+  try {
+    if (!shiftAlarmAudioCtx) shiftAlarmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    shiftAlarmAudioCtx.resume().catch(() => {});
+  } catch {}
+  try {
+    if (!productiveBreakAudioCtx) productiveBreakAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    productiveBreakAudioCtx.resume().catch(() => {});
+  } catch {}
+  audioBlockedShown = false;
+  hideAudioBlockedBanner();
+  playShiftAlarmBeep();
+  toast('🔊 Sonido activado');
+}
+
 // Beep sintetizado con Web Audio (dos tonos cortos ascendentes) — sin
 // archivo de audio externo ni petición de red, funciona completamente
 // offline/sandboxed. Si el navegador bloquea el audio por política de
@@ -13395,7 +13466,18 @@ function playShiftAlarmBeep() {
   try {
     if (!shiftAlarmAudioCtx) shiftAlarmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const ctx = shiftAlarmAudioCtx;
-    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    // BUG-015 (QA v361) — Pedido del usuario: `ctx.resume()` puede fallar
+    // silenciosamente (política de autoplay sin gesto de usuario reciente)
+    // — antes el `.catch(() => {})` tragaba ese fallo sin avisar nada, y el
+    // `toast()` visual del aviso seguía apareciendo igual, dando la falsa
+    // impresión de que el sonido sí sonó. Se revisa el estado REAL del
+    // contexto después de que la promesa de `resume()` se resuelva (sea
+    // éxito o error) — si sigue sin quedar 'running', se muestra un banner
+    // persistente (ver notifyAudioBlockedIfNeeded()) en vez de dejarlo
+    // pasar en silencio.
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {}).finally(() => notifyAudioBlockedIfNeeded(ctx));
+    }
     const now = ctx.currentTime;
     const vol = getMasterVolumeFraction();
     [0, 0.18].forEach((offset, i) => {
@@ -13716,7 +13798,13 @@ function checkBreakEndAlarm() {
 let productiveBreakAudioCtx = null;
 function getProductiveBreakAudioCtx() {
   if (!productiveBreakAudioCtx) productiveBreakAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (productiveBreakAudioCtx.state === 'suspended') productiveBreakAudioCtx.resume().catch(() => {});
+  // BUG-015 (QA v361) — Ver comentario junto a playShiftAlarmBeep(): mismo
+  // criterio, aplicado a este segundo AudioContext (compartido por
+  // "Descanso por productividad" y el sonido "chime" de los 3 avisos de
+  // turno/Break/Lunch, ver playConfiguredAlarmSound()).
+  if (productiveBreakAudioCtx.state === 'suspended') {
+    productiveBreakAudioCtx.resume().catch(() => {}).finally(() => notifyAudioBlockedIfNeeded(productiveBreakAudioCtx));
+  }
   return productiveBreakAudioCtx;
 }
 
@@ -22185,6 +22273,11 @@ function render() {
       const banner = document.getElementById('storageConflictBanner');
       if (banner) banner.classList.remove('show');
     });
+    // BUG-015 (QA v361) — Ver comentario junto a notifyAudioBlockedIfNeeded().
+    const audioBlockedActivateBtn = document.getElementById('audioBlockedActivateBtn');
+    if (audioBlockedActivateBtn) audioBlockedActivateBtn.addEventListener('click', activateBlockedAudio);
+    const audioBlockedDismissBtn = document.getElementById('audioBlockedDismissBtn');
+    if (audioBlockedDismissBtn) audioBlockedDismissBtn.addEventListener('click', hideAudioBlockedBanner);
 
     document.getElementById('shiftControlBtn').addEventListener('click', toggleShift);
     document.getElementById('clockNow').addEventListener('click', () => {
