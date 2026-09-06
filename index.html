@@ -17777,6 +17777,12 @@ function renderWeekSummary() {
       // el evento 'change' la segunda vez.
       input.value = '';
       if (!file) return;
+      // BUG-011 (QA v361) — Rechazo temprano por tamaño, ANTES de leer el
+      // archivo — ver comentario junto a MAX_IMPORT_JSON_BYTES arriba.
+      if (file.size > MAX_IMPORT_JSON_BYTES) {
+        toast(`Ese archivo pesa demasiado (${(file.size / (1024 * 1024)).toFixed(1)}MB, máximo ${Math.round(MAX_IMPORT_JSON_BYTES / (1024 * 1024))}MB) — no parece un backup válido de esta app. Revisa que sea el archivo correcto.`);
+        return;
+      }
       const reader = new FileReader();
       reader.onload = () => {
         let payload;
@@ -18972,6 +18978,19 @@ function renderWeekSummary() {
     // app: llamadas, turnos, horario...) y hacer fallar guardados futuros
     // en silencio. 300KB alcanza de sobra para un beep/campanita corto.
     const MAX_CUSTOM_SOUND_BYTES = 300 * 1024;
+
+    // BUG-011 (QA v361) — Pedido del usuario: "Importar JSON" leía el
+    // archivo completo con FileReader y ejecutaba JSON.parse() sin ningún
+    // límite de tamaño, a diferencia de la subida de sonidos (que sí tiene
+    // un tope de 300KB, ver MAX_CUSTOM_SOUND_BYTES arriba) — un archivo
+    // grande o no relacionado (seleccionado por error) podía congelar la
+    // pestaña durante el parseo, sin ningún aviso previo. Un backup real de
+    // esta app (turnos + llamadas de meses) nunca debería acercarse a este
+    // tope ni de lejos — es lo bastante alto para no molestar a nadie con
+    // un uso normal, y lo bastante bajo para rechazar temprano un archivo
+    // claramente equivocado (ej. un video o un ZIP) antes de intentar
+    // leerlo/parsearlo.
+    const MAX_IMPORT_JSON_BYTES = 8 * 1024 * 1024;
 
     function handleProductiveBreakSoundFile(e) {
       const input = e.target;
