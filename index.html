@@ -9149,6 +9149,80 @@
     }
 
     /* ==========================================================
+       v390 — Página "Fechas de pago" (mockup fechas_pago_mockup_desktop.html,
+       aprobado en otra sesión — vista desktop; mobile pendiente de mockup/
+       aprobación aparte). La lista de ciclos reutiliza tal cual .wk-list/
+       .wk-row/.wk-row-icon/.wk-row-main/.wk-row-title/.wk-row-badge/
+       .wk-row-sub/.wk-row-right/.wk-row-amount (arriba, sin tocarlas) —
+       estas clases nuevas son SOLO para la tarjeta destacada de "Próximo
+       pago", que no tenía ningún equivalente ya existente en la app. */
+    .pd-next-card {
+      border: 1px solid rgba(var(--cyan-rgb), .35);
+      background: rgba(var(--cyan-rgb), .08);
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .pd-next-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      color: var(--cyan);
+    }
+    .pd-next-date {
+      font-size: 22px;
+      font-weight: 900;
+      margin-top: 5px;
+    }
+    .pd-next-sub {
+      font-size: 12.5px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+    .pd-next-days-wrap {
+      text-align: right;
+      flex: 0 0 auto;
+    }
+    .pd-next-days {
+      font-size: 30px;
+      font-weight: 900;
+      color: var(--good);
+      line-height: 1;
+    }
+    .pd-next-days-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      margin-top: 2px;
+    }
+    .pd-legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--muted);
+      padding: 0 2px 10px;
+    }
+    .pd-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .pd-legend-item + .pd-legend-item { margin-left: 10px; }
+    .pd-legend-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    /* ==========================================================
        v345 — Pedido del usuario: los 5 campos "Mensaje" dentro de "Avisos"
        (Antes de mi turno / Antes de Break-Lunch / Después de Break-Lunch /
        Descanso ganado — primera vez / repeticiones) dejan de ser
@@ -9574,6 +9648,11 @@
      Reportes, Avisos. -->
 <button class="sidebar-link" data-page="schedule" type="button"><span class="sidebar-link-icon sidebar-link-icon-schedule"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span class="sidebar-link-label">Horario</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
 <button class="sidebar-link" data-page="reports" type="button"><span class="sidebar-link-icon sidebar-link-icon-reports"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="20" x2="4" y2="10"/><line x1="10" y1="20" x2="10" y2="4"/><line x1="16" y1="20" x2="16" y2="14"/><line x1="21" y1="20" x2="3" y2="20"/></svg></span><span class="sidebar-link-label">Reportes</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
+<!-- v390 — Pedido del usuario: nueva página "Fechas de pago" — mockup
+     fechas_pago_mockup_desktop.html aprobado en otra sesión (vista
+     desktop; mobile pendiente de mockup/aprobación aparte). Ícono con
+     acento propio (--pink-rgb, variable ya existente, sin color nuevo). -->
+<button class="sidebar-link" data-page="paydates" type="button"><span class="sidebar-link-icon" style="background: rgba(var(--pink-rgb), .14); border: 1px solid rgba(var(--pink-rgb), .28);"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span class="sidebar-link-label">Fechas de pago</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
 <!-- v341 — Pedido del usuario: "Avisos" deja de ser una página del menú
      lateral — pasa a ser un ícono más en el header (junto a Higher Rate/
      Ajustes/Reiniciar, ver #avisosHeaderBtn en `.hero-top-actions`), que
@@ -10579,6 +10658,32 @@
 </div>
 </details>
 </div><!-- /pageReports -->
+
+<!-- v390 — Pedido del usuario: nueva página del menú lateral "Fechas de
+     pago" — mockup fechas_pago_mockup_desktop.html, aprobado en otra
+     sesión (vista desktop). Vista mobile pendiente de mockup/aprobación
+     aparte — este bloque no tiene todavía su propio ajuste de anchos
+     angostos, solo hereda el apilado genérico del resto de la app.
+     CERO cálculo de negocio nuevo: renderPayDatesSection() (ver JS) usa
+     tal cual cycleAnchorDate()/CYCLE_LENGTH_DAYS/cycleBoundsForOffset()/
+     settings.cyclePayOffsetDays, todos ya existentes. La lista de ciclos
+     reutiliza tal cual las clases .wk-list/.wk-row/.wk-row-icon/
+     .wk-row-main/.wk-row-title/.wk-row-badge/.wk-row-sub/.wk-row-right/
+     .wk-row-amount (las mismas que ya usa renderWeekSummary()) — el único
+     CSS nuevo es la tarjeta destacada de "Próximo pago" (.pd-next-*, ver
+     CSS "v390"). -->
+<div class="app-page" data-page="paydates" hidden id="pagePayDates">
+<details class="accordion-card" id="payDatesAccordion" open>
+<summary>
+  <div class="accordion-head">
+    <h2>Fechas de pago</h2>
+    <p>Tus ciclos de 14 días — a qué altura vas y cuándo cae el próximo pago.</p>
+  </div>
+  <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
+</summary>
+<div class="accordion-body" id="payDatesBody"></div>
+</details>
+</div><!-- /pagePayDates -->
 
 <div class="footer">Todo queda local en el navegador hasta que exportes o descargues el archivo.</div></div>
 <!-- v341 — Pedido del usuario: "Avisos" deja de ser una página del sidebar
@@ -16781,6 +16886,86 @@ function renderWeekSummary() {
   wrap.innerHTML = `<div class="wk-list">${itemsHtml}</div>${totalHtml}`;
 }
 
+// v390 — Pedido del usuario: nueva página "Fechas de pago" (mockup
+// fechas_pago_mockup_desktop.html, aprobado en otra sesión — vista
+// desktop; vista mobile pendiente de mockup/aprobación aparte). CERO
+// cálculo de negocio nuevo: reutiliza cycleAnchorDate()/CYCLE_LENGTH_DAYS/
+// cycleBoundsForOffset()/settings.cyclePayOffsetDays, todos ya existentes
+// (los mismos que ya usa "Ganancias del ciclo"/Reportes). Muestra 5 ciclos
+// (offsets -2..+2) — el que contiene hoy se marca "Actual — día X de 14",
+// los que ya tienen payDate pasado "Pagado", el resto "Próximo". Reutiliza
+// tal cual .wk-list/.wk-row/.wk-row-icon/.wk-row-main/.wk-row-title/
+// .wk-row-badge/.wk-row-sub/.wk-row-right/.wk-row-amount (las mismas
+// clases que ya usa renderWeekSummary()) — cero CSS nuevo para esa parte,
+// solo la tarjeta superior (.pd-next-*, ver CSS "v390").
+function renderPayDatesSection() {
+  const body = document.getElementById('payDatesBody');
+  if (!body) return;
+
+  const today = todayRange();
+  const cycles = [-2, -1, 0, 1, 2].map(offset => {
+    const { start, end, payDate } = cycleBoundsForOffset(offset);
+    const isCurrent = today >= start && today <= todayRange(end);
+    const isPaid = todayRange(payDate) < today;
+    return { offset, start, end, payDate, isCurrent, isPaid };
+  });
+
+  const current = cycles.find(c => c.isCurrent) || cycles[2];
+  const dayOfCycle = Math.min(14, Math.max(1, Math.floor((today - current.start) / 86400000) + 1));
+  const daysUntilPay = Math.round((todayRange(current.payDate) - today) / 86400000);
+
+  const fmtRange = (start, end) => `${formatCallDayLabel(todayCallDateKey(start))} – ${formatCallDayLabel(todayCallDateKey(end))}`;
+  const fmtFull = (d) => {
+    const raw = new Intl.DateTimeFormat('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(d);
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  };
+  const fmtShort = (d) => new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long' }).format(d);
+
+  const nextCardHtml = `
+    <div class="pd-next-card">
+      <div>
+        <div class="pd-next-label">Próximo pago</div>
+        <div class="pd-next-date">${escapeHtml(fmtFull(current.payDate))}</div>
+        <div class="pd-next-sub">Del ciclo ${escapeHtml(fmtRange(current.start, current.end))}</div>
+      </div>
+      <div class="pd-next-days-wrap">
+        <div class="pd-next-days">${Math.max(0, daysUntilPay)}</div>
+        <div class="pd-next-days-label">días restantes</div>
+      </div>
+    </div>
+    <div class="pd-legend-row">
+      <span class="pd-legend-item"><span class="pd-legend-dot" style="background:var(--cyan);"></span>Ciclo actual</span>
+      <span class="pd-legend-item"><span class="pd-legend-dot" style="background:var(--good);"></span>Ya pagado</span>
+    </div>
+  `;
+
+  const rowsHtml = cycles.map(c => {
+    const isToday = c.isCurrent;
+    const badgeHtml = isToday
+      ? `<span class="wk-row-badge tone-cyan">Actual — día ${dayOfCycle} de 14</span>`
+      : '';
+    const iconTone = c.isPaid ? 'tone-good' : isToday ? 'tone-cyan' : 'tone-neutral';
+    const statusText = c.isPaid ? 'Pagado' : isToday ? `En ${Math.max(0, daysUntilPay)} días` : 'Próximo';
+    const rowClass = isToday ? 'wk-row is-today' : 'wk-row';
+    const subText = isToday ? `Hoy, ${fmtShort(today)}` : '14 días';
+    return `
+      <div class="${rowClass}">
+        <span class="wk-row-icon ${iconTone}">${iconHtml(c.isPaid ? 'checkCircle' : 'calendar')}</span>
+        <div class="wk-row-main">
+          <div class="wk-row-title">Ciclo: ${escapeHtml(fmtRange(c.start, c.end))} ${badgeHtml}</div>
+          <div class="wk-row-sub">${escapeHtml(subText)}</div>
+        </div>
+        <div class="wk-row-right">
+          <div class="wk-row-amount" style="color: ${isToday ? 'var(--cyan)' : 'var(--text)'};">${escapeHtml(fmtShort(c.payDate))}</div>
+          <div class="wk-row-amount-sub">${escapeHtml(statusText)}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  body.innerHTML = `${nextCardHtml}<div class="wk-list">${rowsHtml}</div>`;
+}
+
     function syncGoals(source) {
       if (syncingGoals) return;
       syncingGoals = true;
@@ -21984,6 +22169,9 @@ function render() {
       // encarga de refrescarla al entrar a Reportes (ver ahí), así que
       // los datos nunca quedan obsoletos para quien sí la está viendo.
       if (currentPage === 'reports') renderReportsDashboard();
+      // v390 — Mismo criterio que renderReportsDashboard() arriba (BUG-009):
+      // solo se recalcula si esa página está visible ahora mismo.
+      if (currentPage === 'paydates') renderPayDatesSection();
       renderTable();
       renderDayStatsCards();
       updateLiveActivityBar();
@@ -22139,16 +22327,20 @@ function render() {
       // #pageHome) — se quita 'blocks' de esta lista.
       // v341 — "Avisos" (antes 'settings') deja de ser una página del
       // sidebar — ahora es un popup (#notificationsModal) abierto desde el
-      // header, ver #avisosHeaderBtn. El sidebar queda con 3 páginas.
-      const pages = ['home', 'schedule', 'reports'];
+      // header, ver #avisosHeaderBtn.
+      // v390 — Se agrega 'paydates' ("Fechas de pago") — el sidebar queda
+      // con 4 páginas.
+      const pages = ['home', 'schedule', 'reports', 'paydates'];
       if (!pages.includes(page)) page = 'home';
       currentPage = page;
       // BUG-009 — render() ya no recalcula renderReportsDashboard() salvo
       // que currentPage === 'reports' (ver esa función) — así que, si la
       // página estuvo en pausa mientras el usuario veía Inicio/Horario,
       // hace falta refrescarla explícitamente justo al entrar, para que
-      // los datos no se vean atrasados el instante en que se abre.
+      // los datos no se vean atrasados el instante en que se abre. Mismo
+      // criterio aplicado a 'paydates' (v390) con renderPayDatesSection().
       if (page === 'reports') renderReportsDashboard();
+      if (page === 'paydates') renderPayDatesSection();
       relocateCallsSection(page);
       document.querySelectorAll('.app-page').forEach(el => {
         el.hidden = el.getAttribute('data-page') !== page;
