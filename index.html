@@ -14243,8 +14243,23 @@ function dayGapRows(dayKey = getActiveDayKey(), sourceCalls = callsForDay(dayKey
   // (reconciliación existente en dayShiftBounds(), cuando se toman llamadas
   // antes de dar click en "Iniciar shift"), shiftStart <= firstCallStart y
   // no hay nada que anteponer.
+  // BUG-022 (QA v381) — `dayShiftBounds(normalized).start` solo reconstruye
+  // el turno MÁS RECIENTE del día (mismo problema de fondo que BUG-004,
+  // BUG-021 y BUG-023) — con 2+ sesiones de turno el mismo día, el hueco
+  // virtual "inicio de turno → primera llamada" correspondiente al turno #1
+  // (o el lapso real entre el turno #1 y la primera llamada) se calculaba
+  // con el inicio del turno #2, subestimando/distorsionando el ACW real de
+  // ese día — inconsistente con connectedMinutesForDay()/dayAdherence(),
+  // que ya usan dayShiftSessions() desde BUG-004. Se usa
+  // dayShiftSessions(normalized)[0]?.start (el inicio de la PRIMERA sesión
+  // del día, ya reconciliada con llamadas reales por esa misma función) en
+  // vez de dayShiftBounds(normalized).start — mismo criterio que ya usa
+  // dayAdherence() para su checkpoint de "Entrada". Sin ninguna sesión ese
+  // día, el resultado es `undefined`, igual que antes cuando
+  // dayShiftBounds().start era null — el `if (shiftStart && ...)` de abajo
+  // sigue cubriendo ese caso sin cambios.
   if (sorted.length) {
-    const shiftStart = dayShiftBounds(normalized).start;
+    const shiftStart = dayShiftSessions(normalized)[0]?.start;
     const firstCallStart = new Date(sorted[0].startISO);
     if (shiftStart && shiftStart.getTime() < firstCallStart.getTime()) {
       // endISO = su propio startISO a propósito: es un evento puntual (el
