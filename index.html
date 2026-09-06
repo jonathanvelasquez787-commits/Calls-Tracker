@@ -12599,50 +12599,19 @@ $0.72"></textarea>
       return defaultSettings();
     }
 
-    // BUG-002 (QA v361) — `localStorage.setItem` puede lanzar (típicamente
-    // `QuotaExceededError`) si el navegador ya no tiene espacio — fácil de
-    // alcanzar con meses de llamadas + varios sonidos personalizados de
-    // ~300KB cada uno. Sin manejo de errores, esa excepción interrumpía
-    // saveAll() A MEDIAS: podía guardar `state` pero nunca llegar a
-    // `calls`/`settings` (o ninguno de los tres), dejando los stores
-    // desincronizados entre sí — y como casi CUALQUIER botón de la app
-    // termina llamando a saveAll(), la app se volvía disfuncional en
-    // silencio justo cuando más historial tenía el usuario (el peor
-    // momento para perder datos). `safeLocalStorageSet()` centraliza el
-    // try/catch (mismo patrón que ya usan handleProductiveBreakSoundFile()/
-    // handleAlarmSoundFile() para su propio guardado) — devuelve
-    // true/false en vez de dejar que la excepción se propague, así cada
-    // función de guardado puede seguir intentando las OTRAS llaves aunque
-    // una falle, y avisar con un toast en vez de fallar mudo. Los datos en
-    // MEMORIA (`state`/`calls`/`settings`) nunca se tocan/revierten aquí —
-    // ya fueron actualizados por quien llamó a save*() antes de este punto,
-    // así que un fallo de cuota no pierde el cambio que el usuario acaba
-    // de hacer, solo impide que quede guardado hasta liberar espacio.
-    function safeLocalStorageSet(key, jsonValue) {
-      try {
-        localStorage.setItem(key, jsonValue);
-        return true;
-      } catch {
-        return false;
-      }
-    }
-
-    const STORAGE_QUOTA_TOAST = '⚠️ No se pudo guardar — el almacenamiento del navegador está lleno. Tu cambio se mantiene en esta sesión, pero no quedará guardado hasta que liberes espacio (borra llamadas muy viejas o un sonido personalizado en Avisos).';
-
     function saveAll() {
-      const stateOk = safeLocalStorageSet(STORAGE_KEY, JSON.stringify(state));
-      const callsOk = safeLocalStorageSet(CALLS_KEY, JSON.stringify(calls));
-      const settingsOk = safeLocalStorageSet(SETTINGS_KEY, JSON.stringify(settings));
-      if (!stateOk || !callsOk || !settingsOk) toast(STORAGE_QUOTA_TOAST);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(CALLS_KEY, JSON.stringify(calls));
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
       render();
     }
 
     function saveStateOnly() {
-      if (!safeLocalStorageSet(STORAGE_KEY, JSON.stringify(state))) toast(STORAGE_QUOTA_TOAST);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
 
     function saveSettingsOnly() {
-      if (!safeLocalStorageSet(SETTINGS_KEY, JSON.stringify(settings))) toast(STORAGE_QUOTA_TOAST);
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
     }
 
     function pad(n) { return String(n).padStart(2, '0'); }
