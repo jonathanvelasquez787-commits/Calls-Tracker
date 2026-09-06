@@ -9651,7 +9651,12 @@
 <div class="summary-pill">
   <button class="day-active-label-btn" id="dayActiveLabelBtn" type="button" title="Ir a Hoy">Día activo</button>
   <button class="day-nav-btn" id="dayPrevBtn" type="button" aria-label="Día anterior" title="Día anterior">‹</button>
-  <input id="daySelector" aria-label="Día activo" type="date"/>
+  <!-- BUG-016 (QA v361) — Pedido del usuario: sin min/max, se podía teclear
+       un año absurdo (ej. 0999 o 9999) sin ninguna validación, generando
+       vistas/registros con fechas sin sentido. min/max acotan el rango a
+       algo razonable (1970-2099) — el navegador clampa/rechaza cualquier
+       valor fuera de ese rango al confirmar la fecha. -->
+  <input id="daySelector" aria-label="Día activo" type="date" min="1970-01-01" max="2099-12-31"/>
   <button class="day-nav-btn" id="dayNextBtn" type="button" aria-label="Día siguiente" title="Día siguiente">›</button>
 </div>
 <div class="hero-shift-actions">
@@ -11379,7 +11384,9 @@ $0.72"></textarea>
 <div class="goals-field-row">
 <div class="goals-field">
 <label for="manualCallDateInput">Fecha</label>
-<input id="manualCallDateInput" type="date"/>
+<!-- BUG-016 (QA v361) — Ver comentario junto a #daySelector: mismo min/max
+     para evitar años absurdos (0999/9999) sin ninguna validación. -->
+<input id="manualCallDateInput" type="date" min="1970-01-01" max="2099-12-31"/>
 </div>
 <div class="goals-field">
 <label for="manualCallStartInput">Hora de inicio</label>
@@ -19473,6 +19480,11 @@ function renderWeekSummary() {
       return active ? `${meta.label} +${money(meta.bonusPerMin)}` : meta.label;
     }
 
+    // BUG-016 (QA v361) — Pedido del usuario: el `.hr-window-date-input` que
+    // arma esta función llevaba min/max agregados (ver el atributo en el
+    // template de abajo) para no aceptar años absurdos (0999/9999) sin
+    // ninguna validación — mismo criterio que #daySelector/
+    // #manualCallDateInput.
     function renderHigherRateWindowRow(w) {
       const tier = HIGHER_RATE_TIERS[w.tier] ? w.tier : 'bronze';
       const tierButtonsHtml = ['bronze', 'silver', 'gold'].map(t => {
@@ -19486,7 +19498,7 @@ function renderWeekSummary() {
               <span class="hr-window-day-icon" aria-hidden="true">${iconHtml('calendar')}</span>
               <div class="hr-window-day-text">
                 <div class="hr-window-day-name">${escapeHtml(hrWindowWeekdayLabel(w.date))}</div>
-                <input type="date" class="hr-window-date-input hr-window-date-visible" value="${escapeHtml(isoDateFromDayKey(w.date))}" title="Fecha de la ventana"/>
+                <input type="date" class="hr-window-date-input hr-window-date-visible" value="${escapeHtml(isoDateFromDayKey(w.date))}" title="Fecha de la ventana" min="1970-01-01" max="2099-12-31"/>
               </div>
             </div>
             <button type="button" class="hr-window-remove-btn" data-remove-hr-window aria-label="Eliminar ventana"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
