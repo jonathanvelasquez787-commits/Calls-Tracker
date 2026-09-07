@@ -16245,10 +16245,15 @@ let reportsMonthlyOffset = 0;
 // Calendario de productividad: mes mostrado ahora mismo (0 = mes actual).
 let calMonthOffset = 0;
 // v395 — Pedido del usuario: vista anual de "Calendario de productividad"
-// (solo escritorio) — 'year' (default) o 'month'. calYearOffset: 0 = año
-// actual, navegable ±1 (mismo criterio que calMonthOffset). Ambas viven en
+// (solo escritorio) — 'year' o 'month'. calYearOffset: 0 = año actual,
+// navegable ±1 (mismo criterio que calMonthOffset). Ambas viven en
 // memoria, no en localStorage — vista de sesión, no preferencia persistida.
-let calViewMode = 'year';
+// v400 — Pedido del usuario (punto 3 del plan aprobado en v399): la vista
+// por defecto pasa a ser el DETALLE DE MES actual, no el año — calMonthOffset
+// ya arranca en 0 (mes actual), así que solo hace falta cambiar el modo
+// inicial. "Volver al año" (backToCalYearView) sigue disponible igual que
+// siempre para quien quiera la vista anual.
+let calViewMode = 'month';
 let calYearOffset = 0;
 
 // v334 — Pedido del usuario: pastilla "Hoy / Ciclo" dentro de "Ganancias de
@@ -16640,9 +16645,16 @@ function renderCalendarMonth() {
   const cellsHtml = [];
   for (let i = 0; i < firstWeekday; i++) cellsHtml.push('<div class="cal-day-cell cal-empty"></div>');
 
+  // v400 — Pedido del usuario (punto 4 del plan aprobado en v399): el mes
+  // se pinta COMPLETO, ya no se corta en el día de hoy — antes `break`
+  // dejaba sin ninguna celda los días futuros del mes actual (ni siquiera
+  // vacías/"Sin datos", simplemente no existían en el grid). Un día futuro
+  // no tiene turno ni llamadas, así que `calDayStatus()` ya lo resuelve
+  // solo como 'nodata' (o 'off' si tu horario lo marca libre) — mismo
+  // criterio/mismo tier que ya usa cualquier día pasado sin actividad,
+  // sin necesitar ninguna rama nueva aquí.
   for (let day = 1; day <= daysInMonth; day++) {
     const d = new Date(year, month, day);
-    if (d > today) break;
     const dayKey = todayCallDateKey(d);
     const status = calDayStatus(dayKey);
     const productiveMin = productiveMinutesForDay(dayKey);
@@ -16814,6 +16826,20 @@ function renderCalYear() {
   }).join('');
 }
 
+// v400 — Pedido del usuario (punto 3 del plan aprobado en v399): con la
+// vista por defecto ahora en 'month' (ver calViewMode arriba), este
+// toggle de display ya no vive solo dentro de openCalMonthFromYear()/
+// backToCalYearView() — se extrae aquí para poder llamarlo también al
+// entrar a la página "Calendario" (ver navigateToPage()), así el HTML de
+// partida (calYearView visible / calMonthDetailView oculto, sin tocar)
+// siempre queda sincronizado con calViewMode sin importar de dónde venga.
+function syncCalViewVisibility() {
+  const yearView = document.getElementById('calYearView');
+  const monthView = document.getElementById('calMonthDetailView');
+  if (yearView) yearView.style.display = calViewMode === 'year' ? '' : 'none';
+  if (monthView) monthView.style.display = calViewMode === 'month' ? '' : 'none';
+}
+
 // Click en una tarjeta de mes (dentro de la vista anual): fija calMonthOffset
 // al valor relativo correcto respecto al mes actual (mismo cálculo que ya
 // usan calMonthPrevBtn/calMonthNextBtn, en negativo si es un mes pasado) y
@@ -16823,19 +16849,13 @@ function openCalMonthFromYear(monthIndex) {
   const year = today.getFullYear() + calYearOffset;
   calMonthOffset = (year - today.getFullYear()) * 12 + (monthIndex - today.getMonth());
   calViewMode = 'month';
-  const yearView = document.getElementById('calYearView');
-  const monthView = document.getElementById('calMonthDetailView');
-  if (yearView) yearView.style.display = 'none';
-  if (monthView) monthView.style.display = '';
+  syncCalViewVisibility();
   renderCalendarMonth();
 }
 
 function backToCalYearView() {
   calViewMode = 'year';
-  const yearView = document.getElementById('calYearView');
-  const monthView = document.getElementById('calMonthDetailView');
-  if (monthView) monthView.style.display = 'none';
-  if (yearView) yearView.style.display = '';
+  syncCalViewVisibility();
   renderCalYear();
 }
 
@@ -23107,7 +23127,12 @@ function render() {
       // detalle de un mes al salir de esta página, vuelve a ese mismo mes
       // al reentrar (mismo criterio BUG-009: solo recalcula si la página
       // está visible, sin cambiar cuál de las 2 vistas estaba activa).
-      if (page === 'calendar') { if (calViewMode === 'year') renderCalYear(); else renderCalendarMonth(); }
+      // v400 — syncCalViewVisibility() asegura que el HTML de partida
+      // (calYearView visible / calMonthDetailView oculto) quede acorde a
+      // calViewMode la primera vez que se visita esta página en la sesión
+      // — sin esto, con el nuevo default 'month' (punto 3), se vería el
+      // año Y el mes superpuestos hasta el primer click de ‹›/Volver.
+      if (page === 'calendar') { syncCalViewVisibility(); if (calViewMode === 'year') renderCalYear(); else renderCalendarMonth(); }
       relocateCallsSection(page);
       document.querySelectorAll('.app-page').forEach(el => {
         el.hidden = el.getAttribute('data-page') !== page;
