@@ -8514,6 +8514,17 @@
       font-size: 12.5px;
       white-space: nowrap;
     }
+    /* v398 — Pedido del usuario: mejoras visuales de mobile para
+       "Calendario de productividad" (mockup calendario_anual_mockup_mobile.
+       html, ya aprobado en el proyecto). En escritorio los botones ‹›
+       siguen mostrando "Anterior"/"Siguiente" completo y "Mes actual" tal
+       cual — estas 2 clases solo cambian de visibilidad dentro del
+       `@media (max-width:760px)` de más abajo (buscar "v398" ahí), donde
+       el texto se recorta a solo la flecha (‹/›) y "Hoy" en vez de "Mes
+       actual", igual que el mockup mobile. `.cal-nav-btn-label-short`
+       arranca oculta aquí (default escritorio) — sin ella, "Hoy" se vería
+       duplicado junto a "Mes actual" en pantallas anchas. */
+    .cal-nav-btn-label-short { display: none; }
 
     .rpt-tri-grid {
       display: grid;
@@ -9890,11 +9901,54 @@
       .month-card-badge { font-size: 8px; padding: 1px 5px; }
       .mini-grid { gap: 1.5px; }
       .month-card-amt { font-size: 12px; }
-      .month-card-amt-label { font-size: 9px; }
+      /* v398 — Pedido del usuario: el mockup mobile aprobado
+         (calendario_anual_mockup_mobile.html) no lleva la leyenda "ganado
+         este mes" bajo el monto de cada mes (solo aparece en el mockup de
+         escritorio, ver "v397" más arriba) — se oculta aquí, sin tocar el
+         elemento en sí (sigue existiendo en el HTML/JS para cuando se vea
+         en escritorio). */
+      .month-card-amt-label { display: none; }
+
+      /* v398 — Pedido del usuario: fila de navegación de año/mes más
+         compacta en mobile, calcada del mockup mobile aprobado — el
+         bloque icono+texto decorativo de la vista anual (.cal-year-nav-
+         left DENTRO de #calYearView — el de #calMonthDetailView, que
+         lleva el botón real "‹ Volver al año", no se toca) se oculta, ya
+         que el título/subtítulo de la sección los da el propio
+         `<summary>` del acordeón, justo arriba. Con eso, la fila de
+         navegación queda sola y se estira a todo el ancho (mismo criterio
+         que `.year-nav` del mockup: `width:100%; justify-content:space-
+         between`). Los botones "Anterior"/"Siguiente" se recortan a solo
+         la flecha (‹/›, ver `.cal-nav-btn-label`) y "Mes actual" pasa a
+         "Hoy" (ver `.cal-nav-btn-label-full`/`-short`, definidas junto a
+         `.cal-year-pill` más arriba) — mismo criterio de mostrar/ocultar
+         que ya usa `.hero-action-btn-label` (v283) para sus propios
+         botones de solo-ícono. CERO cambios de HTML/JS más allá de estos
+         `<span>` nuevos: mismos ids/listeners de siempre
+         (calYearPrevBtn/calYearNextBtn/calMonthPrevBtn/calMonthTodayBtn/
+         calMonthNextBtn), sin tocar renderCalYear()/renderCalendarMonth(). */
+      #calYearView .cal-year-nav-left { display: none; }
       .cal-year-nav-row { margin-bottom: 12px; gap: 8px; }
       .cal-year-nav-icon { width: 26px; height: 26px; }
       .cal-year-nav-label { font-size: 11px; }
-      .cal-year-pill { padding: 6px 12px; font-size: 11px; }
+      .cal-year-pill-nav {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .cal-year-pill-nav button {
+        padding: 6px 10px;
+        font-size: 11px;
+      }
+      .cal-year-pill {
+        flex: 1 1 auto;
+        justify-content: center;
+        margin: 0 6px;
+        padding: 6px 12px;
+        font-size: 11px;
+      }
+      .cal-nav-btn-label { display: none; }
+      .cal-nav-btn-label-full { display: none; }
+      .cal-nav-btn-label-short { display: inline; }
     }
   </style>
 </head>
@@ -10997,7 +11051,8 @@
 </summary>
 <div class="accordion-body">
 <!-- v395 — Pedido del usuario: vista anual de "Calendario de productividad"
-     (solo escritorio, sin cambios de mobile). #calYearView es la vista por
+     (implementada originalmente solo escritorio — el rediseño mobile llegó
+     después, ver "v396"/"v397"/"v398"). #calYearView es la vista por
      default (año completo, 12 meses en grid con mini-heatmap); click en un
      mes navega a #calMonthDetailView (el contenido de siempre, ahora
      envuelto en este div, sin tocar su lógica interna). "‹ Volver al año"
@@ -11010,9 +11065,9 @@
 <span class="cal-year-nav-label">Vista anual — toca un mes para ver el detalle</span>
 </div>
 <div class="week-nav cal-year-pill-nav">
-<button id="calYearPrevBtn" type="button">‹ Anterior</button>
+<button id="calYearPrevBtn" type="button">‹ <span class="cal-nav-btn-label">Anterior</span></button>
 <span class="cal-year-pill" id="calYearLabel"></span>
-<button id="calYearNextBtn" type="button">Siguiente ›</button>
+<button id="calYearNextBtn" type="button"><span class="cal-nav-btn-label">Siguiente</span> ›</button>
 </div>
 </div>
 <div class="cal-year-metrics">
@@ -11037,10 +11092,10 @@
 <button class="back-btn" id="calBackToYearBtn" type="button">‹ Volver al año</button>
 </div>
 <div class="week-nav cal-year-pill-nav">
-<button id="calMonthPrevBtn" type="button">‹ Anterior</button>
+<button id="calMonthPrevBtn" type="button">‹ <span class="cal-nav-btn-label">Anterior</span></button>
 <span class="cal-year-pill" id="calMonthLabel"></span>
-<button id="calMonthTodayBtn" type="button">Mes actual</button>
-<button id="calMonthNextBtn" type="button">Siguiente ›</button>
+<button id="calMonthTodayBtn" type="button"><span class="cal-nav-btn-label-full">Mes actual</span><span class="cal-nav-btn-label-short">Hoy</span></button>
+<button id="calMonthNextBtn" type="button"><span class="cal-nav-btn-label">Siguiente</span> ›</button>
 </div>
 </div>
 <div class="cal-legend-row">
