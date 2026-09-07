@@ -8315,6 +8315,123 @@
     table.cal-ref-table td { font-weight: 800; }
     table.cal-ref-table td.cal-total { color: var(--good); }
 
+    /* v395 — Pedido del usuario: vista anual de "Calendario de
+       productividad" (solo escritorio). Reutiliza variables ya existentes
+       (--cyan/--good/--warn/--blue/--bad/--rpt-purple/--panel-navy/--line/
+       --muted/--radius/--shadow) — ningún color nuevo. `.metric-card`/
+       `.month-card`/`.mini-cell` siguen el mismo lenguaje que `.rpt-mini-
+       card`/`.cal-day-cell` ya usan en el resto de la app. */
+    .cal-year-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .metric-card {
+      background: var(--panel-navy);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+    }
+    .cal-year-total-amt {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: -.02em;
+      color: var(--good);
+      margin-top: 6px;
+    }
+    .goal-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .goal-bar {
+      height: 8px;
+      border-radius: 6px;
+      background: rgba(255,255,255,.06);
+      overflow: hidden;
+      margin: 10px 0 7px;
+    }
+    .goal-bar > div {
+      height: 100%;
+      border-radius: 6px;
+      background: linear-gradient(90deg, var(--teal), var(--blue));
+    }
+    .goal-foot {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .month-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .month-card {
+      background: var(--panel-navy);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      cursor: pointer;
+      transition: border-color .14s ease, transform .14s ease;
+      display: grid;
+      gap: 10px;
+    }
+    .month-card:hover {
+      border-color: rgba(var(--cyan-rgb), .4);
+      transform: translateY(-1px);
+    }
+    .month-card.is-current {
+      border-color: rgba(var(--cyan-rgb), .55);
+      box-shadow: 0 0 0 1px rgba(var(--cyan-rgb), .18);
+    }
+    .month-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .month-card-name {
+      font-weight: 900;
+      font-size: 14px;
+      letter-spacing: -.01em;
+      text-transform: capitalize;
+    }
+    .month-card-badge {
+      font-size: 9.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--cyan);
+      background: rgba(var(--cyan-rgb), .14);
+      border-radius: 999px;
+      padding: 2px 8px;
+    }
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+    }
+    .mini-cell {
+      aspect-ratio: 1;
+      border-radius: 3px;
+      background: rgba(255,255,255,.05);
+    }
+    .mini-cell.cal-tier-8hrpp { background: var(--warn); }
+    .mini-cell.cal-tier-8hrp { background: var(--good); }
+    .mini-cell.cal-tier-6hrp { background: var(--blue); }
+    .mini-cell.cal-tier-6hrm { background: var(--bad); }
+    .mini-cell.cal-empty { background: transparent; }
+    .month-card-amt {
+      font-size: 15px;
+      font-weight: 900;
+      color: var(--good);
+    }
+    .back-btn {
+      color: var(--cyan) !important;
+    }
+
     .rpt-tri-grid {
       display: grid;
       grid-template-columns: 1.2fr 1fr 1fr;
@@ -10767,9 +10884,42 @@
   <div class="accordion-chevron"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></div>
 </summary>
 <div class="accordion-body">
+<!-- v395 — Pedido del usuario: vista anual de "Calendario de productividad"
+     (solo escritorio, sin cambios de mobile). #calYearView es la vista por
+     default (año completo, 12 meses en grid con mini-heatmap); click en un
+     mes navega a #calMonthDetailView (el contenido de siempre, ahora
+     envuelto en este div, sin tocar su lógica interna). "‹ Volver al año"
+     regresa a la vista anual. calViewMode/calYearOffset viven en memoria
+     (no localStorage), mismo criterio que calMonthOffset/weekViewOffset. -->
+<div id="calYearView">
+<div class="rpt-section-head">
+<div class="rpt-section-title" id="calYearLabel"></div>
+<div class="week-nav" style="margin:0;">
+<button id="calYearPrevBtn" type="button">‹ Anterior</button>
+<button id="calYearNextBtn" type="button">Siguiente ›</button>
+</div>
+</div>
+<div class="cal-year-metrics">
+<div class="metric-card">
+<div class="rpt-mini-title">TOTAL DEL AÑO</div>
+<div class="cal-year-total-amt" id="calYearTotalAmt">$0.00</div>
+</div>
+<div class="metric-card">
+<div class="goal-top">
+<span class="rpt-mini-title" style="margin:0;">META ANUAL</span>
+<button class="tbl-icon-btn" type="button" id="calYearGoalEditBtn" aria-label="Editar meta anual" title="Editar meta anual"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+</div>
+<div class="goal-bar"><div id="calYearGoalBar" style="width:0%;"></div></div>
+<div class="goal-foot" id="calYearGoalFoot">0% alcanzado · Faltan $0.00</div>
+</div>
+</div>
+<div class="month-grid" id="calYearMonthGrid"></div>
+</div>
+<div id="calMonthDetailView" style="display:none;">
 <div class="rpt-section-head">
 <div class="rpt-section-title" id="calMonthLabel"></div>
 <div class="week-nav" style="margin:0;">
+<button class="back-btn" id="calBackToYearBtn" type="button">‹ Volver al año</button>
 <button id="calMonthPrevBtn" type="button">‹ Anterior</button>
 <button id="calMonthTodayBtn" type="button">Mes actual</button>
 <button id="calMonthNextBtn" type="button">Siguiente ›</button>
@@ -10795,6 +10945,7 @@ representa cada meta diaria — <b>S</b> = semanas del mes (4), <b>D</b> = días
 semana (5). <b>TOTAL = xD × S × D</b>.
 </div>
 <table class="cal-ref-table" id="calRefTable"></table>
+</div>
 </div>
 </div>
 </details>
@@ -12622,6 +12773,12 @@ $0.72"></textarea>
         // siguiente sin querer; cada ciclo nuevo vuelve a sugerir el
         // cálculo automático hasta que se edite aparte.
         cycleGoalOverrides: {},
+        // v395 — Pedido del usuario: Meta anual del Calendario de
+        // productividad (vista anual) — mismo patrón que cycleGoalOverrides
+        // de arriba, aquí con clave = año ("YYYY") en vez de fecha de ciclo.
+        // Auto = meta diaria × días no libres del año; editable con
+        // prompt() nativo simple (ver openCalYearGoalEditor() en el JS).
+        yearGoalOverrides: {},
       };
     }
 
@@ -12763,6 +12920,16 @@ $0.72"></textarea>
         const val = Number(settings.cycleGoalOverrides[key]);
         if (!/^\d{4}-\d{2}-\d{2}$/.test(key) || !Number.isFinite(val) || val <= 0) delete settings.cycleGoalOverrides[key];
         else settings.cycleGoalOverrides[key] = val;
+      });
+      // v395 — Mismo criterio defensivo que cycleGoalOverrides arriba,
+      // aquí con clave = año ("YYYY") en vez de fecha de ciclo.
+      if (!settings.yearGoalOverrides || typeof settings.yearGoalOverrides !== 'object' || Array.isArray(settings.yearGoalOverrides)) {
+        settings.yearGoalOverrides = {};
+      }
+      Object.keys(settings.yearGoalOverrides).forEach((key) => {
+        const val = Number(settings.yearGoalOverrides[key]);
+        if (!/^\d{4}$/.test(key) || !Number.isFinite(val) || val <= 0) delete settings.yearGoalOverrides[key];
+        else settings.yearGoalOverrides[key] = val;
       });
       if (!Array.isArray(settings.higherRateWindows)) settings.higherRateWindows = [];
       // BUG-012 — Se acolcha `w.date` (ver normalizeSlashDate()) ANTES de
@@ -15891,6 +16058,12 @@ let reportsMonthlyOffset = 0;
 
 // Calendario de productividad: mes mostrado ahora mismo (0 = mes actual).
 let calMonthOffset = 0;
+// v395 — Pedido del usuario: vista anual de "Calendario de productividad"
+// (solo escritorio) — 'year' (default) o 'month'. calYearOffset: 0 = año
+// actual, navegable ±1 (mismo criterio que calMonthOffset). Ambas viven en
+// memoria, no en localStorage — vista de sesión, no preferencia persistida.
+let calViewMode = 'year';
+let calYearOffset = 0;
 
 // v334 — Pedido del usuario: pastilla "Hoy / Ciclo" dentro de "Ganancias de
 // hoy" (mockup aprobado) — alterna entre #earningsDayView/#earningsCycleView
@@ -16278,6 +16451,172 @@ function renderCalendarMonth() {
     }).join('');
     refTable.innerHTML = `<thead><tr><th>S</th><th>xD (min/día)</th><th>Total (min/mes)</th></tr></thead><tbody>${rows}</tbody>`;
   }
+}
+
+// v395 — Pedido del usuario: vista anual de "Calendario de productividad"
+// (solo escritorio). Clave del año mostrado ("YYYY") para el override de
+// meta anual — mismo criterio que cycleGoalKeyForOffset()/
+// scheduleWeekKeyForOffset() (clave estable, independiente de qué offset
+// se use para llegar a ella).
+function calYearGoalKey(offset = calYearOffset) {
+  const today = todayRange();
+  return String(today.getFullYear() + offset);
+}
+
+// Meta anual automática = tu meta diaria × días NO libres del año completo
+// (mismo criterio que autoCycleGoal(), extendido a 365/366 días en vez de
+// 14) — dayIsEffectivelyOff() ya reutilizado tal cual, sin duplicar su
+// lógica.
+function autoCalYearGoal(offset = calYearOffset) {
+  const year = Number(calYearGoalKey(offset));
+  const daysInYear = ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) ? 366 : 365;
+  let workDays = 0;
+  for (let i = 0; i < daysInYear; i++) {
+    const d = new Date(year, 0, 1 + i);
+    if (!dayIsEffectivelyOff(todayCallDateKey(d))) workDays++;
+  }
+  return Number(settings.earningsGoal || 0) * workDays;
+}
+
+function getCalYearGoalOverride(offset = calYearOffset) {
+  const key = calYearGoalKey(offset);
+  const val = settings.yearGoalOverrides && settings.yearGoalOverrides[key];
+  return Number.isFinite(Number(val)) && Number(val) > 0 ? Number(val) : null;
+}
+
+function effectiveCalYearGoal(offset = calYearOffset) {
+  const override = getCalYearGoalOverride(offset);
+  return override !== null ? override : autoCalYearGoal(offset);
+}
+
+function setCalYearGoalOverride(offset, amount) {
+  if (!settings.yearGoalOverrides) settings.yearGoalOverrides = {};
+  const key = calYearGoalKey(offset);
+  const num = Number(amount);
+  if (Number.isFinite(num) && num > 0) settings.yearGoalOverrides[key] = num;
+  else delete settings.yearGoalOverrides[key];
+  saveSettingsOnly();
+}
+
+// Editor rápido de la meta anual — prompt() nativo simple (pedido
+// explícito, sin construir un modal nuevo para esto) — mismo criterio de
+// "vacío/inválido = automático" que el resto de campos sueltos de la app.
+function openCalYearGoalEditor() {
+  const current = effectiveCalYearGoal(calYearOffset);
+  const input = window.prompt('Meta anual ($) — déjalo vacío para calcularla automáticamente:', current.toFixed(2));
+  if (input === null) return; // canceló
+  const trimmed = input.trim();
+  if (!trimmed) {
+    setCalYearGoalOverride(calYearOffset, null);
+    renderCalYear();
+    toast('Meta anual vuelve a calcularse automáticamente');
+    return;
+  }
+  const amount = Number(trimmed.replace(',', '.'));
+  if (!Number.isFinite(amount) || amount <= 0) {
+    toast('Valor inválido — la meta anual no se modificó');
+    return;
+  }
+  setCalYearGoalOverride(calYearOffset, amount);
+  renderCalYear();
+  toast(`Meta anual: ${money(amount)}`);
+}
+
+// Pinta la vista anual completa: 2 tarjetas (Total del año / Meta anual) +
+// grid de 12 meses con mini-heatmap. Reutiliza importedCallStats()/
+// productiveMinutesForDay()/calTierForDay() tal cual — ningún cálculo de
+// negocio nuevo, solo agregado por mes/año de datos ya existentes.
+function renderCalYear() {
+  const label = document.getElementById('calYearLabel');
+  const nextBtn = document.getElementById('calYearNextBtn');
+  const totalAmtEl = document.getElementById('calYearTotalAmt');
+  const goalBarEl = document.getElementById('calYearGoalBar');
+  const goalFootEl = document.getElementById('calYearGoalFoot');
+  const monthGrid = document.getElementById('calYearMonthGrid');
+  if (!monthGrid) return;
+
+  const today = todayRange();
+  const year = today.getFullYear() + calYearOffset;
+  const isCurrentYear = calYearOffset === 0;
+  const goalMin = Number(settings.productiveGoalMin) || 0;
+
+  if (label) label.textContent = String(year);
+  if (nextBtn) nextBtn.disabled = calYearOffset >= 0;
+
+  let yearTotal = 0;
+  const monthTotals = [];
+  const monthCellsData = [];
+
+  for (let m = 0; m < 12; m++) {
+    const daysInMonth = new Date(year, m + 1, 0).getDate();
+    let monthTotal = 0;
+    const cells = [];
+    const firstWeekday = (new Date(year, m, 1).getDay() + 6) % 7;
+    for (let i = 0; i < firstWeekday; i++) cells.push({ empty: true });
+    for (let day = 1; day <= daysInMonth; day++) {
+      const d = new Date(year, m, day);
+      if (d > today) { cells.push({ empty: true }); continue; }
+      const dayKey = todayCallDateKey(d);
+      monthTotal += importedCallStats(callsForDay(dayKey), dayKey).earnings;
+      const tier = calTierForDay(productiveMinutesForDay(dayKey), goalMin);
+      cells.push({ empty: false, tier });
+    }
+    yearTotal += monthTotal;
+    monthTotals.push(monthTotal);
+    monthCellsData.push(cells);
+  }
+
+  if (totalAmtEl) totalAmtEl.textContent = money(yearTotal);
+
+  const yearGoal = effectiveCalYearGoal(calYearOffset);
+  const goalPct = yearGoal > 0 ? Math.min(100, (yearTotal / yearGoal) * 100) : 0;
+  if (goalBarEl) goalBarEl.style.width = `${goalPct}%`;
+  if (goalFootEl) goalFootEl.textContent = `${Math.round(goalPct)}% alcanzado · Faltan ${money(Math.max(0, yearGoal - yearTotal))}`;
+
+  const monthNames = Array.from({ length: 12 }, (_, m) => {
+    const raw = new Intl.DateTimeFormat('es-MX', { month: 'long' }).format(new Date(2000, m, 1));
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  });
+
+  monthGrid.innerHTML = monthCellsData.map((cells, m) => {
+    const isCurrentMonth = isCurrentYear && m === today.getMonth();
+    const miniHtml = cells.map(c => c.empty ? '<div class="mini-cell cal-empty"></div>' : `<div class="mini-cell ${c.tier}"></div>`).join('');
+    return `
+      <div class="month-card ${isCurrentMonth ? 'is-current' : ''}" data-cal-month-idx="${m}">
+        <div class="month-card-head">
+          <span class="month-card-name">${escapeHtml(monthNames[m])}</span>
+          ${isCurrentMonth ? '<span class="month-card-badge">Actual</span>' : ''}
+        </div>
+        <div class="mini-grid">${miniHtml}</div>
+        <div class="month-card-amt">${money(monthTotals[m])}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Click en una tarjeta de mes (dentro de la vista anual): fija calMonthOffset
+// al valor relativo correcto respecto al mes actual (mismo cálculo que ya
+// usan calMonthPrevBtn/calMonthNextBtn, en negativo si es un mes pasado) y
+// cambia a la vista de detalle del mes.
+function openCalMonthFromYear(monthIndex) {
+  const today = todayRange();
+  const year = today.getFullYear() + calYearOffset;
+  calMonthOffset = (year - today.getFullYear()) * 12 + (monthIndex - today.getMonth());
+  calViewMode = 'month';
+  const yearView = document.getElementById('calYearView');
+  const monthView = document.getElementById('calMonthDetailView');
+  if (yearView) yearView.style.display = 'none';
+  if (monthView) monthView.style.display = '';
+  renderCalendarMonth();
+}
+
+function backToCalYearView() {
+  calViewMode = 'year';
+  const yearView = document.getElementById('calYearView');
+  const monthView = document.getElementById('calMonthDetailView');
+  if (monthView) monthView.style.display = 'none';
+  if (yearView) yearView.style.display = '';
+  renderCalYear();
 }
 
 // v355 — Pinta la gráfica de barras (Ganancias, eje izquierdo) + línea
@@ -22371,7 +22710,7 @@ function render() {
       // encarga de refrescarla al entrar a Reportes (ver ahí), así que
       // los datos nunca quedan obsoletos para quien sí la está viendo.
       if (currentPage === 'reports') renderReportsDashboard();
-      if (currentPage === 'calendar') renderCalendarMonth();
+      if (currentPage === 'calendar') { if (calViewMode === 'year') renderCalYear(); else renderCalendarMonth(); }
       // v390 — Mismo criterio que renderReportsDashboard() arriba (BUG-009):
       // solo se recalcula si esa página está visible ahora mismo.
       if (currentPage === 'paydates') renderPayDatesSection();
@@ -22544,7 +22883,11 @@ function render() {
       // criterio aplicado a 'paydates' (v390) con renderPayDatesSection().
       if (page === 'reports') renderReportsDashboard();
       if (page === 'paydates') renderPayDatesSection();
-      if (page === 'calendar') renderCalendarMonth();
+      // v395 — Vista anual por default; si el usuario ya estaba viendo el
+      // detalle de un mes al salir de esta página, vuelve a ese mismo mes
+      // al reentrar (mismo criterio BUG-009: solo recalcula si la página
+      // está visible, sin cambiar cuál de las 2 vistas estaba activa).
+      if (page === 'calendar') { if (calViewMode === 'year') renderCalYear(); else renderCalendarMonth(); }
       relocateCallsSection(page);
       document.querySelectorAll('.app-page').forEach(el => {
         el.hidden = el.getAttribute('data-page') !== page;
@@ -23395,6 +23738,16 @@ function render() {
     document.getElementById('calMonthPrevBtn').addEventListener('click', () => { calMonthOffset -= 1; renderCalendarMonth(); });
     document.getElementById('calMonthNextBtn').addEventListener('click', () => { if (calMonthOffset < 0) { calMonthOffset += 1; renderCalendarMonth(); } });
     document.getElementById('calMonthTodayBtn').addEventListener('click', () => { calMonthOffset = 0; renderCalendarMonth(); });
+    // v395 — Vista anual del Calendario de productividad (solo escritorio).
+    document.getElementById('calBackToYearBtn').addEventListener('click', backToCalYearView);
+    document.getElementById('calYearPrevBtn').addEventListener('click', () => { calYearOffset -= 1; renderCalYear(); });
+    document.getElementById('calYearNextBtn').addEventListener('click', () => { if (calYearOffset < 0) { calYearOffset += 1; renderCalYear(); } });
+    document.getElementById('calYearGoalEditBtn').addEventListener('click', openCalYearGoalEditor);
+    document.getElementById('calYearMonthGrid').addEventListener('click', (e) => {
+      const card = e.target instanceof Element ? e.target.closest('[data-cal-month-idx]') : null;
+      if (!card) return;
+      openCalMonthFromYear(Number(card.getAttribute('data-cal-month-idx')));
+    });
     document.getElementById('saveGapBtn').addEventListener('click', saveGapEditor);
     document.getElementById('saveAcwGoalBtn').addEventListener('click', saveAcwGoalEditor);
     document.getElementById('saveDayNoteBtn').addEventListener('click', saveDayNoteFromModal);
