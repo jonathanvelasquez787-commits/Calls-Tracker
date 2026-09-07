@@ -10090,6 +10090,52 @@
       .cal-nav-btn-label { display: none; }
       .cal-nav-btn-label-full { display: none; }
       .cal-nav-btn-label-short { display: inline; }
+
+      /* v403 — Pedido del usuario: versión mobile de la navegación
+         unificada de "Calendario de productividad" → detalle de mes
+         (mockup cal_nav_mockup_mobile_v2.html aprobado, continuación de
+         v402 en escritorio) — track redondeado con 4 elementos (‹ / mes /
+         Hoy / ›), compactado para caber en pantallas angostas. El chip del
+         mes se aprieta (10.5px, elipsis si el nombre es largo) y "Hoy"
+         queda como pastilla chica sin fondo propio, mismo tratamiento que
+         ya usa `.cal-nav-today-btn` en el track de escritorio. Scoped a
+         `#calMonthDetailView` — la vista anual (#calYearView) sigue con su
+         propio `.cal-year-pill-nav` de siempre, sin tocar. CERO cambios de
+         HTML/JS: mismos ids/listeners de siempre (calBackToYearBtn/
+         calMonthPrevBtn/calMonthLabel/calMonthTodayBtn/calMonthNextBtn). */
+      #calMonthDetailView .cal-back-pill {
+        padding: 6px 12px 6px 8px;
+        font-size: 11px;
+        margin-bottom: 10px;
+      }
+      #calMonthDetailView .cal-back-pill-chev {
+        width: 17px;
+        height: 17px;
+        font-size: 10px;
+      }
+      #calMonthDetailView .cal-nav-track {
+        width: 100%;
+        justify-content: space-between;
+      }
+      #calMonthDetailView .cal-nav-arrow {
+        width: 26px;
+        height: 26px;
+        font-size: 12px;
+      }
+      #calMonthDetailView .cal-nav-track .cal-year-pill {
+        flex: 1 1 auto;
+        min-width: 0;
+        margin: 0 2px;
+        padding: 6px 8px;
+        font-size: 10.5px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      #calMonthDetailView .cal-nav-today-btn {
+        font-size: 9.5px;
+        padding: 6px 8px;
+      }
     }
   </style>
 </head>
