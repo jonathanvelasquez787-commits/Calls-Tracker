@@ -8299,17 +8299,31 @@
       font-size: clamp(9px, 2.4vw, 11.5px); font-weight: 700; color: var(--muted);
     }
     .cal-legend-dot { width: clamp(8px, 2vw, 11px); height: clamp(8px, 2vw, 11px); border-radius: 4px; flex: 0 0 auto; }
+    /* v406 — Pedido del usuario (bug real de v405: el clamp() fluido no se
+       veía porque nunca llegaba a aplicar del todo): por default, un hijo
+       de CSS Grid tiene `min-width: auto`, que equivale al ancho MÍNIMO de
+       su propio contenido (el texto, sin poder envolver por
+       `white-space: nowrap`) — el navegador se niega a encoger la celda
+       (ni la columna 1fr que la contiene) por debajo de ese mínimo, sin
+       importar cuánto baje el `font-size` vía clamp(). Como
+       `.cal-day-min`/`.cal-weekday-label` fuerzan texto en una sola línea,
+       eran ellos quienes fijaban ese mínimo — 3 intentos previos de "achicar
+       tamaños" nunca tocaron esta causa real. `min-width: 0` en cada hijo
+       directo del grid (celda del mes y label de encabezado) permite que sí
+       se encojan por debajo del ancho de su contenido; `overflow: hidden` +
+       `text-overflow: ellipsis` quedan como red de seguridad para el caso
+       límite en que un número no quepa ni al font-size mínimo del clamp(). */
     .cal-weekday-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: clamp(3px, 1vw, 8px); margin-bottom: clamp(4px, 1vw, 8px); }
-    .cal-weekday-label { text-align: center; font-size: clamp(7px, 2.2vw, 10.5px); font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+    .cal-weekday-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; font-size: clamp(7px, 2.2vw, 10.5px); font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
     .cal-day-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: clamp(3px, 1.2vw, 8px); }
     .cal-day-cell {
-      position: relative; border-radius: clamp(8px, 2vw, 14px); padding: clamp(4px, 1.4vw, 9px) clamp(2px, 1vw, 8px) clamp(3px, 1vw, 7px);
+      position: relative; min-width: 0; border-radius: clamp(8px, 2vw, 14px); padding: clamp(4px, 1.4vw, 9px) clamp(2px, 1vw, 8px) clamp(3px, 1vw, 7px);
       border: 1px solid var(--line-2); display: flex; flex-direction: column; justify-content: space-between;
       aspect-ratio: 1 / 1;
     }
     .cal-day-cell.cal-empty { border: none; background: transparent; }
-    .cal-day-num { font-size: clamp(8px, 2.6vw, 11.5px); font-weight: 800; color: var(--text); opacity: .85; }
-    .cal-day-min { font-size: clamp(9px, 3.2vw, 14px); font-weight: 900; letter-spacing: -.01em; white-space: nowrap; }
+    .cal-day-num { font-size: clamp(8px, 2.6vw, 11.5px); font-weight: 800; color: var(--text); opacity: .85; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cal-day-min { font-size: clamp(9px, 3.2vw, 14px); font-weight: 900; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
     /* v401 — Pedido del usuario (punto 5 del plan aprobado en v399): "Libre"
        (día efectivamente libre, ver cal-tier-off) y "—" (sin datos, ver
        cal-tier-nodata) son texto más largo que un número de minutos — sin
