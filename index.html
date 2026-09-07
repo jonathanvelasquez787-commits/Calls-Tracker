@@ -9783,6 +9783,29 @@
       table.cal-ref-table { width: 100%; }
       table.cal-ref-table th, table.cal-ref-table td { padding: 6px 8px; font-size: 11px; }
       table.cal-ref-table th { font-size: 9px; }
+
+      /* v396 — Pedido del usuario: vista mobile de la vista ANUAL de
+         "Calendario de productividad" (mockup calendario_anual_mockup_mobile.html
+         aprobado — la vista de detalle de mes ya tenía sus reglas mobile
+         arriba, v391/v394, sin tocar). CERO cambios de HTML/JS: mismos ids
+         de siempre (calYearMetrics/calYearTotalAmt/calYearGoalBar/
+         calYearGoalFoot/calYearMonthGrid) — solo se agregan reglas dentro de
+         este mismo @media ya existente, compactando lo mismo que ya usa el
+         resto de "Calendario" en mobile. Reutiliza las variables/clases ya
+         existentes (.metric-card/.goal-top/.goal-bar/.goal-foot/.month-card/
+         .mini-grid/.month-card-amt) — ningún color ni patrón nuevo. */
+      .cal-year-metrics { grid-template-columns: 1fr; gap: 8px; margin-bottom: 14px; }
+      .metric-card { padding: 12px; border-radius: 14px; }
+      .cal-year-total-amt { font-size: 20px; margin-top: 4px; }
+      .goal-top { font-size: 11px; margin-bottom: 7px; }
+      .goal-bar { margin: 0 0 5px; }
+      .goal-foot { font-size: 10px; }
+      .month-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+      .month-card { padding: 9px; border-radius: 13px; gap: 7px; }
+      .month-card-name { font-size: 11px; }
+      .month-card-badge { font-size: 8px; padding: 1px 5px; }
+      .mini-grid { gap: 1.5px; }
+      .month-card-amt { font-size: 12px; }
     }
   </style>
 </head>
