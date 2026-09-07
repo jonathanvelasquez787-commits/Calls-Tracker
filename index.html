@@ -8484,6 +8484,117 @@
       color: var(--cyan) !important;
     }
 
+    /* v402 — Pedido del usuario: unificar visualmente la navegación de
+       "Calendario de productividad" → detalle de mes (mockup
+       cal_nav_mockup_desktop.html, aprobado — sin versión mobile por
+       ahora). "‹ Volver al año" pasa de texto plano (.back-btn, arriba,
+       que se deja sin usar) a una pill de verdad, con un ícono ‹ en
+       círculo — mismo lenguaje que ya usan `.gap-edit-btn`/`.sidebar-
+       icon-btn` en el resto de la app. "‹ Anterior / [mes] / Siguiente ›"
+       se funden en un solo track redondeado (mismo fondo/borde que ya usa
+       `.sched-segmented`/`.mc-pill-row`): las flechas pasan a botones
+       circulares DENTRO de ese track (ya no botones sueltos con su propio
+       borde), el mes se queda con la MISMA pill cian de siempre
+       (`.cal-year-pill`, sin tocar) y "Hoy" (antes `#calMonthTodayBtn` con
+       label completo/corto `.cal-nav-btn-label-full`/`-short`, ya sin uso
+       aquí) vive dentro del mismo track como una 3ra pastilla chica. CERO
+       cambios funcionales: mismos ids de siempre (calBackToYearBtn/
+       calMonthPrevBtn/calMonthLabel/calMonthTodayBtn/calMonthNextBtn) —
+       renderCalendarMonth() y los listeners ya existentes siguen
+       funcionando igual, solo cambia el HTML/CSS que los envuelve. Solo
+       aplica a la vista de detalle de mes (#calMonthDetailView) — la
+       vista anual (#calYearView) no se toca. */
+    .cal-back-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border: 1px solid var(--line-2);
+      background: rgba(255,255,255,.04);
+      color: var(--cyan);
+      border-radius: 999px;
+      padding: 7px 14px 7px 8px;
+      font-weight: 800;
+      font-size: 12.5px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .14s ease, border-color .14s ease;
+    }
+    .cal-back-pill:hover,
+    .cal-back-pill:focus-visible {
+      background: rgba(var(--cyan-rgb), .1);
+      border-color: rgba(var(--cyan-rgb), .4);
+      outline: none;
+    }
+    .cal-back-pill-chev {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(var(--cyan-rgb), .16);
+      font-size: 11px;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+    .cal-nav-track {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 3px;
+    }
+    .cal-nav-arrow {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 900;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      transition: background .14s ease, color .14s ease;
+    }
+    .cal-nav-arrow:hover,
+    .cal-nav-arrow:focus-visible {
+      background: rgba(255,255,255,.08);
+      color: var(--text);
+      outline: none;
+    }
+    .cal-nav-arrow:disabled {
+      opacity: .35;
+      cursor: not-allowed;
+    }
+    .cal-nav-track .cal-year-pill {
+      margin: 0 2px;
+      white-space: nowrap;
+    }
+    .cal-nav-today-btn {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 800;
+      font-size: 11.5px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .14s ease, color .14s ease;
+    }
+    .cal-nav-today-btn:hover,
+    .cal-nav-today-btn:focus-visible {
+      background: rgba(255,255,255,.08);
+      color: var(--text);
+      outline: none;
+    }
+
     /* v397 — Pedido del usuario: mejoras visuales de escritorio para
        "Calendario de productividad" (mockup calendario_anual_mockup_
        desktop.html aprobado) — fila de navegación de año/mes con el
@@ -11119,13 +11230,13 @@
 <div id="calMonthDetailView" style="display:none;">
 <div class="cal-year-nav-row">
 <div class="cal-year-nav-left">
-<button class="back-btn" id="calBackToYearBtn" type="button">‹ Volver al año</button>
+<button class="cal-back-pill" id="calBackToYearBtn" type="button"><span class="cal-back-pill-chev" aria-hidden="true">‹</span> Volver al año</button>
 </div>
-<div class="week-nav cal-year-pill-nav">
-<button id="calMonthPrevBtn" type="button">‹ <span class="cal-nav-btn-label">Anterior</span></button>
+<div class="cal-nav-track">
+<button class="cal-nav-arrow" id="calMonthPrevBtn" type="button" aria-label="Mes anterior">‹</button>
 <span class="cal-year-pill" id="calMonthLabel"></span>
-<button id="calMonthTodayBtn" type="button"><span class="cal-nav-btn-label-full">Mes actual</span><span class="cal-nav-btn-label-short">Hoy</span></button>
-<button id="calMonthNextBtn" type="button"><span class="cal-nav-btn-label">Siguiente</span> ›</button>
+<button class="cal-nav-today-btn" id="calMonthTodayBtn" type="button">Hoy</button>
+<button class="cal-nav-arrow" id="calMonthNextBtn" type="button" aria-label="Mes siguiente">›</button>
 </div>
 </div>
 <div class="cal-legend-row">
