@@ -8627,6 +8627,23 @@
       margin: 0 2px;
       white-space: nowrap;
     }
+    /* v408 — Ver nota extensa en el resumen: esta regla es la que faltaba
+       fuera del @media max-width:760px. Sin ella, a cualquier ancho donde
+       esa media query no aplicara, la pill de mes (#calMonthLabel) se
+       estiraba libre por su `white-space: nowrap` de arriba y desbordaba
+       TODA la tarjeta del acordeón — arrastrando consigo el grid de 7 días,
+       que en realidad nunca tuvo el problema (ver v405/v406/v407). */
+    #calMonthDetailView .cal-nav-track {
+      width: 100%;
+      justify-content: space-between;
+    }
+    #calMonthDetailView .cal-nav-track .cal-year-pill {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .cal-nav-today-btn {
       border: none;
       background: transparent;
