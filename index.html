@@ -8334,7 +8334,7 @@
       padding: 14px 16px;
     }
     .cal-year-total-amt {
-      font-size: 26px;
+      font-size: 30px;
       font-weight: 900;
       letter-spacing: -.02em;
       color: var(--good);
@@ -8345,6 +8345,21 @@
       align-items: center;
       justify-content: space-between;
       gap: 8px;
+    }
+    /* v397 — Pedido del usuario: mejoras visuales de escritorio para
+       "Calendario de productividad" (mockup calendario_anual_mockup_
+       desktop.html aprobado). El monto de la meta anual pasa a verse
+       también en esta línea (antes solo aparecía dentro del pie "X%
+       alcanzado · Faltan $Y") — mismo criterio que ya usan `.gh-goal-top
+       b`/`.goal-top b` de otras secciones (Ganancias de hoy/del ciclo).
+       CERO cambio funcional: `#calYearGoalAmt` es un elemento nuevo, solo
+       de lectura, que renderCalYear() rellena con el mismo `yearGoal` que
+       ya calculaba para la barra/pie — ningún cálculo nuevo. */
+    .goal-top b {
+      color: var(--text);
+      font-weight: 900;
+      font-size: 13.5px;
+      margin-left: 6px;
     }
     .goal-bar {
       height: 8px;
@@ -8380,6 +8395,7 @@
     }
     .month-card:hover {
       border-color: rgba(var(--cyan-rgb), .4);
+      background: rgba(var(--cyan-rgb), .03);
       transform: translateY(-1px);
     }
     .month-card.is-current {
@@ -8423,13 +8439,80 @@
     .mini-cell.cal-tier-6hrp { background: var(--blue); }
     .mini-cell.cal-tier-6hrm { background: var(--bad); }
     .mini-cell.cal-empty { background: transparent; }
+    .month-card-amt-wrap {
+      display: grid;
+      gap: 2px;
+    }
     .month-card-amt {
       font-size: 15px;
       font-weight: 900;
       color: var(--good);
     }
+    .month-card-amt-label {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 700;
+    }
     .back-btn {
       color: var(--cyan) !important;
+    }
+
+    /* v397 — Pedido del usuario: mejoras visuales de escritorio para
+       "Calendario de productividad" (mockup calendario_anual_mockup_
+       desktop.html aprobado) — fila de navegación de año/mes con el
+       número en una pastilla cian entre los botones ‹›/Volver, en vez del
+       texto plano de siempre a un lado — mismo lenguaje "segmented pill"
+       que ya usa el resto de la app (ej. `.rate-tile.selected`/`.day-tab.
+       active`). CERO cambios funcionales: mismos ids de siempre
+       (calYearLabel/calMonthLabel/calYearPrevBtn/calYearNextBtn/
+       calMonthPrevBtn/calMonthTodayBtn/calMonthNextBtn/calBackToYearBtn) —
+       renderCalYear()/renderCalendarMonth() siguen escribiendo/togglando
+       los mismos elementos por id, solo cambia el HTML/CSS que los
+       envuelve. */
+    .cal-year-nav-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .cal-year-nav-left {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+    }
+    .cal-year-nav-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      background: linear-gradient(135deg, var(--cyan), var(--rpt-purple));
+    }
+    .cal-year-nav-icon .ic-svg { width: 15px; height: 15px; color: #07101f; stroke: #07101f; }
+    .cal-year-nav-label {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--muted);
+    }
+    .cal-year-pill-nav {
+      margin: 0 !important;
+    }
+    .cal-year-pill {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid rgba(var(--cyan-rgb), .4);
+      background: rgba(var(--cyan-rgb), .14);
+      color: var(--cyan);
+      border-radius: 999px;
+      padding: 7px 16px;
+      font-weight: 900;
+      font-size: 12.5px;
+      white-space: nowrap;
     }
 
     .rpt-tri-grid {
@@ -9798,6 +9881,7 @@
       .metric-card { padding: 12px; border-radius: 14px; }
       .cal-year-total-amt { font-size: 20px; margin-top: 4px; }
       .goal-top { font-size: 11px; margin-bottom: 7px; }
+      .goal-top b { font-size: 11px; margin-left: 4px; }
       .goal-bar { margin: 0 0 5px; }
       .goal-foot { font-size: 10px; }
       .month-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -9806,6 +9890,11 @@
       .month-card-badge { font-size: 8px; padding: 1px 5px; }
       .mini-grid { gap: 1.5px; }
       .month-card-amt { font-size: 12px; }
+      .month-card-amt-label { font-size: 9px; }
+      .cal-year-nav-row { margin-bottom: 12px; gap: 8px; }
+      .cal-year-nav-icon { width: 26px; height: 26px; }
+      .cal-year-nav-label { font-size: 11px; }
+      .cal-year-pill { padding: 6px 12px; font-size: 11px; }
     }
   </style>
 </head>
@@ -10915,10 +11004,14 @@
      regresa a la vista anual. calViewMode/calYearOffset viven en memoria
      (no localStorage), mismo criterio que calMonthOffset/weekViewOffset. -->
 <div id="calYearView">
-<div class="rpt-section-head">
-<div class="rpt-section-title" id="calYearLabel"></div>
-<div class="week-nav" style="margin:0;">
+<div class="cal-year-nav-row">
+<div class="cal-year-nav-left">
+<span class="cal-year-nav-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+<span class="cal-year-nav-label">Vista anual — toca un mes para ver el detalle</span>
+</div>
+<div class="week-nav cal-year-pill-nav">
 <button id="calYearPrevBtn" type="button">‹ Anterior</button>
+<span class="cal-year-pill" id="calYearLabel"></span>
 <button id="calYearNextBtn" type="button">Siguiente ›</button>
 </div>
 </div>
@@ -10929,7 +11022,7 @@
 </div>
 <div class="metric-card">
 <div class="goal-top">
-<span class="rpt-mini-title" style="margin:0;">META ANUAL</span>
+<span class="rpt-mini-title" style="margin:0;">META ANUAL <b id="calYearGoalAmt">$0.00</b></span>
 <button class="tbl-icon-btn" type="button" id="calYearGoalEditBtn" aria-label="Editar meta anual" title="Editar meta anual"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
 </div>
 <div class="goal-bar"><div id="calYearGoalBar" style="width:0%;"></div></div>
@@ -10939,11 +11032,13 @@
 <div class="month-grid" id="calYearMonthGrid"></div>
 </div>
 <div id="calMonthDetailView" style="display:none;">
-<div class="rpt-section-head">
-<div class="rpt-section-title" id="calMonthLabel"></div>
-<div class="week-nav" style="margin:0;">
+<div class="cal-year-nav-row">
+<div class="cal-year-nav-left">
 <button class="back-btn" id="calBackToYearBtn" type="button">‹ Volver al año</button>
+</div>
+<div class="week-nav cal-year-pill-nav">
 <button id="calMonthPrevBtn" type="button">‹ Anterior</button>
+<span class="cal-year-pill" id="calMonthLabel"></span>
 <button id="calMonthTodayBtn" type="button">Mes actual</button>
 <button id="calMonthNextBtn" type="button">Siguiente ›</button>
 </div>
@@ -16595,6 +16690,12 @@ function renderCalYear() {
   const goalPct = yearGoal > 0 ? Math.min(100, (yearTotal / yearGoal) * 100) : 0;
   if (goalBarEl) goalBarEl.style.width = `${goalPct}%`;
   if (goalFootEl) goalFootEl.textContent = `${Math.round(goalPct)}% alcanzado · Faltan ${money(Math.max(0, yearGoal - yearTotal))}`;
+  // v397 — Pedido del usuario (mockup de escritorio aprobado): el monto de
+  // la meta anual ahora también se ve en la misma línea del label (antes
+  // solo aparecía dentro del pie "X% alcanzado..."), mismo `yearGoal` de
+  // arriba, sin ningún cálculo nuevo.
+  const goalAmtEl = document.getElementById('calYearGoalAmt');
+  if (goalAmtEl) goalAmtEl.textContent = money(yearGoal);
 
   const monthNames = Array.from({ length: 12 }, (_, m) => {
     const raw = new Intl.DateTimeFormat('es-MX', { month: 'long' }).format(new Date(2000, m, 1));
@@ -16611,7 +16712,10 @@ function renderCalYear() {
           ${isCurrentMonth ? '<span class="month-card-badge">Actual</span>' : ''}
         </div>
         <div class="mini-grid">${miniHtml}</div>
-        <div class="month-card-amt">${money(monthTotals[m])}</div>
+        <div class="month-card-amt-wrap">
+          <div class="month-card-amt">${money(monthTotals[m])}</div>
+          <div class="month-card-amt-label">ganado este mes</div>
+        </div>
       </div>
     `;
   }).join('');
