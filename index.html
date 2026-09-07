@@ -8306,6 +8306,17 @@
     .cal-tier-6hrp .cal-day-min { color: var(--blue); }
     .cal-tier-6hrm { background: rgba(var(--bad-rgb), .14); border-color: rgba(var(--bad-rgb), .38); }
     .cal-tier-6hrm .cal-day-min { color: var(--bad); }
+    /* Pedido del usuario: "Sin datos" (ningún turno/llamada registrado ese
+       día) ya no se pinta rojo como si hubiera rendido mal — fondo neutro,
+       sin tinte de color, el mismo tratamiento "vacío" que ya usa .field/
+       .block-row para superficies sin dato. */
+    .cal-tier-nodata { background: rgba(255,255,255,.03); border-color: var(--line-2); }
+    .cal-tier-nodata .cal-day-min { color: var(--muted); }
+    /* Pedido del usuario: días marcados Libre (dayIsEffectivelyOff) pasan a
+       su propio tono informativo — ni rojo (mal día) ni gris (sin datos) —
+       para que se note que fue una decisión, no un vacío de información. */
+    .cal-tier-off { background: rgba(var(--blue-rgb), .1); border-color: rgba(var(--blue-rgb), .3); }
+    .cal-tier-off .cal-day-min { color: var(--blue); }
     .cal-ref-card { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; margin-top: 16px; }
     .cal-ref-note { flex: 1 1 260px; font-size: 12.5px; color: var(--muted); line-height: 1.6; }
     .cal-ref-note b { color: var(--text); }
@@ -8438,6 +8449,8 @@
     .mini-cell.cal-tier-8hrp { background: var(--good); }
     .mini-cell.cal-tier-6hrp { background: var(--blue); }
     .mini-cell.cal-tier-6hrm { background: var(--bad); }
+    .mini-cell.cal-tier-nodata { background: rgba(255,255,255,.06); }
+    .mini-cell.cal-tier-off { background: var(--blue); opacity: .55; }
     .mini-cell.cal-empty { background: transparent; }
     .month-card-amt-wrap {
       display: grid;
@@ -16579,6 +16592,29 @@ function calTierForDay(productiveMin, goalMin) {
   return 'cal-tier-6hrm';
 }
 
+// Pedido del usuario: distingue "Sin datos" (ningún turno ni llamada
+// registrado ese día — no hay nada que juzgar) y "Libre" (día marcado
+// como tal en el horario) del resto de tiers de rendimiento — antes ambos
+// casos caían en cal-tier-6hrm (rojo), como si hubiera sido un mal día.
+// 'off' gana sobre 'nodata': un día libre sin actividad es una decisión
+// (no un vacío de información), aunque tampoco tenga turno ni llamadas.
+function calDayStatus(dayKey) {
+  if (dayIsEffectivelyOff(dayKey)) return 'off';
+  const hasShift = !!dayShiftBounds(dayKey).start;
+  const hasCalls = callsForDay(dayKey).length > 0;
+  if (!hasShift && !hasCalls) return 'nodata';
+  return 'normal';
+}
+
+// Tier final de una celda (mes o mini-heatmap anual) — envuelve
+// calTierForDay() agregando los 2 casos especiales de arriba.
+function calDayTier(dayKey, goalMin) {
+  const status = calDayStatus(dayKey);
+  if (status === 'off') return 'cal-tier-off';
+  if (status === 'nodata') return 'cal-tier-nodata';
+  return calTierForDay(productiveMinutesForDay(dayKey), goalMin);
+}
+
 function renderCalendarMonth() {
   const grid = document.getElementById('calDayGrid');
   const label = document.getElementById('calMonthLabel');
@@ -16608,11 +16644,13 @@ function renderCalendarMonth() {
     const d = new Date(year, month, day);
     if (d > today) break;
     const dayKey = todayCallDateKey(d);
+    const status = calDayStatus(dayKey);
     const productiveMin = productiveMinutesForDay(dayKey);
     const bonusMin = Math.round(calDailyEquivalentHigherRateMin(dayKey));
-    const tier = calTierForDay(productiveMin, goalMin);
+    const tier = calDayTier(dayKey, goalMin);
     const bonusHtml = bonusMin > 0 ? `<span class="cal-day-bonus">+${bonusMin}</span>` : '';
-    cellsHtml.push(`<div class="cal-day-cell ${tier}">${bonusHtml}<span class="cal-day-num">${day}</span><span class="cal-day-min">${Math.round(productiveMin)}</span></div>`);
+    const minLabel = status === 'off' ? 'Libre' : status === 'nodata' ? '—' : String(Math.round(productiveMin));
+    cellsHtml.push(`<div class="cal-day-cell ${tier}">${bonusHtml}<span class="cal-day-num">${day}</span><span class="cal-day-min">${minLabel}</span></div>`);
   }
   grid.innerHTML = cellsHtml.join('');
 
@@ -16731,7 +16769,7 @@ function renderCalYear() {
       if (d > today) { cells.push({ empty: true }); continue; }
       const dayKey = todayCallDateKey(d);
       monthTotal += importedCallStats(callsForDay(dayKey), dayKey).earnings;
-      const tier = calTierForDay(productiveMinutesForDay(dayKey), goalMin);
+      const tier = calDayTier(dayKey, goalMin);
       cells.push({ empty: false, tier });
     }
     yearTotal += monthTotal;
