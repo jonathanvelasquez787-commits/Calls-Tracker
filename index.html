@@ -8277,23 +8277,39 @@
     .rpt-legend i.dashed { background: repeating-linear-gradient(90deg, var(--rpt-purple) 0 4px, transparent 4px 8px); }
 
     /* Calendario de productividad: grid mensual de minutos productivos vs meta. */
-    .cal-legend-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+    /* v405 — Pedido del usuario: rediseño del escalado responsive de todo
+       "Calendario de productividad" — antes había solo 2 tamaños fijos
+       (escritorio y un solo salto en @media max-width:760px), así que en
+       cualquier ancho intermedio (o muy angosto, <360px) el texto se veía
+       apretado/cortado o el badge de bono se montaba sobre el número. Se
+       reemplazan los valores fijos de gap/padding/font-size/border-radius
+       por clamp() — escalan de forma continua con el ancho de la pantalla
+       en vez de saltar entre 2 puntos — así los 7 días SIEMPRE caben de
+       lado a lado (el grid ya era `repeat(7, 1fr)`, eso no cambia), cada
+       vez más chicos cuanto más angosta la ventana, sin scroll horizontal
+       ni recortes. El bloque `@media max-width:760px` que compactaba estas
+       mismas reglas para mobile se retira (ver más abajo) — ya redundante,
+       el clamp() cubre ese rango solo. min-height se quita: el alto de la
+       celda sale del padding fluido + una línea de texto, sin hueco vacío
+       forzado en ningún ancho. */
+    .cal-legend-row { display: flex; flex-wrap: wrap; gap: clamp(4px, 1.4vw, 10px); margin-bottom: clamp(8px, 2vw, 16px); }
     .cal-legend-chip {
-      display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px;
+      display: inline-flex; align-items: center; gap: clamp(3px, 1vw, 8px); padding: clamp(4px, 1vw, 6px) clamp(6px, 2vw, 12px);
       border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,.03);
-      font-size: 11.5px; font-weight: 700; color: var(--muted);
+      font-size: clamp(9px, 2.4vw, 11.5px); font-weight: 700; color: var(--muted);
     }
-    .cal-legend-dot { width: 11px; height: 11px; border-radius: 4px; flex: 0 0 auto; }
-    .cal-weekday-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 8px; }
-    .cal-weekday-label { text-align: center; font-size: 10.5px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
-    .cal-day-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+    .cal-legend-dot { width: clamp(8px, 2vw, 11px); height: clamp(8px, 2vw, 11px); border-radius: 4px; flex: 0 0 auto; }
+    .cal-weekday-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: clamp(3px, 1vw, 8px); margin-bottom: clamp(4px, 1vw, 8px); }
+    .cal-weekday-label { text-align: center; font-size: clamp(7px, 2.2vw, 10.5px); font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+    .cal-day-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: clamp(3px, 1.2vw, 8px); }
     .cal-day-cell {
-      position: relative; border-radius: 14px; padding: 9px 8px 7px; min-height: 68px;
+      position: relative; border-radius: clamp(8px, 2vw, 14px); padding: clamp(4px, 1.4vw, 9px) clamp(2px, 1vw, 8px) clamp(3px, 1vw, 7px);
       border: 1px solid var(--line-2); display: flex; flex-direction: column; justify-content: space-between;
+      aspect-ratio: 1 / 1;
     }
     .cal-day-cell.cal-empty { border: none; background: transparent; }
-    .cal-day-num { font-size: 11.5px; font-weight: 800; color: var(--text); opacity: .85; }
-    .cal-day-min { font-size: 14px; font-weight: 900; letter-spacing: -.01em; white-space: nowrap; }
+    .cal-day-num { font-size: clamp(8px, 2.6vw, 11.5px); font-weight: 800; color: var(--text); opacity: .85; }
+    .cal-day-min { font-size: clamp(9px, 3.2vw, 14px); font-weight: 900; letter-spacing: -.01em; white-space: nowrap; }
     /* v401 — Pedido del usuario (punto 5 del plan aprobado en v399): "Libre"
        (día efectivamente libre, ver cal-tier-off) y "—" (sin datos, ver
        cal-tier-nodata) son texto más largo que un número de minutos — sin
@@ -8303,14 +8319,13 @@
        por encima de las demás celdas de la semana, rompiendo la cuadrícula
        uniforme. Se agrega esta clase aparte (además de `.cal-day-min`, no en
        su lugar — sigue heredando color/tier de las reglas de arriba) SOLO
-       para los 2 casos de texto: tamaño más chico y sin negrita extrema, dentro
-       del mismo `min-height`/padding de la celda que ya tenían los números —
+       para los 2 casos de texto: tamaño más chico y sin negrita extrema —
        ninguna celda cambia de tamaño, todas miden lo mismo sin importar si
        muestran "42", "Libre" o "—". */
-    .cal-day-min.cal-day-min-label { font-size: 11px; font-weight: 800; letter-spacing: 0; }
+    .cal-day-min.cal-day-min-label { font-size: clamp(7px, 2.4vw, 11px); font-weight: 800; letter-spacing: 0; }
     .cal-day-bonus {
-      position: absolute; top: 6px; right: 6px; font-size: 9px; font-weight: 900;
-      background: rgba(var(--good-rgb), .22); color: var(--good); border-radius: 999px; padding: 2px 6px;
+      position: absolute; top: clamp(2px, .6vw, 6px); right: clamp(2px, .6vw, 6px); font-size: clamp(6px, 1.8vw, 9px); font-weight: 900;
+      background: rgba(var(--good-rgb), .22); color: var(--good); border-radius: 999px; padding: clamp(1px, .4vw, 2px) clamp(3px, 1vw, 6px);
     }
     .cal-tier-8hrpp { background: rgba(var(--warn-rgb), .16); border-color: rgba(var(--warn-rgb), .4); }
     .cal-tier-8hrpp .cal-day-min { color: var(--warn); }
@@ -9999,20 +10014,10 @@
         font-size: 13px;
       }
 
-      /* Calendario de productividad: mismo grid, tamaños compactos de mockup mobile. */
-      .cal-legend-row { gap: 6px; margin-bottom: 10px; }
-      .cal-legend-chip { padding: 5px 9px; font-size: 10px; gap: 5px; }
-      .cal-legend-dot { width: 9px; height: 9px; }
-      .cal-weekday-row { gap: 4px; margin-bottom: 6px; }
-      .cal-weekday-label { font-size: 9px; }
-      .cal-day-grid { gap: 4px; }
-      .cal-day-cell { border-radius: 9px; padding: 5px 3px 4px; min-height: 46px; }
-      .cal-day-num { font-size: 9px; align-self: flex-start; }
-      .cal-day-min { font-size: 11px; }
-      /* v401 — Ver comentario junto a ".cal-day-min-label" (regla base, más
-         arriba) — mismo criterio, aquí la versión compacta de mobile. */
-      .cal-day-min.cal-day-min-label { font-size: 8.5px; }
-      .cal-day-bonus { top: -5px; right: -4px; font-size: 7.5px; padding: 1px 4px; }
+      /* v405 — El grid de 7 días/leyenda/cabecera de días ya escala solo vía
+         clamp() en la regla base (buscar "v405") — este override mobile
+         quedó redundante y se retira. Se conserva abajo solo lo que no es
+         parte del grid de días (tarjeta de referencia + tabla). */
       .cal-ref-card { gap: 0; margin-top: 10px; }
       .cal-ref-note { flex-basis: 100%; font-size: 11px; margin-bottom: 10px; }
       table.cal-ref-table { width: 100%; }
