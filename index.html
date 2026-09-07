@@ -8385,7 +8385,20 @@
     .cal-ref-card { display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start; margin-top: 16px; }
     .cal-ref-note { flex: 1 1 260px; font-size: 12.5px; color: var(--muted); line-height: 1.6; }
     .cal-ref-note b { color: var(--text); }
-    table.cal-ref-table { border-collapse: collapse; flex: 0 0 auto; }
+    /* v409 — Pedido del usuario (bug real encontrado tras varios intentos a
+       ciegas en v405-v408): la regla genérica `table { min-width: 900px }`
+       (ver esa regla más arriba en el archivo) aplicaba también a esta
+       tabla de referencia — el media query mobile solo sobreescribía
+       `width:100%` en ella, nunca `min-width`, así que ese piso de 900px
+       seguía vivo en cualquier ancho de pantalla. Esa tabla obligaba a su
+       fila (`.cal-ref-card`, flex) a medir mínimo 900px, empujando TODO el
+       `.accordion-body` (incluido el grid de 7 días) más ancho que el
+       viewport real — de ahí que ningún fix anterior en `.cal-day-grid`/
+       `.cal-day-cell` cambiara nada visible: esas reglas siempre fueron
+       correctas, vivían dentro de un contenedor que ya era ancho de por
+       sí. `min-width: 0` anula ese heredado sin tocar el resto de estilos
+       de esta tabla. */
+    table.cal-ref-table { border-collapse: collapse; flex: 0 0 auto; min-width: 0; }
     table.cal-ref-table th, table.cal-ref-table td { padding: 7px 15px; font-size: 12px; text-align: center; border-bottom: 1px solid var(--line); }
     table.cal-ref-table th { color: var(--muted); font-weight: 700; text-transform: uppercase; font-size: 10px; letter-spacing: .04em; }
     table.cal-ref-table td { font-weight: 800; }
