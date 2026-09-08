@@ -12022,8 +12022,11 @@ function renderCalYear() {
     for (let i = 0; i < firstWeekday; i++) cells.push({ empty: true });
     for (let day = 1; day <= daysInMonth; day++) {
       const d = new Date(year, m, day);
-      if (d > today) { cells.push({ empty: true }); continue; }
       const dayKey = todayCallDateKey(d);
+      // Días futuros no tienen llamadas ni turno todavía — calDayTier ya
+      // resuelve 'cal-tier-nodata' sola vía calDayStatus, sin necesidad de
+      // un caso especial aquí. Mismo criterio que renderCalendarMonth()
+      // (pinta el mes completo, sin cortar en "hoy").
       monthTotal += importedCallStats(callsForDay(dayKey), dayKey).earnings;
       const tier = calDayTier(dayKey, goalMin);
       cells.push({ empty: false, tier });
