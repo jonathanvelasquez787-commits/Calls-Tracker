@@ -6823,6 +6823,168 @@
       border-radius: 50%;
     }
 
+    /* ========================================================== — Pedido del usuario: página "Finanzas" (mockup finanzas_mockup_desktop_v3.html, aprobado). El contenedor de página es un `section.card` normal (mismo patrón que #callsSection) — no se repite `.fin-wrap` del mockup. */
+    .fin-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
+    .fin-header-left { display: flex; align-items: flex-start; gap: 14px; }
+    .fin-header-icon {
+      width: 46px; height: 46px; border-radius: 13px;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex: 0 0 auto;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      color: #07101f;
+    }
+    .fin-header-icon .ic-svg { width: 21px; height: 21px; }
+    .fin-title { font-size: 20px; font-weight: 900; letter-spacing: -.02em; }
+    .fin-sub { font-size: 12.5px; color: var(--muted); margin-top: 4px; line-height: 1.5; max-width: 46ch; }
+    .fin-date-pill {
+      background: var(--panel-navy);
+      border: 1px solid var(--line);
+      padding: 8px 13px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .fin-date-pill .ic-svg { width: 13px; height: 13px; }
+
+    .fin-available-card {
+      border: 1px solid rgba(var(--cyan-rgb), .35);
+      background: rgba(var(--cyan-rgb), .08);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .fin-available-label { font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--cyan); }
+    .fin-available-amt { font-size: 32px; font-weight: 900; letter-spacing: -.02em; margin-top: 6px; }
+    .fin-available-note { font-size: 12px; color: var(--muted); margin-top: 4px; max-width: 42ch; line-height: 1.5; }
+    .fin-available-stat { text-align: right; flex: 0 0 auto; }
+    .fin-available-stat-label { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+    .fin-available-stat-val { font-size: 18px; font-weight: 900; color: var(--good); margin-top: 4px; }
+
+    .fin-tab-toggle {
+      display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px;
+      background: rgba(255,255,255,.04); border: 1px solid var(--line);
+      margin-bottom: 16px;
+    }
+    .fin-tab-btn {
+      border: none; background: transparent; color: var(--muted);
+      border-radius: 999px; padding: 8px 20px; font-weight: 800; font-size: 12.5px;
+      cursor: pointer; white-space: nowrap; transition: background .14s ease, color .14s ease;
+    }
+    .fin-tab-btn.active { background: var(--cyan); color: #07101f; }
+
+    .fin-legend-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .fin-legend-chip {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 6px 12px; border-radius: 999px;
+      border: 1px solid var(--line); background: rgba(255,255,255,.03);
+      color: var(--muted); font-size: 11.5px; font-weight: 700;
+    }
+    .fin-legend-chip .ic-svg { width: 13px; height: 13px; }
+
+    .fin-info-box {
+      display: flex; align-items: flex-start; gap: 9px;
+      border: 1px solid rgba(var(--purple-rgb), .22);
+      background: rgba(var(--purple-rgb), .07);
+      border-radius: 12px; padding: 11px 14px; margin-bottom: 14px;
+      font-size: 12px; color: var(--muted); line-height: 1.55;
+    }
+    .fin-info-box .ic-svg { color: var(--purple); flex: 0 0 auto; margin-top: 1px; }
+    .fin-info-box strong { color: var(--text); font-weight: 800; }
+
+    .fin-list { display: grid; gap: 10px; }
+    .fin-row {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255,255,255,.03);
+      padding: 14px 16px 14px 12px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .fin-priority { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 0 0 auto; }
+    .fin-priority-btn {
+      width: 22px; height: 17px; border: 1px solid var(--line);
+      background: rgba(255,255,255,.04); color: var(--muted);
+      border-radius: 6px; display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer; padding: 0; transition: background .14s ease, color .14s ease;
+    }
+    .fin-priority-btn:hover { background: rgba(255,255,255,.09); color: var(--text); }
+    .fin-priority-btn:disabled { opacity: .3; cursor: not-allowed; }
+    .fin-priority-btn .ic-svg { width: 11px; height: 11px; }
+    .fin-priority-num {
+      width: 21px; height: 21px; border-radius: 50%;
+      background: rgba(255,255,255,.06); display: inline-flex; align-items: center; justify-content: center;
+      font-size: 10.5px; font-weight: 800; color: var(--muted);
+    }
+
+    .fin-cat-icon {
+      width: 38px; height: 38px; border-radius: 11px;
+      display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+      background: rgba(var(--cat-rgb), .14);
+      border: 1px solid rgba(var(--cat-rgb), .3);
+      color: rgb(var(--cat-rgb));
+    }
+    .fin-cat-icon .ic-svg { width: 17px; height: 17px; }
+
+    .fin-row-main { flex: 1 1 240px; min-width: 0; }
+    .fin-row-title { font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .fin-row-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .fin-row-amt-line { font-size: 11.5px; color: var(--muted); margin-top: 7px; }
+    .fin-row-amt-line b { color: var(--text); font-weight: 800; }
+    .fin-progress-track {
+      height: 7px; border-radius: 99px; background: rgba(255,255,255,.08);
+      overflow: hidden; margin-top: 6px; max-width: 260px;
+    }
+    .fin-progress-track > div { height: 100%; border-radius: inherit; }
+
+    .fin-row-right { text-align: right; flex: 0 0 auto; min-width: 108px; }
+    .fin-row-right-label { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+    .fin-row-right-val { font-weight: 900; font-size: 14.5px; margin-top: 2px; }
+
+    .fin-badge {
+      display: inline-flex; padding: 4px 10px; border-radius: 999px;
+      font-weight: 800; font-size: 10px; white-space: nowrap; flex: 0 0 auto;
+    }
+    .fin-badge.tone-good { background: rgba(var(--good-rgb), .16); color: var(--good); }
+    .fin-badge.tone-warn { background: rgba(var(--warn-rgb), .16); color: var(--warn); }
+    .fin-badge.tone-bad { background: rgba(var(--bad-rgb), .16); color: var(--bad); }
+    .fin-badge.tone-neutral { background: rgba(255,255,255,.06); color: var(--muted); }
+
+    .fin-row-actions { display: flex; gap: 6px; flex: 0 0 auto; align-items: center; }
+    .fin-mini-input {
+      width: 64px; height: 32px; border-radius: 9px; border: 1px solid var(--line);
+      background: rgba(255,255,255,.04); color: var(--text); padding: 0 9px;
+      font-size: 12.5px; font-weight: 700; font-family: inherit;
+    }
+    .fin-mini-input::placeholder { color: var(--muted); }
+    .fin-mini-input:focus, .fin-ghost-btn:focus-visible, .fin-priority-btn:focus-visible { outline: none; border-color: rgba(var(--cyan-rgb), .5); box-shadow: 0 0 0 3px rgba(var(--cyan-rgb), .14); }
+    .fin-mini-btn-primary {
+      border: 0; border-radius: 9px; padding: 0 14px; height: 32px;
+      background: var(--cyan); color: #07101f; font-weight: 800; font-size: 11.5px;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+    }
+    .fin-mini-btn-primary .ic-svg { width: 12px; height: 12px; }
+    .fin-ghost-btn {
+      border: 1px solid var(--line); background: rgba(255,255,255,.03); color: var(--muted);
+      border-radius: 9px; padding: 0 12px; height: 32px; font-size: 11px; font-weight: 700;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+    }
+    .fin-ghost-btn:hover { color: var(--text); border-color: var(--line-2); }
+    .fin-ghost-btn .ic-svg { width: 12px; height: 12px; }
+    .fin-checkbox-label { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); font-weight: 700; white-space: nowrap; flex: 0 0 auto; }
+
     /* ========================================================== — Pedido del usuario: los 5 campos "Mensaje" dentro de "Avisos" (Antes de mi turno / Antes de Break-Lunch / Después de Break-Lunch / Descanso ganado */
     .msg-preview-row {
       display: flex;
@@ -7291,6 +7453,7 @@
 <!-- Pedido del usuario: nueva página "Fechas de pago" — mockup fechas_pago_mockup_desktop.html aprobado en otra sesión (vista desktop; mobile pendiente de mockup/aprobación aparte). -->
 <button class="sidebar-link" data-page="paydates" type="button"><span class="sidebar-link-icon" style="background: rgba(var(--pink-rgb), .14); border: 1px solid rgba(var(--pink-rgb), .28);"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span class="sidebar-link-label">Fechas de pago</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
 <button class="sidebar-link" data-page="calendar" type="button"><span class="sidebar-link-icon" style="background: rgba(var(--rpt-purple-rgb), .14); border: 1px solid rgba(var(--rpt-purple-rgb), .28);"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg></span><span class="sidebar-link-label">Calendario</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
+<button class="sidebar-link" data-page="finance" type="button"><span class="sidebar-link-icon" style="background: rgba(var(--teal-rgb), .14); border: 1px solid rgba(var(--teal-rgb), .28);"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12V8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h13a1 1 0 0 0 1-1v-4"/><path d="M20 12a2 2 0 0 1 0 4h-3a2 2 0 0 1 0-4Z"/></svg></span><span class="sidebar-link-label">Finanzas</span><span class="sidebar-link-arrow">›</span><span class="sidebar-link-dot"></span></button>
 <!-- Pedido del usuario: "Avisos" deja de ser una página del menú lateral -->
 </div>
 <!-- Pedido del usuario: tarjeta "Mi progreso" con anillo de % — dato derivado (productivo de la semana actual vs. tu meta diaria × 7, ver updateSidebarProgressWidget), no un valor nuevo que se guarde en settings/state. -->
@@ -7956,6 +8119,54 @@ semana (5). <b>TOTAL = xD × S × D</b>.
 </details>
 </div><!-- /pageCalendar -->
 
+<div class="app-page" data-page="finance" hidden id="pageFinance">
+<section class="card" id="financeSection">
+  <div class="fin-header">
+    <div class="fin-header-left">
+      <div class="fin-header-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12V8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h13a1 1 0 0 0 1-1v-4"/><path d="M20 12a2 2 0 0 1 0 4h-3a2 2 0 0 1 0-4Z"/></svg></div>
+      <div>
+        <div class="fin-title">Finanzas</div>
+        <div class="fin-sub">Gastos y metas alimentados por tus ganancias — cada llamada guardada llena esto solo.</div>
+      </div>
+    </div>
+    <div class="fin-date-pill"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Ciclo actual</div>
+  </div>
+
+  <div class="fin-available-card">
+    <div>
+      <div class="fin-available-label">Disponible para asignar</div>
+      <div class="fin-available-amt" id="financeAvailableAmt">$0.00</div>
+      <div class="fin-available-note">Se llena solo con cada llamada guardada. Cada fila resta del sobrante de las de arriba — por eso el orden de prioridad importa.</div>
+    </div>
+    <div class="fin-available-stat">
+      <div class="fin-available-stat-label">Siguiente prioridad</div>
+      <div class="fin-available-stat-val" id="financeNextPriorityVal">—</div>
+    </div>
+  </div>
+
+  <div class="fin-tab-toggle" id="financeTabToggle" role="group" aria-label="Ver Gastos o Metas">
+    <button class="fin-tab-btn active" data-fin-tab="gastos" type="button">Gastos</button>
+    <button class="fin-tab-btn" data-fin-tab="metas" type="button">Metas</button>
+  </div>
+
+  <div class="fin-legend-row" id="financeLegendRow" aria-hidden="true"></div>
+
+  <div id="financeGastosView">
+    <div class="fin-list" id="financeGastosList"></div>
+    <button class="sched-add-block-btn" id="addFinanceGastoBtn" type="button">+ Agregar gasto</button>
+  </div>
+
+  <div id="financeMetasView" style="display:none;">
+    <div class="fin-info-box">
+      <svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      <span>A diferencia de un gasto recurrente, lo que asignás a una meta se <strong>acumula para siempre</strong> — nunca se reinicia solo cada mes. Vos decidís cuándo la das por cumplida.</span>
+    </div>
+    <div class="fin-list" id="financeMetasList"></div>
+    <button class="sched-add-block-btn" id="addFinanceMetaBtn" type="button">+ Agregar meta</button>
+  </div>
+</section>
+</div><!-- /pageFinance -->
+
 <div class="footer">Todo queda local en el navegador hasta que exportes o descargues el archivo.</div></div>
 <!-- Pedido del usuario: "Avisos" deja de ser una página del sidebar (#pageSettings, #notificationsAccordion) -->
 <div aria-hidden="true" class="modal-overlay" id="notificationsModal">
@@ -8462,6 +8673,54 @@ $0.72"></textarea>
 </div>
 </div>
 </div>
+<!-- Pedido del usuario: página "Finanzas" — modal chico para agregar fila de gasto o meta, calcado 1:1 de #acwGoalModal (mismo patrón que el resto de editores chicos de la app). -->
+<div aria-hidden="true" class="modal-overlay" id="financeRowModal">
+<div aria-labelledby="financeRowModalTitle" aria-modal="true" class="modal-card" role="dialog">
+<div class="modal-head mc-modal-head">
+<div class="mc-header-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12V8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h13a1 1 0 0 0 1-1v-4"/><path d="M20 12a2 2 0 0 1 0 4h-3a2 2 0 0 1 0-4Z"/></svg></div>
+<div>
+<h3 id="financeRowModalTitle">Agregar gasto</h3>
+<p>Se agrega al final de la cola de prioridad — puedes reordenarla después con las flechas ↑/↓.</p>
+</div>
+<button aria-label="Cerrar" class="modal-close" data-close-modal="financeRowModal" type="button">×</button>
+</div>
+
+<div class="goals-section">
+<div class="goals-section-title"><svg class="goals-section-icon ic-svg cyan" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12V8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h13a1 1 0 0 0 1-1v-4"/><path d="M20 12a2 2 0 0 1 0 4h-3a2 2 0 0 1 0-4Z"/></svg>Detalle</div>
+<div class="goals-field">
+<label for="financeRowNameInput">Nombre</label>
+<input id="financeRowNameInput" maxlength="40" placeholder="Ej. Casa, Internet, Fondo de emergencia..." type="text"/>
+</div>
+<div class="goals-field" id="financeRowCategoryField">
+<label for="financeRowCategoryInput">Categoría</label>
+<select id="financeRowCategoryInput">
+<option value="casa">Casa</option>
+<option value="servicios">Servicios</option>
+<option value="transporte">Transporte</option>
+<option value="comida">Comida</option>
+<option value="deuda">Deuda</option>
+<option value="otro">Otro</option>
+</select>
+</div>
+<div class="goals-field" id="financeRowTypeField">
+<label for="financeRowTypeInput">Tipo</label>
+<select id="financeRowTypeInput">
+<option value="recurring">Recurrente</option>
+<option value="onetime">Puntual</option>
+</select>
+</div>
+<div class="goals-field">
+<label for="financeRowTargetInput">Monto objetivo ($)</label>
+<input id="financeRowTargetInput" inputmode="decimal" min="0.01" step="0.01" type="number"/>
+</div>
+</div>
+
+<div class="modal-actions mc-action-row">
+<button class="mc-btn-primary cyan" id="saveFinanceRowBtn" type="button"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="5 12 10 17 19 6"/></svg> Guardar</button>
+<button class="mc-btn-warn-pill" data-close-modal="financeRowModal" type="button">Cancelar</button>
+</div>
+</div>
+</div>
 <!-- Pedido del usuario: editor rápido de la Meta del ciclo (✎ en la tarjeta "Ganancias del ciclo" de Reportes) — mismo patrón simple que #acwGoalModal : cabecera con ícono cuadrito, un campo, fila de acciones. -->
 <div aria-hidden="true" class="modal-overlay" id="cycleGoalModal">
 <div aria-labelledby="cycleGoalModalTitle" aria-modal="true" class="modal-card" role="dialog">
@@ -8875,6 +9134,13 @@ $0.72"></textarea>
       zap: '<polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/>',
       circle: '<circle cx=\"12\" cy=\"12\" r=\"8\"/>',
       play: '<polygon points=\"6 3 20 12 6 21\" fill=\"currentColor\" stroke=\"none\"/>',
+      wallet: '<path d=\"M20 12V8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h13a1 1 0 0 0 1-1v-4\"/><path d=\"M20 12a2 2 0 0 1 0 4h-3a2 2 0 0 1 0-4Z\"/>',
+      car: '<path d=\"M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11\"/><rect x=\"3\" y=\"11\" width=\"18\" height=\"6\" rx=\"2\"/><circle cx=\"7.5\" cy=\"17.5\" r=\"1.5\"/><circle cx=\"16.5\" cy=\"17.5\" r=\"1.5\"/>',
+      creditCard: '<rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"2\"/><line x1=\"2\" y1=\"10\" x2=\"22\" y2=\"10\"/>',
+      piggyBank: '<path d=\"M4 12a5 5 0 0 1 5-5h6a5 5 0 0 1 5 5v1a2 2 0 0 1-2 2h-1v2a1 1 0 0 1-2 0v-2h-6v2a1 1 0 0 1-2 0v-2H8a4 4 0 0 1-4-4Z\"/><circle cx=\"16\" cy=\"11\" r=\"1\" fill=\"currentColor\" stroke=\"none\"/><path d=\"M4 11H2\"/><path d=\"M17 7l1-2\"/>',
+      moreHorizontal: '<circle cx=\"5\" cy=\"12\" r=\"1.5\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"12\" cy=\"12\" r=\"1.5\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"19\" cy=\"12\" r=\"1.5\" fill=\"currentColor\" stroke=\"none\"/>',
+      chevronUp: '<polyline points=\"18 15 12 9 6 15\"/>',
+      info: '<circle cx=\"12\" cy=\"12\" r=\"9\"/><line x1=\"12\" y1=\"16\" x2=\"12\" y2=\"12\"/><line x1=\"12\" y1=\"8\" x2=\"12.01\" y2=\"8\"/>',
     };
     function iconHtml(name, extraClass) {
       const inner = ICON[name] || '';
@@ -8898,6 +9164,17 @@ $0.72"></textarea>
     };
     // Pedido del usuario (confirmado explícitamente): "si tomo una llamada 5 minutos antes de que el higher rate empiece me cuenta"
     const HIGHER_RATE_EARLY_GRACE_MIN = 5;
+
+    // Página "Finanzas" (pedido del usuario) ---- Categorías fijas, mismo patrón que HIGHER_RATE_TIERS — no viven en settings, solo sus filas (ver settings.financeCategories).
+    const FINANCE_CATEGORIES = {
+      casa:       { label: 'Casa',           icon: 'home',           rgb: '102,226,165' },
+      servicios:  { label: 'Servicios',      icon: 'zap',            rgb: '255,209,92'  },
+      transporte: { label: 'Transporte',     icon: 'car',            rgb: '125,140,255' },
+      comida:     { label: 'Comida',         icon: 'utensils',       rgb: '47,213,255'  },
+      deuda:      { label: 'Deuda',          icon: 'creditCard',     rgb: '255,107,114' },
+      ahorro:     { label: 'Meta de ahorro', icon: 'piggyBank',      rgb: '139,123,255' },
+      otro:       { label: 'Otro',           icon: 'moreHorizontal', rgb: '144,160,190' },
+    };
 
     // Pedido del usuario ("así como en Mochi", con captura de referencia): selector visual de tarifa (Normal/Bronce/Silver/Gold) en Editar llamada y Agregar llamada manual
     const RATE_TILE_DEFS = [
@@ -9289,6 +9566,8 @@ $0.72"></textarea>
         yearGoalOverrides: {},
         // Pedido del usuario: fecha desde la que "empieza" el historial para la vista anual (mes de arranque del año que la contiene + piso de autoCalYearGoal) — vacío = automático (la llamada más antigua en `calls`, ver effectiveHistoryStartDate()).
         historyStartDateOverride: '',
+        // Pedido del usuario: página "Finanzas" — categorías fijas (ver FINANCE_CATEGORIES), cada una con sus propias filas de gasto/meta.
+        financeCategories: { casa: { rows: [] }, servicios: { rows: [] }, transporte: { rows: [] }, comida: { rows: [] }, deuda: { rows: [] }, ahorro: { rows: [] }, otro: { rows: [] } },
       };
     }
 
@@ -9430,6 +9709,21 @@ $0.72"></textarea>
           toast(`⚠️ ${discardedWindowCount} ventana(s) de Higher Rate con datos inválidos se descartaron al cargar.`);
         }
       }
+      // Finanzas: se recrea cualquier categoría faltante/mal formada con
+      // { rows: [] }, y se descarta cualquier row sin id/name/targetAmount
+      // numérico válido (mismo criterio defensivo que cycleGoalOverrides/
+      // higherRateWindows arriba).
+      if (!settings.financeCategories || typeof settings.financeCategories !== 'object' || Array.isArray(settings.financeCategories)) {
+        settings.financeCategories = {};
+      }
+      Object.keys(FINANCE_CATEGORIES).forEach((catId) => {
+        const cat = settings.financeCategories[catId];
+        if (!cat || typeof cat !== 'object' || Array.isArray(cat) || !Array.isArray(cat.rows)) {
+          settings.financeCategories[catId] = { rows: [] };
+          return;
+        }
+        cat.rows = cat.rows.filter(r => r && typeof r === 'object' && String(r.id || '').trim() && String(r.name || '').trim() && Number.isFinite(Number(r.targetAmount)) && Number(r.targetAmount) >= 0);
+      });
     }
 
     // Pedido del usuario: modo claro/oscuro — 'auto' (default) sigue el sistema vía @media (prefers-color-scheme:
@@ -12859,6 +13153,314 @@ function renderPayDatesSection() {
   }).join('');
 
   body.innerHTML = `${nextCardHtml}<div class="wk-list">${rowsHtml}</div>`;
+}
+
+// Página "Finanzas" (pedido del usuario) ---- ver FINANCE_CATEGORIES arriba y el resumen.md para el modelo de datos completo (settings.financeCategories, cascada de "Restante después").
+function financeTotalEarningsAllTime() {
+  return calls.reduce((sum, c) => sum + parseMoney(c.pay), 0) + higherRateBonusForCalls(calls);
+}
+function financeTotalAssigned() {
+  let total = 0;
+  Object.values(settings.financeCategories).forEach(cat => {
+    cat.rows.forEach(r => { total += Number(r.assignedAmount) || 0; });
+  });
+  return total;
+}
+function financeAvailableBalance() {
+  return financeTotalEarningsAllTime() - financeTotalAssigned();
+}
+
+// Todas las filas de Gastos (todas las categorías menos 'ahorro') en UNA sola cola ordenada por prioridad ascendente — así compiten entre sí en la cascada de "Restante después". Las Metas ('ahorro') tienen su propia cola aparte.
+function financeGastoRowsSorted() {
+  const rows = [];
+  Object.keys(FINANCE_CATEGORIES).forEach(catId => {
+    if (catId === 'ahorro') return;
+    (settings.financeCategories[catId]?.rows || []).forEach(r => rows.push(r));
+  });
+  return rows.sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0));
+}
+
+function financeMetaRowsSorted() {
+  return [...(settings.financeCategories.ahorro?.rows || [])].sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0));
+}
+
+function financeIsRowPagado(row) {
+  return row.manualPaid === true || (Number(row.assignedAmount) >= Number(row.targetAmount) && Number(row.targetAmount) > 0);
+}
+
+let financeActiveTab = 'gastos';
+let financeRowModalKind = 'gasto';
+
+function setFinanceTab(tab) {
+  financeActiveTab = tab === 'metas' ? 'metas' : 'gastos';
+  const gastosView = document.getElementById('financeGastosView');
+  const metasView = document.getElementById('financeMetasView');
+  document.querySelectorAll('#financeTabToggle [data-fin-tab]').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-fin-tab') === financeActiveTab);
+  });
+  if (gastosView) gastosView.style.display = financeActiveTab === 'gastos' ? '' : 'none';
+  if (metasView) metasView.style.display = financeActiveTab === 'metas' ? '' : 'none';
+}
+
+// Arma el HTML de una fila (gasto o meta) — `opts.restanteDespues` solo aplica a gastos (ver cascada en renderFinanceSection).
+function financeRowHtml(row, opts) {
+  const cat = FINANCE_CATEGORIES[row.categoryId] || FINANCE_CATEGORIES.otro;
+  const upDisabled = opts.index === 0 ? 'disabled' : '';
+  const downDisabled = opts.index === opts.count - 1 ? 'disabled' : '';
+  const target = Number(row.targetAmount) || 0;
+  const assigned = Number(row.assignedAmount) || 0;
+  const priorityHtml = `
+    <div class="fin-priority">
+      <button class="fin-priority-btn" type="button" data-fin-priority-up="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" ${upDisabled} aria-label="Subir prioridad">${iconHtml('chevronUp')}</button>
+      <span class="fin-priority-num">${opts.index + 1}</span>
+      <button class="fin-priority-btn" type="button" data-fin-priority-down="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" ${downDisabled} aria-label="Bajar prioridad">${iconHtml('chevronDown')}</button>
+    </div>
+    <span class="fin-cat-icon" style="--cat-rgb:${cat.rgb};">${iconHtml(cat.icon)}</span>
+  `;
+
+  if (opts.isMeta) {
+    const faltante = Math.max(0, target - assigned);
+    let badgeHtml, barPct, barColor;
+    if (assigned === 0) { badgeHtml = '<span class="fin-badge tone-bad">Sin empezar</span>'; barPct = 0; barColor = 'var(--bad)'; }
+    else if (assigned < target) { badgeHtml = '<span class="fin-badge tone-warn">En progreso</span>'; barPct = target > 0 ? Math.min(100, (assigned / target) * 100) : 0; barColor = 'var(--purple)'; }
+    else { badgeHtml = '<span class="fin-badge tone-good">Cumplida</span>'; barPct = 100; barColor = 'var(--purple)'; }
+    return `
+      <div class="fin-row" data-fin-row="${escapeHtml(row.id)}">
+        ${priorityHtml}
+        <div class="fin-row-main">
+          <div class="fin-row-title">${escapeHtml(row.name)}</div>
+          <div class="fin-row-sub">${escapeHtml(cat.label)}</div>
+          <div class="fin-row-amt-line">Ahorrado <b>${money(assigned)}</b> de ${money(target)}</div>
+          <div class="fin-progress-track"><div style="width:${barPct}%; background:${barColor};"></div></div>
+        </div>
+        <div class="fin-row-right">
+          <div class="fin-row-right-label">Faltante</div>
+          <div class="fin-row-right-val">${money(faltante)}</div>
+        </div>
+        ${badgeHtml}
+        <div class="fin-row-actions">
+          <input class="fin-mini-input" data-fin-amount-input placeholder="$" type="text"/>
+          <button class="fin-mini-btn-primary" type="button" data-fin-assign="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}">${iconHtml('plus')} Asignar</button>
+          <button class="hr-window-remove-btn" type="button" data-fin-delete="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" aria-label="Eliminar meta" title="Eliminar meta">${iconHtml('trash')}</button>
+        </div>
+      </div>
+    `;
+  }
+
+  const typeLabel = row.recurring ? 'Recurrente' : 'Puntual';
+  const isPagado = financeIsRowPagado(row);
+  const checkboxHtml = !row.recurring
+    ? `<label class="fin-checkbox-label"><input type="checkbox" data-fin-mark-paid="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" ${row.manualPaid ? 'checked' : ''}/> Pagado</label>`
+    : '';
+  let badgeHtml, barPct, barColor, actionsHtml;
+  if (isPagado) {
+    badgeHtml = '<span class="fin-badge tone-good">Pagado</span>';
+    barPct = 100; barColor = 'var(--good)';
+    actionsHtml = `<button class="fin-ghost-btn" type="button" data-fin-reset="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}">${iconHtml('reset')} Reiniciar mes</button>`;
+  } else {
+    barPct = target > 0 ? Math.min(100, (assigned / target) * 100) : 0;
+    if (assigned > 0) { badgeHtml = '<span class="fin-badge tone-warn">Parcial</span>'; barColor = 'var(--warn)'; }
+    else { badgeHtml = '<span class="fin-badge tone-bad">Sin asignar</span>'; barPct = 0; barColor = 'var(--bad)'; }
+    actionsHtml = `${checkboxHtml}<input class="fin-mini-input" data-fin-amount-input placeholder="$" type="text"/><button class="fin-mini-btn-primary" type="button" data-fin-assign="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}">${iconHtml('plus')} Asignar</button>`;
+  }
+  return `
+    <div class="fin-row" data-fin-row="${escapeHtml(row.id)}">
+      ${priorityHtml}
+      <div class="fin-row-main">
+        <div class="fin-row-title">${escapeHtml(row.name)}</div>
+        <div class="fin-row-sub">${escapeHtml(cat.label)} · ${escapeHtml(typeLabel)}</div>
+        <div class="fin-row-amt-line"><b>${money(assigned)}</b> de ${money(target)} asignado</div>
+        <div class="fin-progress-track"><div style="width:${barPct}%; background:${barColor};"></div></div>
+      </div>
+      <div class="fin-row-right">
+        <div class="fin-row-right-label">Restante después</div>
+        <div class="fin-row-right-val">${money(opts.restanteDespues)}</div>
+      </div>
+      ${badgeHtml}
+      <div class="fin-row-actions">
+        ${actionsHtml}
+        <button class="hr-window-remove-btn" type="button" data-fin-delete="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" aria-label="Eliminar gasto" title="Eliminar gasto">${iconHtml('trash')}</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderFinanceSection() {
+  const legendRow = document.getElementById('financeLegendRow');
+  if (!legendRow) return;
+
+  const available = financeAvailableBalance();
+  const availableAmtEl = document.getElementById('financeAvailableAmt');
+  if (availableAmtEl) availableAmtEl.textContent = money(available);
+
+  const gastoRows = financeGastoRowsSorted();
+  const nextPending = gastoRows.find(r => !financeIsRowPagado(r));
+  const nextPriorityEl = document.getElementById('financeNextPriorityVal');
+  if (nextPriorityEl) nextPriorityEl.textContent = nextPending ? nextPending.name : '—';
+
+  legendRow.innerHTML = Object.keys(FINANCE_CATEGORIES).map(catId => {
+    const cat = FINANCE_CATEGORIES[catId];
+    return `<span class="fin-legend-chip"><svg class="ic-svg" viewBox="0 0 24 24" style="color:rgb(${cat.rgb});" aria-hidden="true">${ICON[cat.icon]}</svg> ${escapeHtml(cat.label)}</span>`;
+  }).join('');
+
+  // Cascada "Restante después" — solo Gastos, resta assignedAmount (no targetAmount) de cada fila en orden de prioridad.
+  let runningRemaining = available;
+  const restanteMap = {};
+  gastoRows.forEach(r => {
+    runningRemaining -= Number(r.assignedAmount) || 0;
+    restanteMap[r.id] = runningRemaining;
+  });
+
+  const gastosList = document.getElementById('financeGastosList');
+  if (gastosList) {
+    gastosList.innerHTML = gastoRows.length
+      ? gastoRows.map((r, i) => financeRowHtml(r, { index: i, count: gastoRows.length, isMeta: false, restanteDespues: restanteMap[r.id] })).join('')
+      : '<div class="note" style="margin:0;">Sin gastos configurados. Usa "+ Agregar gasto" para empezar.</div>';
+  }
+
+  const metaRows = financeMetaRowsSorted();
+  const metasList = document.getElementById('financeMetasList');
+  if (metasList) {
+    metasList.innerHTML = metaRows.length
+      ? metaRows.map((r, i) => financeRowHtml(r, { index: i, count: metaRows.length, isMeta: true })).join('')
+      : '<div class="note" style="margin:0;">Sin metas configuradas. Usa "+ Agregar meta" para empezar.</div>';
+  }
+}
+
+function financeSwapPriority(catIdIgnored, rowId, direction) {
+  // catIdIgnored: la fila puede vivir en cualquier categoría de su cola — se busca por id en la cola completa (Gastos o Metas), no solo dentro de una categoría.
+  const row = financeGastoRowsSorted().find(r => r.id === rowId) || financeMetaRowsSorted().find(r => r.id === rowId);
+  if (!row) return;
+  const isMeta = row.categoryId === 'ahorro';
+  const list = isMeta ? financeMetaRowsSorted() : financeGastoRowsSorted();
+  const idx = list.findIndex(r => r.id === rowId);
+  const swapIdx = idx + direction;
+  if (idx === -1 || swapIdx < 0 || swapIdx >= list.length) return;
+  const a = list[idx];
+  const b = list[swapIdx];
+  const rowA = settings.financeCategories[a.categoryId].rows.find(r => r.id === a.id);
+  const rowB = settings.financeCategories[b.categoryId].rows.find(r => r.id === b.id);
+  const tmp = rowA.priority;
+  rowA.priority = rowB.priority;
+  rowB.priority = tmp;
+  saveSettingsOnly();
+  renderFinanceSection();
+}
+
+function financeFindRow(catId, rowId) {
+  const cat = settings.financeCategories[catId];
+  return cat ? cat.rows.find(r => r.id === rowId) : null;
+}
+
+function financeAssignAmount(catId, rowId, rawAmount) {
+  const monto = parseMoney(rawAmount);
+  if (!(monto > 0)) {
+    toast('Ingresa un monto mayor a 0');
+    return;
+  }
+  if (monto > financeAvailableBalance()) {
+    toast('No tienes suficiente disponible para asignar esa cantidad');
+    return;
+  }
+  const row = financeFindRow(catId, rowId);
+  if (!row) return;
+  if (catId === 'ahorro') {
+    row.assignedAmount = (Number(row.assignedAmount) || 0) + monto;
+  } else {
+    const target = Number(row.targetAmount) || 0;
+    row.assignedAmount = Math.min(target, (Number(row.assignedAmount) || 0) + monto);
+  }
+  saveSettingsOnly();
+  renderFinanceSection();
+  toast('Asignado');
+}
+
+function financeResetRow(catId, rowId) {
+  const row = financeFindRow(catId, rowId);
+  if (!row) return;
+  row.assignedAmount = 0;
+  row.manualPaid = false;
+  saveSettingsOnly();
+  renderFinanceSection();
+  toast('Gasto reiniciado');
+}
+
+function financeToggleManualPaid(catId, rowId, checked) {
+  const row = financeFindRow(catId, rowId);
+  if (!row) return;
+  row.manualPaid = !!checked;
+  saveSettingsOnly();
+  renderFinanceSection();
+}
+
+function financeDeleteRow(catId, rowId) {
+  const row = financeFindRow(catId, rowId);
+  if (!row) return;
+  appConfirm(`¿Eliminar "${row.name}"? Esta acción no se puede deshacer.`, () => {
+    const cat = settings.financeCategories[catId];
+    cat.rows = cat.rows.filter(r => r.id !== rowId);
+    saveSettingsOnly();
+    renderFinanceSection();
+    toast('Fila eliminada');
+  });
+}
+
+function openFinanceRowModal(kind) {
+  financeRowModalKind = kind === 'meta' ? 'meta' : 'gasto';
+  const title = document.getElementById('financeRowModalTitle');
+  const categoryField = document.getElementById('financeRowCategoryField');
+  const typeField = document.getElementById('financeRowTypeField');
+  const nameInput = document.getElementById('financeRowNameInput');
+  const categoryInput = document.getElementById('financeRowCategoryInput');
+  const typeInput = document.getElementById('financeRowTypeInput');
+  const targetInput = document.getElementById('financeRowTargetInput');
+  if (nameInput) nameInput.value = '';
+  if (categoryInput) categoryInput.value = 'casa';
+  if (typeInput) typeInput.value = 'recurring';
+  if (targetInput) targetInput.value = '';
+  const isMeta = financeRowModalKind === 'meta';
+  if (title) title.textContent = isMeta ? 'Agregar meta' : 'Agregar gasto';
+  if (categoryField) categoryField.style.display = isMeta ? 'none' : '';
+  if (typeField) typeField.style.display = isMeta ? 'none' : '';
+  openModal('financeRowModal');
+}
+
+function saveFinanceRowModal() {
+  const nameInput = document.getElementById('financeRowNameInput');
+  const categoryInput = document.getElementById('financeRowCategoryInput');
+  const typeInput = document.getElementById('financeRowTypeInput');
+  const targetInput = document.getElementById('financeRowTargetInput');
+  const name = String(nameInput?.value || '').trim();
+  const target = Number(targetInput?.value);
+  if (!name) {
+    toast('Ponle un nombre a la fila');
+    return;
+  }
+  if (!Number.isFinite(target) || target <= 0) {
+    toast('El monto objetivo debe ser mayor a 0');
+    return;
+  }
+  const isMeta = financeRowModalKind === 'meta';
+  const catId = isMeta ? 'ahorro' : (FINANCE_CATEGORIES[categoryInput?.value] ? categoryInput.value : 'otro');
+  const cat = settings.financeCategories[catId];
+  const maxPriority = cat.rows.reduce((max, r) => Math.max(max, Number(r.priority) || 0), 0);
+  const row = {
+    id: makeLocalId(),
+    name,
+    categoryId: catId,
+    targetAmount: target,
+    assignedAmount: 0,
+    priority: maxPriority + 1,
+  };
+  if (!isMeta) {
+    row.recurring = (typeInput?.value || 'recurring') === 'recurring';
+    row.manualPaid = false;
+  }
+  cat.rows.push(row);
+  saveSettingsOnly();
+  closeModal('financeRowModal');
+  renderFinanceSection();
+  toast(isMeta ? 'Meta agregada' : 'Gasto agregado');
 }
 
     function syncGoals(source) {
@@ -16579,6 +17181,7 @@ function render() {
       // v390 — Mismo criterio que renderReportsDashboard() arriba (BUG-009):
       // solo se recalcula si esa página está visible ahora mismo.
       if (currentPage === 'paydates') renderPayDatesSection();
+      if (currentPage === 'finance') renderFinanceSection();
       renderTable();
       renderDayStatsCards();
       updateLiveActivityBar();
@@ -16677,12 +17280,13 @@ function render() {
 
     function navigateToPage(page) {
       // Pedido del usuario: "Bloques del día" se fusiona dentro de "home" (ver #scheduleAccordion en el HTML, ahora hijo de #pageHome) — se quita 'blocks' de esta lista. — "Avisos" (antes 'settings') deja de ser una página del sidebar
-      const pages = ['home', 'schedule', 'reports', 'paydates', 'calendar'];
+      const pages = ['home', 'schedule', 'reports', 'paydates', 'calendar', 'finance'];
       if (!pages.includes(page)) page = 'home';
       currentPage = page;
       // BUG-009 — render ya no recalcula renderReportsDashboard salvo que currentPage === 'reports' (ver esa función)
       if (page === 'reports') renderReportsDashboard();
       if (page === 'paydates') renderPayDatesSection();
+      if (page === 'finance') renderFinanceSection();
       // Vista anual por default; si el usuario ya estaba viendo el detalle de un mes al salir de esta página, vuelve a ese mismo mes al reentrar (mismo criterio BUG-009:
       if (page === 'calendar') { syncCalViewVisibility(); if (calViewMode === 'year') renderCalYear(); else renderCalendarMonth(); }
       relocateCallsSection(page);
@@ -17352,6 +17956,35 @@ function render() {
     });
     document.getElementById('saveGapBtn').addEventListener('click', saveGapEditor);
     document.getElementById('saveAcwGoalBtn').addEventListener('click', saveAcwGoalEditor);
+    document.getElementById('saveFinanceRowBtn').addEventListener('click', saveFinanceRowModal);
+    // Pedido del usuario: un solo listener delegado en #financeSection (tabs, prioridad ↑/↓, Reiniciar mes, Asignar, checkbox Pagado, Eliminar, + los 2 botones de agregar fila) — las filas se repintan enteras en cada cambio, no llevan listener propio.
+    document.getElementById('financeSection').addEventListener('click', (e) => {
+      if (!(e.target instanceof Element)) return;
+      const tabBtn = e.target.closest('[data-fin-tab]');
+      if (tabBtn) { setFinanceTab(tabBtn.getAttribute('data-fin-tab')); return; }
+      const upBtn = e.target.closest('[data-fin-priority-up]');
+      if (upBtn) { financeSwapPriority(upBtn.getAttribute('data-fin-cat'), upBtn.getAttribute('data-fin-priority-up'), -1); return; }
+      const downBtn = e.target.closest('[data-fin-priority-down]');
+      if (downBtn) { financeSwapPriority(downBtn.getAttribute('data-fin-cat'), downBtn.getAttribute('data-fin-priority-down'), 1); return; }
+      const resetBtn = e.target.closest('[data-fin-reset]');
+      if (resetBtn) { financeResetRow(resetBtn.getAttribute('data-fin-cat'), resetBtn.getAttribute('data-fin-reset')); return; }
+      const assignBtn = e.target.closest('[data-fin-assign]');
+      if (assignBtn) {
+        const row = assignBtn.closest('.fin-row');
+        const input = row ? row.querySelector('[data-fin-amount-input]') : null;
+        financeAssignAmount(assignBtn.getAttribute('data-fin-cat'), assignBtn.getAttribute('data-fin-assign'), input ? input.value : '');
+        return;
+      }
+      const deleteBtn = e.target.closest('[data-fin-delete]');
+      if (deleteBtn) { financeDeleteRow(deleteBtn.getAttribute('data-fin-cat'), deleteBtn.getAttribute('data-fin-delete')); return; }
+      if (e.target.closest('#addFinanceGastoBtn')) { openFinanceRowModal('gasto'); return; }
+      if (e.target.closest('#addFinanceMetaBtn')) { openFinanceRowModal('meta'); return; }
+    });
+    document.getElementById('financeSection').addEventListener('change', (e) => {
+      const checkbox = e.target instanceof Element ? e.target.closest('[data-fin-mark-paid]') : null;
+      if (!checkbox) return;
+      financeToggleManualPaid(checkbox.getAttribute('data-fin-cat'), checkbox.getAttribute('data-fin-mark-paid'), checkbox.checked);
+    });
     document.getElementById('saveDayNoteBtn').addEventListener('click', saveDayNoteFromModal);
     document.getElementById('clearDayNoteBtn').addEventListener('click', clearDayNoteFromModal);
     document.getElementById('saveCallEditBtn').addEventListener('click', saveCallEditor);
