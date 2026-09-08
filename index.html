@@ -6866,6 +6866,8 @@
     .fin-available-label { font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--cyan); }
     .fin-available-amt { font-size: 32px; font-weight: 900; letter-spacing: -.02em; margin-top: 6px; }
     .fin-available-note { font-size: 12px; color: var(--muted); margin-top: 4px; max-width: 42ch; line-height: 1.5; }
+    .fin-available-converted { font-size: 12px; color: var(--muted); margin-top: 4px; font-weight: 700; }
+    .fin-row-converted { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
     .fin-available-stat { text-align: right; flex: 0 0 auto; }
     .fin-available-stat-label { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
     .fin-available-stat-val { font-size: 18px; font-weight: 900; color: var(--good); margin-top: 4px; }
@@ -8193,6 +8195,7 @@ semana (5). <b>TOTAL = xD × S × D</b>.
     <div>
       <div class="fin-available-label">Disponible para asignar</div>
       <div class="fin-available-amt" id="financeAvailableAmt">$0.00</div>
+      <div class="fin-available-converted" id="financeAvailableConverted"></div>
       <div class="fin-available-note">Se llena solo con cada llamada guardada. Cada fila resta del sobrante de las de arriba — por eso el orden de prioridad importa.</div>
     </div>
     <div class="fin-available-stat">
@@ -8737,7 +8740,7 @@ $0.72"></textarea>
 <div class="mc-header-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12V8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h13a1 1 0 0 0 1-1v-4"/><path d="M20 12a2 2 0 0 1 0 4h-3a2 2 0 0 1 0-4Z"/></svg></div>
 <div>
 <h3 id="financeRowModalTitle">Agregar gasto</h3>
-<p>Se agrega al final de la cola de prioridad — puedes reordenarla después con las flechas ↑/↓.</p>
+<p id="financeRowModalSubtitle">Se agrega al final de la cola de prioridad — puedes reordenarla después con las flechas ↑/↓.</p>
 </div>
 <button aria-label="Cerrar" class="modal-close" data-close-modal="financeRowModal" type="button">×</button>
 </div>
@@ -13247,6 +13250,7 @@ function financeIsRowPagado(row) {
 
 let financeActiveTab = 'gastos';
 let financeRowModalKind = 'gasto';
+let financeEditingRowId = null;
 
 function setFinanceTab(tab) {
   financeActiveTab = tab === 'metas' ? 'metas' : 'gastos';
@@ -13257,6 +13261,12 @@ function setFinanceTab(tab) {
   });
   if (gastosView) gastosView.style.display = financeActiveTab === 'gastos' ? '' : 'none';
   if (metasView) metasView.style.display = financeActiveTab === 'metas' ? '' : 'none';
+}
+
+// Texto muted con el equivalente en la moneda secundaria (ej. "≈ L 123.45"), vacío si no hay tasa/moneda configurada — mismo `convertedAmountText` que ya usa el resto de la app.
+function financeConvertedNote(usdAmount) {
+  const text = convertedAmountText(usdAmount);
+  return text ? `<div class="fin-row-converted">${escapeHtml(text)}</div>` : '';
 }
 
 // Arma el HTML de una fila (gasto o meta) — `opts.restanteDespues` solo aplica a gastos (ver cascada en renderFinanceSection).
@@ -13291,6 +13301,7 @@ function financeRowHtml(row, opts) {
             <span>Ahorrado <b>${money(assigned)}</b> de ${money(target)}</span>
             <span class="fin-row-restante-inline">Faltan <b>${money(faltante)}</b></span>
           </div>
+          ${financeConvertedNote(assigned)}
           <div class="fin-progress-track"><div style="width:${barPct}%; background:${barColor};"></div></div>
         </div>
         <div class="fin-row-right">
@@ -13301,6 +13312,7 @@ function financeRowHtml(row, opts) {
         <div class="fin-row-actions">
           <input class="fin-mini-input" data-fin-amount-input placeholder="$" type="text"/>
           <button class="fin-mini-btn-primary" type="button" data-fin-assign="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}">${iconHtml('plus')} Asignar</button>
+          <button class="fin-ghost-btn" type="button" data-fin-edit="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" aria-label="Editar meta" title="Editar meta">${iconHtml('edit')}</button>
           <button class="hr-window-remove-btn" type="button" data-fin-delete="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" aria-label="Eliminar meta" title="Eliminar meta">${iconHtml('trash')}</button>
         </div>
       </div>
@@ -13312,16 +13324,17 @@ function financeRowHtml(row, opts) {
   const checkboxHtml = !row.recurring
     ? `<label class="fin-checkbox-label"><input type="checkbox" data-fin-mark-paid="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" ${row.manualPaid ? 'checked' : ''}/> Pagado</label>`
     : '';
+  const editBtnHtml = `<button class="fin-ghost-btn" type="button" data-fin-edit="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" aria-label="Editar gasto" title="Editar gasto">${iconHtml('edit')}</button>`;
   let badgeHtml, barPct, barColor, actionsHtml;
   if (isPagado) {
     badgeHtml = '<span class="fin-badge tone-good">Pagado</span>';
     barPct = 100; barColor = 'var(--good)';
-    actionsHtml = `<button class="fin-ghost-btn" type="button" data-fin-reset="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}">${iconHtml('reset')} Reiniciar mes</button>`;
+    actionsHtml = `<button class="fin-ghost-btn" type="button" data-fin-reset="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}">${iconHtml('reset')} Reiniciar mes</button>${editBtnHtml}`;
   } else {
     barPct = target > 0 ? Math.min(100, (assigned / target) * 100) : 0;
     if (assigned > 0) { badgeHtml = '<span class="fin-badge tone-warn">Parcial</span>'; barColor = 'var(--warn)'; }
     else { badgeHtml = '<span class="fin-badge tone-bad">Sin asignar</span>'; barPct = 0; barColor = 'var(--bad)'; }
-    actionsHtml = `${checkboxHtml}<input class="fin-mini-input" data-fin-amount-input placeholder="$" type="text"/><button class="fin-mini-btn-primary" type="button" data-fin-assign="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}">${iconHtml('plus')} Asignar</button>`;
+    actionsHtml = `${checkboxHtml}<input class="fin-mini-input" data-fin-amount-input placeholder="$" type="text"/><button class="fin-mini-btn-primary" type="button" data-fin-assign="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}">${iconHtml('plus')} Asignar</button>${editBtnHtml}`;
   }
   return `
     <div class="fin-row" data-fin-row="${escapeHtml(row.id)}" style="--cat-rgb:${cat.rgb};">
@@ -13333,6 +13346,7 @@ function financeRowHtml(row, opts) {
           <span><b>${money(assigned)}</b> de ${money(target)} asignado</span>
           <span class="fin-row-restante-inline">Restan <b>${money(opts.restanteDespues)}</b></span>
         </div>
+        ${financeConvertedNote(assigned)}
         <div class="fin-progress-track"><div style="width:${barPct}%; background:${barColor};"></div></div>
       </div>
       <div class="fin-row-right">
@@ -13355,6 +13369,8 @@ function renderFinanceSection() {
   const available = financeAvailableBalance();
   const availableAmtEl = document.getElementById('financeAvailableAmt');
   if (availableAmtEl) availableAmtEl.textContent = money(available);
+  const availableConvertedEl = document.getElementById('financeAvailableConverted');
+  if (availableConvertedEl) availableConvertedEl.textContent = convertedAmountText(available);
 
   const gastoRows = financeGastoRowsSorted();
   const nextPending = gastoRows.find(r => !financeIsRowPagado(r));
@@ -13468,21 +13484,28 @@ function financeDeleteRow(catId, rowId) {
   });
 }
 
-function openFinanceRowModal(kind) {
+function openFinanceRowModal(kind, existingRow = null) {
   financeRowModalKind = kind === 'meta' ? 'meta' : 'gasto';
+  financeEditingRowId = existingRow ? existingRow.id : null;
   const title = document.getElementById('financeRowModalTitle');
+  const subtitle = document.getElementById('financeRowModalSubtitle');
   const categoryField = document.getElementById('financeRowCategoryField');
   const typeField = document.getElementById('financeRowTypeField');
   const nameInput = document.getElementById('financeRowNameInput');
   const categoryInput = document.getElementById('financeRowCategoryInput');
   const typeInput = document.getElementById('financeRowTypeInput');
   const targetInput = document.getElementById('financeRowTargetInput');
-  if (nameInput) nameInput.value = '';
-  if (categoryInput) categoryInput.value = 'casa';
-  if (typeInput) typeInput.value = 'recurring';
-  if (targetInput) targetInput.value = '';
   const isMeta = financeRowModalKind === 'meta';
-  if (title) title.textContent = isMeta ? 'Agregar meta' : 'Agregar gasto';
+  if (nameInput) nameInput.value = existingRow ? existingRow.name : '';
+  if (categoryInput) categoryInput.value = existingRow ? existingRow.categoryId : 'casa';
+  if (typeInput) typeInput.value = existingRow ? (existingRow.recurring ? 'recurring' : 'onetime') : 'recurring';
+  if (targetInput) targetInput.value = existingRow ? existingRow.targetAmount : '';
+  if (title) title.textContent = existingRow ? (isMeta ? 'Editar meta' : 'Editar gasto') : (isMeta ? 'Agregar meta' : 'Agregar gasto');
+  if (subtitle) {
+    subtitle.textContent = existingRow
+      ? 'Los montos ya asignados no se tocan — solo cambia nombre, categoría/tipo y monto objetivo.'
+      : 'Se agrega al final de la cola de prioridad — puedes reordenarla después con las flechas ↑/↓.';
+  }
   if (categoryField) categoryField.style.display = isMeta ? 'none' : '';
   if (typeField) typeField.style.display = isMeta ? 'none' : '';
   openModal('financeRowModal');
@@ -13505,6 +13528,39 @@ function saveFinanceRowModal() {
   }
   const isMeta = financeRowModalKind === 'meta';
   const catId = isMeta ? 'ahorro' : (FINANCE_CATEGORIES[categoryInput?.value] ? categoryInput.value : 'otro');
+
+  if (financeEditingRowId) {
+    const searchCats = isMeta ? ['ahorro'] : Object.keys(FINANCE_CATEGORIES).filter(c => c !== 'ahorro');
+    let foundCatId = null, foundRow = null;
+    searchCats.forEach(cId => {
+      const r = (settings.financeCategories[cId]?.rows || []).find(row => row.id === financeEditingRowId);
+      if (r) { foundCatId = cId; foundRow = r; }
+    });
+    if (!foundRow) {
+      toast('No se encontró la fila a editar');
+      closeModal('financeRowModal');
+      financeEditingRowId = null;
+      return;
+    }
+    foundRow.name = name;
+    foundRow.targetAmount = target;
+    if (!isMeta) {
+      foundRow.recurring = (typeInput?.value || 'recurring') === 'recurring';
+      foundRow.assignedAmount = Math.min(Number(foundRow.assignedAmount) || 0, target);
+      if (catId !== foundCatId) {
+        settings.financeCategories[foundCatId].rows = settings.financeCategories[foundCatId].rows.filter(r => r.id !== foundRow.id);
+        foundRow.categoryId = catId;
+        settings.financeCategories[catId].rows.push(foundRow);
+      }
+    }
+    saveSettingsOnly();
+    closeModal('financeRowModal');
+    renderFinanceSection();
+    toast(isMeta ? 'Meta actualizada' : 'Gasto actualizado');
+    financeEditingRowId = null;
+    return;
+  }
+
   const cat = settings.financeCategories[catId];
   const maxPriority = cat.rows.reduce((max, r) => Math.max(max, Number(r.priority) || 0), 0);
   const row = {
@@ -18025,6 +18081,14 @@ function render() {
       if (!(e.target instanceof Element)) return;
       const tabBtn = e.target.closest('[data-fin-tab]');
       if (tabBtn) { setFinanceTab(tabBtn.getAttribute('data-fin-tab')); return; }
+      const editRowBtn = e.target.closest('[data-fin-edit]');
+      if (editRowBtn) {
+        const catId = editRowBtn.getAttribute('data-fin-cat');
+        const rowId = editRowBtn.getAttribute('data-fin-edit');
+        const row = financeFindRow(catId, rowId);
+        if (row) openFinanceRowModal(catId === 'ahorro' ? 'meta' : 'gasto', row);
+        return;
+      }
       const upBtn = e.target.closest('[data-fin-priority-up]');
       if (upBtn) { financeSwapPriority(upBtn.getAttribute('data-fin-cat'), upBtn.getAttribute('data-fin-priority-up'), -1); return; }
       const downBtn = e.target.closest('[data-fin-priority-down]');
