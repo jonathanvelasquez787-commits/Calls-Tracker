@@ -6943,6 +6943,8 @@
     .fin-row-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
     .fin-row-amt-line { font-size: 11.5px; color: var(--muted); margin-top: 7px; }
     .fin-row-amt-line b { color: var(--text); font-weight: 800; }
+    /* Duplicado mobile-only de "Restante después"/"Faltante" (ver .fin-row-right, la columna que ya lo muestra en escritorio) — mismo patrón dual ya usado en la app (ej. .cal-nav-btn-label-full/-short) para no bifurcar el HTML entre anchos. */
+    .fin-row-restante-inline { display: none; }
     .fin-progress-track {
       height: 7px; border-radius: 99px; background: rgba(255,255,255,.08);
       overflow: hidden; margin-top: 6px; max-width: 260px;
@@ -6984,6 +6986,61 @@
     .fin-ghost-btn:hover { color: var(--text); border-color: var(--line-2); }
     .fin-ghost-btn .ic-svg { width: 12px; height: 12px; }
     .fin-checkbox-label { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); font-weight: 700; white-space: nowrap; flex: 0 0 auto; }
+
+    /* Pedido del usuario: vista mobile de "Finanzas" (mockup finanzas_mockup_mobile_v3.html, aprobado). Mismo HTML de siempre (financeRowHtml en el JS no cambia entre anchos, igual que .tbl-row en Tabla de… */
+    @media (max-width: 760px) {
+      .fin-header { gap: 10px; margin-bottom: 14px; }
+      .fin-header-icon { width: 36px; height: 36px; border-radius: 11px; }
+      .fin-header-icon .ic-svg { width: 17px; height: 17px; }
+      .fin-title { font-size: 15.5px; }
+      .fin-sub { font-size: 10.5px; margin-top: 1px; max-width: none; }
+      .fin-date-pill { display: none; }
+
+      .fin-available-card { padding: 13px 14px; border-radius: 15px; margin-bottom: 12px; align-items: flex-start; }
+      .fin-available-label { font-size: 10px; }
+      .fin-available-amt { font-size: 24px; margin-top: 3px; }
+      .fin-available-note { font-size: 10.5px; margin-top: 7px; max-width: none; flex-basis: 100%; }
+      .fin-available-stat-label { font-size: 9px; }
+      .fin-available-stat-val { font-size: 14px; margin-top: 3px; }
+
+      .fin-tab-toggle { width: 100%; margin-bottom: 12px; }
+      .fin-tab-btn { flex: 1; padding: 7px 0; font-size: 12px; text-align: center; }
+
+      .fin-legend-row { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; margin-bottom: 12px; -webkit-mask-image: none; mask-image: none; }
+      .fin-legend-chip { padding: 5px 10px; font-size: 10px; }
+      .fin-legend-chip .ic-svg { width: 12px; height: 12px; }
+
+      .fin-info-box { padding: 10px 12px; font-size: 11px; margin-bottom: 12px; }
+
+      /* .fin-row pasa de fila horizontal a tarjeta apilada (mismo lenguaje que .sblk-card: borde izquierdo de acento + fondo tonal), sin cambiar el DOM — solo reflow vía flex-wrap + flex-basis:100% en los bloques que deben forzar su propia línea. */
+      .fin-row {
+        border: 1px solid var(--line);
+        border-left: 3px solid rgb(var(--cat-rgb));
+        border-radius: 0 14px 14px 0;
+        background: rgba(var(--cat-rgb), .07);
+        padding: 11px 12px;
+        gap: 9px;
+      }
+      .fin-priority { gap: 1px; }
+      .fin-priority-btn { width: 17px; height: 13px; border-radius: 4px; }
+      .fin-priority-btn .ic-svg { width: 9px; height: 9px; }
+      .fin-priority-num { width: auto; height: auto; background: none; font-size: 8.5px; padding: 1px 0; }
+      .fin-cat-icon { width: 30px; height: 30px; border-radius: 9px; border: none; }
+      .fin-cat-icon .ic-svg { width: 15px; height: 15px; }
+      .fin-row-main { flex-basis: 100%; order: 4; }
+      .fin-row-title { font-size: 13px; }
+      .fin-row-sub { font-size: 9.5px; }
+      .fin-row-amt-line { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-top: 9px; font-size: 10px; }
+      .fin-row-restante-inline { display: inline; text-align: right; white-space: nowrap; }
+      .fin-progress-track { margin-top: 6px; height: 5px; }
+      .fin-row-right { display: none; }
+      .fin-badge { order: 3; margin-left: auto; font-size: 9px; padding: 3px 9px; }
+      .fin-row-actions { flex-basis: 100%; order: 5; margin-top: 9px; flex-wrap: wrap; }
+      .fin-mini-input { flex: 1 1 auto; height: 30px; font-size: 12px; }
+      .fin-mini-btn-primary { height: 30px; padding: 0 15px; font-size: 11px; }
+      .fin-ghost-btn { width: 100%; justify-content: center; padding: 7px 0; font-size: 10.5px; }
+      .fin-checkbox-label { flex-basis: 100%; }
+    }
 
     /* ========================================================== — Pedido del usuario: los 5 campos "Mensaje" dentro de "Avisos" (Antes de mi turno / Antes de Break-Lunch / Después de Break-Lunch / Descanso ganado */
     .msg-preview-row {
@@ -13215,7 +13272,7 @@ function financeRowHtml(row, opts) {
       <span class="fin-priority-num">${opts.index + 1}</span>
       <button class="fin-priority-btn" type="button" data-fin-priority-down="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" ${downDisabled} aria-label="Bajar prioridad">${iconHtml('chevronDown')}</button>
     </div>
-    <span class="fin-cat-icon" style="--cat-rgb:${cat.rgb};">${iconHtml(cat.icon)}</span>
+    <span class="fin-cat-icon">${iconHtml(cat.icon)}</span>
   `;
 
   if (opts.isMeta) {
@@ -13225,12 +13282,15 @@ function financeRowHtml(row, opts) {
     else if (assigned < target) { badgeHtml = '<span class="fin-badge tone-warn">En progreso</span>'; barPct = target > 0 ? Math.min(100, (assigned / target) * 100) : 0; barColor = 'var(--purple)'; }
     else { badgeHtml = '<span class="fin-badge tone-good">Cumplida</span>'; barPct = 100; barColor = 'var(--purple)'; }
     return `
-      <div class="fin-row" data-fin-row="${escapeHtml(row.id)}">
+      <div class="fin-row" data-fin-row="${escapeHtml(row.id)}" style="--cat-rgb:${cat.rgb};">
         ${priorityHtml}
         <div class="fin-row-main">
           <div class="fin-row-title">${escapeHtml(row.name)}</div>
           <div class="fin-row-sub">${escapeHtml(cat.label)}</div>
-          <div class="fin-row-amt-line">Ahorrado <b>${money(assigned)}</b> de ${money(target)}</div>
+          <div class="fin-row-amt-line">
+            <span>Ahorrado <b>${money(assigned)}</b> de ${money(target)}</span>
+            <span class="fin-row-restante-inline">Faltan <b>${money(faltante)}</b></span>
+          </div>
           <div class="fin-progress-track"><div style="width:${barPct}%; background:${barColor};"></div></div>
         </div>
         <div class="fin-row-right">
@@ -13264,12 +13324,15 @@ function financeRowHtml(row, opts) {
     actionsHtml = `${checkboxHtml}<input class="fin-mini-input" data-fin-amount-input placeholder="$" type="text"/><button class="fin-mini-btn-primary" type="button" data-fin-assign="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}">${iconHtml('plus')} Asignar</button>`;
   }
   return `
-    <div class="fin-row" data-fin-row="${escapeHtml(row.id)}">
+    <div class="fin-row" data-fin-row="${escapeHtml(row.id)}" style="--cat-rgb:${cat.rgb};">
       ${priorityHtml}
       <div class="fin-row-main">
         <div class="fin-row-title">${escapeHtml(row.name)}</div>
         <div class="fin-row-sub">${escapeHtml(cat.label)} · ${escapeHtml(typeLabel)}</div>
-        <div class="fin-row-amt-line"><b>${money(assigned)}</b> de ${money(target)} asignado</div>
+        <div class="fin-row-amt-line">
+          <span><b>${money(assigned)}</b> de ${money(target)} asignado</span>
+          <span class="fin-row-restante-inline">Restan <b>${money(opts.restanteDespues)}</b></span>
+        </div>
         <div class="fin-progress-track"><div style="width:${barPct}%; background:${barColor};"></div></div>
       </div>
       <div class="fin-row-right">
