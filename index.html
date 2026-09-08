@@ -11969,6 +11969,7 @@ function openHistoryStartDateEditor() {
 // Pinta la vista anual completa: 2 tarjetas (Total del año / Meta anual) + grid de 12 meses con mini-heatmap. Reutiliza importedCallStats/ productiveMinutesForDay/calTierForDay tal cual
 function renderCalYear() {
   const label = document.getElementById('calYearLabel');
+  const prevBtn = document.getElementById('calYearPrevBtn');
   const nextBtn = document.getElementById('calYearNextBtn');
   const totalAmtEl = document.getElementById('calYearTotalAmt');
   const goalBarEl = document.getElementById('calYearGoalBar');
@@ -11987,6 +11988,12 @@ function renderCalYear() {
   // Pedido del usuario: "Historial desde" — texto informativo + el mes
   // desde el que arranca el grid cuando `year` es el año de esa fecha.
   const historyStart = effectiveHistoryStartDate();
+  // "‹ Anterior" se deshabilita al llegar al año que contiene el inicio del
+  // historial — mismo criterio que "Siguiente ›" arriba con calYearOffset,
+  // aquí bloqueando el paso a años sin ningún dato real que mostrar. Sin
+  // historial conocido (historyStart null), no hay piso: se comporta como
+  // antes de este fix (siempre habilitado).
+  if (prevBtn) prevBtn.disabled = !!(historyStart && year <= historyStart.getFullYear());
   const historyNoteWrap = document.getElementById('calHistoryStartNote');
   const historyNoteText = document.getElementById('calHistoryStartText');
   if (historyNoteWrap && historyNoteText) {
@@ -17322,7 +17329,13 @@ function render() {
     document.getElementById('calMonthTodayBtn').addEventListener('click', () => { calMonthOffset = 0; renderCalendarMonth(); });
     // v395 — Vista anual del Calendario de productividad (solo escritorio).
     document.getElementById('calBackToYearBtn').addEventListener('click', backToCalYearView);
-    document.getElementById('calYearPrevBtn').addEventListener('click', () => { calYearOffset -= 1; renderCalYear(); });
+    document.getElementById('calYearPrevBtn').addEventListener('click', () => {
+      const historyStart = effectiveHistoryStartDate();
+      const targetYear = todayRange().getFullYear() + calYearOffset - 1;
+      if (historyStart && targetYear < historyStart.getFullYear()) return;
+      calYearOffset -= 1;
+      renderCalYear();
+    });
     document.getElementById('calYearNextBtn').addEventListener('click', () => { if (calYearOffset < 0) { calYearOffset += 1; renderCalYear(); } });
     document.getElementById('calYearGoalEditBtn').addEventListener('click', openCalYearGoalEditor);
     document.getElementById('calHistoryStartEditBtn').addEventListener('click', openHistoryStartDateEditor);
