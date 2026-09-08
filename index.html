@@ -5910,6 +5910,8 @@
     }
     .mini-cell {
       aspect-ratio: 1;
+      /* min-width: 0 necesario: un item de grid con aspect-ratio y sin ancho propio calcula su columna "1fr" contra su tamaño preferido en vez de encogerse al espacio real disponible. */
+      min-width: 0;
       border-radius: 3px;
       background: rgba(255,255,255,.05);
     }
