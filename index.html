@@ -5763,6 +5763,9 @@
     }
     .cal-day-cell.cal-empty { border: none; background: transparent; }
     .cal-day-num { font-size: clamp(8px, 2.6vw, 11.5px); font-weight: 800; color: var(--text); opacity: .85; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cal-day-top-row { display: flex; align-items: center; gap: 3px; min-width: 0; }
+    .cal-day-star { flex: 0 0 auto; width: clamp(8px, 2.2vw, 12px); height: clamp(8px, 2.2vw, 12px); color: var(--good); line-height: 0; }
+    .cal-day-star .ic-svg { width: 100%; height: 100%; }
     .cal-day-min { font-size: clamp(9px, 3.2vw, 14px); font-weight: 900; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
     /* Pedido del usuario (punto 5 del plan aprobado en ): "Libre" (día efectivamente libre, ver cal-tier-off) y "—" (sin datos, ver cal-tier-nodata) son texto más largo que un número de minutos */
     .cal-day-min.cal-day-min-label { font-size: clamp(7px, 2.4vw, 11px); font-weight: 800; letter-spacing: 0; }
@@ -5770,12 +5773,12 @@
       position: absolute; top: clamp(2px, .6vw, 6px); right: clamp(2px, .6vw, 6px); font-size: clamp(6px, 1.8vw, 9px); font-weight: 900;
       background: rgba(var(--good-rgb), .22); color: var(--good); border-radius: 999px; padding: clamp(1px, .4vw, 2px) clamp(3px, 1vw, 6px);
     }
-    .cal-tier-8hrpp { background: rgba(var(--warn-rgb), .16); border-color: rgba(var(--warn-rgb), .4); }
-    .cal-tier-8hrpp .cal-day-min { color: var(--warn); }
+    .cal-tier-8hrpp { background: rgba(var(--good-rgb), .28); border-color: rgba(var(--good-rgb), .6); }
+    .cal-tier-8hrpp .cal-day-min { color: var(--good); font-weight: 900; }
     .cal-tier-8hrp { background: rgba(var(--good-rgb), .14); border-color: rgba(var(--good-rgb), .38); }
     .cal-tier-8hrp .cal-day-min { color: var(--good); }
-    .cal-tier-6hrp { background: rgba(var(--blue-rgb), .14); border-color: rgba(var(--blue-rgb), .38); }
-    .cal-tier-6hrp .cal-day-min { color: var(--blue); }
+    .cal-tier-6hrp { background: rgba(var(--warn-rgb), .14); border-color: rgba(var(--warn-rgb), .38); }
+    .cal-tier-6hrp .cal-day-min { color: var(--warn); }
     .cal-tier-6hrm { background: rgba(var(--bad-rgb), .14); border-color: rgba(var(--bad-rgb), .38); }
     .cal-tier-6hrm .cal-day-min { color: var(--bad); }
     /* Pedido del usuario: "Sin datos" (ningún turno/llamada registrado ese día) ya no se pinta rojo como si hubiera rendido mal */
@@ -5915,9 +5918,9 @@
       border-radius: 3px;
       background: rgba(255,255,255,.05);
     }
-    .mini-cell.cal-tier-8hrpp { background: var(--warn); }
-    .mini-cell.cal-tier-8hrp { background: var(--good); }
-    .mini-cell.cal-tier-6hrp { background: var(--blue); }
+    .mini-cell.cal-tier-8hrpp { background: var(--good); }
+    .mini-cell.cal-tier-8hrp { background: var(--good); opacity: .55; }
+    .mini-cell.cal-tier-6hrp { background: var(--warn); }
     .mini-cell.cal-tier-6hrm { background: var(--bad); }
     .mini-cell.cal-tier-nodata { background: rgba(255,255,255,.06); }
     .mini-cell.cal-tier-off { background: var(--blue); opacity: .55; }
@@ -8153,10 +8156,10 @@
 </div>
 </div>
 <div class="cal-legend-row">
-<span class="cal-legend-chip"><span class="cal-legend-dot" style="background:var(--warn);"></span>8hr++ · meta+60 o más</span>
-<span class="cal-legend-chip"><span class="cal-legend-dot" style="background:var(--good);"></span>8hr+ · meta hasta meta+59</span>
-<span class="cal-legend-chip"><span class="cal-legend-dot" style="background:var(--blue);"></span>6hr+ · meta-60 hasta meta-1</span>
-<span class="cal-legend-chip"><span class="cal-legend-dot" style="background:var(--bad);"></span>6hr- · menos de meta-60</span>
+<span class="cal-legend-chip"><svg class="ic-svg ic-fill" viewBox="0 0 24 24" style="width:11px;height:11px;color:var(--good);" aria-hidden="true"><polygon points="12 2 15 8.5 22 9.5 17 14.5 18.5 21.5 12 18 5.5 21.5 7 14.5 2 9.5 9 8.5 12 2" fill="currentColor" stroke="none"/></svg><span id="calLegendTop"></span></span>
+<span class="cal-legend-chip"><span class="cal-legend-dot" style="background:var(--good);"></span><span id="calLegendGood"></span></span>
+<span class="cal-legend-chip"><span class="cal-legend-dot" style="background:var(--warn);"></span><span id="calLegendNear"></span></span>
+<span class="cal-legend-chip"><span class="cal-legend-dot" style="background:var(--bad);"></span><span id="calLegendBad"></span></span>
 <span class="cal-legend-chip"><span class="cal-legend-dot" style="background:var(--good); opacity:.6;"></span>+N min = bono Higher Rate ganado</span>
 </div>
 <div class="cal-weekday-row">
@@ -8773,6 +8776,10 @@ $0.72"></textarea>
 <label for="financeRowTargetInput">Monto objetivo ($)</label>
 <input id="financeRowTargetInput" inputmode="decimal" min="0.01" step="0.01" type="number"/>
 </div>
+<div class="goals-field" id="financeRowTargetCurrencyField" style="display:none;">
+<label for="financeRowTargetCurrencyInput" id="financeRowTargetCurrencyLabel">Monto objetivo en tu moneda</label>
+<input id="financeRowTargetCurrencyInput" inputmode="decimal" min="0" step="0.01" type="number"/>
+</div>
 </div>
 
 <div class="modal-actions mc-action-row">
@@ -9199,6 +9206,7 @@ $0.72"></textarea>
       creditCard: '<rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"2\"/><line x1=\"2\" y1=\"10\" x2=\"22\" y2=\"10\"/>',
       piggyBank: '<path d=\"M4 12a5 5 0 0 1 5-5h6a5 5 0 0 1 5 5v1a2 2 0 0 1-2 2h-1v2a1 1 0 0 1-2 0v-2h-6v2a1 1 0 0 1-2 0v-2H8a4 4 0 0 1-4-4Z\"/><circle cx=\"16\" cy=\"11\" r=\"1\" fill=\"currentColor\" stroke=\"none\"/><path d=\"M4 11H2\"/><path d=\"M17 7l1-2\"/>',
       moreHorizontal: '<circle cx=\"5\" cy=\"12\" r=\"1.5\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"12\" cy=\"12\" r=\"1.5\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"19\" cy=\"12\" r=\"1.5\" fill=\"currentColor\" stroke=\"none\"/>',
+      star: '<polygon points=\"12 2 15 8.5 22 9.5 17 14.5 18.5 21.5 12 18 5.5 21.5 7 14.5 2 9.5 9 8.5 12 2\"/>',
       chevronUp: '<polyline points=\"18 15 12 9 6 15\"/>',
       info: '<circle cx=\"12\" cy=\"12\" r=\"9\"/><line x1=\"12\" y1=\"16\" x2=\"12\" y2=\"12\"/><line x1=\"12\" y1=\"8\" x2=\"12.01\" y2=\"8\"/>',
     };
@@ -12128,7 +12136,7 @@ function calDailyEquivalentHigherRateMin(dayKey) {
 }
 
 function calTierForDay(productiveMin, goalMin) {
-  if (productiveMin >= goalMin + 60) return 'cal-tier-8hrpp';
+  if (productiveMin > goalMin) return 'cal-tier-8hrpp';
   if (productiveMin >= goalMin) return 'cal-tier-8hrp';
   if (productiveMin >= goalMin - 60) return 'cal-tier-6hrp';
   return 'cal-tier-6hrm';
@@ -12166,6 +12174,19 @@ function renderCalendarMonth() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const goalMin = Number(settings.productiveGoalMin) || 0;
 
+  // Los umbrales de color son relativos a TU meta (ver calTierForDay), no
+  // a "8 horas" fijas — el texto de la leyenda se arma con tus minutos
+  // reales para que no confunda a quien tiene una meta distinta de 8hrs.
+  const nearFloor = Math.max(0, goalMin - 60);
+  const legendTopEl = document.getElementById('calLegendTop');
+  const legendGoodEl = document.getElementById('calLegendGood');
+  const legendNearEl = document.getElementById('calLegendNear');
+  const legendBadEl = document.getElementById('calLegendBad');
+  if (legendTopEl) legendTopEl.textContent = `Más de ${formatMinutes(goalMin)} min · superaste tu meta`;
+  if (legendGoodEl) legendGoodEl.textContent = `${formatMinutes(goalMin)} min · meta cumplida`;
+  if (legendNearEl) legendNearEl.textContent = `${formatMinutes(nearFloor)}–${formatMinutes(Math.max(nearFloor, goalMin - 1))} min · cerca de tu meta`;
+  if (legendBadEl) legendBadEl.textContent = `Menos de ${formatMinutes(nearFloor)} min · lejos de tu meta`;
+
   if (label) {
     const raw = new Intl.DateTimeFormat('es-MX', { month: 'long', year: 'numeric' }).format(monthDate);
     label.textContent = raw.charAt(0).toUpperCase() + raw.slice(1);
@@ -12186,12 +12207,13 @@ function renderCalendarMonth() {
     const bonusMin = Math.round(calDailyEquivalentHigherRateMin(dayKey));
     const tier = calDayTier(dayKey, goalMin);
     const bonusHtml = bonusMin > 0 ? `<span class="cal-day-bonus">+${bonusMin}</span>` : '';
+    const starHtml = tier === 'cal-tier-8hrpp' ? `<span class="cal-day-star" aria-hidden="true">${iconHtml('star', 'ic-fill')}</span>` : '';
     const minLabel = status === 'off' ? 'Libre' : status === 'nodata' ? '—' : String(Math.round(productiveMin));
     // v401 — Ver comentario junto a ".cal-day-min-label" en el CSS: "Libre"/
     // "—" usan una variante de texto más chica para no romper el alto/ancho
     // uniforme de la celda que sí miden los números.
     const minLabelClass = status === 'normal' ? 'cal-day-min' : 'cal-day-min cal-day-min-label';
-    cellsHtml.push(`<div class="cal-day-cell ${tier}">${bonusHtml}<span class="cal-day-num">${day}</span><span class="${minLabelClass}">${minLabel}</span></div>`);
+    cellsHtml.push(`<div class="cal-day-cell ${tier}">${bonusHtml}<div class="cal-day-top-row"><span class="cal-day-num">${day}</span>${starHtml}</div><span class="${minLabelClass}">${minLabel}</span></div>`);
   }
   grid.innerHTML = cellsHtml.join('');
 
@@ -13251,6 +13273,27 @@ function financeIsRowPagado(row) {
 let financeActiveTab = 'gastos';
 let financeRowModalKind = 'gasto';
 let financeEditingRowId = null;
+let financeRowTargetSyncing = false;
+
+// Sincroniza Monto objetivo ($) ↔ Monto objetivo en tu moneda, en cualquier
+// dirección — mismo criterio que syncGoals('currency') en Ajustes, aquí
+// simplificado a un solo par de campos (sin meta en minutos de por medio).
+function syncFinanceRowTargetFields(source) {
+  if (financeRowTargetSyncing) return;
+  const usdInput = document.getElementById('financeRowTargetInput');
+  const currencyInput = document.getElementById('financeRowTargetCurrencyInput');
+  const exchangeRate = Number(settings.exchangeRate);
+  if (!usdInput || !currencyInput || !Number.isFinite(exchangeRate) || exchangeRate <= 0) return;
+  financeRowTargetSyncing = true;
+  if (source === 'usd') {
+    const usd = Number(usdInput.value);
+    if (Number.isFinite(usd)) currencyInput.value = (usd * exchangeRate).toFixed(2);
+  } else {
+    const cur = Number(currencyInput.value);
+    if (Number.isFinite(cur)) usdInput.value = (cur / exchangeRate).toFixed(2);
+  }
+  financeRowTargetSyncing = false;
+}
 
 function setFinanceTab(tab) {
   financeActiveTab = tab === 'metas' ? 'metas' : 'gastos';
@@ -13269,6 +13312,15 @@ function financeConvertedNote(usdAmount) {
   return text ? `<div class="fin-row-converted">${escapeHtml(text)}</div>` : '';
 }
 
+// Misma condición que ya usa convertedAmountText() para decidir si hay
+// moneda secundaria configurada — extraída aparte para poder mostrar/
+// ocultar campos de entrada en esa moneda (no solo texto de solo lectura).
+function financeHasSecondaryCurrency() {
+  const rate = Number(settings.exchangeRate);
+  const label = String(settings.currencyLabel || '').trim();
+  return Number.isFinite(rate) && rate > 0 && !!label;
+}
+
 // Arma el HTML de una fila (gasto o meta) — `opts.restanteDespues` solo aplica a gastos (ver cascada en renderFinanceSection).
 function financeRowHtml(row, opts) {
   const cat = FINANCE_CATEGORIES[row.categoryId] || FINANCE_CATEGORIES.otro;
@@ -13276,6 +13328,10 @@ function financeRowHtml(row, opts) {
   const downDisabled = opts.index === opts.count - 1 ? 'disabled' : '';
   const target = Number(row.targetAmount) || 0;
   const assigned = Number(row.assignedAmount) || 0;
+  const currencyLabelTrim = String(settings.currencyLabel || '').trim();
+  const currencyAssignInputHtml = financeHasSecondaryCurrency()
+    ? `<input class="fin-mini-input" data-fin-amount-currency-input placeholder="${escapeHtml(currencyLabelTrim)}" type="text" title="Monto en ${escapeHtml(currencyLabelTrim)} — se convierte solo a $"/>`
+    : '';
   const priorityHtml = `
     <div class="fin-priority">
       <button class="fin-priority-btn" type="button" data-fin-priority-up="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" ${upDisabled} aria-label="Subir prioridad">${iconHtml('chevronUp')}</button>
@@ -13311,6 +13367,7 @@ function financeRowHtml(row, opts) {
         ${badgeHtml}
         <div class="fin-row-actions">
           <input class="fin-mini-input" data-fin-amount-input placeholder="$" type="text"/>
+          ${currencyAssignInputHtml}
           <button class="fin-mini-btn-primary" type="button" data-fin-assign="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}">${iconHtml('plus')} Asignar</button>
           <button class="fin-ghost-btn" type="button" data-fin-edit="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" aria-label="Editar meta" title="Editar meta">${iconHtml('edit')}</button>
           <button class="hr-window-remove-btn" type="button" data-fin-delete="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" aria-label="Eliminar meta" title="Eliminar meta">${iconHtml('trash')}</button>
@@ -13334,7 +13391,7 @@ function financeRowHtml(row, opts) {
     barPct = target > 0 ? Math.min(100, (assigned / target) * 100) : 0;
     if (assigned > 0) { badgeHtml = '<span class="fin-badge tone-warn">Parcial</span>'; barColor = 'var(--warn)'; }
     else { badgeHtml = '<span class="fin-badge tone-bad">Sin asignar</span>'; barPct = 0; barColor = 'var(--bad)'; }
-    actionsHtml = `${checkboxHtml}<input class="fin-mini-input" data-fin-amount-input placeholder="$" type="text"/><button class="fin-mini-btn-primary" type="button" data-fin-assign="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}">${iconHtml('plus')} Asignar</button>${editBtnHtml}`;
+    actionsHtml = `${checkboxHtml}<input class="fin-mini-input" data-fin-amount-input placeholder="$" type="text"/>${currencyAssignInputHtml}<button class="fin-mini-btn-primary" type="button" data-fin-assign="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}">${iconHtml('plus')} Asignar</button>${editBtnHtml}`;
   }
   return `
     <div class="fin-row" data-fin-row="${escapeHtml(row.id)}" style="--cat-rgb:${cat.rgb};">
@@ -13500,6 +13557,19 @@ function openFinanceRowModal(kind, existingRow = null) {
   if (categoryInput) categoryInput.value = existingRow ? existingRow.categoryId : 'casa';
   if (typeInput) typeInput.value = existingRow ? (existingRow.recurring ? 'recurring' : 'onetime') : 'recurring';
   if (targetInput) targetInput.value = existingRow ? existingRow.targetAmount : '';
+  const targetCurrencyField = document.getElementById('financeRowTargetCurrencyField');
+  const targetCurrencyLabelEl = document.getElementById('financeRowTargetCurrencyLabel');
+  const targetCurrencyInput = document.getElementById('financeRowTargetCurrencyInput');
+  const currencyLabelTrim = String(settings.currencyLabel || '').trim();
+  const exchangeRate = Number(settings.exchangeRate);
+  const hasCurrency = financeHasSecondaryCurrency();
+  if (targetCurrencyField) targetCurrencyField.style.display = hasCurrency ? '' : 'none';
+  if (hasCurrency) {
+    if (targetCurrencyLabelEl) targetCurrencyLabelEl.textContent = `Monto objetivo en ${currencyLabelTrim}`;
+    if (targetCurrencyInput) targetCurrencyInput.value = existingRow ? (Number(existingRow.targetAmount || 0) * exchangeRate).toFixed(2) : '';
+  } else if (targetCurrencyInput) {
+    targetCurrencyInput.value = '';
+  }
   if (title) title.textContent = existingRow ? (isMeta ? 'Editar meta' : 'Editar gasto') : (isMeta ? 'Agregar meta' : 'Agregar gasto');
   if (subtitle) {
     subtitle.textContent = existingRow
@@ -18076,6 +18146,8 @@ function render() {
     document.getElementById('saveGapBtn').addEventListener('click', saveGapEditor);
     document.getElementById('saveAcwGoalBtn').addEventListener('click', saveAcwGoalEditor);
     document.getElementById('saveFinanceRowBtn').addEventListener('click', saveFinanceRowModal);
+    document.getElementById('financeRowTargetInput').addEventListener('input', () => syncFinanceRowTargetFields('usd'));
+    document.getElementById('financeRowTargetCurrencyInput').addEventListener('input', () => syncFinanceRowTargetFields('currency'));
     // Pedido del usuario: un solo listener delegado en #financeSection (tabs, prioridad ↑/↓, Reiniciar mes, Asignar, checkbox Pagado, Eliminar, + los 2 botones de agregar fila) — las filas se repintan enteras en cada cambio, no llevan listener propio.
     document.getElementById('financeSection').addEventListener('click', (e) => {
       if (!(e.target instanceof Element)) return;
@@ -18106,6 +18178,27 @@ function render() {
       if (deleteBtn) { financeDeleteRow(deleteBtn.getAttribute('data-fin-cat'), deleteBtn.getAttribute('data-fin-delete')); return; }
       if (e.target.closest('#addFinanceGastoBtn')) { openFinanceRowModal('gasto'); return; }
       if (e.target.closest('#addFinanceMetaBtn')) { openFinanceRowModal('meta'); return; }
+    });
+    // Sincroniza el monto a "Asignar" en $ ↔ en tu moneda dentro de cada
+    // fila — mismo criterio que syncFinanceRowTargetFields, pero acotado a
+    // los 2 inputs hermanos dentro de la misma `.fin-row-actions`.
+    document.getElementById('financeSection').addEventListener('input', (e) => {
+      if (!(e.target instanceof Element)) return;
+      const exchangeRate = Number(settings.exchangeRate);
+      if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) return;
+      const actionsWrap = e.target.closest('.fin-row-actions');
+      if (!actionsWrap) return;
+      if (e.target.matches('[data-fin-amount-input]')) {
+        const sibling = actionsWrap.querySelector('[data-fin-amount-currency-input]');
+        if (!sibling) return;
+        const usd = parseMoney(e.target.value);
+        sibling.value = usd > 0 ? (usd * exchangeRate).toFixed(2) : '';
+      } else if (e.target.matches('[data-fin-amount-currency-input]')) {
+        const sibling = actionsWrap.querySelector('[data-fin-amount-input]');
+        if (!sibling) return;
+        const cur = parseMoney(e.target.value);
+        sibling.value = cur > 0 ? (cur / exchangeRate).toFixed(2) : '';
+      }
     });
     document.getElementById('financeSection').addEventListener('change', (e) => {
       const checkbox = e.target instanceof Element ? e.target.closest('[data-fin-mark-paid]') : null;
