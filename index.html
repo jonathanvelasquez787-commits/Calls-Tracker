@@ -7036,6 +7036,7 @@
       .fin-mini-input { flex: 1 1 auto; height: 30px; font-size: 12px; }
       .fin-mini-btn-primary { height: 30px; padding: 0 15px; font-size: 11px; }
       .fin-ghost-btn { width: 100%; justify-content: center; padding: 7px 0; font-size: 10.5px; }
+      .fin-ghost-btn.fin-ghost-btn-icon { width: 30px; height: 30px; padding: 0; flex: 0 0 auto; }
       .fin-checkbox-label { flex-basis: 100%; }
     }
 
@@ -13347,7 +13348,7 @@ function financeRowHtml(row, opts) {
           <input class="fin-mini-input" data-fin-amount-input placeholder="$" type="text"/>
           ${currencyAssignInputHtml}
           <button class="fin-mini-btn-primary" type="button" data-fin-assign="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}">${iconHtml('plus')} Asignar</button>
-          <button class="fin-ghost-btn" type="button" data-fin-edit="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" aria-label="Editar meta" title="Editar meta">${iconHtml('edit')}</button>
+          <button class="fin-ghost-btn fin-ghost-btn-icon" type="button" data-fin-edit="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" aria-label="Editar meta" title="Editar meta">${iconHtml('edit')}</button>
           <button class="hr-window-remove-btn" type="button" data-fin-delete="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" aria-label="Eliminar meta" title="Eliminar meta">${iconHtml('trash')}</button>
         </div>
       </div>
@@ -13359,7 +13360,7 @@ function financeRowHtml(row, opts) {
   const checkboxHtml = !row.recurring
     ? `<label class="fin-checkbox-label"><input type="checkbox" data-fin-mark-paid="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" ${row.manualPaid ? 'checked' : ''}/> Pagado</label>`
     : '';
-  const editBtnHtml = `<button class="fin-ghost-btn" type="button" data-fin-edit="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" aria-label="Editar gasto" title="Editar gasto">${iconHtml('edit')}</button>`;
+  const editBtnHtml = `<button class="fin-ghost-btn fin-ghost-btn-icon" type="button" data-fin-edit="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" aria-label="Editar gasto" title="Editar gasto">${iconHtml('edit')}</button>`;
   let badgeHtml, barPct, barColor, actionsHtml;
   if (isPagado) {
     badgeHtml = '<span class="fin-badge tone-good">Pagado</span>';
