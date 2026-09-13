@@ -6905,15 +6905,6 @@
     }
     .fin-tab-btn.active { background: var(--cyan); color: #07101f; }
 
-    .fin-legend-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
-    .fin-legend-chip {
-      display: inline-flex; align-items: center; gap: 7px;
-      padding: 6px 12px; border-radius: 999px;
-      border: 1px solid var(--line); background: rgba(255,255,255,.03);
-      color: var(--muted); font-size: 11.5px; font-weight: 700;
-    }
-    .fin-legend-chip .ic-svg { width: 13px; height: 13px; }
-
     .fin-info-box {
       display: flex; align-items: flex-start; gap: 9px;
       border: 1px solid rgba(var(--purple-rgb), .22);
@@ -7031,10 +7022,6 @@
 
       .fin-tab-toggle { width: 100%; margin-bottom: 12px; }
       .fin-tab-btn { flex: 1; padding: 7px 0; font-size: 12px; text-align: center; }
-
-      .fin-legend-row { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; margin-bottom: 12px; -webkit-mask-image: none; mask-image: none; }
-      .fin-legend-chip { padding: 5px 10px; font-size: 10px; }
-      .fin-legend-chip .ic-svg { width: 12px; height: 12px; }
 
       .fin-info-box { padding: 10px 12px; font-size: 11px; margin-bottom: 12px; }
 
@@ -8219,9 +8206,6 @@
     <button class="fin-tab-btn active" data-fin-tab="gastos" type="button">Gastos</button>
     <button class="fin-tab-btn" data-fin-tab="metas" type="button">Metas</button>
   </div>
-
-  <div class="fin-available-stat-label" style="margin:0 0 6px;">Categorías · referencia</div>
-  <div class="fin-legend-row" id="financeLegendRow" aria-hidden="true"></div>
 
   <div id="financeGastosView">
     <div class="fin-info-box">
@@ -13518,11 +13502,11 @@ function financeRowHtml(row, opts) {
   const currencyAssignInputHtml = financeHasSecondaryCurrency()
     ? `<input class="fin-mini-input" data-fin-amount-currency-input placeholder="o en ${escapeHtml(currencyLabelTrim)}" type="text" title="${amountLinkTitle}"/>`
     : '';
-  // Pedido del usuario (mockup aprobado): pill +/- decide si "Aplicar" suma (resta de Disponible, mismo tope que antes tenía "Asignar") o resta (devuelve a Disponible) del monto asignado de esta fila.
+  // Pedido del usuario: el pill +/- (solo símbolos, sin texto) no dejaba claro qué iba a hacer "Aplicar" — pasa a mostrar la palabra completa (mismo patrón .mc-pill-btn de Sí/No, sin lenguaje visual nuevo) + title con el detalle.
   const signPillHtml = `
-    <div class="mc-pill-row" role="group" aria-label="Sumar o restar">
-      <button class="mc-pill-btn" data-fin-sign-btn data-sign="plus" aria-pressed="true" type="button">+</button>
-      <button class="mc-pill-btn" data-fin-sign-btn data-sign="minus" aria-pressed="false" type="button">−</button>
+    <div class="mc-pill-row" role="group" aria-label="Elige si Aplicar suma o resta este monto">
+      <button class="mc-pill-btn" data-fin-sign-btn data-sign="plus" aria-pressed="true" type="button" title="Resta este monto de Disponible y lo suma a lo ya asignado de esta fila">+ Sumar</button>
+      <button class="mc-pill-btn" data-fin-sign-btn data-sign="minus" aria-pressed="false" type="button" title="Devuelve este monto de lo ya asignado de esta fila a Disponible">− Restar</button>
     </div>
   `;
   const priorityTitle = 'Prioridad — decide el orden de la cascada de "Restante después"';
@@ -13616,12 +13600,12 @@ function financeRowHtml(row, opts) {
 }
 
 function renderFinanceSection() {
-  const legendRow = document.getElementById('financeLegendRow');
-  if (!legendRow) return;
+  const availableAmtElGuard = document.getElementById('financeAvailableAmt');
+  if (!availableAmtElGuard) return;
 
   const available = financeAvailableBalance();
-  const availableAmtEl = document.getElementById('financeAvailableAmt');
-  if (availableAmtEl) availableAmtEl.textContent = money(available);
+  const availableAmtEl = availableAmtElGuard;
+  availableAmtEl.textContent = money(available);
   const availableConvertedEl = document.getElementById('financeAvailableConverted');
   if (availableConvertedEl) availableConvertedEl.textContent = convertedAmountText(available);
 
@@ -13629,11 +13613,6 @@ function renderFinanceSection() {
   const nextPending = gastoRows.find(r => !financeIsRowPagado(r));
   const nextPriorityEl = document.getElementById('financeNextPriorityVal');
   if (nextPriorityEl) nextPriorityEl.textContent = nextPending ? nextPending.name : '—';
-
-  legendRow.innerHTML = Object.keys(FINANCE_CATEGORIES).map(catId => {
-    const cat = FINANCE_CATEGORIES[catId];
-    return `<span class="fin-legend-chip" title="Solo referencia — no es un filtro"><svg class="ic-svg" viewBox="0 0 24 24" style="color:rgb(${cat.rgb});" aria-hidden="true">${ICON[cat.icon]}</svg> ${escapeHtml(cat.label)}</span>`;
-  }).join('');
 
   // Cascada "Restante después" — solo Gastos, resta assignedAmount (no targetAmount) de cada fila en orden de prioridad. Arranca en "available + lo ya asignado a Gastos" (no en "available" solo): "available" ya tiene restado TODO lo asignado (Gastos y Metas), así que hay que devolverle la parte de Gastos antes de volver a restarla fila por fila, o se resta dos veces.
   const gastoAssignedTotal = gastoRows.reduce((sum, r) => sum + (Number(r.assignedAmount) || 0), 0);
