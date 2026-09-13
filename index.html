@@ -12205,12 +12205,18 @@ function calDayStatus(dayKey) {
 }
 
 // Tier final de una celda (mes o mini-heatmap anual) — envuelve
-// calTierForDay() agregando los 2 casos especiales de arriba.
+// calTierForDay() agregando los 2 casos especiales de arriba. El color
+// SÍ suma el equivalente en minutos del bono de Higher Rate (mismo
+// criterio que ya usa "Ganancias de hoy" en remainingMin, ver
+// renderHeader) — sin esto, un día que alcanza la meta de dólares gracias
+// al bono seguía viéndose "amarillo" (por debajo de meta) aunque el
+// propio badge "+N" de la celda ya mostrara ese mismo bono.
 function calDayTier(dayKey, goalMin) {
   const status = calDayStatus(dayKey);
   if (status === 'off') return 'cal-tier-off';
   if (status === 'nodata') return 'cal-tier-nodata';
-  return calTierForDay(productiveMinutesForDay(dayKey), goalMin);
+  const effectiveMin = productiveMinutesForDay(dayKey) + calDailyEquivalentHigherRateMin(dayKey);
+  return calTierForDay(effectiveMin, goalMin);
 }
 
 function renderCalendarMonth() {
