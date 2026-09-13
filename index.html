@@ -13516,15 +13516,21 @@ function financeAssignAmount(catId, rowId, rawAmount) {
   }
   const row = financeFindRow(catId, rowId);
   if (!row) return;
+  let appliedAmount = monto;
   if (catId === 'ahorro') {
     row.assignedAmount = (Number(row.assignedAmount) || 0) + monto;
   } else {
     const target = Number(row.targetAmount) || 0;
-    row.assignedAmount = Math.min(target, (Number(row.assignedAmount) || 0) + monto);
+    const before = Number(row.assignedAmount) || 0;
+    row.assignedAmount = Math.min(target, before + monto);
+    appliedAmount = row.assignedAmount - before;
   }
   saveSettingsOnly();
   renderFinanceSection();
-  toast('Asignado');
+  // Un Gasto ya no acepta más de lo que le falta para su objetivo — si el monto pedido se recortó, se avisa cuánto entró de verdad en vez de un "Asignado" genérico que dejaría creer que se aplicó todo.
+  toast(appliedAmount < monto
+    ? `Solo se asignaron ${money(appliedAmount)} de ${money(monto)} — el gasto ya llegó a su objetivo. El resto sigue en Disponible.`
+    : 'Asignado');
 }
 
 function financeResetRow(catId, rowId) {
