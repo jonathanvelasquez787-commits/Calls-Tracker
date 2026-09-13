@@ -275,7 +275,8 @@
       :root:not(.theme-dark) .rpt-goal-card,
       :root:not(.theme-dark) .rpt-chart-card,
       :root:not(.theme-dark) .rpt-mini-card,
-      :root:not(.theme-dark) .rpt-trend-chip {
+      :root:not(.theme-dark) .rpt-trend-chip,
+      :root:not(.theme-dark) .rpt-streak-card {
         background: var(--panel);
       }
       :root:not(.theme-dark) .accordion-card {
@@ -289,7 +290,8 @@
       :root:not(.theme-dark) .modal-card,
       :root:not(.theme-dark) textarea,
       :root:not(.theme-dark) .toast,
-      :root:not(.theme-dark) .sidebar-progress-ring::before {
+      :root:not(.theme-dark) .sidebar-progress-ring::before,
+      :root:not(.theme-dark) .gh-ring::before {
         background: var(--panel-2);
       }
       /* Botones utilitarios chicos ("Editar", "Editar gap", "Probar sonido"...) — antes SIEMPRE cian, repetido decenas de veces por toda la app (cada fila de Tabla de llamadas, cada modal...). Se vuelven neutros */
@@ -650,6 +652,18 @@
       :root:not(.theme-dark) .cal-year-nav-icon { background: linear-gradient(135deg, var(--accent-blue-2), var(--rpt-purple)); }
       :root:not(.theme-dark) .goals-section-icon.cyan { color: var(--accent-blue-2); stroke: var(--accent-blue-2); }
       :root:not(.theme-dark) .msg-preview-var { color: var(--accent-blue-2); }
+      /* Pedido del usuario (con capturas): 2 elementos sueltos que ningún
+         override anterior cubría, con --cyan-rgb/--blue-rgb sin condición
+         en modo claro — ver resumen.md para el detalle completo. */
+      :root:not(.theme-dark) .sidebar-brand-icon {
+        background: linear-gradient(135deg, rgba(var(--accent-blue-2-rgb), .22), rgba(var(--blue-rgb), .22));
+        border-color: rgba(var(--accent-blue-2-rgb), .32);
+      }
+      /* --blue-rgb en este tema es --lunch-purple (#A78BFA), un pastel muy
+         claro — al 14/28% de opacidad sobre fondo blanco casi desaparece.
+         Se reemplaza por --purple (ya definido más saturado en este mismo
+         tema) solo para este ícono puntual, sin tocar --blue global. */
+      :root:not(.theme-dark) .sidebar-link-icon-schedule { --icon-rgb: var(--purple-rgb); }
     }
     html.theme-light .action-btn:not(.is-active) {
       border-color: var(--line-2);
@@ -675,7 +689,8 @@
     html.theme-light .rpt-goal-card,
     html.theme-light .rpt-chart-card,
     html.theme-light .rpt-mini-card,
-    html.theme-light .rpt-trend-chip {
+    html.theme-light .rpt-trend-chip,
+    html.theme-light .rpt-streak-card {
       background: var(--panel);
     }
     html.theme-light .accordion-card {
@@ -689,7 +704,8 @@
     html.theme-light .modal-card,
     html.theme-light textarea,
     html.theme-light .toast,
-    html.theme-light .sidebar-progress-ring::before {
+    html.theme-light .sidebar-progress-ring::before,
+    html.theme-light .gh-ring::before {
       background: var(--panel-2);
     }
     html.theme-light .gap-edit-btn {
@@ -1041,6 +1057,12 @@
     html.theme-light .cal-year-nav-icon { background: linear-gradient(135deg, var(--accent-blue-2), var(--rpt-purple)); }
     html.theme-light .goals-section-icon.cyan { color: var(--accent-blue-2); stroke: var(--accent-blue-2); }
     html.theme-light .msg-preview-var { color: var(--accent-blue-2); }
+    /* Ver comentario gemelo en la rama @media de arriba. */
+    html.theme-light .sidebar-brand-icon {
+      background: linear-gradient(135deg, rgba(var(--accent-blue-2-rgb), .22), rgba(var(--blue-rgb), .22));
+      border-color: rgba(var(--accent-blue-2-rgb), .32);
+    }
+    html.theme-light .sidebar-link-icon-schedule { --icon-rgb: var(--purple-rgb); }
 
     * { box-sizing: border-box; }
     html, body { min-height: 100%; }
