@@ -10067,7 +10067,15 @@ $0.72"></textarea>
       const label = String(settings.currencyLabel || '').trim();
       if (!Number.isFinite(rate) || rate <= 0 || !label) return '';
       const converted = (Number.isFinite(usdAmount) ? usdAmount : 0) * rate;
-      return `≈ ${label} ${converted.toFixed(2)}`;
+      // Redondeado a unidades enteras (sin centavos): el monto real siempre
+      // vive en dólares (con centavos), así que convertir de vuelta a la
+      // moneda secundaria y mostrar 2 decimales expone un desfase de
+      // fracciones de centavo (ej. escribes L2500 -> se guarda $92.59 ->
+      // se vuelve a mostrar como "L 2499.93") que confunde sin aportar
+      // nada real, ya que este número siempre se presenta como aproximado
+      // ("≈"). Redondear a entero hace que el caso común (fracciones de
+      // centavo) vuelva a mostrar el número que el usuario esperaba.
+      return `≈ ${label} ${Math.round(converted)}`;
     }
 
     // Ciclo de pago (PAGOS 2025) ---- Cada ciclo dura 14 días de calendario de forma fija; el día en el que arranca un ciclo conocido (cycleAnchorDate) y los días hasta el pago (cyclePayOffsetDays) SÍ son editables
