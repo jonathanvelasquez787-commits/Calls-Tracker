@@ -13587,12 +13587,12 @@ function financeRowHtml(row, opts) {
         <div class="fin-row-sub">${escapeHtml(cat.label)} · ${escapeHtml(typeLabel)}</div>
         <div class="fin-row-amt-line">
           <span><b>${money(assigned)}</b>${financeConvertedInline(assigned)} de ${money(target)}${financeConvertedInline(target)} asignado</span>
-          <span class="fin-row-restante-inline" title="${restanteDespuesTitle}">Disponible después: <b>${money(opts.restanteDespues)}</b>${financeConvertedInline(opts.restanteDespues)}</span>
+          <span class="fin-row-restante-inline" title="${restanteDespuesTitle}">Disponible <b>${money(opts.restanteDespues)}</b>${financeConvertedInline(opts.restanteDespues)}</span>
         </div>
         <div class="fin-progress-track"><div style="width:${barPct}%; background:${barColor};"></div></div>
       </div>
       <div class="fin-row-right" title="${restanteDespuesTitle}">
-        <div class="fin-row-right-label">Disponible después</div>
+        <div class="fin-row-right-label">Disponible</div>
         <div class="fin-row-right-val">${money(opts.restanteDespues)}</div>
         ${financeConvertedNote(opts.restanteDespues)}
       </div>
