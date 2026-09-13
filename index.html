@@ -13599,6 +13599,21 @@ function financeRowHtml(row, opts) {
   `;
 }
 
+// Fila de total al final de cada lista de Finanzas — mismo patrón visual que .wk-total-row de Resumen semanal, sin lenguaje nuevo.
+function financeTotalsRowHtml(label, targetTotal, assignedTotal, assignedLabel) {
+  const remaining = Math.max(0, targetTotal - assignedTotal);
+  return `
+    <div class="wk-total-row" style="border-top: 1px solid var(--line); margin-top: 2px;">
+      <div class="wk-total-label">${escapeHtml(label)}</div>
+      <div class="wk-total-metrics">
+        <div class="wk-total-metric"><span class="wk-total-metric-label">Objetivo</span><strong>${money(targetTotal)}</strong></div>
+        <div class="wk-total-metric"><span class="wk-total-metric-label">${escapeHtml(assignedLabel)}</span><strong>${money(assignedTotal)}</strong></div>
+        <div class="wk-total-metric"><span class="wk-total-metric-label">Faltante</span><strong>${money(remaining)}</strong></div>
+      </div>
+    </div>
+  `;
+}
+
 function renderFinanceSection() {
   const availableAmtElGuard = document.getElementById('financeAvailableAmt');
   if (!availableAmtElGuard) return;
@@ -13625,16 +13640,19 @@ function renderFinanceSection() {
 
   const gastosList = document.getElementById('financeGastosList');
   if (gastosList) {
+    const gastoTargetTotal = gastoRows.reduce((sum, r) => sum + (Number(r.targetAmount) || 0), 0);
     gastosList.innerHTML = gastoRows.length
-      ? gastoRows.map((r, i) => financeRowHtml(r, { index: i, count: gastoRows.length, isMeta: false, restanteDespues: restanteMap[r.id] })).join('')
+      ? gastoRows.map((r, i) => financeRowHtml(r, { index: i, count: gastoRows.length, isMeta: false, restanteDespues: restanteMap[r.id] })).join('') + financeTotalsRowHtml('Total gastos', gastoTargetTotal, gastoAssignedTotal, 'Asignado')
       : '<div class="note" style="margin:0;">Sin gastos configurados. Usa "+ Agregar gasto" para empezar.</div>';
   }
 
   const metaRows = financeMetaRowsSorted();
   const metasList = document.getElementById('financeMetasList');
   if (metasList) {
+    const metaTargetTotal = metaRows.reduce((sum, r) => sum + (Number(r.targetAmount) || 0), 0);
+    const metaAssignedTotal = metaRows.reduce((sum, r) => sum + (Number(r.assignedAmount) || 0), 0);
     metasList.innerHTML = metaRows.length
-      ? metaRows.map((r, i) => financeRowHtml(r, { index: i, count: metaRows.length, isMeta: true })).join('')
+      ? metaRows.map((r, i) => financeRowHtml(r, { index: i, count: metaRows.length, isMeta: true })).join('') + financeTotalsRowHtml('Total metas', metaTargetTotal, metaAssignedTotal, 'Ahorrado')
       : '<div class="note" style="margin:0;">Sin metas configuradas. Usa "+ Agregar meta" para empezar.</div>';
   }
 }
