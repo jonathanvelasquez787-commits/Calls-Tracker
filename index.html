@@ -13023,10 +13023,21 @@ function renderReportsMonthlyChart() {
     .filter(seg => seg.length > 1)
     .map(seg => `<polyline points="${seg.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}" fill="none" stroke="var(--rpt-purple)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="6 4"/>`)
     .join('');
-  const dotsHtml = points.filter(Boolean).map(p => `
+  // Bug reportado por el usuario (con captura): cuando el mes de mayor
+  // ganancia (barra casi a tope) coincide con una adherencia baja, el punto
+  // cae DENTRO de la franja vertical de esa barra — sin nada detrás, el "%"
+  // se mezclaba con el azul sólido y quedaba ilegible. La píldora oscura
+  // detrás del texto (no del punto, que se deja visible tal cual) resuelve
+  // esto sin importar qué haya debajo (barra, panel oscuro o vacío).
+  const dotsHtml = points.filter(Boolean).map(p => {
+    const label = `${p.pct}%`;
+    const chipWidth = label.length * 6.2 + 8;
+    return `
+    <rect x="${(p.x - chipWidth / 2).toFixed(1)}" y="${(p.y - 19).toFixed(1)}" width="${chipWidth.toFixed(1)}" height="13" rx="6" fill="rgba(7, 16, 31, .55)"/>
     <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="var(--rpt-purple)"/>
-    <text x="${p.x.toFixed(1)}" y="${(p.y - 8).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="700" fill="var(--rpt-purple)">${p.pct}%</text>
-  `).join('');
+    <text x="${p.x.toFixed(1)}" y="${(p.y - 9).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="700" fill="var(--rpt-purple)">${escapeHtml(label)}</text>
+  `;
+  }).join('');
 
   svg.innerHTML = `${barsHtml}${lineHtml}${dotsHtml}`;
 }
