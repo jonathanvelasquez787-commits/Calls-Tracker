@@ -5953,6 +5953,11 @@
       color: var(--muted);
       font-weight: 700;
     }
+    .month-card-amt-converted {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 600;
+    }
     .back-btn {
       color: var(--cyan) !important;
     }
@@ -7439,6 +7444,7 @@
       .month-card-amt { font-size: 12px; }
       /* Pedido del usuario: el mockup mobile aprobado (calendario_anual_mockup_mobile.html) no lleva la leyenda "ganado este mes" bajo el monto de cada mes (solo aparece en el mockup de escritorio, ver "" más arriba) */
       .month-card-amt-label { display: none; }
+      .month-card-amt-converted { display: none; }
 
       /* Pedido del usuario: fila de navegación de año/mes más compacta en mobile, calcada del mockup mobile aprobado — el bloque icono+texto decorativo de la vista anual (.cal-year-nav- left DENTRO de #calYearView */
       #calYearView .cal-year-nav-left { display: none; }
@@ -12627,6 +12633,7 @@ function renderCalYear() {
         <div class="month-card-amt-wrap">
           <div class="month-card-amt">${money(monthTotals[m])}</div>
           <div class="month-card-amt-label">ganado este mes</div>
+          ${convertedAmountText(monthTotals[m]) ? `<div class="month-card-amt-converted">${escapeHtml(convertedAmountText(monthTotals[m]))}</div>` : ''}
         </div>
       </div>
     `;
