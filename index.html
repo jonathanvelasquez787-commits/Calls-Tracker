@@ -14674,7 +14674,15 @@ function saveFinanceRowModal() {
     function applyImportedPayload(payload) {
       state = normalizeStateObject(payload.state);
       calls = normalizeCallsArray(payload.calls);
-      if (!state.activeDayKey) state.activeDayKey = defaultActiveDayKey();
+      // Mismo criterio que importCalls(): salta a un día con llamadas reales (hoy si tiene, si no la más reciente importada) — sin esto, el día activo se quedaba en el que traía guardado el respaldo, que podía no tener ninguna llamada y daba la impresión de que la importación no hizo nada.
+      const importedDates = [...new Set(calls.map(c => callDateKeyFromValue(c.callDate)).filter(Boolean))]
+        .sort((a, b) => callDateToDate(a) - callDateToDate(b));
+      const todayKey = todayCallDateKey();
+      if (importedDates.length) {
+        state.activeDayKey = importedDates.includes(todayKey) ? todayKey : importedDates[importedDates.length - 1];
+      } else if (!state.activeDayKey) {
+        state.activeDayKey = defaultActiveDayKey();
+      }
       saveAll();
     }
 
