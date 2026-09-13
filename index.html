@@ -5940,23 +5940,30 @@
     .mini-cell.cal-tier-off { background: var(--blue); opacity: .55; }
     .mini-cell.cal-empty { background: transparent; }
     .month-card-amt-wrap {
-      display: grid;
-      gap: 2px;
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      column-gap: 6px;
+      row-gap: 0;
+      min-width: 0;
     }
     .month-card-amt {
       font-size: 15px;
       font-weight: 900;
       color: var(--good);
+      white-space: nowrap;
     }
     .month-card-amt-label {
       font-size: 10px;
       color: var(--muted);
       font-weight: 700;
+      white-space: nowrap;
     }
     .month-card-amt-converted {
       font-size: 10px;
       color: var(--muted);
       font-weight: 600;
+      white-space: nowrap;
     }
     .back-btn {
       color: var(--cyan) !important;
@@ -7125,12 +7132,25 @@
       #pageFinance .wk-total-row {
         flex-direction: row;
         align-items: center;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+      }
+      #pageFinance .wk-total-label {
+        flex: 0 0 auto;
       }
       #pageFinance .wk-total-metrics {
         display: flex;
-        flex-wrap: wrap;
-        gap: 6px 16px;
+        flex: 1 1 auto;
+        min-width: 0;
+        flex-wrap: nowrap;
+        gap: 14px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      #pageFinance .wk-total-metrics::-webkit-scrollbar { display: none; }
+      #pageFinance .wk-total-metric {
+        flex: 0 0 auto;
+        white-space: nowrap;
       }
       #pageFinance .wk-total-metric-label {
         display: inline;
@@ -7499,9 +7519,11 @@
       .month-card-name { font-size: 11px; }
       .month-card-badge { font-size: 8px; padding: 1px 5px; }
       .mini-grid { gap: 1.5px; }
-      .month-card-amt { font-size: 12px; }
-      /* Pedido del usuario: el mockup mobile aprobado (calendario_anual_mockup_mobile.html) no lleva la leyenda "ganado este mes" bajo el monto de cada mes (solo aparece en el mockup de escritorio, ver "" más arriba) */
-      .month-card-amt-label { display: none; }
+      .month-card-amt { font-size: 12px; flex: 0 0 auto; }
+      /* Pedido del usuario (con captura): monto/leyenda/conversión de cada mes en una sola línea, en vez de apiladas */
+      .month-card-amt-wrap { flex-wrap: nowrap; overflow: hidden; }
+      .month-card-amt-label { font-size: 8.5px; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+      .month-card-amt-converted { font-size: 8.5px; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 
       /* Pedido del usuario: fila de navegación de año/mes más compacta en mobile, calcada del mockup mobile aprobado — el bloque icono+texto decorativo de la vista anual (.cal-year-nav- left DENTRO de #calYearView */
       #calYearView .cal-year-nav-left { display: none; }
