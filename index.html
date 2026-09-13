@@ -7161,12 +7161,19 @@
         margin-left: 3px;
         font-size: 10.5px;
       }
-      /* El equivalente en moneda secundaria ("≈ L 6591.78") es lo que más
-         espacio ocupa de las 3 métricas — en esta fila (a diferencia de
-         .fin-row, con más ancho por fila) se oculta en mobile para que el
-         monto principal quepa en una sola línea sin recortarse. */
       #pageFinance .wk-total-row .fin-row-converted-inline {
-        display: none;
+        font-size: 9px;
+        margin-left: 1px;
+      }
+      /* Pedido del usuario: NO ocultar el equivalente en moneda secundaria
+         (revertido — ver v453/v454 en el resumen). En vez de recortar
+         contenido, se avisa que la fila se puede deslizar con el mismo
+         fundido de borde que ya usa `.chips.is-scrollable` — la clase
+         `.is-scrollable` la agrega JS (updateFinanceTotalsScrollHint) solo
+         cuando de verdad desborda. */
+      #pageFinance .wk-total-metrics.is-scrollable {
+        -webkit-mask-image: linear-gradient(to right, black calc(100% - 22px), transparent 100%);
+        mask-image: linear-gradient(to right, black calc(100% - 22px), transparent 100%);
       }
     }
 
@@ -13858,6 +13865,7 @@ function renderFinanceSection() {
   }
 
   renderFinancePreview();
+  updateFinanceTotalsScrollHint();
 }
 
 function financeSwapPriority(catIdIgnored, rowId, direction) {
@@ -16728,6 +16736,16 @@ function updateChipsScrollHint() {
   chipsEl.classList.toggle('is-scrollable', overflows);
 }
 
+// Mismo criterio que updateChipsScrollHint, aplicado a las filas de
+// Totales de Finanzas (#pageFinance .wk-total-metrics) — puede haber 2 a
+// la vez (Gastos y Metas), se revisan todas.
+function updateFinanceTotalsScrollHint() {
+  document.querySelectorAll('#pageFinance .wk-total-metrics').forEach(el => {
+    const overflows = el.scrollWidth > el.clientWidth + 1;
+    el.classList.toggle('is-scrollable', overflows);
+  });
+}
+
 const gapLabels = ['acw', 'break', 'lunch', 'other'];
 let editingGapContext = null;
 
@@ -18260,7 +18278,7 @@ function render() {
     let resizeTimer = null;
     window.addEventListener('resize', () => {
       clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => renderTable(), 120);
+      resizeTimer = setTimeout(() => { renderTable(); updateFinanceTotalsScrollHint(); }, 120);
     });
 
     // BUG-010 (QA ) — Pedido del usuario: detectar cambios externos vía evento `storage` y avisar en vez de dejar que la última pestaña que guarde gane en silencio.
