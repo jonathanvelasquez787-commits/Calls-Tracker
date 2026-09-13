@@ -7730,7 +7730,7 @@
 </div>
 </div>
 
-<div class="controls-grid">
+<div class="controls-grid" id="callsControlsGrid">
 <button class="action-btn" id="callControlBtn" type="button" data-accent="pink">
 <span class="action-ripple"></span>
 <span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.05 5A5 5 0 0 1 19 8.95M15.05 1A9 9 0 0 1 23 8.94m-1 7.98v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.68 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.32 1.85.55 2.81.68A2 2 0 0 1 22 16.92Z"/></svg></span></span>
@@ -14672,6 +14672,8 @@ function saveFinanceRowModal() {
       const timerEl = document.getElementById('callsStatusTimer');
       const mid = document.getElementById('callsStatusMid');
       const actions = document.getElementById('callsStatusActions');
+      // Pedido del usuario: con una llamada en curso, la tarjeta de estado ya trae Guardar/Descartar — los 3 botones de abajo (Iniciar llamada/Pegar Llamadas/Agregar llamada) se ocultan para no repetir el mismo control dos veces.
+      const controlsGrid = document.getElementById('callsControlsGrid');
       if (!card || !icon || !textTitle) return;
 
       const isLive = !!state.activeCall;
@@ -14681,6 +14683,7 @@ function saveFinanceRowModal() {
       if (mid) mid.style.display = isLive ? '' : 'none';
       if (timerEl && isLive) timerEl.textContent = formatDuration(Date.now() - new Date(state.activeCall.startedAt).getTime());
       if (actions) actions.style.display = isLive ? '' : 'none';
+      if (controlsGrid) controlsGrid.style.display = isLive ? 'none' : '';
     }
 
     // A diferencia de resetDay (borra SOLO el día activo), esto borra TODO lo que la app guarda en este navegador: las 3 llaves de localStorage completas (STORAGE_KEY/CALLS_KEY/SETTINGS_KEY), sin dejar nada
