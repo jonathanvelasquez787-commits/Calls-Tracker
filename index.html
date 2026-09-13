@@ -13618,12 +13618,12 @@ function renderFinancePreview() {
         <span class="fin-preview-icon" style="--cat-rgb:${cat.rgb};">${iconHtml(cat.icon)}</span>
         <div class="fin-preview-main">
           <div class="fin-preview-name">${escapeHtml(row.name)}</div>
-          <div class="fin-preview-sub">Faltan ${money(faltante)} de ${money(target)}</div>
+          <div class="fin-preview-sub">Faltan ${money(faltante)}${financeConvertedInline(faltante)} de ${money(target)}${financeConvertedInline(target)}</div>
           <div class="fin-preview-bar"><div style="width:${pct}%; background:${barColor};"></div></div>
         </div>
         <div class="fin-preview-right">
           <div class="fin-preview-amt">${money(assigned)}</div>
-          <div class="fin-preview-amt-label">${isMeta ? 'ahorrado' : 'asignado'}</div>
+          <div class="fin-preview-amt-label">${isMeta ? 'ahorrado' : 'asignado'}${financeConvertedInline(assigned)}</div>
         </div>
       </div>
     `;
