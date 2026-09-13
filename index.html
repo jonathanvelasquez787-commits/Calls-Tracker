@@ -5769,7 +5769,7 @@
     .cal-day-min { font-size: clamp(9px, 3.2vw, 14px); font-weight: 900; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
     /* Pedido del usuario (punto 5 del plan aprobado en ): "Libre" (día efectivamente libre, ver cal-tier-off) y "—" (sin datos, ver cal-tier-nodata) son texto más largo que un número de minutos */
     .cal-day-min.cal-day-min-label { font-size: clamp(7px, 2.4vw, 11px); font-weight: 800; letter-spacing: 0; }
-    /* Pedido del usuario: cada día del mes también muestra cuánto ganó ese día — en $ (mismo tono/tier que los minutos) y, debajo, el equivalente redondeado en la moneda secundaria (mockup de 3 vueltas aprobado — sin decimales en ninguna de las 2, es lo único que entra sin agrandar la celda ni scroll horizontal). */
+    /* Pedido del usuario: cada día del mes también muestra cuánto ganó ese día — en $ (mismo tono/tier que los minutos) y, debajo, el equivalente en la moneda secundaria, ambos con decimales. */
     .cal-day-amt { font-size: clamp(6.5px, 2vw, 10px); font-weight: 800; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1.25; }
     .cal-day-amt-alt { font-size: clamp(5.5px, 1.6vw, 8.5px); font-weight: 700; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1.25; }
     .cal-day-bonus {
@@ -12299,16 +12299,16 @@ function renderCalendarMonth() {
     // uniforme de la celda que sí miden los números.
     const minLabelClass = status === 'normal' ? 'cal-day-min' : 'cal-day-min cal-day-min-label';
     // Pedido del usuario: minutos + monto en $ + monto en la otra moneda,
-    // los 3 juntos en la celda — redondeados sin centavos en AMBAS monedas
-    // (única combinación que entra en el mismo tamaño de celda de siempre,
-    // sin scroll horizontal ni pasar a lista en mobile; mockup de 3 vueltas
-    // aprobado). Solo aplica a días 'normal' (Libre/Sin datos no tienen
-    // ganancia real que mostrar).
+    // los 3 juntos en la celda, con decimales en ambas monedas — el corte a
+    // enteros de una vuelta anterior se revirtió: sí caben, la celda ya
+    // trae `white-space:nowrap`+`overflow:hidden`+`text-overflow:ellipsis`
+    // como red de seguridad para cualquier ancho extremo. Solo aplica a
+    // días 'normal' (Libre/Sin datos no tienen ganancia real que mostrar).
     let amtLinesHtml = '';
     if (status === 'normal') {
       const dayEarningsForCell = importedCallStats(callsForDay(dayKey), dayKey).earnings;
-      const amtHtml = `<span class="cal-day-amt">$${Math.round(dayEarningsForCell)}</span>`;
-      const amtAltHtml = calHasCurrency ? `<span class="cal-day-amt-alt">${escapeHtml(calCurrencyLabel)}${Math.round(dayEarningsForCell * calExchangeRate)}</span>` : '';
+      const amtHtml = `<span class="cal-day-amt">$${dayEarningsForCell.toFixed(2)}</span>`;
+      const amtAltHtml = calHasCurrency ? `<span class="cal-day-amt-alt">${escapeHtml(calCurrencyLabel)}${(dayEarningsForCell * calExchangeRate).toFixed(2)}</span>` : '';
       amtLinesHtml = `${amtHtml}${amtAltHtml}`;
     }
     cellsHtml.push(`<div class="cal-day-cell ${tier}"${titleAttr}>${bonusHtml}<div class="cal-day-top-row"><span class="cal-day-num">${day}</span>${starHtml}</div><span class="${minLabelClass}">${minLabel}</span>${amtLinesHtml}</div>`);
