@@ -9101,7 +9101,7 @@ $0.72"></textarea>
 <div class="goals-field-row">
 <div class="goals-field">
 <label for="callEditDurationInput">Duración (min)</label>
-<input id="callEditDurationInput" inputmode="numeric" min="1" step="1" type="number"/>
+<input id="callEditDurationInput" inputmode="numeric" min="1" max="1440" step="1" type="number"/>
 </div>
 <div class="goals-field">
 <label for="callEditPayInput">Pago ($)</label>
@@ -9193,7 +9193,7 @@ $0.72"></textarea>
 <div class="goals-field-row">
 <div class="goals-field">
 <label for="manualCallDurationInput">Duración (min)</label>
-<input id="manualCallDurationInput" inputmode="numeric" min="1" step="1" type="number"/>
+<input id="manualCallDurationInput" inputmode="numeric" min="1" max="1440" step="1" type="number"/>
 </div>
 <div class="goals-field">
 <label for="manualCallPayInput">Pago ($)</label>
@@ -9391,6 +9391,8 @@ $0.72"></textarea>
     const EMOJI_CHOICES = ['', '🙂', '😄', '😎', '🤩', '🥳', '😴', '☕', '🔥', '💪', '🚀', '⭐', '🎯', '⚡', '🌟', '🙌', '👋', '🐱', '🌮', '🎧'];
     const DEFAULT_GOAL_MINUTES = 420;
     const DEFAULT_GOAL_DOLLARS = Number((DEFAULT_GOAL_MINUTES * RATE).toFixed(2));
+    // Tope duro de duración para una sola llamada (pegada, editada o agregada a mano) — sin esto, un valor como "1e10" o negativo pasa el chequeo de Number.isFinite y genera un endISO absurdo (años en el futuro/pasado) que rompe callsOverlap para el resto de llamadas.
+    const MAX_CALL_DURATION_MIN = 1440;
 
     // Higher Rate Opportunity (pedido del usuario) ---- Propio manda avisos por correo con una fecha y una o más ventanas horarias donde aplica un bono sobre la tasa por minuto
     const HIGHER_RATE_TIERS = {
@@ -14783,7 +14785,7 @@ function saveFinanceRowModal() {
         if (!/^\d{2}\/\d{2}\/\d{4}$/.test(callDate)) return;
         if (!/^\d{1,2}:\d{2}\s*[AP]M$/i.test(callStart)) return;
         const dur = Number(duration);
-        if (!Number.isFinite(dur)) return;
+        if (!Number.isFinite(dur) || dur <= 0 || dur > MAX_CALL_DURATION_MIN) return;
         const start = toDateFromInputs(callDate, callStart);
         if (!start) return;
         const end = new Date(start.getTime() + dur * 60000);
@@ -16949,8 +16951,8 @@ function saveCallEditor() {
   const droppedInput = document.getElementById('callEditDroppedInput');
 
   const duration = Number(durationInput?.value);
-  if (!Number.isFinite(duration) || duration <= 0) {
-    toast('La duración debe ser un número mayor a 0');
+  if (!Number.isFinite(duration) || duration <= 0 || duration > MAX_CALL_DURATION_MIN) {
+    toast(`La duración debe ser un número entre 1 y ${MAX_CALL_DURATION_MIN} minutos`);
     return;
   }
   // BUG-027 (QA ) — parseMoney preserva el signo '-' a propósito (para poder leer valores ya negativos de datos viejos/importados), así que un valor negativo tecleado a mano se guardaba tal cual
@@ -17232,8 +17234,8 @@ function saveManualCall() {
     return;
   }
   const duration = Number(durationInput?.value);
-  if (!Number.isFinite(duration) || duration <= 0) {
-    toast('La duración debe ser un número mayor a 0');
+  if (!Number.isFinite(duration) || duration <= 0 || duration > MAX_CALL_DURATION_MIN) {
+    toast(`La duración debe ser un número entre 1 y ${MAX_CALL_DURATION_MIN} minutos`);
     return;
   }
   const callStart = callStartLabelFromHHMM(startInput?.value);
