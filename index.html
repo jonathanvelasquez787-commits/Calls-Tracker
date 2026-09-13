@@ -7057,6 +7057,29 @@
       .fin-checkbox-label { flex-basis: 100%; }
     }
 
+    /* Pedido del usuario (con capturas): la fila de total de Finanzas (financeTotalsRowHtml, reutiliza .wk-total-row) se veía "uno encima de otro" en mobile, heredando el layout apilado que .wk-total-row usa en Resumen semanal (pensado para 5 métricas, no 3). Se revierte a fila en línea SOLO aquí. */
+    @media (max-width: 760px) {
+      #pageFinance .wk-total-row {
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      #pageFinance .wk-total-metrics {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 16px;
+      }
+      #pageFinance .wk-total-metric-label {
+        display: inline;
+        font-size: 10.5px;
+      }
+      #pageFinance .wk-total-metric strong {
+        display: inline;
+        margin-left: 4px;
+        font-size: 12px;
+      }
+    }
+
     /* ========================================================== — Pedido del usuario: los 5 campos "Mensaje" dentro de "Avisos" (Antes de mi turno / Antes de Break-Lunch / Después de Break-Lunch / Descanso ganado */
     .msg-preview-row {
       display: flex;
