@@ -8154,7 +8154,7 @@
 <span class="cal-legend-chip"><span class="cal-legend-dot" style="background:var(--good);"></span><span id="calLegendGood"></span></span>
 <span class="cal-legend-chip"><span class="cal-legend-dot" style="background:var(--warn);"></span><span id="calLegendNear"></span></span>
 <span class="cal-legend-chip"><span class="cal-legend-dot" style="background:var(--bad);"></span><span id="calLegendBad"></span></span>
-<span class="cal-legend-chip"><span class="cal-legend-dot" style="background:var(--good); opacity:.6;"></span>+N min = bono Higher Rate ganado</span>
+<span class="cal-legend-chip" title="+N = minutos equivalentes al bono de Higher Rate ganado ese día"><span class="cal-legend-dot" style="background:var(--good); opacity:.6;"></span>+N · Bono Higher Rate</span>
 </div>
 <div class="cal-weekday-row">
 <div class="cal-weekday-label">Lun</div><div class="cal-weekday-label">Mar</div><div class="cal-weekday-label">Mié</div>
@@ -12248,10 +12248,29 @@ function renderCalendarMonth() {
   const legendGoodEl = document.getElementById('calLegendGood');
   const legendNearEl = document.getElementById('calLegendNear');
   const legendBadEl = document.getElementById('calLegendBad');
-  if (legendTopEl) legendTopEl.textContent = `Más de ${formatMinutes(goalMin)} min · superaste tu meta`;
-  if (legendGoodEl) legendGoodEl.textContent = `${formatMinutes(goalMin)} min · meta cumplida`;
-  if (legendNearEl) legendNearEl.textContent = `${formatMinutes(nearFloor)}–${formatMinutes(Math.max(nearFloor, goalMin - 1))} min · cerca de tu meta`;
-  if (legendBadEl) legendBadEl.textContent = `Menos de ${formatMinutes(nearFloor)} min · lejos de tu meta`;
+  const nearCeil = Math.max(nearFloor, goalMin - 1);
+  // Pedido del usuario: los 4 textos se veían "muy largos, no se entienden"
+  // (frases completas tipo "Más de X min · superaste tu meta" dentro de un
+  // chip chico, sobre todo en mobile). Se acortan a "Xm · Cumplida" y el
+  // texto completo se mueve al `title` (tooltip al pasar el mouse/tap
+  // largo) del chip contenedor — no se pierde información, solo deja de
+  // estar siempre visible.
+  if (legendTopEl) {
+    legendTopEl.textContent = `>${formatMinutes(goalMin)}m · Superó meta`;
+    legendTopEl.closest('.cal-legend-chip').title = `Más de ${formatMinutes(goalMin)} min productivos — superaste tu meta`;
+  }
+  if (legendGoodEl) {
+    legendGoodEl.textContent = `${formatMinutes(goalMin)}m · Cumplida`;
+    legendGoodEl.closest('.cal-legend-chip').title = `${formatMinutes(goalMin)} min productivos — meta cumplida`;
+  }
+  if (legendNearEl) {
+    legendNearEl.textContent = `${formatMinutes(nearFloor)}–${formatMinutes(nearCeil)}m · Cerca`;
+    legendNearEl.closest('.cal-legend-chip').title = `Entre ${formatMinutes(nearFloor)} y ${formatMinutes(nearCeil)} min productivos — cerca de tu meta`;
+  }
+  if (legendBadEl) {
+    legendBadEl.textContent = `<${formatMinutes(nearFloor)}m · Lejos`;
+    legendBadEl.closest('.cal-legend-chip').title = `Menos de ${formatMinutes(nearFloor)} min productivos — lejos de tu meta`;
+  }
 
   if (label) {
     const raw = new Intl.DateTimeFormat('es-MX', { month: 'long', year: 'numeric' }).format(monthDate);
