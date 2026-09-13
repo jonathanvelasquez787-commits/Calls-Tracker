@@ -7142,7 +7142,7 @@
         flex: 1 1 auto;
         min-width: 0;
         flex-wrap: nowrap;
-        gap: 14px;
+        gap: 7px;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
@@ -7154,12 +7154,19 @@
       }
       #pageFinance .wk-total-metric-label {
         display: inline;
-        font-size: 10.5px;
+        font-size: 9px;
       }
       #pageFinance .wk-total-metric strong {
         display: inline;
-        margin-left: 4px;
-        font-size: 12px;
+        margin-left: 3px;
+        font-size: 10.5px;
+      }
+      /* El equivalente en moneda secundaria ("≈ L 6591.78") es lo que más
+         espacio ocupa de las 3 métricas — en esta fila (a diferencia de
+         .fin-row, con más ancho por fila) se oculta en mobile para que el
+         monto principal quepa en una sola línea sin recortarse. */
+      #pageFinance .wk-total-row .fin-row-converted-inline {
+        display: none;
       }
     }
 
@@ -13793,9 +13800,9 @@ function financeTotalsRowHtml(label, targetTotal, assignedTotal, assignedLabel) 
     <div class="wk-total-row" style="margin-bottom: 4px;">
       <div class="wk-total-label">${escapeHtml(label)}</div>
       <div class="wk-total-metrics">
-        <div class="wk-total-metric"><span class="wk-total-metric-label">Objetivo</span><strong>${money(targetTotal)}</strong>${financeConvertedInline(targetTotal)}</div>
+        <div class="wk-total-metric"><span class="wk-total-metric-label">Obj.</span><strong>${money(targetTotal)}</strong>${financeConvertedInline(targetTotal)}</div>
         <div class="wk-total-metric"><span class="wk-total-metric-label">${escapeHtml(assignedLabel)}</span><strong>${money(assignedTotal)}</strong>${financeConvertedInline(assignedTotal)}</div>
-        <div class="wk-total-metric"><span class="wk-total-metric-label">Faltante</span><strong>${money(remaining)}</strong>${financeConvertedInline(remaining)}</div>
+        <div class="wk-total-metric"><span class="wk-total-metric-label">Falta</span><strong>${money(remaining)}</strong>${financeConvertedInline(remaining)}</div>
       </div>
     </div>
   `;
@@ -13831,7 +13838,7 @@ function renderFinanceSection() {
   const gastosTotalRowEl = document.getElementById('financeGastosTotalRow');
   if (gastosTotalRowEl) {
     const gastoTargetTotal = gastoRows.reduce((sum, r) => sum + (Number(r.targetAmount) || 0), 0);
-    gastosTotalRowEl.innerHTML = gastoRows.length ? financeTotalsRowHtml('Total gastos', gastoTargetTotal, gastoAssignedTotal, 'Asignado') : '';
+    gastosTotalRowEl.innerHTML = gastoRows.length ? financeTotalsRowHtml('Total gastos', gastoTargetTotal, gastoAssignedTotal, 'Asig.') : '';
   }
   const gastosList = document.getElementById('financeGastosList');
   if (gastosList) {
@@ -13846,7 +13853,7 @@ function renderFinanceSection() {
     const metaTargetTotal = metaRows.reduce((sum, r) => sum + (Number(r.targetAmount) || 0), 0);
     const metaAssignedTotal = metaRows.reduce((sum, r) => sum + (Number(r.assignedAmount) || 0), 0);
     metasList.innerHTML = metaRows.length
-      ? metaRows.map((r, i) => financeRowHtml(r, { index: i, count: metaRows.length, isMeta: true })).join('') + financeTotalsRowHtml('Total metas', metaTargetTotal, metaAssignedTotal, 'Ahorrado')
+      ? metaRows.map((r, i) => financeRowHtml(r, { index: i, count: metaRows.length, isMeta: true })).join('') + financeTotalsRowHtml('Total metas', metaTargetTotal, metaAssignedTotal, 'Ahorr.')
       : '<div class="note" style="margin:0;">Sin metas configuradas. Usa "+ Agregar meta" para empezar.</div>';
   }
 
