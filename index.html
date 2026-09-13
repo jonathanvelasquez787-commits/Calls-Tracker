@@ -2438,76 +2438,24 @@
 
 
 
-    .controls-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 8px;
-    }
-
-    /* Pedido del usuario: reskin de "Llamadas" (Iniciar llamada/ Pegar Llamadas/Agregar llamada) al estilo "action tile" de su mock de referencia (ícono en círculo de acento + título + subtítulo, en fila, en vez de apilados y centrados) */
-    .controls-grid .action-btn {
-      flex-direction: row;
-      align-items: center;
-      justify-content: flex-start;
-      text-align: left;
-      gap: 12px;
-      padding: 14px;
-      min-height: unset;
-    }
-    .controls-grid .action-btn .action-icon-wrap {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: rgba(var(--accent-rgb), .14);
-      border: 1px solid rgba(var(--accent-rgb), .3);
-    }
-    .controls-grid .action-btn .action-icon .ic-svg {
-      width: 19px;
-      height: 19px;
-    }
-    .controls-grid .action-btn .action-label {
-      font-size: 14.5px;
-      font-weight: 700;
-      letter-spacing: -.01em;
-      line-height: 1.25;
-    }
-    .controls-grid .action-btn .action-sub {
-      font-size: 12px;
-      font-weight: 600;
-      margin-top: 2px;
-      line-height: 1.3;
-    }
-
-    /* Pedido del usuario: tarjeta de estado de "Llamadas" (encabezado "LISTO PARA LLAMAR" / "LLAMADA EN CURSO" + punto pulsante + timer + ícono grande + waveform en vivo), tomada de la Vista 1/Vista 2 de su mock de referencia. */
-    .calls-status-card {
-      background: var(--panel-navy);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      overflow: hidden;
-      margin-bottom: 16px;
-    }
-    .calls-status-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--line);
-    }
-    .calls-status-head-left {
+    /* Rediseño compacto de "Llamadas" (mockup aprobado): status + acciones en una sola fila angosta, reemplaza la tarjeta alta + los 3 botones grandes de antes. */
+    .calls-compact-row {
       display: flex;
       align-items: center;
       gap: 10px;
+      flex-wrap: wrap;
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      margin-bottom: 16px;
     }
-    .calls-status-dot {
-      width: 9px;
-      height: 9px;
+    .calls-compact-dot {
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: var(--muted);
       flex: 0 0 auto;
     }
-    .calls-status-dot.live {
+    .calls-compact-dot.live {
       background: var(--good);
       box-shadow: 0 0 0 4px rgba(var(--good-rgb), .18);
       animation: calls-status-pulse 1.6s infinite;
@@ -2516,136 +2464,211 @@
       0%, 100% { box-shadow: 0 0 0 4px rgba(var(--good-rgb), .18); }
       50% { box-shadow: 0 0 0 7px rgba(var(--good-rgb), .06); }
     }
-    .calls-status-title {
-      font-size: 12.5px;
+    .calls-compact-status-label {
+      font-size: 11px;
       font-weight: 800;
-      letter-spacing: .05em;
+      letter-spacing: .04em;
       text-transform: uppercase;
-      color: var(--text);
+      color: var(--muted);
+      flex: 0 0 auto;
+      white-space: nowrap;
     }
-    .calls-status-timer {
-      font-size: 15px;
-      font-weight: 800;
-      color: var(--good);
-      font-variant-numeric: tabular-nums;
+    .calls-compact-status-label.live { color: var(--good); }
+    .calls-compact-divider {
+      width: 1px;
+      height: 20px;
+      background: var(--line);
+      flex: 0 0 auto;
     }
-    .calls-status-body {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      flex-wrap: wrap;
-      padding: 18px 16px;
-    }
-    .calls-status-icon {
-      width: 52px;
-      height: 52px;
+    .calls-compact-icon {
+      width: 28px;
+      height: 28px;
       border-radius: 50%;
-      display: flex;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
       background: rgba(var(--purple-rgb), .14);
-      border: 1px solid rgba(var(--purple-rgb), .3);
       color: var(--purple);
       flex: 0 0 auto;
     }
-    .calls-status-icon .ic-svg {
-      width: 21px;
-      height: 21px;
+    .calls-compact-icon .ic-svg {
+      width: 13px;
+      height: 13px;
       stroke: var(--purple);
       color: var(--purple);
     }
-    .calls-status-icon.live {
-      background: rgba(var(--good-rgb), .14);
-      border-color: rgba(var(--good-rgb), .35);
+    .calls-compact-icon.live {
+      background: rgba(var(--good-rgb), .16);
       animation: calls-status-pulse 1.6s infinite;
     }
-    .calls-status-icon.live .ic-svg {
+    .calls-compact-icon.live .ic-svg {
       stroke: var(--good);
       color: var(--good);
     }
-    .calls-status-text {
-      flex: 1 1 180px;
-      min-width: 180px;
-    }
-    .calls-status-text-title {
-      font-size: 15.5px;
+    .calls-compact-title {
+      font-size: 13px;
       font-weight: 800;
+      flex: 1 1 140px;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
-    .calls-status-live-tag {
+    .calls-compact-live-tag {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       background: rgba(var(--good-rgb), .14);
       color: var(--good);
       border: 1px solid rgba(var(--good-rgb), .3);
-      padding: 3px 10px;
+      padding: 3px 9px;
       border-radius: 999px;
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 800;
-      margin-top: 8px;
+      flex: 0 0 auto;
+      white-space: nowrap;
     }
-    .calls-status-live-tag .dot {
+    .calls-compact-live-tag .dot {
       width: 6px;
       height: 6px;
       border-radius: 50%;
       background: var(--good);
     }
-    /* Pedido del usuario (mockup visual aprobado, 2 vistas): la barra de sonido sale de debajo de "En vivo" (antes vivía dentro de `.calls-status-text`, apilada bajo el tag) y pasa a ser hermana de `.calls-… */
-    .calls-status-waveform {
+    .calls-compact-waveform {
       display: flex;
       align-items: flex-end;
-      gap: 3px;
-      height: 24px;
+      gap: 2px;
+      height: 16px;
       flex: 0 0 auto;
     }
-    .calls-status-waveform span {
-      width: 3px;
+    .calls-compact-waveform span {
+      width: 2px;
       border-radius: 2px;
       background: var(--good);
       opacity: .85;
       animation: calls-status-wave 1.1s ease-in-out infinite;
     }
-    .calls-status-waveform span:nth-child(1) { height: 40%; animation-delay: 0s; }
-    .calls-status-waveform span:nth-child(2) { height: 70%; animation-delay: .1s; }
-    .calls-status-waveform span:nth-child(3) { height: 100%; animation-delay: .2s; }
-    .calls-status-waveform span:nth-child(4) { height: 55%; animation-delay: .3s; }
-    .calls-status-waveform span:nth-child(5) { height: 85%; animation-delay: .4s; }
-    .calls-status-waveform span:nth-child(6) { height: 35%; animation-delay: .5s; }
-    .calls-status-waveform span:nth-child(7) { height: 65%; animation-delay: .6s; }
+    .calls-compact-waveform span:nth-child(1) { height: 40%; animation-delay: 0s; }
+    .calls-compact-waveform span:nth-child(2) { height: 70%; animation-delay: .1s; }
+    .calls-compact-waveform span:nth-child(3) { height: 100%; animation-delay: .2s; }
+    .calls-compact-waveform span:nth-child(4) { height: 55%; animation-delay: .3s; }
+    .calls-compact-waveform span:nth-child(5) { height: 85%; animation-delay: .4s; }
+    .calls-compact-waveform span:nth-child(6) { height: 35%; animation-delay: .5s; }
+    .calls-compact-waveform span:nth-child(7) { height: 65%; animation-delay: .6s; }
     @keyframes calls-status-wave {
       0%, 100% { transform: scaleY(.5); }
       50% { transform: scaleY(1); }
     }
-    .calls-status-actions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      flex: 0 0 auto;
-    }
-    .calls-status-btn-save,
-    .calls-status-btn-end {
-      padding: 9px 16px;
-      border-radius: 10px;
+    .calls-compact-timer {
       font-size: 12.5px;
       font-weight: 800;
-      border: 1px solid transparent;
-      cursor: pointer;
+      color: var(--good);
+      font-variant-numeric: tabular-nums;
+      flex: 0 0 auto;
       white-space: nowrap;
     }
-    .calls-status-btn-save {
-      background: rgba(var(--rpt-blue-rgb), .16);
-      color: var(--rpt-blue);
-      border-color: rgba(var(--rpt-blue-rgb), .35);
+    .calls-compact-actions {
+      display: flex;
+      gap: 6px;
+      flex: 0 0 auto;
+      margin-left: auto;
     }
-    .calls-status-btn-end {
+    /* Los 3 botones default (Llamar/Pegar/Agregar) reutilizan .action-btn (mismo ripple/anillo de siempre) pero a tamaño ícono-solo dentro de esta fila — mismo patrón ya usado por .hero-shift-actions. */
+    #callsCompactDefaultActions.calls-compact-actions .action-btn {
+      flex-direction: row;
+      min-height: unset;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border-radius: 10px;
+      gap: 0;
+    }
+    #callsCompactDefaultActions .action-btn .action-icon-wrap {
+      width: 15px;
+      height: 15px;
+    }
+    #callsCompactDefaultActions .action-btn .action-icon .ic-svg {
+      width: 14px;
+      height: 14px;
+    }
+    #callsCompactDefaultActions .action-btn .action-label,
+    #callsCompactDefaultActions .action-btn .action-sub {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .calls-compact-icon-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      cursor: pointer;
+      padding: 0;
+    }
+    .calls-compact-icon-btn .ic-svg { width: 15px; height: 15px; }
+    .calls-compact-icon-btn.good {
+      background: rgba(var(--good-rgb), .16);
+      border-color: rgba(var(--good-rgb), .35);
+      color: var(--good);
+    }
+    .calls-compact-icon-btn.good:hover { background: rgba(var(--good-rgb), .26); }
+    .calls-compact-icon-btn.bad {
       background: rgba(var(--bad-rgb), .16);
-      color: var(--bad);
       border-color: rgba(var(--bad-rgb), .35);
+      color: var(--bad);
     }
-    @media (max-width: 640px) {
-      .calls-status-body { padding: 16px 14px; }
-      .calls-status-actions { width: 100%; }
-      .calls-status-actions button { flex: 1 1 0; }
+    .calls-compact-icon-btn.bad:hover { background: rgba(var(--bad-rgb), .26); }
+    .calls-compact-btn-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    @media (max-width: 760px) {
+      .calls-compact-row { gap: 7px; padding: 9px 10px; }
+      .calls-compact-divider { display: none; }
+      .calls-compact-live-tag { display: none !important; }
+      .calls-compact-waveform { display: none !important; }
+      .calls-compact-actions { flex-basis: 100%; width: 100%; margin-left: 0; margin-top: 4px; }
+      #callsCompactDefaultActions.calls-compact-actions .action-btn,
+      .calls-compact-icon-btn {
+        flex: 1 1 0;
+        width: auto;
+        gap: 6px;
+        padding: 0 6px;
+      }
+      #callsCompactDefaultActions .action-btn .action-label,
+      #callsCompactDefaultActions .action-btn .action-sub,
+      .calls-compact-btn-label {
+        position: static;
+        width: auto;
+        height: auto;
+        padding: 0;
+        margin: 0;
+        overflow: visible;
+        clip: auto;
+        white-space: nowrap;
+        border: 0;
+        font-size: 10.5px;
+      }
+      #callsCompactDefaultActions .action-btn .action-sub { display: none; }
     }
 
     /* Pedido del usuario ( reordenamiento de secciones — con boceto visual acordado antes de tocar código): Llamadas (Iniciar llamada/ Pegar Llamadas/Agregar llamada) sube a su PROPIA sección arriba de todo (#callsSection, ver HTML) */
@@ -4185,31 +4208,6 @@
       }
       .hero-shift-actions .action-btn .action-sub {
         font-size: 8px;
-        line-height: 1.25;
-      }
-      /* Pedido del usuario: los 3 botones grandes de "Llamadas" (.controls-grid — Iniciar llamada/Pegar Llamadas/Agregar llamada) ya reparten el ancho parejo con grid-template-columns: */
-      .controls-grid {
-        gap: 6px;
-      }
-      /* Ver comentario junto a `.controls-grid .action-btn` (regla base, más arriba): el layout en FILA (ícono en círculo a la izquierda, texto a la derecha) se mantiene también en mobile */
-      .controls-grid .action-btn {
-        padding: 9px 8px;
-        gap: 8px;
-      }
-      .controls-grid .action-btn .action-icon-wrap {
-        width: 30px;
-        height: 30px;
-      }
-      .controls-grid .action-btn .action-icon .ic-svg {
-        width: 14px;
-        height: 14px;
-      }
-      .controls-grid .action-btn .action-label {
-        font-size: 11px;
-        line-height: 1.2;
-      }
-      .controls-grid .action-btn .action-sub {
-        font-size: 9px;
         line-height: 1.25;
       }
     }
@@ -7735,38 +7733,30 @@
 </div>
 </div>
 
-<!-- Ver comentario extenso junto a `.calls-status-card` en el CSS. -->
-<div class="calls-status-card" id="callsStatusCard">
-<div class="calls-status-head">
-<div class="calls-status-head-left">
-<span class="calls-status-dot" id="callsStatusDot"></span>
-<span class="calls-status-title" id="callsStatusTitle">Listo para llamar</span>
-</div>
-<span class="calls-status-timer" id="callsStatusTimer" style="display:none;">00:00:00</span>
-</div>
-<div class="calls-status-body">
-<span class="calls-status-icon" id="callsStatusIcon" aria-hidden="true"></span>
-<div class="calls-status-text">
-<div class="calls-status-text-title" id="callsStatusTextTitle">Comienza una nueva llamada</div>
-<span class="calls-status-live-tag" id="callsStatusLiveTag" style="display:none;"><span class="dot"></span>En vivo</span>
-</div>
-<div class="calls-status-waveform" id="callsStatusWaveform" style="display:none;"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
-<div class="calls-status-actions" id="callsStatusActions" style="display:none;">
-<button class="calls-status-btn-save" id="callsStatusSaveBtn" type="button">Guardar</button>
-<button class="calls-status-btn-end" id="callsStatusEndBtn" type="button">Descartar</button>
-</div>
-</div>
-</div>
-
-<div class="controls-grid">
-<button class="action-btn" id="callControlBtn" type="button" data-accent="pink">
+<!-- Rediseño compacto de "Llamadas" (mockup aprobado): status + acciones en una sola fila, sin la tarjeta alta ni los 3 botones grandes de antes. Conserva la clase .calls-status-card para heredar el fondo de modo claro ya definido para ella. -->
+<div class="calls-compact-row calls-status-card" id="callsStatusCard">
+<span class="calls-compact-dot" id="callsStatusDot"></span>
+<span class="calls-compact-status-label" id="callsStatusTitle">Listo para llamar</span>
+<span class="calls-compact-divider" aria-hidden="true"></span>
+<span class="calls-compact-icon" id="callsStatusIcon" aria-hidden="true"></span>
+<span class="calls-compact-title" id="callsStatusTextTitle">Comienza una nueva llamada</span>
+<span class="calls-compact-live-tag" id="callsStatusLiveTag" style="display:none;"><span class="dot"></span>En vivo</span>
+<span class="calls-compact-waveform" id="callsStatusWaveform" style="display:none;"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span>
+<span class="calls-compact-timer" id="callsStatusTimer" style="display:none;">00:00:00</span>
+<div class="calls-compact-actions" id="callsCompactDefaultActions">
+<button class="action-btn" id="callControlBtn" type="button" data-accent="pink" title="Iniciar llamada">
 <span class="action-ripple"></span>
 <span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.05 5A5 5 0 0 1 19 8.95M15.05 1A9 9 0 0 1 23 8.94m-1 7.98v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.68 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.32 1.85.55 2.81.68A2 2 0 0 1 22 16.92Z"/></svg></span></span>
 <span class="action-label" id="callControlLabel">Iniciar llamada</span>
 <span class="action-sub" id="callControlTimer">00:00:00</span>
 </button>
-<button class="action-btn" id="pasteCallsBtn" type="button" data-accent="cyan"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg></span></span><span class="action-label">Pegar Llamadas</span><span class="action-sub">Importar data</span></button>
-<button class="action-btn" id="addCallManualBtn" type="button" data-accent="good"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></span><span class="action-label">Agregar llamada</span><span class="action-sub">Manual</span></button>
+<button class="action-btn" id="pasteCallsBtn" type="button" data-accent="cyan" title="Pegar Llamadas"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg></span></span><span class="action-label">Pegar Llamadas</span><span class="action-sub">Importar data</span></button>
+<button class="action-btn" id="addCallManualBtn" type="button" data-accent="good" title="Agregar llamada manual"><span class="action-ripple"></span><span class="action-icon-wrap"><span class="action-ring"></span><span class="action-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span></span><span class="action-label">Agregar llamada</span><span class="action-sub">Manual</span></button>
+</div>
+<div class="calls-compact-actions" id="callsStatusActions" style="display:none;">
+<button class="calls-compact-icon-btn good" id="callsStatusSaveBtn" type="button" title="Guardar llamada"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><polyline points="5 12 10 17 19 6"/></svg><span class="calls-compact-btn-label">Guardar</span></button>
+<button class="calls-compact-icon-btn bad" id="callsStatusEndBtn" type="button" title="Descartar llamada"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span class="calls-compact-btn-label">Descartar</span></button>
+</div>
 </div>
 </section>
 
@@ -14702,6 +14692,7 @@ function saveFinanceRowModal() {
       const liveTag = document.getElementById('callsStatusLiveTag');
       const waveform = document.getElementById('callsStatusWaveform');
       const actions = document.getElementById('callsStatusActions');
+      const defaultActions = document.getElementById('callsCompactDefaultActions');
       if (!dot || !title || !icon || !textTitle) return;
 
       const isLive = !!state.activeCall;
@@ -14717,6 +14708,7 @@ function saveFinanceRowModal() {
       if (liveTag) liveTag.style.display = isLive ? '' : 'none';
       if (waveform) waveform.style.display = isLive ? '' : 'none';
       if (actions) actions.style.display = isLive ? '' : 'none';
+      if (defaultActions) defaultActions.style.display = isLive ? 'none' : '';
     }
 
     // A diferencia de resetDay (borra SOLO el día activo), esto borra TODO lo que la app guarda en este navegador: las 3 llaves de localStorage completas (STORAGE_KEY/CALLS_KEY/SETTINGS_KEY), sin dejar nada
