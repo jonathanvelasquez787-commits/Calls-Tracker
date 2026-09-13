@@ -3788,6 +3788,20 @@
       padding: 5px 8px;
       font-size: 10.5px;
     }
+    /* Pedido del usuario: en mobile, máximo 3 píldoras por fila (antes flex-wrap dejaba 2 por fila según el ancho del texto) — grid fuerza el conteo sin importar el largo de cada píldora. */
+    @media (max-width: 760px) {
+      #earningsTagsRow.table-tags {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+      }
+      #earningsTagsRow.table-tags .tag {
+        min-width: 0;
+        width: 100%;
+        justify-content: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
 
     /* Pedido del usuario: filtro Todo/Llamadas/Acciones sobre la tabla fusionada (ver comentario junto a #tableFilterRow en el HTML) */
     .table-filter-row {
@@ -7785,6 +7799,7 @@
 </div>
 </div>
 <div class="table-tags" id="earningsTagsRow"></div>
+<div id="earningsBonusRow"></div>
 <div class="gh-goal-card">
 <div class="gh-goal-top"><span>Meta diaria</span><b id="goalAmountBadge">Meta $0.00</b></div>
 <div class="gh-goal-sub-row">
@@ -7801,7 +7816,6 @@
 </div>
 <div id="financePreviewRows"></div>
 </div>
-<div id="earningsBonusRow"></div>
 </div>
 </div>
 <div id="earningsCycleView" style="display:none;">
@@ -16693,16 +16707,16 @@ function renderHeader() {
   // Antes esto era un solo <div class="big-meta"> con texto plano ("X llamada(s) · Y completados · ACW Z"). Pedido del usuario: mostrar esta info como los mismos tags/pills que ya usa "Tabla de llamadas" (misma clase .tag, mismo tamaño
   const adherenceForTag = dayAdherence(dayKey);
   const earningsTagsHtml = [
-    `<span class="tag ${hasShift ? 'good' : ''}">Conectado: ${hasShift ? formatDuration(connected * 60000) : '—'}</span>`,
-    `<span class="tag good">Tiempo llamadas: ${formatCallTimeLabel(stats.total)}</span>`,
-    `<span class="tag">Total: ${dayCalls.length}</span>`,
-    `<span class="tag">Billable: ${stats.billable}</span>`,
-    `<span class="tag">Dropped: ${stats.dropped}</span>`,
-    `<span class="tag good">ACW: ${formatDuration(stats.gapTotal * 60000)}</span>`,
-    stats.breakGapTotal > 0 ? `<span class="tag warn">Break: ${formatDuration(stats.breakGapTotal * 60000)}</span>` : '',
-    stats.lunchGapTotal > 0 ? `<span class="tag cyan">Lunch: ${formatDuration(stats.lunchGapTotal * 60000)}</span>` : '',
-    stats.otherGapTotal > 0 ? `<span class="tag">Otro: ${formatDuration(stats.otherGapTotal * 60000)}</span>` : '',
-    adherenceForTag ? `<span class="tag ${adherenceForTag.scorePct >= 90 ? 'good' : adherenceForTag.scorePct >= 70 ? 'warn' : 'bad'}">Adherencia: ${adherenceForTag.scorePct}%</span>` : '',
+    `<span class="tag ${hasShift ? 'good' : ''}" title="Tiempo transcurrido desde que iniciaste tu turno hoy">Conectado: ${hasShift ? formatDuration(connected * 60000) : '—'}</span>`,
+    `<span class="tag good" title="Tiempo total que llevas en llamada hoy">Llamadas: ${formatCallTimeLabel(stats.total)}</span>`,
+    `<span class="tag" title="Cantidad de llamadas registradas hoy">Total: ${dayCalls.length}</span>`,
+    `<span class="tag" title="Llamadas marcadas como Billable hoy">Billable: ${stats.billable}</span>`,
+    `<span class="tag" title="Llamadas marcadas como Dropped hoy">Dropped: ${stats.dropped}</span>`,
+    `<span class="tag good" title="Tiempo de ACW/Available acumulado hoy (huecos entre llamadas sin clasificar como Break/Lunch/Otro)">ACW: ${formatDuration(stats.gapTotal * 60000)}</span>`,
+    stats.breakGapTotal > 0 ? `<span class="tag warn" title="Tiempo de Break tomado hoy">Break: ${formatDuration(stats.breakGapTotal * 60000)}</span>` : '',
+    stats.lunchGapTotal > 0 ? `<span class="tag cyan" title="Tiempo de Lunch tomado hoy">Lunch: ${formatDuration(stats.lunchGapTotal * 60000)}</span>` : '',
+    stats.otherGapTotal > 0 ? `<span class="tag" title="Tiempo clasificado como Otro (huecos largos sin Break/Lunch real)">Otro: ${formatDuration(stats.otherGapTotal * 60000)}</span>` : '',
+    adherenceForTag ? `<span class="tag ${adherenceForTag.scorePct >= 90 ? 'good' : adherenceForTag.scorePct >= 70 ? 'warn' : 'bad'}" title="Qué tan apegado estuviste hoy a tu horario planeado">Adherencia: ${adherenceForTag.scorePct}%</span>` : '',
   ].join('');
   document.getElementById('earningsTagsRow').innerHTML = earningsTagsHtml;
   // Pedido del usuario: el bono de Higher Rate (si aplica hoy) ya no vive SOLO como tag chico dentro de la fila de arriba (se quitó `higherRateBreakdownTagsHtml(...)` de ese array)
