@@ -7612,7 +7612,7 @@
 <div class="sidebar-brand-row">
 <span class="sidebar-brand-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="20" x2="4" y2="10"/><line x1="10" y1="20" x2="10" y2="4"/><line x1="16" y1="20" x2="16" y2="14"/><line x1="21" y1="20" x2="3" y2="20"/></svg></span>
 <div>
-<div class="sidebar-brand-name">TRKR</div>
+<div class="sidebar-brand-name">Menú</div>
 <div class="sidebar-brand-tagline">Enfócate y hazlo contar.</div>
 </div>
 </div>
@@ -18022,6 +18022,15 @@ function render() {
       document.body.classList.remove('sidebar-open');
       const btn = document.getElementById('menuToggleBtn');
       if (btn) btn.setAttribute('aria-expanded', 'false');
+      // Bug reportado por el usuario: en escritorio con el sidebar fijado, `body.sidebar-pinned .sidebar-nav` lo mantenía visible sin importar `sidebar-open` — la X parecía no hacer nada. Cerrar con la X desfija también.
+      const isDesktopWidth = window.matchMedia('(min-width: 901px)').matches;
+      if (isDesktopWidth && document.body.classList.contains('sidebar-pinned')) {
+        document.body.classList.remove('sidebar-pinned');
+        const pinBtn = document.getElementById('sidebarPinBtn');
+        if (pinBtn) pinBtn.setAttribute('aria-pressed', 'false');
+        settings.sidebarPinned = false;
+        saveSettingsOnly();
+      }
     }
 
     function toggleSidebar() {
