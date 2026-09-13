@@ -12376,6 +12376,15 @@ function renderCalendarMonth() {
     }
     cellsHtml.push(`<div class="cal-day-cell ${tier}"${titleAttr}>${bonusHtml}<div class="cal-day-top-row"><span class="cal-day-num">${day}</span>${starHtml}</div><span class="${minLabelClass}">${minLabel}</span>${amtLinesHtml}</div>`);
   }
+  // Si el offset de día de semana + los días recortados por "Historial desde"
+  // suman una o más filas COMPLETAS de celdas vacías al inicio, se quitan esas
+  // filas enteras (múltiplos de 7) — así el grid no deja una fila en blanco
+  // debajo de Lun-Dom antes del primer día real. El resto (menos de 7 vacías)
+  // se conserva para no desalinear las columnas de los días siguientes.
+  let leadingEmptyCount = 0;
+  while (leadingEmptyCount < cellsHtml.length && cellsHtml[leadingEmptyCount].includes('cal-empty')) leadingEmptyCount++;
+  const fullEmptyRowsToDrop = Math.floor(leadingEmptyCount / 7);
+  if (fullEmptyRowsToDrop > 0) cellsHtml.splice(0, fullEmptyRowsToDrop * 7);
   grid.innerHTML = cellsHtml.join('');
 }
 
