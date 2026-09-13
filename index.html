@@ -13429,8 +13429,9 @@ function renderFinanceSection() {
     return `<span class="fin-legend-chip"><svg class="ic-svg" viewBox="0 0 24 24" style="color:rgb(${cat.rgb});" aria-hidden="true">${ICON[cat.icon]}</svg> ${escapeHtml(cat.label)}</span>`;
   }).join('');
 
-  // Cascada "Restante después" — solo Gastos, resta assignedAmount (no targetAmount) de cada fila en orden de prioridad.
-  let runningRemaining = available;
+  // Cascada "Restante después" — solo Gastos, resta assignedAmount (no targetAmount) de cada fila en orden de prioridad. Arranca en "available + lo ya asignado a Gastos" (no en "available" solo): "available" ya tiene restado TODO lo asignado (Gastos y Metas), así que hay que devolverle la parte de Gastos antes de volver a restarla fila por fila, o se resta dos veces.
+  const gastoAssignedTotal = gastoRows.reduce((sum, r) => sum + (Number(r.assignedAmount) || 0), 0);
+  let runningRemaining = available + gastoAssignedTotal;
   const restanteMap = {};
   gastoRows.forEach(r => {
     runningRemaining -= Number(r.assignedAmount) || 0;
@@ -13640,7 +13641,9 @@ function saveFinanceRowModal() {
   }
 
   const cat = settings.financeCategories[catId];
-  const maxPriority = cat.rows.reduce((max, r) => Math.max(max, Number(r.priority) || 0), 0);
+  // La cola de prioridad es GLOBAL (todas las categorías de Gastos combinadas, ver financeGastoRowsSorted) — el máximo debe salir de ahí, no de `cat.rows` (solo esta categoría), o dos filas de categorías distintas pueden terminar con el mismo número de prioridad.
+  const priorityQueue = isMeta ? financeMetaRowsSorted() : financeGastoRowsSorted();
+  const maxPriority = priorityQueue.reduce((max, r) => Math.max(max, Number(r.priority) || 0), 0);
   const row = {
     id: makeLocalId(),
     name,
