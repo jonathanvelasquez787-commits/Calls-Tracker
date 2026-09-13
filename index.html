@@ -5769,18 +5769,21 @@
     .cal-day-min { font-size: clamp(9px, 3.2vw, 14px); font-weight: 900; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
     /* Pedido del usuario (punto 5 del plan aprobado en ): "Libre" (día efectivamente libre, ver cal-tier-off) y "—" (sin datos, ver cal-tier-nodata) son texto más largo que un número de minutos */
     .cal-day-min.cal-day-min-label { font-size: clamp(7px, 2.4vw, 11px); font-weight: 800; letter-spacing: 0; }
+    /* Pedido del usuario: cada día del mes también muestra cuánto ganó ese día — en $ (mismo tono/tier que los minutos) y, debajo, el equivalente redondeado en la moneda secundaria (mockup de 3 vueltas aprobado — sin decimales en ninguna de las 2, es lo único que entra sin agrandar la celda ni scroll horizontal). */
+    .cal-day-amt { font-size: clamp(6.5px, 2vw, 10px); font-weight: 800; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1.25; }
+    .cal-day-amt-alt { font-size: clamp(5.5px, 1.6vw, 8.5px); font-weight: 700; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1.25; }
     .cal-day-bonus {
       position: absolute; top: clamp(2px, .6vw, 6px); right: clamp(2px, .6vw, 6px); font-size: clamp(6px, 1.8vw, 9px); font-weight: 900;
       background: rgba(var(--good-rgb), .22); color: var(--good); border-radius: 999px; padding: clamp(1px, .4vw, 2px) clamp(3px, 1vw, 6px);
     }
     .cal-tier-8hrpp { background: rgba(var(--good-rgb), .28); border-color: rgba(var(--good-rgb), .6); }
-    .cal-tier-8hrpp .cal-day-min { color: var(--good); font-weight: 900; }
+    .cal-tier-8hrpp .cal-day-min, .cal-tier-8hrpp .cal-day-amt { color: var(--good); font-weight: 900; }
     .cal-tier-8hrp { background: rgba(var(--good-rgb), .14); border-color: rgba(var(--good-rgb), .38); }
-    .cal-tier-8hrp .cal-day-min { color: var(--good); }
+    .cal-tier-8hrp .cal-day-min, .cal-tier-8hrp .cal-day-amt { color: var(--good); }
     .cal-tier-6hrp { background: rgba(var(--warn-rgb), .14); border-color: rgba(var(--warn-rgb), .38); }
-    .cal-tier-6hrp .cal-day-min { color: var(--warn); }
+    .cal-tier-6hrp .cal-day-min, .cal-tier-6hrp .cal-day-amt { color: var(--warn); }
     .cal-tier-6hrm { background: rgba(var(--bad-rgb), .14); border-color: rgba(var(--bad-rgb), .38); }
-    .cal-tier-6hrm .cal-day-min { color: var(--bad); }
+    .cal-tier-6hrm .cal-day-min, .cal-tier-6hrm .cal-day-amt { color: var(--bad); }
     /* Pedido del usuario: "Sin datos" (ningún turno/llamada registrado ese día) ya no se pinta rojo como si hubiera rendido mal */
     .cal-tier-nodata { background: rgba(255,255,255,.03); border-color: var(--line-2); }
     .cal-tier-nodata .cal-day-min { color: var(--muted); }
@@ -5794,6 +5797,8 @@
       .cal-day-num { font-size: 8px; }
       .cal-day-min { font-size: 9px; }
       .cal-day-min.cal-day-min-label { font-size: 6.5px; }
+      .cal-day-amt { font-size: 6px; }
+      .cal-day-amt-alt { font-size: 5px; }
       .cal-weekday-label { font-size: 7px; }
       .cal-day-bonus { font-size: 5.5px; padding: 1px 3px; top: 1px; right: 1px; }
       .cal-legend-chip { font-size: 8px; padding: 3px 5px; gap: 3px; }
@@ -12221,6 +12226,13 @@ function renderCalendarMonth() {
   const month = monthDate.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const goalMin = Number(settings.productiveGoalMin) || 0;
+  // Pedido del usuario: cada día del mes también muestra cuánto ganó ese
+  // día en $ y en la moneda secundaria — mismo par settings.exchangeRate/
+  // currencyLabel que ya usa convertedAmountText(), leído una sola vez
+  // fuera del loop de días (es constante para todo el mes).
+  const calExchangeRate = Number(settings.exchangeRate);
+  const calCurrencyLabel = String(settings.currencyLabel || '').trim();
+  const calHasCurrency = Number.isFinite(calExchangeRate) && calExchangeRate > 0 && !!calCurrencyLabel;
 
   // Los umbrales de color son relativos a TU meta (ver calTierForDay), no
   // a "8 horas" fijas — el texto de la leyenda se arma con tus minutos
@@ -12286,7 +12298,20 @@ function renderCalendarMonth() {
     // "—" usan una variante de texto más chica para no romper el alto/ancho
     // uniforme de la celda que sí miden los números.
     const minLabelClass = status === 'normal' ? 'cal-day-min' : 'cal-day-min cal-day-min-label';
-    cellsHtml.push(`<div class="cal-day-cell ${tier}"${titleAttr}>${bonusHtml}<div class="cal-day-top-row"><span class="cal-day-num">${day}</span>${starHtml}</div><span class="${minLabelClass}">${minLabel}</span></div>`);
+    // Pedido del usuario: minutos + monto en $ + monto en la otra moneda,
+    // los 3 juntos en la celda — redondeados sin centavos en AMBAS monedas
+    // (única combinación que entra en el mismo tamaño de celda de siempre,
+    // sin scroll horizontal ni pasar a lista en mobile; mockup de 3 vueltas
+    // aprobado). Solo aplica a días 'normal' (Libre/Sin datos no tienen
+    // ganancia real que mostrar).
+    let amtLinesHtml = '';
+    if (status === 'normal') {
+      const dayEarningsForCell = importedCallStats(callsForDay(dayKey), dayKey).earnings;
+      const amtHtml = `<span class="cal-day-amt">$${Math.round(dayEarningsForCell)}</span>`;
+      const amtAltHtml = calHasCurrency ? `<span class="cal-day-amt-alt">${escapeHtml(calCurrencyLabel)}${Math.round(dayEarningsForCell * calExchangeRate)}</span>` : '';
+      amtLinesHtml = `${amtHtml}${amtAltHtml}`;
+    }
+    cellsHtml.push(`<div class="cal-day-cell ${tier}"${titleAttr}>${bonusHtml}<div class="cal-day-top-row"><span class="cal-day-num">${day}</span>${starHtml}</div><span class="${minLabelClass}">${minLabel}</span>${amtLinesHtml}</div>`);
   }
   grid.innerHTML = cellsHtml.join('');
 }
