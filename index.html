@@ -12146,6 +12146,7 @@ function renderCalendarMonth() {
   const grid = document.getElementById('calDayGrid');
   const label = document.getElementById('calMonthLabel');
   const nextBtn = document.getElementById('calMonthNextBtn');
+  const prevBtn = document.getElementById('calMonthPrevBtn');
   if (!grid) return;
 
   const today = todayRange();
@@ -12174,6 +12175,19 @@ function renderCalendarMonth() {
   }
   if (nextBtn) nextBtn.disabled = calMonthOffset >= 0;
 
+  // Bug reportado por el usuario: "‹ Anterior" no tenía ningún tope aquí
+  // (a diferencia de calYearPrevBtn, que sí se bloquea en el año de
+  // "Historial desde") — se podía seguir navegando a meses que ese límite
+  // se supone que oculta. Mismo criterio: se bloquea al llegar al mes que
+  // contiene esa fecha.
+  const historyStart = effectiveHistoryStartDate();
+  const historyStartRange = historyStart ? todayRange(historyStart) : null;
+  if (prevBtn) {
+    const startMonthKey = historyStart ? historyStart.getFullYear() * 12 + historyStart.getMonth() : null;
+    const currentMonthKey = year * 12 + month;
+    prevBtn.disabled = startMonthKey !== null && currentMonthKey <= startMonthKey;
+  }
+
   // Lunes=0 ... Domingo=6, para alinear con el weekday-row Lun-Dom.
   const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7;
   const cellsHtml = [];
@@ -12182,6 +12196,10 @@ function renderCalendarMonth() {
   // Pedido del usuario (punto 4 del plan aprobado en ): el mes se pinta COMPLETO, ya no se corta en el día de hoy
   for (let day = 1; day <= daysInMonth; day++) {
     const d = new Date(year, month, day);
+    if (historyStartRange && d < historyStartRange) {
+      cellsHtml.push('<div class="cal-day-cell cal-empty"></div>');
+      continue;
+    }
     const dayKey = todayCallDateKey(d);
     const status = calDayStatus(dayKey);
     const productiveMin = productiveMinutesForDay(dayKey);
@@ -12365,6 +12383,11 @@ function renderCalYear() {
     }
   }
   const startMonthForYear = (historyStart && historyStart.getFullYear() === year) ? historyStart.getMonth() : 0;
+  // Bug reportado por el usuario: "Total del año" sumaba TODOS los días del
+  // año sin importar "Historial desde" — el corte solo se aplicaba al pintar
+  // las tarjetas de mes (ver `startMonthForYear`), no al total ni al % de
+  // meta. Un día anterior a este límite se excluye aquí también.
+  const historyStartRange = historyStart ? todayRange(historyStart) : null;
 
   let yearTotal = 0;
   const monthTotals = [];
@@ -12378,6 +12401,10 @@ function renderCalYear() {
     for (let i = 0; i < firstWeekday; i++) cells.push({ empty: true });
     for (let day = 1; day <= daysInMonth; day++) {
       const d = new Date(year, m, day);
+      if (historyStartRange && d < historyStartRange) {
+        cells.push({ empty: true });
+        continue;
+      }
       const dayKey = todayCallDateKey(d);
       // Días futuros no tienen llamadas ni turno todavía — calDayTier ya
       // resuelve 'cal-tier-nodata' sola vía calDayStatus, sin necesidad de
@@ -18174,7 +18201,15 @@ function render() {
     document.getElementById('rptMonthlyPrevBtn').addEventListener('click', () => { reportsMonthlyOffset -= 1; renderReportsMonthlyChart(); });
     document.getElementById('rptMonthlyNextBtn').addEventListener('click', () => { if (reportsMonthlyOffset < 0) { reportsMonthlyOffset += 1; renderReportsMonthlyChart(); } });
     document.getElementById('rptMonthlyTodayBtn').addEventListener('click', () => { reportsMonthlyOffset = 0; renderReportsMonthlyChart(); });
-    document.getElementById('calMonthPrevBtn').addEventListener('click', () => { calMonthOffset -= 1; renderCalendarMonth(); });
+    document.getElementById('calMonthPrevBtn').addEventListener('click', () => {
+      const historyStart = effectiveHistoryStartDate();
+      const today = todayRange();
+      const targetMonthKey = (today.getFullYear() * 12 + today.getMonth()) + (calMonthOffset - 1);
+      const startMonthKey = historyStart ? historyStart.getFullYear() * 12 + historyStart.getMonth() : null;
+      if (startMonthKey !== null && targetMonthKey < startMonthKey) return;
+      calMonthOffset -= 1;
+      renderCalendarMonth();
+    });
     document.getElementById('calMonthNextBtn').addEventListener('click', () => { if (calMonthOffset < 0) { calMonthOffset += 1; renderCalendarMonth(); } });
     document.getElementById('calMonthTodayBtn').addEventListener('click', () => { calMonthOffset = 0; renderCalendarMonth(); });
     // v395 — Vista anual del Calendario de productividad (solo escritorio).
