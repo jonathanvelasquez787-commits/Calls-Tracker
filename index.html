@@ -673,20 +673,9 @@
       :root:not(.theme-dark) .sblk-dot {
         border-color: rgba(var(--accent-blue-2-rgb), .75);
       }
-      /* v472 — v471 solo corrigió el borde/fondo tenue de .sblk-card/.sblk-dot.
-         La capa de relleno líquido (.sblk-fill) es un elemento aparte que
-         siempre pinta rgb(var(--sblk-rgb, var(--rpt-purple-rgb))) — nadie
-         define --sblk-rgb en ningún lado, así que SIEMPRE cae al morado de
-         --rpt-purple-rgb, sin importar el tema. Se fija SOLO el color en
-         modo claro, sin tocar el criterio "un solo color para todos los
-         tipos" (ver comentario junto a .sblk-fill en el CSS base, más
-         abajo). v473 — Pedido del usuario (con captura): el azul se veía
-         muy intenso/plano al cubrir casi toda la tarjeta en bloques
-         "Hecho" — se cambia a --good (verde ya usado en el resto de la
-         app en modo claro), sin tocar nada más de este bloque.
-      */
+      /* El relleno líquido de .sblk-fill (rgb(var(--sblk-rgb, var(--rpt-purple-rgb)))) cae siempre al morado de --rpt-purple-rgb porque --sblk-rgb nunca se define — se fija solo el color en modo claro. Ver resumen.md "Bloques del día" si esto cambia de nuevo. */
       :root:not(.theme-dark) .sblk-fill {
-        background: rgb(var(--good-rgb));
+        background: rgb(107, 107, 107);
       }
     }
     html.theme-light .action-btn:not(.is-active) {
@@ -1096,9 +1085,9 @@
     html.theme-light .sblk-dot {
       border-color: rgba(var(--accent-blue-2-rgb), .75);
     }
-    /* v472/v473 — Ver comentario gemelo en la rama @media de arriba. */
+    /* Ver comentario gemelo en la rama @media de arriba. */
     html.theme-light .sblk-fill {
-      background: rgb(var(--good-rgb));
+      background: rgb(107, 107, 107);
     }
 
     * { box-sizing: border-box; }
