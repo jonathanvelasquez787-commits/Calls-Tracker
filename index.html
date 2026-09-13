@@ -8118,12 +8118,14 @@
 <div class="metric-card">
 <div class="rpt-mini-title">TOTAL DEL AÑO</div>
 <div class="cal-year-total-amt" id="calYearTotalAmt">$0.00</div>
+<div class="helper" id="calYearTotalConvertedText" style="margin-top:2px;"></div>
 </div>
 <div class="metric-card">
 <div class="goal-top">
 <span class="rpt-mini-title" style="margin:0;">META ANUAL <b id="calYearGoalAmt">$0.00</b></span>
 <button class="tbl-icon-btn" type="button" id="calYearGoalEditBtn" aria-label="Editar meta anual" title="Editar meta anual"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
 </div>
+<div class="helper" id="calYearGoalConvertedText" style="margin:2px 0 0;"></div>
 <div class="goal-bar"><div id="calYearGoalBar" style="width:0%;"></div></div>
 <div class="goal-foot" id="calYearGoalFoot">0% alcanzado · Faltan $0.00</div>
 </div>
@@ -12504,14 +12506,24 @@ function renderCalYear() {
   }
 
   if (totalAmtEl) totalAmtEl.textContent = money(yearTotal);
+  // Pedido del usuario: el Total del año y la Meta anual también muestran su
+  // equivalente en la moneda secundaria (mismo convertedAmountText() que ya
+  // usa el resto de la app, ej. "Ganancias del ciclo") — vacío si no hay
+  // tasa de cambio/moneda configurada.
+  const totalConvertedEl = document.getElementById('calYearTotalConvertedText');
+  if (totalConvertedEl) totalConvertedEl.textContent = convertedAmountText(yearTotal);
 
   const yearGoal = effectiveCalYearGoal(calYearOffset);
   const goalPct = yearGoal > 0 ? Math.min(100, (yearTotal / yearGoal) * 100) : 0;
   if (goalBarEl) goalBarEl.style.width = `${goalPct}%`;
-  if (goalFootEl) goalFootEl.textContent = `${Math.round(goalPct)}% alcanzado · Faltan ${money(Math.max(0, yearGoal - yearTotal))}`;
+  const remainingToGoal = Math.max(0, yearGoal - yearTotal);
+  const remainingConverted = convertedAmountText(remainingToGoal);
+  if (goalFootEl) goalFootEl.textContent = `${Math.round(goalPct)}% alcanzado · Faltan ${money(remainingToGoal)}${remainingConverted ? ` (${remainingConverted})` : ''}`;
   // Pedido del usuario (mockup de escritorio aprobado): el monto de la meta anual ahora también se ve en la misma línea del label (antes solo aparecía dentro del pie "X% alcanzado..."), mismo `yearGoal` d…
   const goalAmtEl = document.getElementById('calYearGoalAmt');
   if (goalAmtEl) goalAmtEl.textContent = money(yearGoal);
+  const goalConvertedEl = document.getElementById('calYearGoalConvertedText');
+  if (goalConvertedEl) goalConvertedEl.textContent = convertedAmountText(yearGoal);
 
   const monthNames = Array.from({ length: 12 }, (_, m) => {
     const raw = new Intl.DateTimeFormat('es-MX', { month: 'long' }).format(new Date(2000, m, 1));
