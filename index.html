@@ -3788,18 +3788,20 @@
       padding: 5px 8px;
       font-size: 10.5px;
     }
-    /* Pedido del usuario: en mobile, máximo 3 píldoras por fila (antes flex-wrap dejaba 2 por fila según el ancho del texto) — grid fuerza el conteo sin importar el largo de cada píldora. `justify-self: start` evita que la grid estire cada píldora a llenar su columna (default de CSS Grid) — cada una conserva su propio ancho, como con flex-wrap. */
+    /* Marcador de salto de línea forzado cada 3 píldoras (ver #earningsTagsRow.table-tags .tags-row-break más abajo, inyectado desde JS en renderHeader) — sin efecto fuera de ese contexto. */
+    .tags-row-break { display: none; }
+    /* Pedido del usuario (v465, corrección de v463/v464): en mobile, máximo 3 píldoras por fila PERO pegadas entre sí como en escritorio — se vuelve a flex-wrap (heredado de .table-tags) en vez de columnas de grid de ancho fijo, que dejaban huecos después de píldoras cortas y recortaban mal las largas (text-overflow no aplica sobre contenedores flex/grid). */
     @media (max-width: 760px) {
-      #earningsTagsRow.table-tags {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-      }
       #earningsTagsRow.table-tags .tag {
-        justify-self: start;
         min-width: 0;
         max-width: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+      #earningsTagsRow.table-tags .tags-row-break {
+        display: block;
+        flex-basis: 100%;
+        height: 0;
       }
     }
 
@@ -16705,7 +16707,7 @@ function renderHeader() {
   if (cycleGoalEditBtnEl) cycleGoalEditBtnEl.style.display = cycleViewOffset === 0 ? '' : 'none';
   // Antes esto era un solo <div class="big-meta"> con texto plano ("X llamada(s) · Y completados · ACW Z"). Pedido del usuario: mostrar esta info como los mismos tags/pills que ya usa "Tabla de llamadas" (misma clase .tag, mismo tamaño
   const adherenceForTag = dayAdherence(dayKey);
-  const earningsTagsHtml = [
+  const earningsTagsParts = [
     `<span class="tag ${hasShift ? 'good' : ''}" title="Tiempo transcurrido desde que iniciaste tu turno hoy">Conectado: ${hasShift ? formatDuration(connected * 60000) : '—'}</span>`,
     `<span class="tag good" title="Tiempo total que llevas en llamada hoy">Llamadas: ${formatCallTimeLabel(stats.total)}</span>`,
     `<span class="tag" title="Cantidad de llamadas registradas hoy">Total: ${dayCalls.length}</span>`,
@@ -16717,7 +16719,13 @@ function renderHeader() {
     stats.otherGapTotal > 0 ? `<span class="tag" title="Tiempo clasificado como Otro (huecos largos sin Break/Lunch real)">Otro: ${formatDuration(stats.otherGapTotal * 60000)}</span>` : '',
     higherRateBreakdownTagsHtml(stats.higherRateBreakdown, 'tag'),
     adherenceForTag ? `<span class="tag ${adherenceForTag.scorePct >= 90 ? 'good' : adherenceForTag.scorePct >= 70 ? 'warn' : 'bad'}" title="Qué tan apegado estuviste hoy a tu horario planeado">Adherencia: ${adherenceForTag.scorePct}%</span>` : '',
-  ].join('');
+  ].filter(Boolean);
+  // v465 — separador invisible cada 3 píldoras reales, para forzar el
+  // salto de línea en mobile sin estirar ninguna a una columna de ancho
+  // fijo (ver .tags-row-break en el CSS).
+  const earningsTagsHtml = earningsTagsParts
+    .map((html, i) => (i > 0 && i % 3 === 0 ? '<span class="tags-row-break" aria-hidden="true"></span>' + html : html))
+    .join('');
   document.getElementById('earningsTagsRow').innerHTML = earningsTagsHtml;
   const earnBar = document.getElementById('earningsBar');
   earnBar.style.width = `${goalPct}%`;
