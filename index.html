@@ -11297,6 +11297,18 @@ function sessionsToPresenceIntervals(sessions, normalizedDayKey) {
   }).filter(iv => iv.endMin > iv.startMin);
 }
 
+// Mismo criterio que sessionsToPresenceIntervals: una pausa real (Break/
+// Lunch o hueco clasificado a mano) que cruza medianoche pierde el día al
+// convertirse a minuto-del-día con getHours()/getMinutes() — sin este
+// recorte, start > end y la pausa deja de matchear cualquier minuto.
+function pauseIntervalsToMinuteRanges(pauses, normalizedDayKey) {
+  return pauses.map(p => {
+    const startMin = dateKey(p.start) === normalizedDayKey ? p.start.getHours() * 60 + p.start.getMinutes() : 0;
+    const endMin = dateKey(p.end) === normalizedDayKey ? p.end.getHours() * 60 + p.end.getMinutes() : 1440;
+    return { type: p.type, startMin, endMin };
+  }).filter(iv => iv.endMin > iv.startMin);
+}
+
 // BUG-004 — antes dependía de dayShiftBounds (solo veía el turno MÁS RECIENTE del día).
 function connectedMinutesForDay(dayKey = getActiveDayKey()) {
   return dayShiftSessions(dayKey).reduce((total, s) => {
@@ -11694,7 +11706,7 @@ function minuteAdherenceForDay(dayKey, sessions) {
   const plannedSlots = plannedRaw.map(s => ({ type: s.type.toLowerCase(), startMin: toMinutes(s.start), endMin: toMinutes(s.end) }));
   const minuteOfDay = (date) => date.getHours() * 60 + date.getMinutes();
 
-  const actualIntervals = actualPauseIntervalsForDay(normalized).map(p => ({ type: p.type, startMin: minuteOfDay(p.start), endMin: minuteOfDay(p.end) }));
+  const actualIntervals = pauseIntervalsToMinuteRanges(actualPauseIntervalsForDay(normalized), normalized);
   const presenceIntervals = sessionsToPresenceIntervals(sessions, normalized);
 
   const rangeStart = plannedSlots[0].startMin;
@@ -11717,7 +11729,7 @@ function isRightNowOutOfAdherence() {
 
   const plannedSlots = plannedRaw.map(s => ({ type: s.type.toLowerCase(), startMin: toMinutes(s.start), endMin: toMinutes(s.end) }));
   const minuteOfDay = (date) => date.getHours() * 60 + date.getMinutes();
-  const actualIntervals = actualPauseIntervalsForDay(dayKey).map(p => ({ type: p.type, startMin: minuteOfDay(p.start), endMin: minuteOfDay(p.end) }));
+  const actualIntervals = pauseIntervalsToMinuteRanges(actualPauseIntervalsForDay(dayKey), dayKey);
   // BUG-001 (QA ) — Mismo criterio que minuteAdherenceForDay: si el turno empezó AYER (cruzó medianoche) y sigue abierto, se trata como presente desde el minuto 0 de hoy — usar la hora cruda de state.shiftStartedAt (ej.
   const realStartMin = sameCallDay(state.shiftStartedAt, dayKey) ? minuteOfDay(new Date(state.shiftStartedAt)) : 0;
   const nowMin = minuteOfDay(new Date());
@@ -11748,7 +11760,7 @@ function slotMinuteAdherence(dayKey, originalSlot, sessions) {
   const plannedSlots = plannedRaw.map(s => ({ type: s.type.toLowerCase(), startMin: toMinutes(s.start), endMin: toMinutes(s.end) }));
   const minuteOfDay = (date) => date.getHours() * 60 + date.getMinutes();
 
-  const actualIntervals = actualPauseIntervalsForDay(normalized).map(p => ({ type: p.type, startMin: minuteOfDay(p.start), endMin: minuteOfDay(p.end) }));
+  const actualIntervals = pauseIntervalsToMinuteRanges(actualPauseIntervalsForDay(normalized), normalized);
   const presenceIntervals = sessionsToPresenceIntervals(sessions, normalized);
 
   const slotStartMin = toMinutes(originalSlot.start);
