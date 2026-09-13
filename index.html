@@ -3788,16 +3788,16 @@
       padding: 5px 8px;
       font-size: 10.5px;
     }
-    /* Pedido del usuario: en mobile, máximo 3 píldoras por fila (antes flex-wrap dejaba 2 por fila según el ancho del texto) — grid fuerza el conteo sin importar el largo de cada píldora. */
+    /* Pedido del usuario: en mobile, máximo 3 píldoras por fila (antes flex-wrap dejaba 2 por fila según el ancho del texto) — grid fuerza el conteo sin importar el largo de cada píldora. `justify-self: start` evita que la grid estire cada píldora a llenar su columna (default de CSS Grid) — cada una conserva su propio ancho, como con flex-wrap. */
     @media (max-width: 760px) {
       #earningsTagsRow.table-tags {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
       }
       #earningsTagsRow.table-tags .tag {
+        justify-self: start;
         min-width: 0;
-        width: 100%;
-        justify-content: center;
+        max-width: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
       }
