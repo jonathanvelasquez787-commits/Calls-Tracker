@@ -8277,7 +8277,7 @@
       <div class="fin-header-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12V8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h13a1 1 0 0 0 1-1v-4"/><path d="M20 12a2 2 0 0 1 0 4h-3a2 2 0 0 1 0-4Z"/></svg></div>
       <div>
         <div class="fin-title">Finanzas</div>
-        <div class="fin-sub">Gastos y metas alimentados por tus ganancias — cada llamada guardada llena esto solo.</div>
+        <div class="fin-sub">Gastos y metas que se llenan solos con cada llamada.</div>
       </div>
     </div>
     <div class="fin-date-pill"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Ciclo actual</div>
@@ -8288,7 +8288,7 @@
       <div class="fin-available-label">Disponible para asignar</div>
       <div class="fin-available-amt" id="financeAvailableAmt">$0.00</div>
       <div class="fin-available-converted" id="financeAvailableConverted"></div>
-      <div class="fin-available-note">Se llena solo con cada llamada guardada. Cada fila resta del sobrante de las de arriba — por eso el orden de prioridad importa.</div>
+      <div class="fin-available-note">Se reparte en el orden de prioridad de cada fila (↑/↓).</div>
     </div>
     <div class="fin-available-stat">
       <div class="fin-available-stat-label">Siguiente prioridad</div>
@@ -8299,7 +8299,7 @@
   <label class="sched-checkbox-row" style="margin-bottom:4px;">
     <input id="financeAutoFillInput" type="checkbox"/> Asignar disponible automáticamente
   </label>
-  <p class="sched-hint" style="margin:0 0 16px;">Cada llamada guardada reparte tu Disponible solo, en tu orden de prioridad — primero Gastos (saltando los ya Pagados), luego Metas — hasta llenar cada fila o hasta que ya no quede Disponible. Puedes seguir ajustando cualquier fila a mano con el pill +/-.</p>
+  <p class="sched-hint" style="margin:0 0 16px;">Reparte tu Disponible solo, en orden de prioridad — Gastos primero, luego Metas. Puedes seguir ajustando cualquier fila a mano con el pill +/-.</p>
 
   <div class="fin-tab-toggle" id="financeTabToggle" role="group" aria-label="Ver Gastos o Metas">
     <button class="fin-tab-btn active" data-fin-tab="gastos" type="button">Gastos</button>
@@ -8309,7 +8309,7 @@
   <div id="financeGastosView">
     <div class="fin-info-box fin-info-box-compact">
       <svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-      <span>Los Gastos se reinician cada mes — marca <strong>Pagado</strong> o usa <strong>Reiniciar mes</strong> cuando corresponda. Cada fila resta del sobrante de las de arriba, en el orden que marques con ↑/↓ — por eso "Restante después" se ve igual en varias filas hasta que empieces a asignar.</span>
+      <span>Se reinician cada mes — marca <strong>Pagado</strong> o usa <strong>Reiniciar mes</strong>. El orden ↑/↓ decide cuánto le toca a cada uno.</span>
     </div>
     <div id="financeGastosTotalRow"></div>
     <div class="fin-list" id="financeGastosList"></div>
