@@ -13517,6 +13517,7 @@ function financeRowHtml(row, opts) {
     ? `<input class="fin-mini-input" data-fin-amount-currency-input placeholder="o en ${escapeHtml(currencyLabelTrim)}" type="text" title="${amountLinkTitle}"/>`
     : '';
   const priorityTitle = 'Prioridad — decide el orden de la cascada de "Restante después"';
+  const restanteDespuesTitle = 'Lo que te queda de tu Disponible después de cubrir esta fila y todas las de más prioridad arriba (↑/↓) — no es lo que falta pagar de este gasto.';
   const priorityHtml = `
     <div class="fin-priority">
       <button class="fin-priority-btn" type="button" data-fin-priority-up="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" ${upDisabled} aria-label="Subir prioridad" title="${priorityTitle}">${iconHtml('chevronUp')}</button>
@@ -13586,12 +13587,12 @@ function financeRowHtml(row, opts) {
         <div class="fin-row-sub">${escapeHtml(cat.label)} · ${escapeHtml(typeLabel)}</div>
         <div class="fin-row-amt-line">
           <span><b>${money(assigned)}</b>${financeConvertedInline(assigned)} de ${money(target)}${financeConvertedInline(target)} asignado</span>
-          <span class="fin-row-restante-inline">Restan <b>${money(opts.restanteDespues)}</b>${financeConvertedInline(opts.restanteDespues)}</span>
+          <span class="fin-row-restante-inline" title="${restanteDespuesTitle}">Disponible después: <b>${money(opts.restanteDespues)}</b>${financeConvertedInline(opts.restanteDespues)}</span>
         </div>
         <div class="fin-progress-track"><div style="width:${barPct}%; background:${barColor};"></div></div>
       </div>
-      <div class="fin-row-right">
-        <div class="fin-row-right-label">Restante después</div>
+      <div class="fin-row-right" title="${restanteDespuesTitle}">
+        <div class="fin-row-right-label">Disponible después</div>
         <div class="fin-row-right-val">${money(opts.restanteDespues)}</div>
         ${financeConvertedNote(opts.restanteDespues)}
       </div>
