@@ -8214,9 +8214,14 @@
     <button class="fin-tab-btn" data-fin-tab="metas" type="button">Metas</button>
   </div>
 
+  <div class="fin-available-stat-label" style="margin:0 0 6px;">Categorías · referencia</div>
   <div class="fin-legend-row" id="financeLegendRow" aria-hidden="true"></div>
 
   <div id="financeGastosView">
+    <div class="fin-info-box">
+      <svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      <span>Los Gastos se reinician cada mes — marca <strong>Pagado</strong> o usa <strong>Reiniciar mes</strong> cuando corresponda. Cada fila resta del sobrante de las de arriba, en el orden que marques con ↑/↓ — por eso "Restante después" se ve igual en varias filas hasta que empieces a asignar.</span>
+    </div>
     <div class="fin-list" id="financeGastosList"></div>
     <button class="sched-add-block-btn" id="addFinanceGastoBtn" type="button">+ Agregar gasto</button>
   </div>
@@ -13507,14 +13512,16 @@ function financeRowHtml(row, opts) {
   const target = Number(row.targetAmount) || 0;
   const assigned = Number(row.assignedAmount) || 0;
   const currencyLabelTrim = String(settings.currencyLabel || '').trim();
+  const amountLinkTitle = 'Escribe en cualquiera de los dos — el otro se completa solo';
   const currencyAssignInputHtml = financeHasSecondaryCurrency()
-    ? `<input class="fin-mini-input" data-fin-amount-currency-input placeholder="${escapeHtml(currencyLabelTrim)}" type="text" title="Monto en ${escapeHtml(currencyLabelTrim)} — se convierte solo a $"/>`
+    ? `<input class="fin-mini-input" data-fin-amount-currency-input placeholder="o en ${escapeHtml(currencyLabelTrim)}" type="text" title="${amountLinkTitle}"/>`
     : '';
+  const priorityTitle = 'Prioridad — decide el orden de la cascada de "Restante después"';
   const priorityHtml = `
     <div class="fin-priority">
-      <button class="fin-priority-btn" type="button" data-fin-priority-up="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" ${upDisabled} aria-label="Subir prioridad">${iconHtml('chevronUp')}</button>
-      <span class="fin-priority-num">${opts.index + 1}</span>
-      <button class="fin-priority-btn" type="button" data-fin-priority-down="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" ${downDisabled} aria-label="Bajar prioridad">${iconHtml('chevronDown')}</button>
+      <button class="fin-priority-btn" type="button" data-fin-priority-up="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" ${upDisabled} aria-label="Subir prioridad" title="${priorityTitle}">${iconHtml('chevronUp')}</button>
+      <span class="fin-priority-num" title="${priorityTitle}">${opts.index + 1}</span>
+      <button class="fin-priority-btn" type="button" data-fin-priority-down="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" ${downDisabled} aria-label="Bajar prioridad" title="${priorityTitle}">${iconHtml('chevronDown')}</button>
     </div>
     <span class="fin-cat-icon">${iconHtml(cat.icon)}</span>
   `;
@@ -13544,7 +13551,7 @@ function financeRowHtml(row, opts) {
         </div>
         ${badgeHtml}
         <div class="fin-row-actions">
-          <input class="fin-mini-input" data-fin-amount-input placeholder="$" type="text"/>
+          <input class="fin-mini-input" data-fin-amount-input placeholder="$" type="text" title="${amountLinkTitle}"/>
           ${currencyAssignInputHtml}
           <button class="fin-mini-btn-primary" type="button" data-fin-assign="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}">${iconHtml('plus')} Asignar</button>
           <button class="fin-ghost-btn fin-ghost-btn-icon" type="button" data-fin-edit="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" aria-label="Editar meta" title="Editar meta">${iconHtml('edit')}</button>
@@ -13569,7 +13576,7 @@ function financeRowHtml(row, opts) {
     barPct = target > 0 ? Math.min(100, (assigned / target) * 100) : 0;
     if (assigned > 0) { badgeHtml = '<span class="fin-badge tone-warn">Parcial</span>'; barColor = 'var(--warn)'; }
     else { badgeHtml = '<span class="fin-badge tone-bad">Sin asignar</span>'; barPct = 0; barColor = 'var(--bad)'; }
-    actionsHtml = `${checkboxHtml}<input class="fin-mini-input" data-fin-amount-input placeholder="$" type="text"/>${currencyAssignInputHtml}<button class="fin-mini-btn-primary" type="button" data-fin-assign="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}">${iconHtml('plus')} Asignar</button>${editBtnHtml}`;
+    actionsHtml = `${checkboxHtml}<input class="fin-mini-input" data-fin-amount-input placeholder="$" type="text" title="${amountLinkTitle}"/>${currencyAssignInputHtml}<button class="fin-mini-btn-primary" type="button" data-fin-assign="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}">${iconHtml('plus')} Asignar</button>${editBtnHtml}`;
   }
   return `
     <div class="fin-row" data-fin-row="${escapeHtml(row.id)}" style="--cat-rgb:${cat.rgb};">
@@ -13614,7 +13621,7 @@ function renderFinanceSection() {
 
   legendRow.innerHTML = Object.keys(FINANCE_CATEGORIES).map(catId => {
     const cat = FINANCE_CATEGORIES[catId];
-    return `<span class="fin-legend-chip"><svg class="ic-svg" viewBox="0 0 24 24" style="color:rgb(${cat.rgb});" aria-hidden="true">${ICON[cat.icon]}</svg> ${escapeHtml(cat.label)}</span>`;
+    return `<span class="fin-legend-chip" title="Solo referencia — no es un filtro"><svg class="ic-svg" viewBox="0 0 24 24" style="color:rgb(${cat.rgb});" aria-hidden="true">${ICON[cat.icon]}</svg> ${escapeHtml(cat.label)}</span>`;
   }).join('');
 
   // Cascada "Restante después" — solo Gastos, resta assignedAmount (no targetAmount) de cada fila en orden de prioridad. Arranca en "available + lo ya asignado a Gastos" (no en "available" solo): "available" ya tiene restado TODO lo asignado (Gastos y Metas), así que hay que devolverle la parte de Gastos antes de volver a restarla fila por fila, o se resta dos veces.
