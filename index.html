@@ -2479,173 +2479,146 @@
     }
 
     /* Pedido del usuario: tarjeta de estado de "Llamadas" (encabezado "LISTO PARA LLAMAR" / "LLAMADA EN CURSO" + punto pulsante + timer + ícono grande + waveform en vivo), tomada de la Vista 1/Vista 2 de su mock de referencia. */
+    /* Rediseño (mockup v1 aprobado por el usuario): de cabecera+cuerpo en 2
+       pisos a una sola fila compacta — morado (reposo) y verde (en vivo)
+       unificados en el cian de "Fechas de pago" (--cyan). */
     .calls-status-card {
       background: var(--panel-navy);
       border: 1px solid var(--line);
-      border-radius: var(--radius);
+      border-radius: 16px;
       overflow: hidden;
       margin-bottom: 16px;
-    }
-    .calls-status-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
       padding: 14px 16px;
-      border-bottom: 1px solid var(--line);
-    }
-    .calls-status-head-left {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .calls-status-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .calls-status-dot {
-      width: 9px;
-      height: 9px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: var(--muted);
       flex: 0 0 auto;
     }
     .calls-status-dot.live {
-      background: var(--good);
-      box-shadow: 0 0 0 4px rgba(var(--good-rgb), .18);
+      background: var(--cyan);
+      box-shadow: 0 0 0 4px rgba(var(--cyan-rgb), .18);
       animation: calls-status-pulse 1.6s infinite;
     }
     @keyframes calls-status-pulse {
-      0%, 100% { box-shadow: 0 0 0 4px rgba(var(--good-rgb), .18); }
-      50% { box-shadow: 0 0 0 7px rgba(var(--good-rgb), .06); }
+      0%, 100% { box-shadow: 0 0 0 4px rgba(var(--cyan-rgb), .18); }
+      50% { box-shadow: 0 0 0 7px rgba(var(--cyan-rgb), .06); }
     }
     .calls-status-title {
-      font-size: 12.5px;
-      font-weight: 800;
-      letter-spacing: .05em;
-      text-transform: uppercase;
-      color: var(--text);
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-top: 1px;
     }
     .calls-status-timer {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 800;
-      color: var(--good);
+      color: var(--cyan);
       font-variant-numeric: tabular-nums;
     }
-    .calls-status-body {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      flex-wrap: wrap;
-      padding: 18px 16px;
-    }
     .calls-status-icon {
-      width: 52px;
-      height: 52px;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(var(--purple-rgb), .14);
-      border: 1px solid rgba(var(--purple-rgb), .3);
-      color: var(--purple);
+      background: rgba(var(--cyan-rgb), .14);
+      border: 1px solid rgba(var(--cyan-rgb), .32);
+      color: var(--cyan);
       flex: 0 0 auto;
     }
     .calls-status-icon .ic-svg {
-      width: 21px;
-      height: 21px;
-      stroke: var(--purple);
-      color: var(--purple);
+      width: 17px;
+      height: 17px;
+      stroke: var(--cyan);
+      color: var(--cyan);
     }
     .calls-status-icon.live {
-      background: rgba(var(--good-rgb), .14);
-      border-color: rgba(var(--good-rgb), .35);
       animation: calls-status-pulse 1.6s infinite;
-    }
-    .calls-status-icon.live .ic-svg {
-      stroke: var(--good);
-      color: var(--good);
     }
     .calls-status-text {
       flex: 1 1 180px;
       min-width: 180px;
     }
     .calls-status-text-title {
-      font-size: 15.5px;
+      font-size: 14px;
       font-weight: 800;
+      letter-spacing: -.01em;
     }
-    .calls-status-live-tag {
-      display: inline-flex;
+    .calls-status-right {
+      display: flex;
       align-items: center;
-      gap: 6px;
-      background: rgba(var(--good-rgb), .14);
-      color: var(--good);
-      border: 1px solid rgba(var(--good-rgb), .3);
-      padding: 3px 10px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 800;
-      margin-top: 8px;
+      gap: 10px;
+      flex: 0 0 auto;
     }
-    .calls-status-live-tag .dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--good);
-    }
-    /* Pedido del usuario (mockup visual aprobado, 2 vistas): la barra de sonido sale de debajo de "En vivo" (antes vivía dentro de `.calls-status-text`, apilada bajo el tag) y pasa a ser hermana de `.calls-… */
     .calls-status-waveform {
       display: flex;
       align-items: flex-end;
-      gap: 3px;
-      height: 24px;
+      gap: 2px;
+      height: 16px;
       flex: 0 0 auto;
     }
     .calls-status-waveform span {
-      width: 3px;
+      width: 2.5px;
       border-radius: 2px;
-      background: var(--good);
-      opacity: .85;
+      background: var(--cyan);
+      opacity: .8;
       animation: calls-status-wave 1.1s ease-in-out infinite;
     }
-    .calls-status-waveform span:nth-child(1) { height: 40%; animation-delay: 0s; }
-    .calls-status-waveform span:nth-child(2) { height: 70%; animation-delay: .1s; }
+    .calls-status-waveform span:nth-child(1) { height: 35%; animation-delay: 0s; }
+    .calls-status-waveform span:nth-child(2) { height: 65%; animation-delay: .1s; }
     .calls-status-waveform span:nth-child(3) { height: 100%; animation-delay: .2s; }
-    .calls-status-waveform span:nth-child(4) { height: 55%; animation-delay: .3s; }
-    .calls-status-waveform span:nth-child(5) { height: 85%; animation-delay: .4s; }
-    .calls-status-waveform span:nth-child(6) { height: 35%; animation-delay: .5s; }
-    .calls-status-waveform span:nth-child(7) { height: 65%; animation-delay: .6s; }
+    .calls-status-waveform span:nth-child(4) { height: 50%; animation-delay: .3s; }
+    .calls-status-waveform span:nth-child(5) { height: 78%; animation-delay: .4s; }
+    .calls-status-waveform span:nth-child(6) { height: 40%; animation-delay: .5s; }
+    .calls-status-waveform span:nth-child(7) { height: 60%; animation-delay: .6s; }
     @keyframes calls-status-wave {
       0%, 100% { transform: scaleY(.5); }
       50% { transform: scaleY(1); }
     }
     .calls-status-actions {
       display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
+      gap: 7px;
       flex: 0 0 auto;
+      width: 100%;
     }
     .calls-status-btn-save,
     .calls-status-btn-end {
-      padding: 9px 16px;
-      border-radius: 10px;
-      font-size: 12.5px;
+      padding: 8px 14px;
+      border-radius: 9px;
+      font-size: 12px;
       font-weight: 800;
       border: 1px solid transparent;
       cursor: pointer;
       white-space: nowrap;
+      flex: 1 1 0;
     }
     .calls-status-btn-save {
-      background: rgba(var(--rpt-blue-rgb), .16);
-      color: var(--rpt-blue);
-      border-color: rgba(var(--rpt-blue-rgb), .35);
+      background: rgba(var(--cyan-rgb), .16);
+      color: var(--cyan);
+      border-color: rgba(var(--cyan-rgb), .35);
     }
     .calls-status-btn-end {
-      background: rgba(var(--bad-rgb), .16);
+      background: rgba(var(--bad-rgb), .12);
       color: var(--bad);
-      border-color: rgba(var(--bad-rgb), .35);
+      border-color: rgba(var(--bad-rgb), .3);
     }
-    @media (max-width: 640px) {
-      .calls-status-body { padding: 16px 14px; }
-      .calls-status-actions { width: 100%; }
-      .calls-status-actions button { flex: 1 1 0; }
+    @media (min-width: 520px) {
+      .calls-status-actions { width: auto; }
+      .calls-status-btn-save,
+      .calls-status-btn-end { flex: 0 0 auto; }
     }
 
     /* Pedido del usuario ( reordenamiento de secciones — con boceto visual acordado antes de tocar código): Llamadas (Iniciar llamada/ Pegar Llamadas/Agregar llamada) sube a su PROPIA sección arriba de todo (#callsSection, ver HTML) */
@@ -7737,24 +7710,21 @@
 
 <!-- Ver comentario extenso junto a `.calls-status-card` en el CSS. -->
 <div class="calls-status-card" id="callsStatusCard">
-<div class="calls-status-head">
-<div class="calls-status-head-left">
-<span class="calls-status-dot" id="callsStatusDot"></span>
-<span class="calls-status-title" id="callsStatusTitle">Listo para llamar</span>
-</div>
-<span class="calls-status-timer" id="callsStatusTimer" style="display:none;">00:00:00</span>
-</div>
-<div class="calls-status-body">
 <span class="calls-status-icon" id="callsStatusIcon" aria-hidden="true"></span>
 <div class="calls-status-text">
-<div class="calls-status-text-title" id="callsStatusTextTitle">Comienza una nueva llamada</div>
-<span class="calls-status-live-tag" id="callsStatusLiveTag" style="display:none;"><span class="dot"></span>En vivo</span>
+<div class="calls-status-title-row">
+<span class="calls-status-dot" id="callsStatusDot"></span>
+<span class="calls-status-text-title" id="callsStatusTextTitle">Comienza una nueva llamada</span>
 </div>
+<span class="calls-status-title" id="callsStatusTitle">Listo para llamar</span>
+</div>
+<div class="calls-status-right">
+<span class="calls-status-timer" id="callsStatusTimer" style="display:none;">00:00:00</span>
 <div class="calls-status-waveform" id="callsStatusWaveform" style="display:none;"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+</div>
 <div class="calls-status-actions" id="callsStatusActions" style="display:none;">
 <button class="calls-status-btn-save" id="callsStatusSaveBtn" type="button">Guardar</button>
 <button class="calls-status-btn-end" id="callsStatusEndBtn" type="button">Descartar</button>
-</div>
 </div>
 </div>
 
