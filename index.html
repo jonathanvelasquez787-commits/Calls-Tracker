@@ -16267,6 +16267,17 @@ function findGapRow(dayKey, gapKey) {
   return dayGapRows(dayKey).find(g => g.gapKey === gapKey) || null;
 }
 
+// Mismo criterio que `displayAmount` en gapClassification(): Break/Lunch se
+// guardan con la duración COMPLETA del hueco (raw), no con el residual ya
+// descontado de una pausa real — el preview del modal debe reflejar el
+// mismo número que de verdad se va a guardar, no siempre `residual`.
+function gapDisplayAmountForLabel(row, label) {
+  return (label === 'break' || label === 'lunch') ? row.raw : row.residual;
+}
+function gapDisplayAmountUnitLabel(label) {
+  return (label === 'break' || label === 'lunch') ? 'Total' : 'Residual';
+}
+
 // Pedido del usuario: editor de la meta máxima de ACW (ver #acwGoalModal en el HTML y el botón ✎ de la tarjeta de ACW en "Turno de Hoy"). Mismo patrón simple que el resto de editores chicos de la app (openGapEditor/openDayNoteModal):
 function openAcwGoalEditor() {
   const input = document.getElementById('acwGoalMinInput');
@@ -16322,7 +16333,7 @@ function openGapEditor(dayKey, gapKey) {
   if (preview) {
     preview.textContent = annotation
       ? `Clasificación guardada: ${gapLabelText(label)}${note ? ` · Nota: ${note}` : ''}`
-      : `Sugerido: ${gapLabelText(row.suggested)} · Residual ${row.residual.toFixed(1)} min`;
+      : `Sugerido: ${gapLabelText(row.suggested)} · ${gapDisplayAmountUnitLabel(row.suggested)} ${gapDisplayAmountForLabel(row, row.suggested).toFixed(1)} min`;
   }
   if (labelInput) labelInput.value = label;
   if (noteInput) noteInput.value = note;
@@ -18280,7 +18291,7 @@ function render() {
       const preview = document.getElementById('gapPreviewText');
       if (row && preview) {
         const label = String(document.getElementById('gapLabelInput').value || 'acw');
-        preview.textContent = `Clasificación lista: ${gapLabelText(label)} · Residual ${row.residual.toFixed(1)} min`;
+        preview.textContent = `Clasificación lista: ${gapLabelText(label)} · ${gapDisplayAmountUnitLabel(label)} ${gapDisplayAmountForLabel(row, label).toFixed(1)} min`;
       }
     });
     document.getElementById('gapModal').addEventListener('keydown', (e) => {
