@@ -17831,11 +17831,16 @@ function render() {
         toast('Semana personalizada — arrancó como copia de tu plantilla, ajústala y guarda cada día que cambie.');
         syncShiftModalFields();
       } else {
-        // Bug corregido: appConfirm es asíncrono (solo abre el modal) — un
-        // syncShiftModalFields() fuera de este callback corría antes de que
-        // el usuario confirmara, y como el override todavía no se había
-        // borrado, volvía a marcar el checkbox solo mientras el modal de
-        // confirmación seguía abierto.
+        // Bug corregido: el checkbox ya se ve desmarcado en el DOM apenas
+        // el usuario le da click (el navegador cambia `checked` ANTES de
+        // disparar 'change') — pero la confirmación de abajo es asíncrona.
+        // Si el usuario cancela (×, click afuera, Escape) en vez de
+        // confirmar, el override nunca se borra y el formulario sigue
+        // siendo editable como semana personalizada, mientras el checkbox
+        // se queda viéndose "apagado" para siempre (hasta recargar).
+        // Se revierte a `true` de inmediato — solo la confirmación (que sí
+        // llama a syncShiftModalFields) lo vuelve a poner en `false`.
+        e.target.checked = true;
         appConfirm('¿Quitar la personalización de esta semana y volver a usar la plantilla? El horario propio de esta semana se borra — no afecta la plantilla ni otras semanas.', () => {
           removeScheduleWeekOverride(scheduleWeekOffset);
           saveAll();
