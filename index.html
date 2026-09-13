@@ -15890,7 +15890,10 @@ function saveFinanceRowModal() {
       const editedIds = newWindows
         .filter(nw => {
           const old = oldWindows.find(ow => ow.id === nw.id);
-          return old && (old.date !== nw.date || old.start !== nw.start || old.end !== nw.end || old.tier !== nw.tier);
+          // Solo se congela si cambió algo que puede alterar SI la ventana
+          // aplica (fecha/horario) — un cambio de nivel no debe congelar el
+          // bono ya calculado, debe recalcularse con el nivel nuevo.
+          return old && (old.date !== nw.date || old.start !== nw.start || old.end !== nw.end);
         })
         .map(w => w.id);
       if (editedIds.length) freezeHigherRateBonusesForWindowIds(editedIds);
