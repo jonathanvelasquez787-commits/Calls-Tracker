@@ -6940,6 +6940,7 @@
     .fin-row-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
     .fin-row-amt-line { font-size: 11.5px; color: var(--muted); margin-top: 7px; }
     .fin-row-amt-line b { color: var(--text); font-weight: 800; }
+    .fin-row-converted-inline { color: var(--muted); font-size: 10px; font-weight: 600; }
     /* Duplicado mobile-only de "Restante después"/"Faltante" (ver .fin-row-right, la columna que ya lo muestra en escritorio) — mismo patrón dual ya usado en la app (ej. .cal-nav-btn-label-full/-short) para no bifurcar el HTML entre anchos. */
     .fin-row-restante-inline { display: none; }
     .fin-progress-track {
@@ -13291,6 +13292,16 @@ function financeConvertedNote(usdAmount) {
   return text ? `<div class="fin-row-converted">${escapeHtml(text)}</div>` : '';
 }
 
+// Bug reportado por el usuario: Finanzas solo mostraba el equivalente en la
+// moneda secundaria para el monto YA ASIGNADO — el objetivo y el restante/
+// faltante se quedaban solo en dólares. Esta variante va pegada al valor
+// (entre paréntesis) en vez de en su propia línea, para poder usarse varias
+// veces en la misma fila (asignado / objetivo / restante).
+function financeConvertedInline(usdAmount) {
+  const text = convertedAmountText(usdAmount);
+  return text ? ` <span class="fin-row-converted-inline">(${escapeHtml(text)})</span>` : '';
+}
+
 // Misma condición que ya usa convertedAmountText() para decidir si hay
 // moneda secundaria configurada — extraída aparte para poder mostrar/
 // ocultar campos de entrada en esa moneda (no solo texto de solo lectura).
@@ -13333,15 +13344,15 @@ function financeRowHtml(row, opts) {
           <div class="fin-row-title">${escapeHtml(row.name)}</div>
           <div class="fin-row-sub">${escapeHtml(cat.label)}</div>
           <div class="fin-row-amt-line">
-            <span>Ahorrado <b>${money(assigned)}</b> de ${money(target)}</span>
-            <span class="fin-row-restante-inline">Faltan <b>${money(faltante)}</b></span>
+            <span>Ahorrado <b>${money(assigned)}</b>${financeConvertedInline(assigned)} de ${money(target)}${financeConvertedInline(target)}</span>
+            <span class="fin-row-restante-inline">Faltan <b>${money(faltante)}</b>${financeConvertedInline(faltante)}</span>
           </div>
-          ${financeConvertedNote(assigned)}
           <div class="fin-progress-track"><div style="width:${barPct}%; background:${barColor};"></div></div>
         </div>
         <div class="fin-row-right">
           <div class="fin-row-right-label">Faltante</div>
           <div class="fin-row-right-val">${money(faltante)}</div>
+          ${financeConvertedNote(faltante)}
         </div>
         ${badgeHtml}
         <div class="fin-row-actions">
@@ -13379,15 +13390,15 @@ function financeRowHtml(row, opts) {
         <div class="fin-row-title">${escapeHtml(row.name)}</div>
         <div class="fin-row-sub">${escapeHtml(cat.label)} · ${escapeHtml(typeLabel)}</div>
         <div class="fin-row-amt-line">
-          <span><b>${money(assigned)}</b> de ${money(target)} asignado</span>
-          <span class="fin-row-restante-inline">Restan <b>${money(opts.restanteDespues)}</b></span>
+          <span><b>${money(assigned)}</b>${financeConvertedInline(assigned)} de ${money(target)}${financeConvertedInline(target)} asignado</span>
+          <span class="fin-row-restante-inline">Restan <b>${money(opts.restanteDespues)}</b>${financeConvertedInline(opts.restanteDespues)}</span>
         </div>
-        ${financeConvertedNote(assigned)}
         <div class="fin-progress-track"><div style="width:${barPct}%; background:${barColor};"></div></div>
       </div>
       <div class="fin-row-right">
         <div class="fin-row-right-label">Restante después</div>
         <div class="fin-row-right-val">${money(opts.restanteDespues)}</div>
+        ${financeConvertedNote(opts.restanteDespues)}
       </div>
       ${badgeHtml}
       <div class="fin-row-actions">
