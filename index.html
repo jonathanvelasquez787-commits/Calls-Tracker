@@ -10062,6 +10062,12 @@ $0.72"></textarea>
     }
 
     // Texto "≈ L 123.45" para mostrar el equivalente en la moneda secundaria junto a un monto en dólares.
+    // Al convertir un monto en la moneda secundaria A DÓLARES para GUARDARLO (a diferencia de convertedAmountText, que solo muestra un "≈" informativo), se redondea SIEMPRE hacia arriba, nunca hacia abajo — así un monto redondo en la moneda del usuario (ej. 2500 Lps) nunca guarda de vuelta menos de eso en dólares por una fracción de centavo perdida en el redondeo. Ver resumen.md v456.
+    function usdCeilFromCurrencyAmount(currencyAmount, exchangeRate) {
+      if (!Number.isFinite(currencyAmount) || !Number.isFinite(exchangeRate) || exchangeRate <= 0) return 0;
+      return Math.ceil((currencyAmount / exchangeRate) * 100) / 100;
+    }
+
     function convertedAmountText(usdAmount) {
       const rate = Number(settings.exchangeRate);
       const label = String(settings.currencyLabel || '').trim();
@@ -13658,7 +13664,7 @@ function syncFinanceRowTargetFields(source) {
     if (Number.isFinite(usd)) currencyInput.value = (usd * exchangeRate).toFixed(2);
   } else {
     const cur = Number(currencyInput.value);
-    if (Number.isFinite(cur)) usdInput.value = (cur / exchangeRate).toFixed(2);
+    if (Number.isFinite(cur)) usdInput.value = usdCeilFromCurrencyAmount(cur, exchangeRate).toFixed(2);
   }
   financeRowTargetSyncing = false;
 }
@@ -18776,7 +18782,7 @@ function render() {
         const sibling = actionsWrap.querySelector('[data-fin-amount-input]');
         if (!sibling) return;
         const cur = parseMoney(e.target.value);
-        sibling.value = cur > 0 ? (cur / exchangeRate).toFixed(2) : '';
+        sibling.value = cur > 0 ? usdCeilFromCurrencyAmount(cur, exchangeRate).toFixed(2) : '';
       }
     });
     document.getElementById('financeSection').addEventListener('change', (e) => {
