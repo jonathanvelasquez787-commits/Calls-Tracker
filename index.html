@@ -3788,20 +3788,13 @@
       padding: 5px 8px;
       font-size: 10.5px;
     }
-    /* Marcador de salto de línea forzado cada 3 píldoras (ver #earningsTagsRow.table-tags .tags-row-break más abajo, inyectado desde JS en renderHeader) — sin efecto fuera de ese contexto. */
-    .tags-row-break { display: none; }
-    /* Pedido del usuario (v465, corrección de v463/v464): en mobile, máximo 3 píldoras por fila PERO pegadas entre sí como en escritorio — se vuelve a flex-wrap (heredado de .table-tags) en vez de columnas de grid de ancho fijo, que dejaban huecos después de píldoras cortas y recortaban mal las largas (text-overflow no aplica sobre contenedores flex/grid). */
+    /* Pedido del usuario (v466, corrección de v465): se quita el salto de línea FORZADO cada 3 píldoras — dejaba hueco vacío en filas con píldoras cortas (ej. Billable/Dropped/ACW), aunque una 4ta píldora sí cupiera. Vuelve a empaquetarse por contenido real (mismo flex-wrap de .table-tags/.chips de escritorio) — cada fila mete tantas píldoras como quepan según su propio ancho. */
     @media (max-width: 760px) {
       #earningsTagsRow.table-tags .tag {
         min-width: 0;
         max-width: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
-      }
-      #earningsTagsRow.table-tags .tags-row-break {
-        display: block;
-        flex-basis: 100%;
-        height: 0;
       }
     }
 
@@ -16720,13 +16713,7 @@ function renderHeader() {
     higherRateBreakdownTagsHtml(stats.higherRateBreakdown, 'tag'),
     adherenceForTag ? `<span class="tag ${adherenceForTag.scorePct >= 90 ? 'good' : adherenceForTag.scorePct >= 70 ? 'warn' : 'bad'}" title="Qué tan apegado estuviste hoy a tu horario planeado">Adherencia: ${adherenceForTag.scorePct}%</span>` : '',
   ].filter(Boolean);
-  // v465 — separador invisible cada 3 píldoras reales, para forzar el
-  // salto de línea en mobile sin estirar ninguna a una columna de ancho
-  // fijo (ver .tags-row-break en el CSS).
-  const earningsTagsHtml = earningsTagsParts
-    .map((html, i) => (i > 0 && i % 3 === 0 ? '<span class="tags-row-break" aria-hidden="true"></span>' + html : html))
-    .join('');
-  document.getElementById('earningsTagsRow').innerHTML = earningsTagsHtml;
+  document.getElementById('earningsTagsRow').innerHTML = earningsTagsParts.join('');
   const earnBar = document.getElementById('earningsBar');
   earnBar.style.width = `${goalPct}%`;
   // Pedido del usuario : esta barra (relleno de "Ganancias de hoy") usaba var(--cyan) — en modo claro --cyan es en realidad el rosa/magenta de --primary.
