@@ -605,6 +605,51 @@
       :root:not(.theme-dark) .mc-info-box { border-color: rgba(var(--accent-blue-2-rgb), .18); background: rgba(var(--accent-blue-2-rgb), .07); }
       :root:not(.theme-dark) .mc-info-box .ic-svg { color: var(--accent-blue-2); stroke: var(--accent-blue-2); }
       :root:not(.theme-dark) .blocks-view-btn.active { background: var(--accent-blue-2); }
+      /* v469 — Pedido del usuario: segunda pasada buscando el resto del rosa heredado de --cyan en modo claro. Mismo acento --accent-blue-2 de arriba, ahora en: tarjeta de estado "En llamada" (Llamadas), íconos de cabecera de modal (Pegar Llamadas/Editar hueco/Editar día/Editar llamada/metas editables/Agregar gasto-meta/Ajustes/Finanzas), botones primarios "Listo/Guardar/Importar", pills de segmentado activas (Hoy-Ciclo/Todo-Llamadas-Acciones/Gastos-Metas), ícono "Inicio" del sidebar, anillo de "Ganancias de hoy", badge/ícono "Shift" de Tabla de llamadas, vista anual de Calendario (hover/actual/badge de mes/ícono de cabecera), ícono de sección "Tu perfil" en Ajustes (reutilizado en Clasificación/Categoría) y el resaltado de {variable} en Avisos. */
+      :root:not(.theme-dark) .calls-status-card.live {
+        border-color: rgba(var(--accent-blue-2-rgb), .4);
+        background: rgba(var(--accent-blue-2-rgb), .06);
+      }
+      :root:not(.theme-dark) .calls-status-card.live .calls-status-dot {
+        background: var(--accent-blue-2);
+        box-shadow: 0 0 0 4px rgba(var(--accent-blue-2-rgb), .18);
+        animation: calls-status-pulse-light 1.6s infinite;
+      }
+      :root:not(.theme-dark) .calls-status-card.live .calls-status-icon {
+        background: rgba(var(--accent-blue-2-rgb), .14);
+        border-color: rgba(var(--accent-blue-2-rgb), .32);
+        color: var(--accent-blue-2);
+      }
+      :root:not(.theme-dark) .calls-status-card.live .calls-status-text-title,
+      :root:not(.theme-dark) .calls-status-timer {
+        color: var(--accent-blue-2);
+      }
+      :root:not(.theme-dark) .mc-header-icon:not(.good):not(.warn):not(.hr-gradient) { background: var(--accent-blue-2); }
+      :root:not(.theme-dark) .goals-header-icon { background: var(--accent-blue-2); }
+      :root:not(.theme-dark) .fin-header-icon { background: linear-gradient(135deg, var(--accent-blue-2), var(--blue)); }
+      :root:not(.theme-dark) .mc-btn-primary.cyan { background: var(--accent-blue-2); }
+      :root:not(.theme-dark) .earnings-mode-btn.active { background: var(--accent-blue-2); }
+      :root:not(.theme-dark) .table-filter-btn.active { background: var(--accent-blue-2); }
+      :root:not(.theme-dark) .fin-tab-btn.active { background: var(--accent-blue-2); }
+      :root:not(.theme-dark) .sidebar-link-icon-home { --icon-rgb: var(--accent-blue-2-rgb); }
+      :root:not(.theme-dark) .gh-ring { background: conic-gradient(var(--accent-blue-2) calc(var(--ring-pct, 0) * 1%), rgba(255,255,255,.10) 0); }
+      :root:not(.theme-dark) .tbl-row-icon.type-shift { background: rgba(var(--accent-blue-2-rgb), .14); color: var(--accent-blue-2); }
+      :root:not(.theme-dark) .tbl-type-badge.type-shift { background: rgba(var(--accent-blue-2-rgb), .16); color: var(--accent-blue-2); }
+      :root:not(.theme-dark) .month-card:hover {
+        border-color: rgba(var(--accent-blue-2-rgb), .4);
+        background: rgba(var(--accent-blue-2-rgb), .03);
+      }
+      :root:not(.theme-dark) .month-card.is-current {
+        border-color: rgba(var(--accent-blue-2-rgb), .55);
+        box-shadow: 0 0 0 1px rgba(var(--accent-blue-2-rgb), .18);
+      }
+      :root:not(.theme-dark) .month-card-badge {
+        color: var(--accent-blue-2);
+        background: rgba(var(--accent-blue-2-rgb), .14);
+      }
+      :root:not(.theme-dark) .cal-year-nav-icon { background: linear-gradient(135deg, var(--accent-blue-2), var(--rpt-purple)); }
+      :root:not(.theme-dark) .goals-section-icon.cyan { color: var(--accent-blue-2); stroke: var(--accent-blue-2); }
+      :root:not(.theme-dark) .msg-preview-var { color: var(--accent-blue-2); }
     }
     html.theme-light .action-btn:not(.is-active) {
       border-color: var(--line-2);
@@ -951,6 +996,51 @@
     html.theme-light .mc-info-box { border-color: rgba(var(--accent-blue-2-rgb), .18); background: rgba(var(--accent-blue-2-rgb), .07); }
     html.theme-light .mc-info-box .ic-svg { color: var(--accent-blue-2); stroke: var(--accent-blue-2); }
     html.theme-light .blocks-view-btn.active { background: var(--accent-blue-2); }
+    /* v469 — Ver comentario gemelo en la rama @media de arriba. */
+    html.theme-light .calls-status-card.live {
+      border-color: rgba(var(--accent-blue-2-rgb), .4);
+      background: rgba(var(--accent-blue-2-rgb), .06);
+    }
+    html.theme-light .calls-status-card.live .calls-status-dot {
+      background: var(--accent-blue-2);
+      box-shadow: 0 0 0 4px rgba(var(--accent-blue-2-rgb), .18);
+      animation: calls-status-pulse-light 1.6s infinite;
+    }
+    html.theme-light .calls-status-card.live .calls-status-icon {
+      background: rgba(var(--accent-blue-2-rgb), .14);
+      border-color: rgba(var(--accent-blue-2-rgb), .32);
+      color: var(--accent-blue-2);
+    }
+    html.theme-light .calls-status-card.live .calls-status-text-title,
+    html.theme-light .calls-status-timer {
+      color: var(--accent-blue-2);
+    }
+    html.theme-light .mc-header-icon:not(.good):not(.warn):not(.hr-gradient) { background: var(--accent-blue-2); }
+    html.theme-light .goals-header-icon { background: var(--accent-blue-2); }
+    html.theme-light .fin-header-icon { background: linear-gradient(135deg, var(--accent-blue-2), var(--blue)); }
+    html.theme-light .mc-btn-primary.cyan { background: var(--accent-blue-2); }
+    html.theme-light .earnings-mode-btn.active { background: var(--accent-blue-2); }
+    html.theme-light .table-filter-btn.active { background: var(--accent-blue-2); }
+    html.theme-light .fin-tab-btn.active { background: var(--accent-blue-2); }
+    html.theme-light .sidebar-link-icon-home { --icon-rgb: var(--accent-blue-2-rgb); }
+    html.theme-light .gh-ring { background: conic-gradient(var(--accent-blue-2) calc(var(--ring-pct, 0) * 1%), rgba(255,255,255,.10) 0); }
+    html.theme-light .tbl-row-icon.type-shift { background: rgba(var(--accent-blue-2-rgb), .14); color: var(--accent-blue-2); }
+    html.theme-light .tbl-type-badge.type-shift { background: rgba(var(--accent-blue-2-rgb), .16); color: var(--accent-blue-2); }
+    html.theme-light .month-card:hover {
+      border-color: rgba(var(--accent-blue-2-rgb), .4);
+      background: rgba(var(--accent-blue-2-rgb), .03);
+    }
+    html.theme-light .month-card.is-current {
+      border-color: rgba(var(--accent-blue-2-rgb), .55);
+      box-shadow: 0 0 0 1px rgba(var(--accent-blue-2-rgb), .18);
+    }
+    html.theme-light .month-card-badge {
+      color: var(--accent-blue-2);
+      background: rgba(var(--accent-blue-2-rgb), .14);
+    }
+    html.theme-light .cal-year-nav-icon { background: linear-gradient(135deg, var(--accent-blue-2), var(--rpt-purple)); }
+    html.theme-light .goals-section-icon.cyan { color: var(--accent-blue-2); stroke: var(--accent-blue-2); }
+    html.theme-light .msg-preview-var { color: var(--accent-blue-2); }
 
     * { box-sizing: border-box; }
     html, body { min-height: 100%; }
@@ -2566,6 +2656,11 @@
     @keyframes calls-status-pulse {
       0%, 100% { box-shadow: 0 0 0 4px rgba(var(--cyan-rgb), .18); }
       50% { box-shadow: 0 0 0 7px rgba(var(--cyan-rgb), .06); }
+    }
+    /* v469 — Ver comentario junto a --accent-blue-2 en :root: misma pulsación de la tarjeta "En llamada", pero con el acento azul puntual en vez de --cyan-rgb (heredado rosa en modo claro). Se activa desde las 2 ramas de modo claro, ver ese bloque. */
+    @keyframes calls-status-pulse-light {
+      0%, 100% { box-shadow: 0 0 0 4px rgba(var(--accent-blue-2-rgb), .18); }
+      50% { box-shadow: 0 0 0 7px rgba(var(--accent-blue-2-rgb), .06); }
     }
     .calls-status-icon {
       width: 30px;
