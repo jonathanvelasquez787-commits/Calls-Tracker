@@ -119,7 +119,10 @@
         --good-rgb: 34, 197, 94;
         --warn-rgb: 244, 135, 75;
         --bad-rgb: 236, 30, 122;
-        --shadow: 0 14px 34px rgba(26, 26, 26, .08); /* --black-badge al 8% */
+        /* Pedido del usuario (v467, rediseño de elevación de modo claro, mockup mockup_light_mode_inicio.html aprobado): --shadow pasa de una sola sombra plana a 2 capas (borde cercano fino + sombra ancha suave) — mismos tokens que el mockup (--shadow-card/--shadow-raised/--shadow-active), reutilizados app-wide porque .hero/.card/.accordion-card/.modal-card/textarea/.toast ya comparten var(--shadow). */
+        --shadow: 0 1px 2px rgba(26, 26, 26, .04), 0 4px 16px rgba(26, 26, 26, .07);
+        --shadow-raised: 0 2px 4px rgba(26, 26, 26, .05), 0 8px 20px rgba(26, 26, 26, .08);
+        --shadow-active: 0 2px 6px rgba(236, 30, 122, .14), 0 10px 24px rgba(236, 30, 122, .16);
         --glow-1: rgba(236, 30, 122, .015); /* --primary al 1.5% -- muy sutil, para que domine el gris-azulado plano de --bg-page */
         --glow-2: rgba(244, 135, 75, .015); /* --break-orange al 1.5% */
         --pale-good: #167F3D; /* --success-green mezclado 35% con negro */
@@ -199,7 +202,10 @@
       --good-rgb: 34, 197, 94;
       --warn-rgb: 244, 135, 75;
       --bad-rgb: 236, 30, 122;
-      --shadow: 0 14px 34px rgba(26, 26, 26, .08);
+      /* v467 — Ver comentario gemelo en la rama @media de arriba: mismos tokens de elevación en capas del mockup aprobado. */
+      --shadow: 0 1px 2px rgba(26, 26, 26, .04), 0 4px 16px rgba(26, 26, 26, .07);
+      --shadow-raised: 0 2px 4px rgba(26, 26, 26, .05), 0 8px 20px rgba(26, 26, 26, .08);
+      --shadow-active: 0 2px 6px rgba(236, 30, 122, .14), 0 10px 24px rgba(236, 30, 122, .16);
       --glow-1: rgba(236, 30, 122, .015);
       --glow-2: rgba(244, 135, 75, .015);
       --pale-good: #167F3D;
@@ -268,6 +274,11 @@
       }
       :root:not(.theme-dark) .accordion-card {
         background: var(--accordion-bg);
+      }
+      /* Pedido del usuario (v467, mockup aprobado): paneles "hundidos" dentro de una tarjeta ya blanca (Meta diaria/del ciclo, Ajustar turno completo) pasan al mismo gris-azulado de fondo de página (--bg) en vez de un rgba(255,255,255,.03) casi invisible sobre blanco — mismo criterio 3 niveles de elevación del mockup. */
+      :root:not(.theme-dark) .gh-goal-card,
+      :root:not(.theme-dark) .sched-offset-block {
+        background: var(--bg);
       }
       :root:not(.theme-dark) .modal-card,
       :root:not(.theme-dark) textarea,
@@ -592,6 +603,11 @@
     }
     html.theme-light .accordion-card {
       background: var(--accordion-bg);
+    }
+    /* v467 — Ver comentario gemelo en la rama @media de arriba. */
+    html.theme-light .gh-goal-card,
+    html.theme-light .sched-offset-block {
+      background: var(--bg);
     }
     html.theme-light .modal-card,
     html.theme-light textarea,
@@ -1224,31 +1240,6 @@
     .sidebar-switch input:focus-visible ~ .sidebar-switch-track {
       outline: 2px solid rgba(var(--cyan-rgb), .6);
       outline-offset: 2px;
-    }
-
-    /* BUG-018 (QA ) — Pedido del usuario: el switch "Modo oscuro" se veía y se comportaba como cualquier otro toggle activo — solo al soltarlo (apagarlo) se revertía solo y aparecía un toast explicando por qué (ver setThemeFromSidebarSwitch) */
-    .sidebar-darkmode-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 2px 7px;
-      margin-left: 6px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,.04);
-      color: var(--muted);
-      font-size: 9.5px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: .03em;
-      white-space: nowrap;
-      vertical-align: 1px;
-    }
-    .sidebar-switch.is-locked {
-      opacity: .55;
-      cursor: not-allowed;
-    }
-    .sidebar-switch.is-locked input {
-      cursor: not-allowed;
     }
 
     /* Escritorio con el sidebar FIJADO (pedido del usuario: "colapsado pero con opción de fijar abierto"): el sidebar deja de flotar sobre el contenido y en vez empuja `.app` hacia la derecha */
@@ -7654,8 +7645,8 @@
 <div class="sidebar-footer">
 <div class="sidebar-darkmode-row">
 <span class="sidebar-darkmode-icon"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/></svg></span>
-<span>Modo oscuro <span class="sidebar-darkmode-badge">Próximamente</span></span>
-<label class="sidebar-switch is-locked" title="Estamos trabajando en mejorar el modo claro — disponible pronto.">
+<span>Modo oscuro</span>
+<label class="sidebar-switch" title="Cambiar entre modo claro y oscuro">
 <input aria-label="Modo oscuro" id="sidebarDarkModeInput" type="checkbox"/>
 <span class="sidebar-switch-track"><span class="sidebar-switch-thumb"></span></span>
 </label>
@@ -9976,11 +9967,12 @@ $0.72"></textarea>
       if (typeof settings.financeAutoFill !== 'boolean') settings.financeAutoFill = false;
     }
 
-    // Pedido del usuario: modo claro/oscuro — 'auto' (default) sigue el sistema vía @media (prefers-color-scheme:
+    // Pedido del usuario (v467): se reactiva el modo claro (antes forzado siempre a oscuro mientras se rediseñaba) — 'auto' sigue el sistema vía @media (prefers-color-scheme:...), 'light'/'dark' fuerzan el tema con las clases html.theme-light/html.theme-dark.
     function applyTheme() {
       const root = document.documentElement;
-      root.classList.remove('theme-light');
-      root.classList.add('theme-dark');
+      root.classList.remove('theme-light', 'theme-dark');
+      if (settings.theme === 'light') root.classList.add('theme-light');
+      else if (settings.theme === 'dark') root.classList.add('theme-dark');
       updateThemeButtonUI();
     }
 
@@ -10019,13 +10011,7 @@ $0.72"></textarea>
 
     // Pedido del usuario: switch de Modo oscuro en el sidebar — mismo dato (settings.theme) que ya controla `#themeToggleBtn`, pero como on/off simple en vez del ciclo de 3 estados (Auto/Claro/Oscuro).
     function setThemeFromSidebarSwitch(isDark) {
-      if (!isDark) {
-        const sidebarSwitch = document.getElementById('sidebarDarkModeInput');
-        if (sidebarSwitch) sidebarSwitch.checked = true;
-        toast('🚧 Estamos trabajando en mejorar el modo claro — disponible pronto.');
-        return;
-      }
-      settings.theme = 'dark';
+      settings.theme = isDark ? 'dark' : 'light';
       saveSettingsOnly();
       applyTheme();
     }
