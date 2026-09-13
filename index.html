@@ -677,15 +677,16 @@
          La capa de relleno líquido (.sblk-fill) es un elemento aparte que
          siempre pinta rgb(var(--sblk-rgb, var(--rpt-purple-rgb))) — nadie
          define --sblk-rgb en ningún lado, así que SIEMPRE cae al morado de
-         --rpt-purple-rgb, sin importar el tema. Con el líquido casi al 100%
-         en bloques "Hecho" (.30 de opacidad sobre buena parte de la tarjeta),
-         ese morado de fondo terminaba dominando visualmente incluso con el
-         borde/fondo ya en azul. Se fija SOLO el color en modo claro, sin
-         tocar el criterio "un solo color para todos los tipos" (ver
-         comentario junto a .sblk-fill en el CSS base, más abajo).
+         --rpt-purple-rgb, sin importar el tema. Se fija SOLO el color en
+         modo claro, sin tocar el criterio "un solo color para todos los
+         tipos" (ver comentario junto a .sblk-fill en el CSS base, más
+         abajo). v473 — Pedido del usuario (con captura): el azul se veía
+         muy intenso/plano al cubrir casi toda la tarjeta en bloques
+         "Hecho" — se cambia a --good (verde ya usado en el resto de la
+         app en modo claro), sin tocar nada más de este bloque.
       */
       :root:not(.theme-dark) .sblk-fill {
-        background: rgb(var(--accent-blue-2-rgb));
+        background: rgb(var(--good-rgb));
       }
     }
     html.theme-light .action-btn:not(.is-active) {
@@ -1095,9 +1096,9 @@
     html.theme-light .sblk-dot {
       border-color: rgba(var(--accent-blue-2-rgb), .75);
     }
-    /* v472 — Ver comentario gemelo en la rama @media de arriba. */
+    /* v472/v473 — Ver comentario gemelo en la rama @media de arriba. */
     html.theme-light .sblk-fill {
-      background: rgb(var(--accent-blue-2-rgb));
+      background: rgb(var(--good-rgb));
     }
 
     * { box-sizing: border-box; }
