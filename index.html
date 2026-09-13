@@ -17829,15 +17829,19 @@ function render() {
         ensureScheduleWeekOverride(scheduleWeekOffset);
         saveSettingsOnly();
         toast('Semana personalizada — arrancó como copia de tu plantilla, ajústala y guarda cada día que cambie.');
+        syncShiftModalFields();
       } else {
+        // Bug corregido: appConfirm es asíncrono (solo abre el modal) — un
+        // syncShiftModalFields() fuera de este callback corría antes de que
+        // el usuario confirmara, y como el override todavía no se había
+        // borrado, volvía a marcar el checkbox solo mientras el modal de
+        // confirmación seguía abierto.
         appConfirm('¿Quitar la personalización de esta semana y volver a usar la plantilla? El horario propio de esta semana se borra — no afecta la plantilla ni otras semanas.', () => {
           removeScheduleWeekOverride(scheduleWeekOffset);
           saveAll();
           syncShiftModalFields();
         });
-        // Mientras se espera la confirmación, se refresca ya mismo (ver abajo)
       }
-      syncShiftModalFields();
     });
     document.getElementById('copyDayToAllBtn').addEventListener('click', copyDayToAll);
     document.getElementById('copyWeekendBtn').addEventListener('click', copyDayToWeekend);
@@ -17891,7 +17895,16 @@ function render() {
     });
     document.getElementById('addCallManualBtn').addEventListener('click', openManualCallModal);
     document.getElementById('manualCallDurationInput').addEventListener('input', updateManualCallPreview);
-    document.getElementById('manualCallPayInput').addEventListener('input', () => { manualCallPayDirty = true; });
+    document.getElementById('manualCallPayInput').addEventListener('input', () => {
+      manualCallPayDirty = true;
+      // Mismo criterio que callEditPayInput: editar el Pago a mano
+      // deselecciona el tile de tarifa (si no, se queda resaltado aunque
+      // el monto ya no coincida con esa tarifa).
+      if (manualCallSelectedRateTile !== null) {
+        manualCallSelectedRateTile = null;
+        renderRateTiles('manualCallRateTiles', null);
+      }
+    });
     document.getElementById('manualCallRateTiles').addEventListener('click', (e) => {
       const btn = e.target instanceof Element ? e.target.closest('[data-rate-tile]') : null;
       if (!btn) return;
