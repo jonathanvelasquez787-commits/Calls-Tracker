@@ -3779,6 +3779,16 @@
       margin-top: 10px;
     }
 
+    /* Pedido del usuario: las píldoras de "Ganancias de hoy" suben arriba de "Meta diaria" — versión compacta (mismo tamaño que ya usa .chip en mobile) para que quepan en máximo 2 filas. */
+    #earningsTagsRow.table-tags {
+      margin: 6px 0 14px;
+      gap: 6px;
+    }
+    #earningsTagsRow.table-tags .tag {
+      padding: 5px 8px;
+      font-size: 10.5px;
+    }
+
     /* Pedido del usuario: filtro Todo/Llamadas/Acciones sobre la tabla fusionada (ver comentario junto a #tableFilterRow en el HTML) */
     .table-filter-row {
       display: inline-flex;
@@ -7774,6 +7784,7 @@
 <div class="gh-ring-label">de tu meta</div>
 </div>
 </div>
+<div class="table-tags" id="earningsTagsRow"></div>
 <div class="gh-goal-card">
 <div class="gh-goal-top"><span>Meta diaria</span><b id="goalAmountBadge">Meta $0.00</b></div>
 <div class="gh-goal-sub-row">
@@ -7790,7 +7801,6 @@
 </div>
 <div id="financePreviewRows"></div>
 </div>
-<div class="table-tags" id="earningsTagsRow"></div>
 <div id="earningsBonusRow"></div>
 </div>
 </div>
