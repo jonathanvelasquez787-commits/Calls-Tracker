@@ -6466,6 +6466,10 @@
       color: #07101f;
       font-weight: 900;
     }
+    /* Pedido del usuario: pill +/- de Finanzas — el signo "restar" activo se pinta rojo (--bad) en vez del verde genérico de arriba, para que se distinga del signo "sumar". */
+    .mc-pill-btn[data-sign="minus"][aria-pressed="true"] {
+      background: var(--bad);
+    }
 
     /* ========================================================== — Pedido del usuario: rediseño 100% VISUAL de "Editar hueco" (#gapModal), mismo criterio que Horario/Bloques del día/Ajustes/ Pegar Llamadas/Agregar llamada (-301) */
     .gap-tag-row {
@@ -6998,6 +7002,8 @@
       cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
     }
     .fin-mini-btn-primary .ic-svg { width: 12px; height: 12px; }
+    /* Pedido del usuario: pill +/- decide si "Aplicar" suma o resta del monto asignado — el botón cambia de cian a rojo según el signo activo, señal visual extra de qué va a pasar. */
+    .fin-mini-btn-primary.mode-minus { background: var(--bad); }
     .fin-ghost-btn {
       border: 1px solid var(--line); background: rgba(255,255,255,.03); color: var(--muted);
       border-radius: 9px; padding: 0 12px; height: 32px; font-size: 11px; font-weight: 700;
@@ -8786,10 +8792,6 @@ $0.72"></textarea>
 <div class="goals-field" id="financeRowTargetCurrencyField" style="display:none;">
 <label for="financeRowTargetCurrencyInput" id="financeRowTargetCurrencyLabel">Monto objetivo en tu moneda</label>
 <input id="financeRowTargetCurrencyInput" inputmode="decimal" min="0" step="0.01" type="number"/>
-</div>
-<div class="goals-field" id="financeRowAssignedField" style="display:none;">
-<label for="financeRowAssignedInput" id="financeRowAssignedLabel">Monto ya asignado ($)</label>
-<input id="financeRowAssignedInput" inputmode="decimal" min="0" step="0.01" type="number"/>
 </div>
 </div>
 
@@ -13516,6 +13518,13 @@ function financeRowHtml(row, opts) {
   const currencyAssignInputHtml = financeHasSecondaryCurrency()
     ? `<input class="fin-mini-input" data-fin-amount-currency-input placeholder="o en ${escapeHtml(currencyLabelTrim)}" type="text" title="${amountLinkTitle}"/>`
     : '';
+  // Pedido del usuario (mockup aprobado): pill +/- decide si "Aplicar" suma (resta de Disponible, mismo tope que antes tenía "Asignar") o resta (devuelve a Disponible) del monto asignado de esta fila.
+  const signPillHtml = `
+    <div class="mc-pill-row" role="group" aria-label="Sumar o restar">
+      <button class="mc-pill-btn" data-fin-sign-btn data-sign="plus" aria-pressed="true" type="button">+</button>
+      <button class="mc-pill-btn" data-fin-sign-btn data-sign="minus" aria-pressed="false" type="button">−</button>
+    </div>
+  `;
   const priorityTitle = 'Prioridad — decide el orden de la cascada de "Restante después"';
   const restanteDespuesTitle = 'Lo que te queda de tu Disponible después de cubrir esta fila y todas las de más prioridad arriba (↑/↓) — no es lo que falta pagar de este gasto.';
   const priorityHtml = `
@@ -13554,7 +13563,8 @@ function financeRowHtml(row, opts) {
         <div class="fin-row-actions">
           <input class="fin-mini-input" data-fin-amount-input placeholder="$" type="text" title="${amountLinkTitle}"/>
           ${currencyAssignInputHtml}
-          <button class="fin-mini-btn-primary" type="button" data-fin-assign="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}">${iconHtml('plus')} Asignar</button>
+          ${signPillHtml}
+          <button class="fin-mini-btn-primary" type="button" data-fin-apply="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}">Aplicar</button>
           <button class="fin-ghost-btn fin-ghost-btn-icon" type="button" data-fin-edit="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" aria-label="Editar meta" title="Editar meta">${iconHtml('edit')}</button>
           <button class="hr-window-remove-btn" type="button" data-fin-delete="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}" aria-label="Eliminar meta" title="Eliminar meta">${iconHtml('trash')}</button>
         </div>
@@ -13577,7 +13587,7 @@ function financeRowHtml(row, opts) {
     barPct = target > 0 ? Math.min(100, (assigned / target) * 100) : 0;
     if (assigned > 0) { badgeHtml = '<span class="fin-badge tone-warn">Parcial</span>'; barColor = 'var(--warn)'; }
     else { badgeHtml = '<span class="fin-badge tone-bad">Sin asignar</span>'; barPct = 0; barColor = 'var(--bad)'; }
-    actionsHtml = `${checkboxHtml}<input class="fin-mini-input" data-fin-amount-input placeholder="$" type="text" title="${amountLinkTitle}"/>${currencyAssignInputHtml}<button class="fin-mini-btn-primary" type="button" data-fin-assign="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}">${iconHtml('plus')} Asignar</button>${editBtnHtml}`;
+    actionsHtml = `${checkboxHtml}<input class="fin-mini-input" data-fin-amount-input placeholder="$" type="text" title="${amountLinkTitle}"/>${currencyAssignInputHtml}${signPillHtml}<button class="fin-mini-btn-primary" type="button" data-fin-apply="${escapeHtml(row.id)}" data-fin-cat="${escapeHtml(row.categoryId)}">Aplicar</button>${editBtnHtml}`;
   }
   return `
     <div class="fin-row" data-fin-row="${escapeHtml(row.id)}" style="--cat-rgb:${cat.rgb};">
@@ -13675,18 +13685,37 @@ function financeFindRow(catId, rowId) {
   return cat ? cat.rows.find(r => r.id === rowId) : null;
 }
 
-function financeAssignAmount(catId, rowId, rawAmount) {
+// Pedido del usuario (mockup mockup_finanzas_pill_aplicar_desktop/mobile.html, aprobado): "Asignar" pasa a "Aplicar", con un pill +/- junto al monto que decide el sentido — "+" resta de Disponible (mismo
+// tope de siempre: no pasa del objetivo en Gastos, no pasa de lo disponible), "-" devuelve dinero ya asignado a Disponible (tope: no puede restar más de lo que la fila ya tiene asignado).
+function financeApplySignedAmount(catId, rowId, rawAmount, sign) {
   const monto = parseMoney(rawAmount);
   if (!(monto > 0)) {
     toast('Ingresa un monto mayor a 0');
     return;
   }
+  const row = financeFindRow(catId, rowId);
+  if (!row) return;
+
+  if (sign === 'minus') {
+    const before = Number(row.assignedAmount) || 0;
+    const removed = Math.min(monto, before);
+    if (removed <= 0) {
+      toast('Esta fila no tiene nada asignado para restar');
+      return;
+    }
+    row.assignedAmount = before - removed;
+    saveSettingsOnly();
+    renderFinanceSection();
+    toast(removed < monto
+      ? `Solo se restaron ${money(removed)} de ${money(monto)} — la fila no tenía más asignado. El resto no se tocó.`
+      : 'Aplicado');
+    return;
+  }
+
   if (monto > financeAvailableBalance()) {
     toast('No tienes suficiente disponible para asignar esa cantidad');
     return;
   }
-  const row = financeFindRow(catId, rowId);
-  if (!row) return;
   let appliedAmount = monto;
   if (catId === 'ahorro') {
     row.assignedAmount = (Number(row.assignedAmount) || 0) + monto;
@@ -13698,10 +13727,10 @@ function financeAssignAmount(catId, rowId, rawAmount) {
   }
   saveSettingsOnly();
   renderFinanceSection();
-  // Un Gasto ya no acepta más de lo que le falta para su objetivo — si el monto pedido se recortó, se avisa cuánto entró de verdad en vez de un "Asignado" genérico que dejaría creer que se aplicó todo.
+  // Un Gasto ya no acepta más de lo que le falta para su objetivo — si el monto pedido se recortó, se avisa cuánto entró de verdad en vez de un "Aplicado" genérico que dejaría creer que se aplicó todo.
   toast(appliedAmount < monto
     ? `Solo se asignaron ${money(appliedAmount)} de ${money(monto)} — el gasto ya llegó a su objetivo. El resto sigue en Disponible.`
-    : 'Asignado');
+    : 'Aplicado');
 }
 
 function financeResetRow(catId, rowId) {
@@ -13766,15 +13795,9 @@ function openFinanceRowModal(kind, existingRow = null) {
   if (title) title.textContent = existingRow ? (isMeta ? 'Editar meta' : 'Editar gasto') : (isMeta ? 'Agregar meta' : 'Agregar gasto');
   if (subtitle) {
     subtitle.textContent = existingRow
-      ? 'Corrige nombre, categoría/tipo, monto objetivo o el monto ya asignado si te equivocaste.'
+      ? 'Corrige nombre, categoría/tipo o monto objetivo. Para sumar o restar el monto asignado, usa el pill +/- de la fila.'
       : 'Se agrega al final de la cola de prioridad — puedes reordenarla después con las flechas ↑/↓.';
   }
-  const assignedField = document.getElementById('financeRowAssignedField');
-  const assignedLabelEl = document.getElementById('financeRowAssignedLabel');
-  const assignedInput = document.getElementById('financeRowAssignedInput');
-  if (assignedField) assignedField.style.display = existingRow ? '' : 'none';
-  if (assignedLabelEl) assignedLabelEl.textContent = isMeta ? 'Monto ya ahorrado ($)' : 'Monto ya asignado ($)';
-  if (assignedInput) assignedInput.value = existingRow ? (Number(existingRow.assignedAmount) || 0).toFixed(2) : '';
   if (categoryField) categoryField.style.display = isMeta ? 'none' : '';
   if (typeField) typeField.style.display = isMeta ? 'none' : '';
   openModal('financeRowModal');
@@ -13812,20 +13835,13 @@ function saveFinanceRowModal() {
       return;
     }
 
-    const assignedInputEl = document.getElementById('financeRowAssignedInput');
+    // El modal ya no edita el monto asignado (eso vive en el pill +/- de la fila, ver financeApplySignedAmount) — si el objetivo se editó por debajo de lo ya asignado, se recorta para no dejar un Gasto por encima de su propio objetivo.
     const oldAssigned = Number(foundRow.assignedAmount) || 0;
-    let newAssigned = Number(assignedInputEl?.value);
-    if (!Number.isFinite(newAssigned) || newAssigned < 0) newAssigned = oldAssigned;
-    if (!isMeta) newAssigned = Math.min(newAssigned, target);
-    const assignedDelta = newAssigned - oldAssigned;
-    if (assignedDelta > 0 && assignedDelta > financeAvailableBalance()) {
-      toast('No tienes suficiente disponible para subir ese monto — baja la cantidad o libera espacio en otra fila.');
-      return;
-    }
+    const clampedAssigned = isMeta ? oldAssigned : Math.min(oldAssigned, target);
 
     foundRow.name = name;
     foundRow.targetAmount = target;
-    foundRow.assignedAmount = newAssigned;
+    foundRow.assignedAmount = clampedAssigned;
     if (!isMeta) {
       foundRow.recurring = (typeInput?.value || 'recurring') === 'recurring';
       if (catId !== foundCatId) {
@@ -18432,11 +18448,22 @@ function render() {
       if (downBtn) { financeSwapPriority(downBtn.getAttribute('data-fin-cat'), downBtn.getAttribute('data-fin-priority-down'), 1); return; }
       const resetBtn = e.target.closest('[data-fin-reset]');
       if (resetBtn) { financeResetRow(resetBtn.getAttribute('data-fin-cat'), resetBtn.getAttribute('data-fin-reset')); return; }
-      const assignBtn = e.target.closest('[data-fin-assign]');
-      if (assignBtn) {
-        const row = assignBtn.closest('.fin-row');
+      const signBtn = e.target.closest('[data-fin-sign-btn]');
+      if (signBtn) {
+        const row = signBtn.closest('.fin-row');
+        if (!row) return;
+        row.querySelectorAll('[data-fin-sign-btn]').forEach(b => b.setAttribute('aria-pressed', b === signBtn ? 'true' : 'false'));
+        const applyBtnInRow = row.querySelector('[data-fin-apply]');
+        if (applyBtnInRow) applyBtnInRow.classList.toggle('mode-minus', signBtn.getAttribute('data-sign') === 'minus');
+        return;
+      }
+      const applyBtn = e.target.closest('[data-fin-apply]');
+      if (applyBtn) {
+        const row = applyBtn.closest('.fin-row');
         const input = row ? row.querySelector('[data-fin-amount-input]') : null;
-        financeAssignAmount(assignBtn.getAttribute('data-fin-cat'), assignBtn.getAttribute('data-fin-assign'), input ? input.value : '');
+        const activeSignBtn = row ? row.querySelector('[data-fin-sign-btn][aria-pressed="true"]') : null;
+        const sign = activeSignBtn ? activeSignBtn.getAttribute('data-sign') : 'plus';
+        financeApplySignedAmount(applyBtn.getAttribute('data-fin-cat'), applyBtn.getAttribute('data-fin-apply'), input ? input.value : '', sign);
         return;
       }
       const deleteBtn = e.target.closest('[data-fin-delete]');
