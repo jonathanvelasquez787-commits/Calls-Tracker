@@ -8231,6 +8231,11 @@
     </div>
   </div>
 
+  <label class="sched-checkbox-row" style="margin-bottom:4px;">
+    <input id="financeAutoFillInput" type="checkbox"/> Asignar disponible automáticamente
+  </label>
+  <p class="sched-hint" style="margin:0 0 16px;">Cada llamada guardada reparte tu Disponible solo, en tu orden de prioridad — primero Gastos (saltando los ya Pagados), luego Metas — hasta llenar cada fila o hasta que ya no quede Disponible. Puedes seguir ajustando cualquier fila a mano con el pill +/-.</p>
+
   <div class="fin-tab-toggle" id="financeTabToggle" role="group" aria-label="Ver Gastos o Metas">
     <button class="fin-tab-btn active" data-fin-tab="gastos" type="button">Gastos</button>
     <button class="fin-tab-btn" data-fin-tab="metas" type="button">Metas</button>
@@ -9717,6 +9722,10 @@ $0.72"></textarea>
         historyStartDateOverride: '',
         // Pedido del usuario: página "Finanzas" — categorías fijas (ver FINANCE_CATEGORIES), cada una con sus propias filas de gasto/meta.
         financeCategories: { casa: { rows: [] }, servicios: { rows: [] }, transporte: { rows: [] }, comida: { rows: [] }, deuda: { rows: [] }, ahorro: { rows: [] }, otro: { rows: [] } },
+        // Pedido del usuario: reparte el Disponible SOLO (Gastos primero, luego
+        // Metas, ambos en su propio orden de prioridad) cada vez que se guarda
+        // una llamada, en vez de exigir "Aplicar" manual en cada fila.
+        financeAutoFill: false,
       };
     }
 
@@ -9873,6 +9882,7 @@ $0.72"></textarea>
         }
         cat.rows = cat.rows.filter(r => r && typeof r === 'object' && String(r.id || '').trim() && String(r.name || '').trim() && Number.isFinite(Number(r.targetAmount)) && Number(r.targetAmount) >= 0);
       });
+      if (typeof settings.financeAutoFill !== 'boolean') settings.financeAutoFill = false;
     }
 
     // Pedido del usuario: modo claro/oscuro — 'auto' (default) sigue el sistema vía @media (prefers-color-scheme:
@@ -13664,6 +13674,9 @@ function renderFinanceSection() {
   const availableConvertedEl = document.getElementById('financeAvailableConverted');
   if (availableConvertedEl) availableConvertedEl.textContent = convertedAmountText(available);
 
+  const autoFillInput = document.getElementById('financeAutoFillInput');
+  if (autoFillInput) autoFillInput.checked = !!settings.financeAutoFill;
+
   const gastoRows = financeGastoRowsSorted();
   const nextPending = gastoRows.find(r => !financeIsRowPagado(r));
   const nextPriorityEl = document.getElementById('financeNextPriorityVal');
@@ -13772,6 +13785,51 @@ function financeApplySignedAmount(catId, rowId, rawAmount, sign) {
   toast(appliedAmount < monto
     ? `Solo se asignaron ${money(appliedAmount)} de ${money(monto)} — el gasto ya llegó a su objetivo. El resto sigue en Disponible.`
     : 'Aplicado');
+}
+
+// Pedido del usuario: reparte TODO el Disponible actual, solo, en el mismo
+// orden de prioridad que ya usa la cascada de "Restante después" — primero
+// Gastos (financeGastoRowsSorted, saltando los ya Pagados), luego Metas
+// (financeMetaRowsSorted), sin pasarse del objetivo de cada fila. Convive
+// con el pill +/- manual: éste sigue funcionando igual, sin importar si el
+// auto-llenado está activo — el usuario puede reajustar cualquier fila a
+// mano en cualquier momento.
+function financeRunAutoFillCascade() {
+  if (!settings.financeAutoFill) return false;
+  let changed = false;
+  // Tope defensivo de iteraciones — cada vuelta llena una fila distinta o
+  // agota el Disponible, así que nunca debería acercarse a este número.
+  let guard = 0;
+  while (guard++ < 500) {
+    const available = financeAvailableBalance();
+    if (available <= 0.004) break;
+    const nextRow = financeGastoRowsSorted().find(r => !financeIsRowPagado(r))
+      || financeMetaRowsSorted().find(r => (Number(r.assignedAmount) || 0) < (Number(r.targetAmount) || 0) - 0.004);
+    if (!nextRow) break; // nada pendiente en ninguna cola — el resto se queda en Disponible
+    const remaining = Math.max(0, (Number(nextRow.targetAmount) || 0) - (Number(nextRow.assignedAmount) || 0));
+    const applyAmount = Math.min(available, remaining);
+    if (applyAmount <= 0) break;
+    nextRow.assignedAmount = (Number(nextRow.assignedAmount) || 0) + applyAmount;
+    changed = true;
+  }
+  return changed;
+}
+
+// Checkbox "Asignar disponible automáticamente" (ver #financeAutoFillInput
+// en el HTML) — al activarlo, reparte de inmediato cualquier Disponible que
+// ya hubiera quedado sin asignar de antes.
+function updateFinanceAutoFillSetting(checked) {
+  settings.financeAutoFill = !!checked;
+  const changed = settings.financeAutoFill && financeRunAutoFillCascade();
+  saveSettingsOnly();
+  renderFinanceSection();
+  if (settings.financeAutoFill) {
+    toast(changed
+      ? 'Asignación automática activada — tu Disponible ya se repartió en orden de prioridad'
+      : 'Asignación automática activada — se repartirá con tu próxima llamada guardada');
+  } else {
+    toast('Asignación automática desactivada — vuelve a ser manual');
+  }
 }
 
 function financeResetRow(catId, rowId) {
@@ -13916,6 +13974,10 @@ function saveFinanceRowModal() {
     row.manualPaid = false;
   }
   cat.rows.push(row);
+  // La fila nueva entra al final de su cola (prioridad más baja) — si ya
+  // había Disponible sin asignar de antes, solo le toca lo que sobre
+  // después de las filas con más prioridad.
+  financeRunAutoFillCascade();
   saveSettingsOnly();
   closeModal('financeRowModal');
   renderFinanceSection();
@@ -14717,6 +14779,7 @@ function saveFinanceRowModal() {
       const overlapNote = overlapSkipped ? ` · ${overlapSkipped} traslapada(s) omitida(s)` : '';
       const duplicateNote = skippedDuplicates.length ? ` · ${skippedDuplicates.length} duplicada(s) omitida(s)` : '';
       setEvent('import', 'Llamadas importadas', `${unique.length} fila(s) · ${importNote}${overlapNote}${duplicateNote}`, 'Propio');
+      if (unique.length) financeRunAutoFillCascade();
       saveAll();
       // BUG-017 — El resumen detallado (con motivo por fila) queda visible dentro del modal en vez de depender solo del toast, que ya desaparece solo
       renderImportSkippedSummary(skippedDuplicates, skippedOverlaps);
@@ -16777,6 +16840,7 @@ function saveCallEditor() {
 
   editingCallId = null;
   closeModal('callEditModal');
+  financeRunAutoFillCascade();
   saveAll();
   toast('Llamada actualizada');
 }
@@ -17045,6 +17109,7 @@ function saveManualCall() {
   // se apaga la bandera antes de cerrar sin preguntar.
   manualCallLiveBackupPending = false;
   closeModal('manualCallModal');
+  financeRunAutoFillCascade();
   saveAll();
   toast('Llamada agregada');
 }
@@ -17065,6 +17130,7 @@ function autoSaveLiveCall(startedAtISO, endedAtISO) {
   const result = trySaveCallCandidate(candidate);
 
   if (result.ok) {
+    financeRunAutoFillCascade();
     saveAll();
     toast(`Llamada guardada (${formatDuration(durationMin * 60000)}) — edítala en Tabla de llamadas si hace falta`);
   } else {
@@ -18538,6 +18604,7 @@ function render() {
       if (!checkbox) return;
       financeToggleManualPaid(checkbox.getAttribute('data-fin-cat'), checkbox.getAttribute('data-fin-mark-paid'), checkbox.checked);
     });
+    document.getElementById('financeAutoFillInput').addEventListener('change', (e) => updateFinanceAutoFillSetting(e.target.checked));
     document.getElementById('saveDayNoteBtn').addEventListener('click', saveDayNoteFromModal);
     document.getElementById('clearDayNoteBtn').addEventListener('click', clearDayNoteFromModal);
     document.getElementById('saveCallEditBtn').addEventListener('click', saveCallEditor);
