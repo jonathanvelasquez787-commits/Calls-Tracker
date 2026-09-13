@@ -9860,8 +9860,6 @@ $0.72"></textarea>
     }
 
     function updateThemeButtonUI() {
-      const btn = document.getElementById('themeToggleBtn');
-      if (btn) btn.textContent = themeButtonLabel(settings.theme);
       const sidebarSwitch = document.getElementById('sidebarDarkModeInput');
       if (sidebarSwitch) sidebarSwitch.checked = isEffectivelyDark();
     }
