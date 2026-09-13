@@ -6849,6 +6849,64 @@
       border-radius: 50%;
     }
 
+    /* Preview de próximos 2 gastos/metas pendientes de Finanzas, dentro de "Ganancias de hoy" (mockup finanzas_preview_mockup_desktop.html, aprobado — "Ganancias de hoy", solo escritorio). */
+    .fin-preview {
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: grid;
+      gap: 6px;
+    }
+    .fin-preview-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 2px;
+    }
+    .fin-preview-title {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--muted);
+    }
+    .fin-preview-link {
+      border: 0;
+      background: transparent;
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--cyan);
+      cursor: pointer;
+      white-space: nowrap;
+      padding: 0;
+    }
+    .fin-preview-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .fin-preview-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .fin-preview-icon {
+      width: 28px; height: 28px; border-radius: 9px; flex: 0 0 auto;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: rgba(var(--cat-rgb), .14);
+      border: 1px solid rgba(var(--cat-rgb), .3);
+      color: rgb(var(--cat-rgb));
+    }
+    .fin-preview-icon .ic-svg { width: 14px; height: 14px; }
+    .fin-preview-main { flex: 1 1 auto; min-width: 0; }
+    .fin-preview-name { font-size: 12.5px; font-weight: 800; }
+    .fin-preview-sub { font-size: 10.5px; color: var(--muted); margin-top: 1px; }
+    .fin-preview-right { text-align: right; flex: 0 0 auto; }
+    .fin-preview-amt { font-size: 12.5px; font-weight: 900; }
+    .fin-preview-amt-label { font-size: 9.5px; color: var(--muted); }
+    .fin-preview-bar { height: 4px; border-radius: 99px; background: rgba(255,255,255,.08); overflow: hidden; margin-top: 5px; }
+    .fin-preview-bar > div { height: 100%; border-radius: inherit; }
+
     /* ========================================================== — Pedido del usuario: página "Finanzas" (mockup finanzas_mockup_desktop_v3.html, aprobado). El contenedor de página es un `section.card` normal (mismo patrón que #callsSection) — no se repite `.fin-wrap` del mockup. */
     .fin-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
     .fin-header-left { display: flex; align-items: flex-start; gap: 14px; }
@@ -7716,6 +7774,13 @@
 </div>
 <div class="progress" style="margin-top: 4px;"><div id="earningsBar"></div></div>
 <div class="gh-goal-foot" id="remainingText">0 min restantes</div>
+</div>
+<div class="fin-preview" id="financePreviewBox" style="display:none;">
+<div class="fin-preview-head">
+<span class="fin-preview-title">Próximos pendientes</span>
+<button class="fin-preview-link" data-nav-page="finance" type="button">Ver Finanzas →</button>
+</div>
+<div id="financePreviewRows"></div>
 </div>
 <div class="table-tags" id="earningsTagsRow"></div>
 <div id="earningsBonusRow"></div>
@@ -13479,6 +13544,56 @@ function financeIsRowPagado(row) {
   return row.manualPaid === true || (Number(row.assignedAmount) >= Number(row.targetAmount) && Number(row.targetAmount) > 0);
 }
 
+// Próximos 2 gastos/metas pendientes (Gastos primero por prioridad, saltando
+// Pagados; si no alcanzan el límite, se completa con Metas) — para el
+// preview de "Ganancias de hoy". Sin registro nuevo, reutiliza las mismas
+// colas de Finanzas.
+function financePendingPreviewItems(limit = 2) {
+  const pending = [];
+  financeGastoRowsSorted().forEach(r => {
+    if (!financeIsRowPagado(r)) pending.push({ row: r, isMeta: false });
+  });
+  if (pending.length < limit) {
+    financeMetaRowsSorted().forEach(r => {
+      if ((Number(r.assignedAmount) || 0) < (Number(r.targetAmount) || 0) - 0.004) {
+        pending.push({ row: r, isMeta: true });
+      }
+    });
+  }
+  return pending.slice(0, limit);
+}
+
+function renderFinancePreview() {
+  const box = document.getElementById('financePreviewBox');
+  const rowsEl = document.getElementById('financePreviewRows');
+  if (!box || !rowsEl) return;
+  const items = financePendingPreviewItems(2);
+  if (!items.length) { box.style.display = 'none'; return; }
+  box.style.display = '';
+  rowsEl.innerHTML = items.map(({ row, isMeta }) => {
+    const cat = FINANCE_CATEGORIES[row.categoryId] || FINANCE_CATEGORIES.otro;
+    const target = Number(row.targetAmount) || 0;
+    const assigned = Number(row.assignedAmount) || 0;
+    const pct = target > 0 ? Math.min(100, (assigned / target) * 100) : 0;
+    const faltante = Math.max(0, target - assigned);
+    const barColor = isMeta ? 'var(--purple)' : 'var(--warn)';
+    return `
+      <div class="fin-preview-row">
+        <span class="fin-preview-icon" style="--cat-rgb:${cat.rgb};">${iconHtml(cat.icon)}</span>
+        <div class="fin-preview-main">
+          <div class="fin-preview-name">${escapeHtml(row.name)}</div>
+          <div class="fin-preview-sub">Faltan ${money(faltante)} de ${money(target)}</div>
+          <div class="fin-preview-bar"><div style="width:${pct}%; background:${barColor};"></div></div>
+        </div>
+        <div class="fin-preview-right">
+          <div class="fin-preview-amt">${money(assigned)}</div>
+          <div class="fin-preview-amt-label">${isMeta ? 'ahorrado' : 'asignado'}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 let financeActiveTab = 'gastos';
 let financeRowModalKind = 'gasto';
 let financeEditingRowId = null;
@@ -13712,6 +13827,8 @@ function renderFinanceSection() {
       ? metaRows.map((r, i) => financeRowHtml(r, { index: i, count: metaRows.length, isMeta: true })).join('') + financeTotalsRowHtml('Total metas', metaTargetTotal, metaAssignedTotal, 'Ahorrado')
       : '<div class="note" style="margin:0;">Sin metas configuradas. Usa "+ Agregar meta" para empezar.</div>';
   }
+
+  renderFinancePreview();
 }
 
 function financeSwapPriority(catIdIgnored, rowId, direction) {
@@ -17731,6 +17848,7 @@ function render() {
       if (currentPage === 'finance') renderFinanceSection();
       renderTable();
       renderDayStatsCards();
+      renderFinancePreview();
       updateLiveActivityBar();
       updateCallsStatusCard();
       updateSidebarProgressWidget();
@@ -18036,6 +18154,13 @@ function render() {
       const target = e.target instanceof Element ? e.target.closest('[data-edit-card="cycle-goal"]') : null;
       if (!target) return;
       openCycleGoalEditor();
+    });
+
+    // "Ver Finanzas →" del preview de próximos pendientes (Ganancias de hoy)
+    document.addEventListener('click', (e) => {
+      const btn = e.target instanceof Element ? e.target.closest('[data-nav-page]') : null;
+      if (!btn) return;
+      navigateToPage(btn.getAttribute('data-nav-page'));
     });
 
     document.getElementById('clearDayCallsBtn').addEventListener('click', clearActiveDayCalls);
