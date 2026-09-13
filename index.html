@@ -673,6 +673,20 @@
       :root:not(.theme-dark) .sblk-dot {
         border-color: rgba(var(--accent-blue-2-rgb), .75);
       }
+      /* v472 — v471 solo corrigió el borde/fondo tenue de .sblk-card/.sblk-dot.
+         La capa de relleno líquido (.sblk-fill) es un elemento aparte que
+         siempre pinta rgb(var(--sblk-rgb, var(--rpt-purple-rgb))) — nadie
+         define --sblk-rgb en ningún lado, así que SIEMPRE cae al morado de
+         --rpt-purple-rgb, sin importar el tema. Con el líquido casi al 100%
+         en bloques "Hecho" (.30 de opacidad sobre buena parte de la tarjeta),
+         ese morado de fondo terminaba dominando visualmente incluso con el
+         borde/fondo ya en azul. Se fija SOLO el color en modo claro, sin
+         tocar el criterio "un solo color para todos los tipos" (ver
+         comentario junto a .sblk-fill en el CSS base, más abajo).
+      */
+      :root:not(.theme-dark) .sblk-fill {
+        background: rgb(var(--accent-blue-2-rgb));
+      }
     }
     html.theme-light .action-btn:not(.is-active) {
       border-color: var(--line-2);
@@ -1080,6 +1094,10 @@
     }
     html.theme-light .sblk-dot {
       border-color: rgba(var(--accent-blue-2-rgb), .75);
+    }
+    /* v472 — Ver comentario gemelo en la rama @media de arriba. */
+    html.theme-light .sblk-fill {
+      background: rgb(var(--accent-blue-2-rgb));
     }
 
     * { box-sizing: border-box; }
