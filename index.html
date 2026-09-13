@@ -7799,7 +7799,6 @@
 </div>
 </div>
 <div class="table-tags" id="earningsTagsRow"></div>
-<div id="earningsBonusRow"></div>
 <div class="gh-goal-card">
 <div class="gh-goal-top"><span>Meta diaria</span><b id="goalAmountBadge">Meta $0.00</b></div>
 <div class="gh-goal-sub-row">
@@ -10332,7 +10331,7 @@ $0.72"></textarea>
         const colorVar = meta?.colorVar || '--warn';
         const rgb = meta?.colorRgb || '255,209,92';
         const label = meta?.label || tier;
-        return `<span class="${tagClass}" style="background: rgba(${rgb},.16); border-color: rgba(${rgb},.4); color: var(${colorVar});">${iconHtml('flame')} ${escapeHtml(label)}: +${money(amount)}</span>`;
+        return `<span class="${tagClass}" style="background: rgba(${rgb},.16); border-color: rgba(${rgb},.4); color: var(${colorVar});" title="Bono extra ganado por llamadas dentro de una ventana Higher Rate ${escapeHtml(label)}">${iconHtml('flame')} ${escapeHtml(label)}: +${money(amount)}</span>`;
       }).join('');
     }
 
@@ -16716,12 +16715,10 @@ function renderHeader() {
     stats.breakGapTotal > 0 ? `<span class="tag warn" title="Tiempo de Break tomado hoy">Break: ${formatDuration(stats.breakGapTotal * 60000)}</span>` : '',
     stats.lunchGapTotal > 0 ? `<span class="tag cyan" title="Tiempo de Lunch tomado hoy">Lunch: ${formatDuration(stats.lunchGapTotal * 60000)}</span>` : '',
     stats.otherGapTotal > 0 ? `<span class="tag" title="Tiempo clasificado como Otro (huecos largos sin Break/Lunch real)">Otro: ${formatDuration(stats.otherGapTotal * 60000)}</span>` : '',
+    higherRateBreakdownTagsHtml(stats.higherRateBreakdown, 'tag'),
     adherenceForTag ? `<span class="tag ${adherenceForTag.scorePct >= 90 ? 'good' : adherenceForTag.scorePct >= 70 ? 'warn' : 'bad'}" title="Qué tan apegado estuviste hoy a tu horario planeado">Adherencia: ${adherenceForTag.scorePct}%</span>` : '',
   ].join('');
   document.getElementById('earningsTagsRow').innerHTML = earningsTagsHtml;
-  // Pedido del usuario: el bono de Higher Rate (si aplica hoy) ya no vive SOLO como tag chico dentro de la fila de arriba (se quitó `higherRateBreakdownTagsHtml(...)` de ese array)
-  const earningsBonusRowEl = document.getElementById('earningsBonusRow');
-  if (earningsBonusRowEl) earningsBonusRowEl.innerHTML = higherRateBonusChipsHtml(stats.higherRateBreakdown);
   const earnBar = document.getElementById('earningsBar');
   earnBar.style.width = `${goalPct}%`;
   // Pedido del usuario : esta barra (relleno de "Ganancias de hoy") usaba var(--cyan) — en modo claro --cyan es en realidad el rosa/magenta de --primary.
