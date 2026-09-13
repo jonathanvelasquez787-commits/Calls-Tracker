@@ -139,6 +139,9 @@
         --accent-decorative: #00F0FF;
         --accent-decorative-rgb: 0, 240, 255;
         --accent-decorative-pale: #046C7A;
+        /* Pedido del usuario: acento azul puntual (mismo --cyan de modo oscuro, #2fd5ff) reutilizado en un puñado de elementos concretos de modo claro donde el rosa heredado de --cyan/--primary no se quería — ver los selectores que consumen esta variable, más abajo en el archivo. */
+        --accent-blue-2: #2fd5ff;
+        --accent-blue-2-rgb: 47, 213, 255;
         /* Pedido del usuario : --bad/--pink en este tema apuntan a --primary (rosa/magenta, #EC1E7A) — el mismo problema de fondo que ya motivó --accent-decorative : "cian" prestado que en realidad se ve rosa. Aquí el caso es al revés: */
         --danger-red: #DC2626;
         --danger-red-rgb: 220, 38, 38;
@@ -223,6 +226,9 @@
       --accent-decorative: #00F0FF;
       --accent-decorative-rgb: 0, 240, 255;
       --accent-decorative-pale: #046C7A;
+      /* Ver comentario gemelo en la rama @media de arriba — mismo acento azul puntual. */
+      --accent-blue-2: #2fd5ff;
+      --accent-blue-2-rgb: 47, 213, 255;
       /* Ver comentario gemelo en la rama @media de arriba (v217) — misma
          variable, mismo criterio. */
       --danger-red: #DC2626;
@@ -573,6 +579,32 @@
         --accent-pale: var(--hover-flip);
         --accent-rgb: var(--hover-flip-rgb);
       }
+      /* Pedido del usuario: acento azul puntual (--accent-blue-2, ver :root arriba) en vez del rosa heredado de --cyan/--primary, solo en estos elementos concretos — menú lateral, tarjeta "Shift" de Bloques del día, fila de hoy en Resumen semanal, Fechas de pago, Calendario, "Disponible para asignar" de Finanzas, emoji de Ajustes, aviso de Higher Rate y el botón "Llamadas" del segmentado de Bloques del día. */
+      :root:not(.theme-dark) .sidebar-link.active {
+        background: rgba(var(--accent-blue-2-rgb), .14);
+        border-color: rgba(var(--accent-blue-2-rgb), .35);
+      }
+      :root:not(.theme-dark) .sidebar-link-dot {
+        background: var(--accent-blue-2);
+        box-shadow: 0 0 10px rgba(var(--accent-blue-2-rgb), .6);
+      }
+      :root:not(.theme-dark) .block-summary-card[data-accent="cyan"] { --bsc-rgb: var(--accent-blue-2-rgb); }
+      :root:not(.theme-dark) .wk-row.is-today { background: rgba(var(--accent-blue-2-rgb), .06); }
+      :root:not(.theme-dark) .wk-row-icon.tone-cyan { background: rgba(var(--accent-blue-2-rgb), .16); color: var(--accent-blue-2); }
+      :root:not(.theme-dark) .wk-row-badge.tone-cyan { background: rgba(var(--accent-blue-2-rgb), .16); color: var(--accent-blue-2); }
+      :root:not(.theme-dark) .pd-next-card { border-color: rgba(var(--accent-blue-2-rgb), .35); background: rgba(var(--accent-blue-2-rgb), .08); }
+      :root:not(.theme-dark) .pd-next-label { color: var(--accent-blue-2); }
+      :root:not(.theme-dark) .cal-back-pill { color: var(--accent-blue-2); }
+      :root:not(.theme-dark) .cal-back-pill:hover,
+      :root:not(.theme-dark) .cal-back-pill:focus-visible { background: rgba(var(--accent-blue-2-rgb), .1); border-color: rgba(var(--accent-blue-2-rgb), .4); }
+      :root:not(.theme-dark) .cal-back-pill-chev { background: rgba(var(--accent-blue-2-rgb), .16); }
+      :root:not(.theme-dark) .cal-year-pill { border-color: rgba(var(--accent-blue-2-rgb), .4); background: rgba(var(--accent-blue-2-rgb), .14); color: var(--accent-blue-2); }
+      :root:not(.theme-dark) .fin-available-card { border-color: rgba(var(--accent-blue-2-rgb), .35); background: rgba(var(--accent-blue-2-rgb), .08); }
+      :root:not(.theme-dark) .fin-available-label { color: var(--accent-blue-2); }
+      :root:not(.theme-dark) .goals-emoji-circle { background: rgba(var(--accent-blue-2-rgb), .14); border-color: rgba(var(--accent-blue-2-rgb), .4); }
+      :root:not(.theme-dark) .mc-info-box { border-color: rgba(var(--accent-blue-2-rgb), .18); background: rgba(var(--accent-blue-2-rgb), .07); }
+      :root:not(.theme-dark) .mc-info-box .ic-svg { color: var(--accent-blue-2); stroke: var(--accent-blue-2); }
+      :root:not(.theme-dark) .blocks-view-btn.active { background: var(--accent-blue-2); }
     }
     html.theme-light .action-btn:not(.is-active) {
       border-color: var(--line-2);
@@ -893,6 +925,32 @@
       --accent-pale: var(--hover-flip);
       --accent-rgb: var(--hover-flip-rgb);
     }
+    /* v468 — Ver comentario gemelo en la rama @media de arriba: mismo acento azul puntual. */
+    html.theme-light .sidebar-link.active {
+      background: rgba(var(--accent-blue-2-rgb), .14);
+      border-color: rgba(var(--accent-blue-2-rgb), .35);
+    }
+    html.theme-light .sidebar-link-dot {
+      background: var(--accent-blue-2);
+      box-shadow: 0 0 10px rgba(var(--accent-blue-2-rgb), .6);
+    }
+    html.theme-light .block-summary-card[data-accent="cyan"] { --bsc-rgb: var(--accent-blue-2-rgb); }
+    html.theme-light .wk-row.is-today { background: rgba(var(--accent-blue-2-rgb), .06); }
+    html.theme-light .wk-row-icon.tone-cyan { background: rgba(var(--accent-blue-2-rgb), .16); color: var(--accent-blue-2); }
+    html.theme-light .wk-row-badge.tone-cyan { background: rgba(var(--accent-blue-2-rgb), .16); color: var(--accent-blue-2); }
+    html.theme-light .pd-next-card { border-color: rgba(var(--accent-blue-2-rgb), .35); background: rgba(var(--accent-blue-2-rgb), .08); }
+    html.theme-light .pd-next-label { color: var(--accent-blue-2); }
+    html.theme-light .cal-back-pill { color: var(--accent-blue-2); }
+    html.theme-light .cal-back-pill:hover,
+    html.theme-light .cal-back-pill:focus-visible { background: rgba(var(--accent-blue-2-rgb), .1); border-color: rgba(var(--accent-blue-2-rgb), .4); }
+    html.theme-light .cal-back-pill-chev { background: rgba(var(--accent-blue-2-rgb), .16); }
+    html.theme-light .cal-year-pill { border-color: rgba(var(--accent-blue-2-rgb), .4); background: rgba(var(--accent-blue-2-rgb), .14); color: var(--accent-blue-2); }
+    html.theme-light .fin-available-card { border-color: rgba(var(--accent-blue-2-rgb), .35); background: rgba(var(--accent-blue-2-rgb), .08); }
+    html.theme-light .fin-available-label { color: var(--accent-blue-2); }
+    html.theme-light .goals-emoji-circle { background: rgba(var(--accent-blue-2-rgb), .14); border-color: rgba(var(--accent-blue-2-rgb), .4); }
+    html.theme-light .mc-info-box { border-color: rgba(var(--accent-blue-2-rgb), .18); background: rgba(var(--accent-blue-2-rgb), .07); }
+    html.theme-light .mc-info-box .ic-svg { color: var(--accent-blue-2); stroke: var(--accent-blue-2); }
+    html.theme-light .blocks-view-btn.active { background: var(--accent-blue-2); }
 
     * { box-sizing: border-box; }
     html, body { min-height: 100%; }
@@ -13504,7 +13562,7 @@ function renderPayDatesSection() {
       </div>
     </div>
     <div class="pd-legend-row">
-      <span class="pd-legend-item"><span class="pd-legend-dot" style="background:var(--cyan);"></span>Ciclo actual</span>
+      <span class="pd-legend-item"><span class="pd-legend-dot" style="background:var(--accent-blue-2, var(--cyan));"></span>Ciclo actual</span>
       <span class="pd-legend-item"><span class="pd-legend-dot" style="background:var(--good);"></span>Ya pagado</span>
     </div>
   `;
@@ -13529,7 +13587,7 @@ function renderPayDatesSection() {
           <div class="wk-row-sub">${escapeHtml(subText)}</div>
         </div>
         <div class="wk-row-right">
-          <div class="wk-row-amount" style="color: ${isNextPayment ? 'var(--cyan)' : 'var(--text)'};">${escapeHtml(fmtShort(c.payDate))}</div>
+          <div class="wk-row-amount" style="color: ${isNextPayment ? 'var(--accent-blue-2, var(--cyan))' : 'var(--text)'};">${escapeHtml(fmtShort(c.payDate))}</div>
           <div class="wk-row-amount-sub">${escapeHtml(statusText)}</div>
         </div>
       </div>
