@@ -13096,13 +13096,9 @@ function renderWeekSummary() {
     const dayLabel = WEEKDAY_LABELS[weekdayKey];
     const noteMeta = r.note ? dayNoteCategoryMeta(r.note.category) : null;
 
-    // Estado del día: decide el badge (texto+tono), el ícono (nombre+tono) y si la fila cuenta como "trabajada" — mismo orden de prioridad que (nota con categoría > Libre > Futuro > Sin datos > Trabajado).
+    // Estado del día: decide el badge (texto+tono) y el ícono (nombre+tono) — SOLO según si el día cuenta como laborado de verdad (Libre > Futuro > Sin datos > Trabajado). La Categoría (noteMeta) es puramente informativa (ver "Editar día") y nunca reemplaza este badge — se muestra aparte, como chip adicional.
     let badgeText, badgeTone, iconName, iconTone;
-    if (noteMeta) {
-      badgeText = noteMeta.label;
-      badgeTone = noteMeta.tagClass === 'good' ? 'good' : noteMeta.tagClass === 'bad' ? 'bad' : noteMeta.tagClass === 'warn' ? 'bad' : 'neutral';
-      iconName = 'calendar'; iconTone = badgeTone;
-    } else if (r.isOff) {
+    if (r.isOff) {
       badgeText = 'Libre'; badgeTone = 'neutral'; iconName = 'calendar'; iconTone = 'neutral';
     } else if (r.isFuture) {
       badgeText = 'Futuro'; badgeTone = 'neutral'; iconName = 'calendar'; iconTone = 'neutral';
@@ -13111,9 +13107,11 @@ function renderWeekSummary() {
     } else {
       badgeText = 'Trabajado'; badgeTone = 'good'; iconName = 'check'; iconTone = 'good';
     }
-    if (r.isToday && !r.isOff && !noteMeta) { badgeText = 'Hoy'; badgeTone = 'cyan'; iconTone = 'cyan'; }
+    if (r.isToday && !r.isOff) { badgeText = 'Hoy'; badgeTone = 'cyan'; iconTone = 'cyan'; }
 
-    const worked = !r.isFuture && (r.hasShift || r.calls);
+    const noteBadgeTone = noteMeta ? (noteMeta.tagClass === 'good' ? 'good' : noteMeta.tagClass === 'bad' ? 'bad' : noteMeta.tagClass === 'warn' ? 'bad' : 'neutral') : '';
+    const noteBadgeHtml = noteMeta ? ` <span class="wk-row-badge tone-${noteBadgeTone}">${escapeHtml(noteMeta.label)}</span>` : '';
+
     const rowClasses = ['wk-row', r.isToday ? 'is-today' : '', r.isFuture ? 'is-future' : ''].filter(Boolean).join(' ');
 
     const adherenceText = r.adherencePct === null ? '' : ` · Adherencia ${r.adherencePct}%`;
@@ -13140,7 +13138,7 @@ function renderWeekSummary() {
       <div class="${rowClasses}" data-week-day="${escapeHtml(r.dayKey)}">
         <span class="wk-row-icon tone-${iconTone}" aria-hidden="true">${iconHtml(iconName)}</span>
         <div class="wk-row-main">
-          <div class="wk-row-title">${escapeHtml(dayLabel)} <span class="wk-row-badge tone-${badgeTone}">${escapeHtml(badgeText)}</span></div>
+          <div class="wk-row-title">${escapeHtml(dayLabel)} <span class="wk-row-badge tone-${badgeTone}">${escapeHtml(badgeText)}</span>${noteBadgeHtml}</div>
           <div class="wk-row-sub">${subText}</div>
           ${noteHtml}
         </div>
