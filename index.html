@@ -7481,6 +7481,19 @@
       border-radius: 999px;
       white-space: nowrap;
     }
+    /* Pedido del usuario: las 2 píldoras de "Hoy en Higher Rate" (tiempo real
+       en llamada + bono, vs. duración total de tus ventanas configuradas)
+       necesitan diferenciarse a simple vista — cada una con su propio tono. */
+    .hr-count-pill.tone-live {
+      color: var(--good);
+      background: rgba(var(--good-rgb), .14);
+      border-color: rgba(var(--good-rgb), .35);
+    }
+    .hr-count-pill.tone-window {
+      color: var(--blue);
+      background: rgba(var(--blue-rgb), .14);
+      border-color: rgba(var(--blue-rgb), .35);
+    }
     .hr-window-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -8994,11 +9007,10 @@
 <div class="hr-section-head">
 <div class="hr-section-title">Hoy en Higher Rate</div>
 <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
-<div class="hr-count-pill" id="higherRateTodayPill" title="Tiempo real en llamada dentro de una ventana de Higher Rate hoy, y el bono que ya ganaste por eso.">0 min en llamada · $0.00</div>
-<div class="hr-count-pill" id="higherRateTodayWindowsPill" title="Duración total de tus ventanas de Higher Rate de hoy, las hayas aprovechado o no.">0 min de ventana</div>
+<div class="hr-count-pill tone-live" id="higherRateTodayPill" title="Tiempo real en llamada dentro de una ventana de Higher Rate hoy, y el bono que ya ganaste por eso.">0 min en llamada · $0.00</div>
+<div class="hr-count-pill tone-window" id="higherRateTodayWindowsPill" title="Duración total de tus ventanas de Higher Rate de hoy, las hayas aprovechado o no.">0 min de ventana</div>
 </div>
 </div>
-<div id="higherRateTodayBreakdown" style="margin-bottom:4px;"></div>
 
 <div class="hr-section-head">
 <div class="hr-section-title">Ventanas activas</div>
