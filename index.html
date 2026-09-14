@@ -8993,7 +8993,10 @@
 
 <div class="hr-section-head">
 <div class="hr-section-title">Hoy en Higher Rate</div>
-<div class="hr-count-pill" id="higherRateTodayPill">0 min · $0.00</div>
+<div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; justify-content:flex-end;">
+<div class="hr-count-pill" id="higherRateTodayPill" title="Tiempo real en llamada dentro de una ventana de Higher Rate hoy, y el bono que ya ganaste por eso.">0 min en llamada · $0.00</div>
+<div class="hr-count-pill" id="higherRateTodayWindowsPill" title="Duración total de tus ventanas de Higher Rate de hoy, las hayas aprovechado o no.">0 min de ventana</div>
+</div>
 </div>
 <div id="higherRateTodayBreakdown" style="margin-bottom:4px;"></div>
 
@@ -16584,15 +16587,35 @@ function saveFinanceRowModal() {
       return { totalMin, totalBonus, breakdown };
     }
 
+    // Duración TOTAL de las ventanas de Higher Rate configuradas para hoy
+    // (las hayas aprovechado o no) — distinto de `higherRateStatsForDay`
+    // (tiempo real en llamada). Se fusionan traslapes con `mergeIntervals`
+    // (misma función ya usada para pausas) para no contar dos veces la
+    // franja compartida si dos ventanas se superponen.
+    function higherRateWindowsTodayTotalMin(dayKey = todayCallDateKey()) {
+      const todaysWindows = (settings.higherRateWindows || []).filter(w => w.date === dayKey);
+      const intervals = todaysWindows
+        .map(w => ({ start: toDateFromInputs(w.date, timeLabel(w.start)), end: toDateFromInputs(w.date, timeLabel(w.end)) }))
+        .filter(iv => iv.start && iv.end && iv.end > iv.start);
+      return mergeIntervals(intervals).reduce((sum, iv) => sum + (iv.end.getTime() - iv.start.getTime()) / 60000, 0);
+    }
+
     function updateHigherRateTodayStats() {
       const pill = document.getElementById('higherRateTodayPill');
+      const windowsPill = document.getElementById('higherRateTodayWindowsPill');
       const breakdownEl = document.getElementById('higherRateTodayBreakdown');
-      if (!pill && !breakdownEl) return;
+      if (!pill && !windowsPill && !breakdownEl) return;
       const stats = higherRateStatsForDay(todayCallDateKey());
       if (pill) {
         pill.textContent = stats.totalMin > 0
-          ? `${formatBlockDurationLabel(stats.totalMin)} · +${money(stats.totalBonus)}`
+          ? `${formatBlockDurationLabel(stats.totalMin)} en llamada · +${money(stats.totalBonus)}`
           : 'Sin llamadas en Higher Rate hoy';
+      }
+      if (windowsPill) {
+        const windowsTotalMin = higherRateWindowsTodayTotalMin(todayCallDateKey());
+        windowsPill.textContent = windowsTotalMin > 0
+          ? `${formatBlockDurationLabel(windowsTotalMin)} de ventana`
+          : 'Sin ventanas hoy';
       }
       if (breakdownEl) {
         const chips = Object.entries(stats.breakdown)
