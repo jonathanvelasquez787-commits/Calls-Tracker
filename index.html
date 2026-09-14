@@ -19,6 +19,10 @@
       --panel-navy: radial-gradient(circle 220px at 0% 0%, rgba(var(--cyan-rgb), .10), transparent), linear-gradient(165deg, #141c46 0%, #0c1130 60%, #0a0e26 100%);
       --text: #edf4ff;
       --muted: #90a0be;
+      /* Tercer tono de texto (muted/terciario), mismo RGB que --muted con
+         menos opacidad — para subtítulos secundarios que no deben competir
+         con el texto de más peso. */
+      --muted-3: rgba(144, 160, 190, .62);
       --line: rgba(145, 163, 184, 0.16);
       --line-2: rgba(145, 163, 184, 0.24);
       --cyan: #2fd5ff;
@@ -1213,7 +1217,7 @@
       line-height: 1.15;
     }
     .sidebar-brand-tagline {
-      color: var(--muted);
+      color: var(--muted-3);
       font-size: 12px;
       line-height: 1.3;
       margin-top: 1px;
@@ -1383,7 +1387,7 @@
       line-height: 1.25;
     }
     .sidebar-progress-sub {
-      color: var(--muted);
+      color: var(--muted-3);
       font-size: 11.5px;
       margin-top: 2px;
       line-height: 1.3;
@@ -1524,7 +1528,10 @@
          vuelta a var(--panel) en las 2 ramas de modo claro, buscar "v267"
          ahí. */
       background: var(--panel-navy);
-      border: 1px solid var(--line);
+      /* Sin borde perimetral entre secciones — se separan por espacio/
+         sombra, no por línea divisoria (mismo criterio que ya usan las 2
+         ramas de modo claro). */
+      border: 1px solid transparent;
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       backdrop-filter: blur(14px);
@@ -1799,7 +1806,7 @@
       user-select: none;
     }
 
-    .date { color: var(--muted); font-size: 13px; margin-top: 6px; }
+    .date { color: var(--muted-3); font-size: 13px; margin-top: 6px; }
 
     .earnings-big {
       font-size: clamp(40px, 5vw, 66px);
@@ -1961,7 +1968,7 @@
 
     /* Pedido del usuario (rediseño mobile de "Bloques del día", mockup aprobado): el rango de cada tarjeta chica (ej. "Siguiente: 02:35–02:50 PM", "1 min de meta 60 min") se veía cortado con "..." en pantallas angostas — `white-space: */
     .block-summary-card .bsc-range {
-      color: var(--muted);
+      color: var(--muted-3);
       font-size: 10.5px;
       line-height: 1.3;
       white-space: normal;
@@ -3812,7 +3819,9 @@
       margin: 0;
       padding: 0;
       border-radius: 20px;
-      border: 1px solid var(--line);
+      /* Sin borde perimetral entre secciones — ver comentario gemelo junto
+         a .hero/.card/.mini/.table-card/.list-card. */
+      border: 1px solid transparent;
       /* v267 — Ver comentario junto a --panel-navy en :root. Override de
          vuelta a var(--accordion-bg) en las 2 ramas de modo claro, buscar
          "v267" ahí. */
@@ -3855,7 +3864,7 @@
 
     .accordion-head p {
       margin: 0;
-      color: var(--muted);
+      color: var(--muted-3);
       font-size: 13px;
       line-height: 1.45;
     }
@@ -4810,7 +4819,7 @@
       text-align: right;
       font-size: 12px;
       font-weight: 800;
-      color: var(--muted);
+      color: var(--muted-3);
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       white-space: nowrap;
     }
