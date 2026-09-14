@@ -8992,6 +8992,12 @@
 </div>
 
 <div class="hr-section-head">
+<div class="hr-section-title">Hoy en Higher Rate</div>
+<div class="hr-count-pill" id="higherRateTodayPill">0 min · $0.00</div>
+</div>
+<div id="higherRateTodayBreakdown" style="margin-bottom:4px;"></div>
+
+<div class="hr-section-head">
 <div class="hr-section-title">Ventanas activas</div>
 <div class="hr-count-pill" id="higherRateActiveCountPill">0 próximas</div>
 </div>
@@ -16559,6 +16565,47 @@ function saveFinanceRowModal() {
       `;
     }
 
+    // Pedido del usuario: total de minutos/horas del día que ya calificaron
+    // para un bono de Higher Rate, dentro del propio modal — reutiliza
+    // higherRateBonusForCall (misma regla de elegibilidad de siempre, sin
+    // duplicar lógica) sobre las llamadas de HOY.
+    function higherRateStatsForDay(dayKey = todayCallDateKey()) {
+      const dayCallsList = callsForDay(dayKey, calls);
+      let totalMin = 0;
+      let totalBonus = 0;
+      const breakdown = {};
+      dayCallsList.forEach(c => {
+        const bonus = higherRateBonusForCall(c);
+        if (!bonus) return;
+        totalMin += Number(c.durationMin) || 0;
+        totalBonus += bonus.amount;
+        breakdown[bonus.tier] = (breakdown[bonus.tier] || 0) + (Number(c.durationMin) || 0);
+      });
+      return { totalMin, totalBonus, breakdown };
+    }
+
+    function updateHigherRateTodayStats() {
+      const pill = document.getElementById('higherRateTodayPill');
+      const breakdownEl = document.getElementById('higherRateTodayBreakdown');
+      if (!pill && !breakdownEl) return;
+      const stats = higherRateStatsForDay(todayCallDateKey());
+      if (pill) {
+        pill.textContent = stats.totalMin > 0
+          ? `${formatBlockDurationLabel(stats.totalMin)} · +${money(stats.totalBonus)}`
+          : 'Sin llamadas en Higher Rate hoy';
+      }
+      if (breakdownEl) {
+        const chips = Object.entries(stats.breakdown)
+          .filter(([, mins]) => mins > 0)
+          .sort((a, b) => (HIGHER_RATE_TIERS[b[0]]?.bonusPerMin || 0) - (HIGHER_RATE_TIERS[a[0]]?.bonusPerMin || 0))
+          .map(([tier, mins]) => {
+            const meta = HIGHER_RATE_TIERS[tier];
+            return `<span class="tag" title="Minutos de llamada de hoy dentro de una ventana ${escapeHtml(meta?.label || tier)}">${iconHtml('flame')} ${escapeHtml(meta?.label || tier)}: ${formatBlockDurationLabel(mins)}</span>`;
+          });
+        breakdownEl.innerHTML = chips.length ? `<div class="table-tags" style="margin:0;">${chips.join('')}</div>` : '';
+      }
+    }
+
     function renderHigherRateWindowsEditor(windows) {
       const list = document.getElementById('higherRateWindowsList');
       const historyList = document.getElementById('higherRateHistoryList');
@@ -16586,6 +16633,7 @@ function saveFinanceRowModal() {
         || '<div class="note" style="margin:0;">Sin ventanas pasadas todavía.</div>';
       if (historyTitle) historyTitle.innerHTML = `${iconHtml('history')} Historial (${sortedPast.length} ${sortedPast.length === 1 ? 'pasada' : 'pasadas'})`;
       if (activeCountPill) activeCountPill.textContent = `${sortedActive.length} ${sortedActive.length === 1 ? 'próxima' : 'próximas'}`;
+      updateHigherRateTodayStats();
     }
 
     // Lee todas las filas del editor tal como están en el DOM — AMBAS listas (activas + historial), ya que las dos son igual de editables. `id` se conserva vía el atributo data-hr-window-id del contenedor de la fila (asignado al renderizar)
