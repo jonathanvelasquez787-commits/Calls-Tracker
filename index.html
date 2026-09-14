@@ -1259,7 +1259,7 @@
       font-size: 11px;
       letter-spacing: .07em;
       text-transform: uppercase;
-      color: var(--muted);
+      color: var(--muted-3);
       padding: 10px 10px 2px;
     }
 
@@ -1816,7 +1816,7 @@
     }
 
     .helper {
-      color: var(--muted);
+      color: var(--muted-3);
       font-size: 13px;
       line-height: 1.45;
     }
@@ -2242,7 +2242,7 @@
     }
     .gh-goal-foot {
       font-size: 11.5px;
-      color: var(--muted);
+      color: var(--muted-3);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -5491,7 +5491,7 @@
     }
     .sblk-range {
       font-size: 12px;
-      color: var(--muted);
+      color: var(--muted-3);
       margin-top: 1px;
     }
     .sblk-status {
@@ -5617,7 +5617,13 @@
       color: transparent;
       -webkit-text-fill-color: transparent;
     }
-    .sblk-card .sblk-range,
+    .sblk-card .sblk-range {
+      background-image: linear-gradient(to bottom, #fff 0%, #fff var(--sblk-pct, 0%), var(--muted-3) var(--sblk-pct, 0%), var(--muted-3) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+    }
     .sblk-card .sblk-meta-line,
     .sblk-card .sblk-bar-label-row {
       background-image: linear-gradient(to bottom, #fff 0%, #fff var(--sblk-pct, 0%), var(--muted) var(--sblk-pct, 0%), var(--muted) 100%);
