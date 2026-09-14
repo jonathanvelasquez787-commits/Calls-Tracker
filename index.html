@@ -81,173 +81,155 @@
         color-scheme: light;
         /* ---- Paleta exacta del usuario (ver bloque :root de referencia
            al final del cambio) ---- */
-        /* Pedido del usuario ( con muestra de color): SOLO el fondo de página del tema claro (--bg-page, y su derivado --bg-2 para el degradado sutil del body, ver más abajo) cambia de #FAF3EC (crema cálido) a #F0F4F8 (gris-azulado muy pálido) */
-        --bg-page: #F0F4F8;
+        /* Pedido del usuario (rediseño v2, mockup_light_v2_desktop/mobile.html aprobados): paleta indigo/naranja/violeta/verde sobre fondo gris-azulado muy pálido, con 3 tonos de texto en vez de negro fijo. */
+        --bg-page: #F8FAFC;
         --bg-card: #FFFFFF;
-        --primary: #EC1E7A;
-        --primary-light: #FCE4EF;
-        --gradient-logo: linear-gradient(135deg, #F4874B 0%, #EC1E7A 100%);
-        --text-dark: #1A1A1A;
-        --text-gray: #6B6B6B;
-        --btn-secondary-bg: #F2F2F2;
-        --border-light: #EAE4DC;
-        --black-badge: #1A1A1A;
+        --primary: #6366F1;
+        --primary-light: #EEF2FF;
+        --gradient-logo: linear-gradient(135deg, #6366F1 0%, #A855F7 100%);
+        --text-dark: #0F172A;
+        --text-gray: #64748B;
+        /* Tercer tono de texto (muted/terciario) — solo existe en este tema claro, para sub-textos como rangos de hora o etiquetas secundarias. */
+        --text-muted-3: #94A3B8;
+        --btn-secondary-bg: #F1F5F9;
+        --border-light: #E2E8F0;
+        --black-badge: #0F172A;
         --success-green: #22C55E;
-        --break-orange: #F4874B;
-        --lunch-purple: #A78BFA;
+        --break-orange: #F97316;
+        --lunch-purple: #A855F7;
 
-        /* Variables internas de la app, remapeadas 1:1 a la paleta de arriba. Donde la app no tenía un token exacto (--teal, --bad, --pale-*, --tier-*), se derivó del mismo color con mezcla de blanco/negro — nunca con un tono nuevo. */
+        /* Variables internas de la app, remapeadas 1:1 a la paleta de arriba. */
         --bg: var(--bg-page);
-        --bg-2: #E9EDF1; /* --bg-page mezclado ~3% con negro, para el degradado sutil del fondo */
+        --bg-2: #EEF2F7;
         --panel: var(--bg-card);
         --panel-2: var(--bg-card);
         --text: var(--text-dark);
         --muted: var(--text-gray);
+        --muted-3: var(--text-muted-3);
         --line: var(--border-light);
-        --line-2: #CDC8C2; /* --border-light mezclado ~12% con negro */
+        --line-2: #CBD5E1;
         --cyan: var(--primary);
-        --teal: #59D386; /* --success-green mezclado 25% con blanco (pareja de degradado de --good) */
+        --teal: #4ADE80;
         --blue: var(--lunch-purple);
         --pink: var(--primary);
         --good: var(--success-green);
         --warn: var(--break-orange);
-        --bad: var(--primary); /* sin rojo/peligro dedicado en tu paleta — usa --primary; avísame si quieres un tono aparte */
-        --cyan-rgb: 236, 30, 122;
-        --teal-rgb: 89, 211, 134;
-        --blue-rgb: 167, 139, 250;
-        --pink-rgb: 236, 30, 122;
+        --bad: var(--primary);
+        --cyan-rgb: 99, 102, 241;
+        --teal-rgb: 74, 222, 128;
+        --blue-rgb: 168, 85, 247;
+        --pink-rgb: 99, 102, 241;
         --good-rgb: 34, 197, 94;
-        --warn-rgb: 244, 135, 75;
-        --bad-rgb: 236, 30, 122;
-        /* Pedido del usuario (v467, rediseño de elevación de modo claro, mockup mockup_light_mode_inicio.html aprobado): --shadow pasa de una sola sombra plana a 2 capas (borde cercano fino + sombra ancha suave) — mismos tokens que el mockup (--shadow-card/--shadow-raised/--shadow-active), reutilizados app-wide porque .hero/.card/.accordion-card/.modal-card/textarea/.toast ya comparten var(--shadow). */
-        --shadow: 0 1px 2px rgba(26, 26, 26, .04), 0 4px 16px rgba(26, 26, 26, .07);
-        --shadow-raised: 0 2px 4px rgba(26, 26, 26, .05), 0 8px 20px rgba(26, 26, 26, .08);
-        --shadow-active: 0 2px 6px rgba(236, 30, 122, .14), 0 10px 24px rgba(236, 30, 122, .16);
-        --glow-1: rgba(236, 30, 122, .015); /* --primary al 1.5% -- muy sutil, para que domine el gris-azulado plano de --bg-page */
-        --glow-2: rgba(244, 135, 75, .015); /* --break-orange al 1.5% */
-        --pale-good: #167F3D; /* --success-green mezclado 35% con negro */
-        --pale-warn: #92512D; /* --break-orange mezclado 40% con negro */
-        --pale-bad: #991450; /* --primary mezclado 35% con negro */
-        --pale-cyan: #8D1249; /* --primary mezclado 40% con negro */
-        --pale-teal: #307549; /* --teal mezclado 45% con negro */
-        --pale-indigo: #6C5AA2; /* --lunch-purple mezclado 35% con negro */
-        --tier-bronze: #C36C3C; /* --break-orange mezclado 20% con negro */
+        --warn-rgb: 249, 115, 22;
+        --bad-rgb: 99, 102, 241;
+        /* Elevación en capas (sin cambios de estructura, solo recoloreada a indigo). */
+        --shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 4px 16px rgba(15, 23, 42, .06);
+        --shadow-raised: 0 2px 4px rgba(15, 23, 42, .05), 0 8px 20px rgba(15, 23, 42, .07);
+        --shadow-active: 0 2px 6px rgba(99, 102, 241, .14), 0 10px 24px rgba(99, 102, 241, .16);
+        --glow-1: rgba(99, 102, 241, .02);
+        --glow-2: rgba(168, 85, 247, .015);
+        --pale-good: #15803D;
+        --pale-warn: #C2410C;
+        --pale-bad: #4338CA;
+        --pale-cyan: #4338CA;
+        --pale-teal: #15803D;
+        --pale-indigo: #6D28D9;
+        --tier-bronze: #C2410C;
         --tier-silver: var(--text-gray);
         --tier-gold: var(--break-orange);
         --accordion-bg: var(--panel);
-        /* Pedido del usuario : en modo claro, --cyan quedó mapeado a --primary (el mismo rosa/magenta que usan --pink y --bad) */
-        --accent-decorative: #00F0FF;
-        --accent-decorative-rgb: 0, 240, 255;
-        --accent-decorative-pale: #046C7A;
-        /* Pedido del usuario: acento azul puntual (mismo --cyan de modo oscuro, #2fd5ff) reutilizado en un puñado de elementos concretos de modo claro donde el rosa heredado de --cyan/--primary no se quería — ver los selectores que consumen esta variable, más abajo en el archivo. */
-        --accent-blue-2: #2fd5ff;
-        --accent-blue-2-rgb: 47, 213, 255;
-        /* Pedido del usuario : --bad/--pink en este tema apuntan a --primary (rosa/magenta, #EC1E7A) — el mismo problema de fondo que ya motivó --accent-decorative : "cian" prestado que en realidad se ve rosa. Aquí el caso es al revés: */
+        --accent-decorative: #6366F1;
+        --accent-decorative-rgb: 99, 102, 241;
+        --accent-decorative-pale: #4338CA;
+        --accent-blue-2: #6366F1;
+        --accent-blue-2-rgb: 99, 102, 241;
         --danger-red: #DC2626;
         --danger-red-rgb: 220, 38, 38;
-        /* Ver comentario junto a --hover-flip en :root (v227) — mismo
-           criterio, misma variable: aquí (modo claro) un azul real en vez
-           del rojo que usa el tema oscuro. */
-        --hover-flip: #2563EB;
-        /* v234 — Ver comentario junto a --hover-flip-rgb en :root — mismo
-           azul de arriba (#2563EB), como triplete "r,g,b". */
-        --hover-flip-rgb: 37, 99, 235;
-        /* v290 — Ver comentario junto a --icon-mono en :root: mismo criterio,
-           aquí (modo claro automático) negro sólido en vez de blanco. */
-        --icon-mono: #000;
-        /* Ver comentario junto a --purple/--rpt-blue en :root: en modo claro se oscurecen/saturan un poco (el tono oscuro de --root se ve lavado sobre un fondo casi blanco) — mismo criterio que ya usa el resto de la paleta clara (ej. */
-        --purple: #6D4FE0;
-        --purple-rgb: 109, 79, 224;
-        --rpt-blue: #2F6FEB;
-        --rpt-blue-rgb: 47, 111, 235;
-        /* v294 — Ver comentario junto a --rpt-purple en :root. */
-        --rpt-purple: #7C5CE0;
-        --rpt-purple-rgb: 124, 92, 224;
+        --hover-flip: #4F46E5;
+        --hover-flip-rgb: 79, 70, 229;
+        --icon-mono: #0F172A;
+        --purple: #7C3AED;
+        --purple-rgb: 124, 58, 237;
+        --rpt-blue: #6366F1;
+        --rpt-blue-rgb: 99, 102, 241;
+        --rpt-purple: #A855F7;
+        --rpt-purple-rgb: 168, 85, 247;
       }
     }
 
     /* Forzado manual (botón de tema en el header) — misma paleta clara de arriba, pero aplicada siempre que el usuario elija "Claro", sin depender del sistema. html.theme-dark (forzar "Oscuro") no necesita una regla propia: */
     html.theme-light {
       color-scheme: light;
-      --bg-page: #F0F4F8;
+      --bg-page: #F8FAFC;
       --bg-card: #FFFFFF;
-      --primary: #EC1E7A;
-      --primary-light: #FCE4EF;
-      --gradient-logo: linear-gradient(135deg, #F4874B 0%, #EC1E7A 100%);
-      --text-dark: #1A1A1A;
-      --text-gray: #6B6B6B;
-      --btn-secondary-bg: #F2F2F2;
-      --border-light: #EAE4DC;
-      --black-badge: #1A1A1A;
+      --primary: #6366F1;
+      --primary-light: #EEF2FF;
+      --gradient-logo: linear-gradient(135deg, #6366F1 0%, #A855F7 100%);
+      --text-dark: #0F172A;
+      --text-gray: #64748B;
+      --text-muted-3: #94A3B8;
+      --btn-secondary-bg: #F1F5F9;
+      --border-light: #E2E8F0;
+      --black-badge: #0F172A;
       --success-green: #22C55E;
-      --break-orange: #F4874B;
-      --lunch-purple: #A78BFA;
+      --break-orange: #F97316;
+      --lunch-purple: #A855F7;
 
       --bg: var(--bg-page);
-      --bg-2: #E9EDF1;
+      --bg-2: #EEF2F7;
       --panel: var(--bg-card);
       --panel-2: var(--bg-card);
       --text: var(--text-dark);
       --muted: var(--text-gray);
+      --muted-3: var(--text-muted-3);
       --line: var(--border-light);
-      --line-2: #CDC8C2;
+      --line-2: #CBD5E1;
       --cyan: var(--primary);
-      --teal: #59D386;
+      --teal: #4ADE80;
       --blue: var(--lunch-purple);
       --pink: var(--primary);
       --good: var(--success-green);
       --warn: var(--break-orange);
       --bad: var(--primary);
-      --cyan-rgb: 236, 30, 122;
-      --teal-rgb: 89, 211, 134;
-      --blue-rgb: 167, 139, 250;
-      --pink-rgb: 236, 30, 122;
+      --cyan-rgb: 99, 102, 241;
+      --teal-rgb: 74, 222, 128;
+      --blue-rgb: 168, 85, 247;
+      --pink-rgb: 99, 102, 241;
       --good-rgb: 34, 197, 94;
-      --warn-rgb: 244, 135, 75;
-      --bad-rgb: 236, 30, 122;
-      /* v467 — Ver comentario gemelo en la rama @media de arriba: mismos tokens de elevación en capas del mockup aprobado. */
-      --shadow: 0 1px 2px rgba(26, 26, 26, .04), 0 4px 16px rgba(26, 26, 26, .07);
-      --shadow-raised: 0 2px 4px rgba(26, 26, 26, .05), 0 8px 20px rgba(26, 26, 26, .08);
-      --shadow-active: 0 2px 6px rgba(236, 30, 122, .14), 0 10px 24px rgba(236, 30, 122, .16);
-      --glow-1: rgba(236, 30, 122, .015);
-      --glow-2: rgba(244, 135, 75, .015);
-      --pale-good: #167F3D;
-      --pale-warn: #92512D;
-      --pale-bad: #991450;
-      --pale-cyan: #8D1249;
-      --pale-teal: #307549;
-      --pale-indigo: #6C5AA2;
-      --tier-bronze: #C36C3C;
+      --warn-rgb: 249, 115, 22;
+      --bad-rgb: 99, 102, 241;
+      /* Ver comentario gemelo en la rama @media de arriba: mismos tokens de elevación, recoloreados a indigo. */
+      --shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 4px 16px rgba(15, 23, 42, .06);
+      --shadow-raised: 0 2px 4px rgba(15, 23, 42, .05), 0 8px 20px rgba(15, 23, 42, .07);
+      --shadow-active: 0 2px 6px rgba(99, 102, 241, .14), 0 10px 24px rgba(99, 102, 241, .16);
+      --glow-1: rgba(99, 102, 241, .02);
+      --glow-2: rgba(168, 85, 247, .015);
+      --pale-good: #15803D;
+      --pale-warn: #C2410C;
+      --pale-bad: #4338CA;
+      --pale-cyan: #4338CA;
+      --pale-teal: #15803D;
+      --pale-indigo: #6D28D9;
+      --tier-bronze: #C2410C;
       --tier-silver: var(--text-gray);
       --tier-gold: var(--break-orange);
       --accordion-bg: var(--panel);
-      /* Ver comentario gemelo en la rama @media (prefers-color-scheme:
-         light) de arriba — misma variable, mismo criterio. */
-      --accent-decorative: #00F0FF;
-      --accent-decorative-rgb: 0, 240, 255;
-      --accent-decorative-pale: #046C7A;
-      /* Ver comentario gemelo en la rama @media de arriba — mismo acento azul puntual. */
-      --accent-blue-2: #2fd5ff;
-      --accent-blue-2-rgb: 47, 213, 255;
-      /* Ver comentario gemelo en la rama @media de arriba (v217) — misma
-         variable, mismo criterio. */
+      --accent-decorative: #6366F1;
+      --accent-decorative-rgb: 99, 102, 241;
+      --accent-decorative-pale: #4338CA;
+      --accent-blue-2: #6366F1;
+      --accent-blue-2-rgb: 99, 102, 241;
       --danger-red: #DC2626;
       --danger-red-rgb: 220, 38, 38;
-      /* Ver comentario gemelo en la rama @media de arriba (v227) — misma
-         variable, mismo criterio. */
-      --hover-flip: #2563EB;
-      /* v234 — Ver comentario gemelo en la rama @media de arriba. */
-      --hover-flip-rgb: 37, 99, 235;
-      /* v290 — Ver comentario gemelo en la rama @media de arriba. */
-      --icon-mono: #000;
-      /* v292 — Ver comentario gemelo en la rama @media de arriba. */
-      --purple: #6D4FE0;
-      --purple-rgb: 109, 79, 224;
-      --rpt-blue: #2F6FEB;
-      --rpt-blue-rgb: 47, 111, 235;
-      /* v294 — Ver comentario gemelo en la rama @media de arriba. */
-      --rpt-purple: #7C5CE0;
-      --rpt-purple-rgb: 124, 92, 224;
+      --hover-flip: #4F46E5;
+      --hover-flip-rgb: 79, 70, 229;
+      --icon-mono: #0F172A;
+      --purple: #7C3AED;
+      --purple-rgb: 124, 58, 237;
+      --rpt-blue: #6366F1;
+      --rpt-blue-rgb: 99, 102, 241;
+      --rpt-purple: #A855F7;
+      --rpt-purple-rgb: 168, 85, 247;
     }
 
     /* Rediseño del tema claro (pedido del usuario) ---- "Dashboard premium blanco inspirado en GTA 6", no "dashboard pastel de colores GTA 6". El problema reportado: */
@@ -279,8 +261,17 @@
       :root:not(.theme-dark) .rpt-streak-card {
         background: var(--panel);
       }
+      /* Pedido del usuario (rediseño v2): sin borde perimetral entre secciones — se separan por espacio/sombra, no por línea divisoria. */
+      :root:not(.theme-dark) .hero,
+      :root:not(.theme-dark) .card,
+      :root:not(.theme-dark) .mini,
+      :root:not(.theme-dark) .table-card,
+      :root:not(.theme-dark) .list-card {
+        border-color: transparent;
+      }
       :root:not(.theme-dark) .accordion-card {
         background: var(--accordion-bg);
+        border-color: transparent;
       }
       /* Pedido del usuario (v467, mockup aprobado): paneles "hundidos" dentro de una tarjeta ya blanca (Meta diaria/del ciclo, Ajustar turno completo) pasan al mismo gris-azulado de fondo de página (--bg) en vez de un rgba(255,255,255,.03) casi invisible sobre blanco — mismo criterio 3 niveles de elevación del mockup. */
       :root:not(.theme-dark) .gh-goal-card,
@@ -706,7 +697,16 @@
     html.theme-light .rpt-streak-card {
       background: var(--panel);
     }
+    /* Pedido del usuario (rediseño v2): mismo criterio gemelo de arriba — sin borde perimetral entre secciones. */
+    html.theme-light .hero,
+    html.theme-light .card,
+    html.theme-light .mini,
+    html.theme-light .table-card,
+    html.theme-light .list-card {
+      border-color: transparent;
+    }
     html.theme-light .accordion-card {
+      border-color: transparent;
       background: var(--accordion-bg);
     }
     /* v467 — Ver comentario gemelo en la rama @media de arriba. */
