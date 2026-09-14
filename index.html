@@ -122,8 +122,8 @@
         --good-rgb: 34, 197, 94;
         --warn-rgb: 249, 115, 22;
         --bad-rgb: 99, 102, 241;
-        /* Elevación en capas (sin cambios de estructura, solo recoloreada a indigo). */
-        --shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 4px 16px rgba(15, 23, 42, .06);
+        /* Elevación en capas (sin cambios de estructura, solo recoloreada a indigo). Valor ajustado a la sombra exacta del mockup aprobado (antes 16px/.06, más marcada que la referencia y se veía como borde). */
+        --shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 2px 8px rgba(15, 23, 42, .03);
         --shadow-raised: 0 2px 4px rgba(15, 23, 42, .05), 0 8px 20px rgba(15, 23, 42, .07);
         --shadow-active: 0 2px 6px rgba(99, 102, 241, .14), 0 10px 24px rgba(99, 102, 241, .16);
         --glow-1: rgba(99, 102, 241, .02);
@@ -199,7 +199,7 @@
       --warn-rgb: 249, 115, 22;
       --bad-rgb: 99, 102, 241;
       /* Ver comentario gemelo en la rama @media de arriba: mismos tokens de elevación, recoloreados a indigo. */
-      --shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 4px 16px rgba(15, 23, 42, .06);
+      --shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 2px 8px rgba(15, 23, 42, .03);
       --shadow-raised: 0 2px 4px rgba(15, 23, 42, .05), 0 8px 20px rgba(15, 23, 42, .07);
       --shadow-active: 0 2px 6px rgba(99, 102, 241, .14), 0 10px 24px rgba(99, 102, 241, .16);
       --glow-1: rgba(99, 102, 241, .02);
@@ -272,6 +272,12 @@
       :root:not(.theme-dark) .accordion-card {
         background: var(--accordion-bg);
         border-color: transparent;
+      }
+      /* Pedido del usuario (cableado pendiente desde v477): tercer tono de texto (--muted-3) para rangos/subtítulos secundarios, en vez de compartir var(--muted) con el texto de más peso. */
+      :root:not(.theme-dark) .bsc-range,
+      :root:not(.theme-dark) .sched-tl-hour,
+      :root:not(.theme-dark) .accordion-head p {
+        color: var(--muted-3);
       }
       /* Pedido del usuario (v467, mockup aprobado): paneles "hundidos" dentro de una tarjeta ya blanca (Meta diaria/del ciclo, Ajustar turno completo) pasan al mismo gris-azulado de fondo de página (--bg) en vez de un rgba(255,255,255,.03) casi invisible sobre blanco — mismo criterio 3 niveles de elevación del mockup. */
       :root:not(.theme-dark) .gh-goal-card,
@@ -708,6 +714,12 @@
     html.theme-light .accordion-card {
       border-color: transparent;
       background: var(--accordion-bg);
+    }
+    /* Ver comentario gemelo en la rama @media de arriba: mismo cableado de --muted-3. */
+    html.theme-light .bsc-range,
+    html.theme-light .sched-tl-hour,
+    html.theme-light .accordion-head p {
+      color: var(--muted-3);
     }
     /* v467 — Ver comentario gemelo en la rama @media de arriba. */
     html.theme-light .gh-goal-card,
