@@ -16742,11 +16742,26 @@ function saveFinanceRowModal() {
     }
 
     // Bug reportado por el usuario: "agrego una ventana y luego no la encuentro". Causa: este editor es "auto-guardado en cada cambio" (no hay botón "Guardar")
+    // Pedido del usuario: la ventana nueva ya no arranca siempre a las 07:00 —
+    // eso la hacía "colarse" antes de las ventanas de hoy ya creadas más tarde
+    // (la lista se ordena por fecha+hora, no por orden de creación). Ahora
+    // arranca justo después de la ÚLTIMA ventana de hoy (o de "ahora mismo" si
+    // todavía no hay ninguna hoy), así siempre cae al final del grupo de hoy.
     function addHigherRateWindowRow() {
       const current = readHigherRateWindowsFromEditor();
-      current.push({ id: makeLocalId(), date: todayCallDateKey(), start: '07:00', end: '08:00', tier: 'bronze' });
+      const todayKey = todayCallDateKey();
+      const todaysEndMins = current.filter(w => w.date === todayKey).map(w => toMinutes(formatHHMM(w.end)));
+      const now = new Date();
+      const nowMin = now.getHours() * 60 + now.getMinutes();
+      let startMin = todaysEndMins.length ? Math.max(...todaysEndMins) : nowMin;
+      startMin = Math.min(startMin, 23 * 60);
+      const endMin = Math.min(23 * 60 + 59, startMin + 60);
+      const newWindow = { id: makeLocalId(), date: todayKey, start: minutesToHHMM(startMin), end: minutesToHHMM(endMin), tier: 'bronze' };
+      current.push(newWindow);
       renderHigherRateWindowsEditor(current);
       saveHigherRateWindowsFromEditor();
+      const newCard = document.querySelector(`.hr-window-card[data-hr-window-id="${newWindow.id}"]`);
+      if (newCard && newCard.scrollIntoView) newCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     function removeHigherRateWindowRowAt(id) {
