@@ -666,8 +666,8 @@
       :root:not(.theme-dark) .sidebar-link-icon-schedule { --icon-rgb: var(--purple-rgb); }
       /* Pedido del usuario (con captura): "Bloques del día" pintaba .sblk-card/.sblk-dot con var(--blue)/var(--blue-rgb) sin condición — en este tema --blue apunta a --lunch-purple (#A78BFA), de ahí el morado. Mismo --accent-blue-2 de siempre. Break/Lunch no se tocan: sus overrides (.sblk-item[data-block-type="break/lunch"]) pintan --muted/--good con más especificidad y siguen ganando. */
       :root:not(.theme-dark) .sblk-card {
-        border-color: rgba(var(--accent-blue-2-rgb), .24);
-        background: rgba(var(--accent-blue-2-rgb), .07);
+        border-color: var(--line);
+        background: var(--panel);
         border-left-color: var(--accent-blue-2);
       }
       :root:not(.theme-dark) .sblk-dot {
@@ -1078,8 +1078,8 @@
     html.theme-light .sidebar-link-icon-schedule { --icon-rgb: var(--purple-rgb); }
     /* Ver comentario gemelo en la rama @media de arriba. */
     html.theme-light .sblk-card {
-      border-color: rgba(var(--accent-blue-2-rgb), .24);
-      background: rgba(var(--accent-blue-2-rgb), .07);
+      border-color: var(--line);
+      background: var(--panel);
       border-left-color: var(--accent-blue-2);
     }
     html.theme-light .sblk-dot {
