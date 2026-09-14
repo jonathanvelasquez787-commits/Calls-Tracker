@@ -14313,7 +14313,22 @@ function saveFinanceRowModal() {
   const categoryInput = document.getElementById('financeRowCategoryInput');
   const typeInput = document.getElementById('financeRowTypeInput');
   const targetInput = document.getElementById('financeRowTargetInput');
+  const targetCurrencyInput = document.getElementById('financeRowTargetCurrencyInput');
   const name = String(nameInput?.value || '').trim();
+  // Blindaje: si el campo "Monto objetivo en tu moneda" tiene un valor
+  // válido, se recalcula el objetivo en $ a partir de ahí en vez de confiar
+  // ciegamente en el campo oculto ya sincronizado por syncFinanceRowTargetFields
+  // — cubre el caso donde ese 'input' de sincronización no llegó a disparar
+  // antes de "Guardar" (autocompletado del navegador, pegado rápido, etc.),
+  // que dejaba el objetivo guardado con el valor viejo aunque se viera el
+  // campo en moneda secundaria ya actualizado en pantalla.
+  if (financeHasSecondaryCurrency() && targetCurrencyInput) {
+    const curVal = Number(targetCurrencyInput.value);
+    const exchangeRate = Number(settings.exchangeRate);
+    if (Number.isFinite(curVal) && curVal > 0 && Number.isFinite(exchangeRate) && exchangeRate > 0) {
+      targetInput.value = usdCeilFromCurrencyAmount(curVal, exchangeRate).toFixed(2);
+    }
+  }
   const target = Number(targetInput?.value);
   if (!name) {
     toast('Ponle un nombre a la fila');
@@ -14355,6 +14370,12 @@ function saveFinanceRowModal() {
         settings.financeCategories[catId].rows.push(foundRow);
       }
     }
+    // Si bajar el objetivo recortó `assignedAmount` (ver clampedAssigned
+    // arriba), el Disponible que quedó liberado se reparte solo cuando el
+    // usuario tiene activado "Asignar disponible automáticamente" — sin
+    // esto, ese dinero se quedaba sin asignar hasta la próxima llamada
+    // guardada.
+    financeRunAutoFillCascade();
     saveSettingsOnly();
     closeModal('financeRowModal');
     renderFinanceSection();
