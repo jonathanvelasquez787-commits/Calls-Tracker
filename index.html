@@ -7501,6 +7501,45 @@
     }
     .hr-count-pill .ic-svg { width: 10px; height: 10px; }
     /* Pedido del usuario (mockup mockup_hr_daystats_desktop.html, aprobado):
+       cabecera propia de "Tiempo y bono por día" con ícono en cuadrito +
+       subtítulo — scoped a esta sección nada más (nombres propios, no se
+       toca .hr-section-head/.hr-section-title que sigue usando "Ventanas
+       activas" y el resto de secciones del modal). */
+    .hr-daystats-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 18px 0 10px;
+    }
+    .hr-daystats-head-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .hr-daystats-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 11px;
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      color: #07101f;
+    }
+    .hr-daystats-icon .ic-svg { width: 16px; height: 16px; }
+    .hr-daystats-title {
+      font-size: 14.5px;
+      font-weight: 900;
+      letter-spacing: -.01em;
+    }
+    .hr-daystats-sub {
+      font-size: 11.5px;
+      color: var(--muted-3);
+      margin-top: 1px;
+    }
+    /* Pedido del usuario (mockup mockup_hr_daystats_desktop.html, aprobado):
        "Tiempo y bono por día" pasa de una lista plana de filas a una tarjeta
        hero para Hoy + un timeline (mismo lenguaje visual que Horario/Bloques
        del día) para Próximos/Pasados. Vista mobile pendiente de mockup/
@@ -7511,7 +7550,7 @@
       isolation: isolate;
       border-radius: 18px;
       padding: 18px 20px;
-      margin-bottom: 4px;
+      margin-bottom: 18px;
       border: 1px solid var(--line);
       background: rgba(255,255,255,.03);
     }
@@ -9271,8 +9310,14 @@
 </div>
 </div>
 
-<div class="hr-section-head">
-<div class="hr-section-title">Tiempo y bono por día</div>
+<div class="hr-daystats-head">
+<div class="hr-daystats-head-left">
+<span class="hr-daystats-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c2 3-1 4-1 7a3 3 0 1 0 6 0c0-1-.5-2-.5-2 2 1 3 3.5 3 6a7 7 0 1 1-14 0c0-4 2-6 3.5-8 .5 2 1 2.5 3-3Z"/></svg></span>
+<div>
+<div class="hr-daystats-title">Tiempo y bono por día</div>
+<div class="hr-daystats-sub">Cuánto ganaste en cada ventana, día por día</div>
+</div>
+</div>
 <div class="hr-count-pill" id="higherRateDayStatsCountPill">0 próximas</div>
 </div>
 <div id="higherRateDayStats"></div>
