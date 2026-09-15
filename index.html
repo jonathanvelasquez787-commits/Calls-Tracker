@@ -711,6 +711,46 @@
       :root:not(.theme-dark) .sblk-card .sblk-range { color: var(--muted-3); }
       :root:not(.theme-dark) .sblk-card .sblk-meta-line,
       :root:not(.theme-dark) .sblk-card .sblk-bar-label-row { color: var(--muted); }
+      /* Pedido del usuario: mismo acento índigo que ya usa la pastilla de mes ("Septiembre de 2026", --accent-blue-2) para el bloque de Trabajo en Horario y los días Libre del calendario — antes usaban --blue/--blue-rgb (--lunch-purple, un morado distinto). */
+      :root:not(.theme-dark) .sched-header-icon {
+        background: var(--accent-blue-2);
+        border-color: rgba(var(--accent-blue-2-rgb), .5);
+        box-shadow: 0 6px 16px rgba(var(--accent-blue-2-rgb), .28);
+      }
+      :root:not(.theme-dark) .sched-day-card-icon {
+        background: rgba(var(--accent-blue-2-rgb), .16);
+        border-color: rgba(var(--accent-blue-2-rgb), .3);
+      }
+      :root:not(.theme-dark) .sched-tl-dot {
+        border-color: rgba(var(--accent-blue-2-rgb), .7);
+      }
+      :root:not(.theme-dark) .sched-tl-card {
+        background: rgba(var(--accent-blue-2-rgb), .10);
+        border-left-color: rgba(var(--accent-blue-2-rgb), .55);
+      }
+      :root:not(.theme-dark) .sched-tl-icon {
+        background: rgba(var(--accent-blue-2-rgb), .14);
+        border-color: rgba(var(--accent-blue-2-rgb), .28);
+      }
+      :root:not(.theme-dark) .sched-tl-type-select:hover,
+      :root:not(.theme-dark) .sched-tl-type-select:focus-visible {
+        color: var(--accent-blue-2);
+      }
+      :root:not(.theme-dark) .sched-tl-duration {
+        color: var(--accent-blue-2);
+        background: rgba(var(--accent-blue-2-rgb), .14);
+        border-color: rgba(var(--accent-blue-2-rgb), .3);
+      }
+      :root:not(.theme-dark) .cal-tier-off {
+        background: rgba(var(--accent-blue-2-rgb), .1);
+        border-color: rgba(var(--accent-blue-2-rgb), .3);
+      }
+      :root:not(.theme-dark) .cal-tier-off .cal-day-min {
+        color: var(--accent-blue-2);
+      }
+      :root:not(.theme-dark) .mini-cell.cal-tier-off {
+        background: var(--accent-blue-2);
+      }
     }
     html.theme-light .action-btn:not(.is-active) {
       border-color: var(--line-2);
@@ -1172,6 +1212,46 @@
     html.theme-light .sblk-card .sblk-range { color: var(--muted-3); }
     html.theme-light .sblk-card .sblk-meta-line,
     html.theme-light .sblk-card .sblk-bar-label-row { color: var(--muted); }
+    /* Ver comentario gemelo en la rama @media de arriba: mismo acento índigo para el bloque de Trabajo en Horario y los días Libre del calendario. */
+    html.theme-light .sched-header-icon {
+      background: var(--accent-blue-2);
+      border-color: rgba(var(--accent-blue-2-rgb), .5);
+      box-shadow: 0 6px 16px rgba(var(--accent-blue-2-rgb), .28);
+    }
+    html.theme-light .sched-day-card-icon {
+      background: rgba(var(--accent-blue-2-rgb), .16);
+      border-color: rgba(var(--accent-blue-2-rgb), .3);
+    }
+    html.theme-light .sched-tl-dot {
+      border-color: rgba(var(--accent-blue-2-rgb), .7);
+    }
+    html.theme-light .sched-tl-card {
+      background: rgba(var(--accent-blue-2-rgb), .10);
+      border-left-color: rgba(var(--accent-blue-2-rgb), .55);
+    }
+    html.theme-light .sched-tl-icon {
+      background: rgba(var(--accent-blue-2-rgb), .14);
+      border-color: rgba(var(--accent-blue-2-rgb), .28);
+    }
+    html.theme-light .sched-tl-type-select:hover,
+    html.theme-light .sched-tl-type-select:focus-visible {
+      color: var(--accent-blue-2);
+    }
+    html.theme-light .sched-tl-duration {
+      color: var(--accent-blue-2);
+      background: rgba(var(--accent-blue-2-rgb), .14);
+      border-color: rgba(var(--accent-blue-2-rgb), .3);
+    }
+    html.theme-light .cal-tier-off {
+      background: rgba(var(--accent-blue-2-rgb), .1);
+      border-color: rgba(var(--accent-blue-2-rgb), .3);
+    }
+    html.theme-light .cal-tier-off .cal-day-min {
+      color: var(--accent-blue-2);
+    }
+    html.theme-light .mini-cell.cal-tier-off {
+      background: var(--accent-blue-2);
+    }
 
     * { box-sizing: border-box; }
     html, body { min-height: 100%; }
