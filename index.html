@@ -247,7 +247,13 @@
       /* Pedido del usuario (con captura de referencia): fondo azul marino para el panel del sidebar — pero SOLO en modo oscuro, el usuario confirmó explícitamente que en modo claro se queda igual que antes (var(--panel-2), blanco sólido). */
       :root:not(.theme-dark) .sidebar-nav {
         background: var(--panel-2);
+        border-right-color: var(--line);
       }
+      /* Los separadores puros (sidebar/header/divisor entre bloques) solo se apagan en modo oscuro — ver las reglas base (fuera de este bloque), ahora en transparent. */
+      :root:not(.theme-dark) .sidebar-brand-block { border-bottom-color: var(--line); }
+      :root:not(.theme-dark) .sidebar-footer { border-top-color: var(--line); }
+      :root:not(.theme-dark) .hero-top-row { border-bottom-color: var(--line); }
+      :root:not(.theme-dark) .divider { background: var(--line); }
       /* Ver comentario junto a --panel-navy en :root. Mismo patrón dark-only que .sidebar-nav arriba : las reglas base (fuera de este bloque) ahora pintan var(--panel-navy) sin condición */
       :root:not(.theme-dark) .hero,
       :root:not(.theme-dark) .card,
@@ -715,7 +721,14 @@
        del sidebar es dark-only, aquí (forzado "Claro") se revierte igual. */
     html.theme-light .sidebar-nav {
       background: var(--panel-2);
+      border-right-color: var(--line);
     }
+    /* Ver comentario gemelo en la rama @media de arriba: mismo revert de
+       los separadores puros, aquí (forzado "Claro"). */
+    html.theme-light .sidebar-brand-block { border-bottom-color: var(--line); }
+    html.theme-light .sidebar-footer { border-top-color: var(--line); }
+    html.theme-light .hero-top-row { border-bottom-color: var(--line); }
+    html.theme-light .divider { background: var(--line); }
     /* v267 — Ver comentario gemelo en la rama @media de arriba: mismo
        revert dark-only, aquí (forzado "Claro"). */
     html.theme-light .hero,
@@ -1221,7 +1234,7 @@
       background:
         radial-gradient(circle 220px at 0% 0%, rgba(var(--cyan-rgb), .10), transparent),
         linear-gradient(165deg, #141c46 0%, #0c1130 60%, #0a0e26 100%);
-      border-right: 1px solid var(--line);
+      border-right: 1px solid transparent;
       box-shadow: var(--shadow);
       z-index: 95;
       display: flex;
@@ -1244,7 +1257,7 @@
       gap: 8px;
       padding: 4px 6px 14px;
       margin-bottom: 10px;
-      border-bottom: 1px solid var(--line);
+      border-bottom: 1px solid transparent;
     }
     .sidebar-brand-row {
       display: flex;
@@ -1451,7 +1464,7 @@
     .sidebar-footer {
       margin-top: auto;
       padding-top: 10px;
-      border-top: 1px solid var(--line);
+      border-top: 1px solid transparent;
     }
     .sidebar-darkmode-row {
       display: flex;
@@ -1623,7 +1636,7 @@
       gap: 8px;
       margin-bottom: 14px;
       padding-bottom: 12px;
-      border-bottom: 1px solid var(--line);
+      border-bottom: 1px solid transparent;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
@@ -4227,7 +4240,7 @@
 
     .divider {
       height: 1px;
-      background: var(--line);
+      background: transparent;
       margin: 16px 0;
     }
 
