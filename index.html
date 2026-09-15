@@ -7571,6 +7571,36 @@
       color: var(--muted);
       margin-top: 2px;
     }
+    /* Pedido del usuario (mockup mockup_hr_live_card_text.html, aprobado): el texto de "Próxima ventana" pasa de una sola línea plana a eyebrow + fecha/hora en azul (mismo acento que el próximo pago en "Fechas de pago") + pastilla de nivel aparte. */
+    .hr-live-eyebrow {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted-3);
+    }
+    .hr-live-main-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-top: 2px;
+      flex-wrap: wrap;
+    }
+    .hr-live-datetime {
+      font-weight: 900;
+      font-size: 15px;
+      letter-spacing: -.01em;
+      color: var(--cyan);
+    }
+    .hr-live-tier-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-size: 10.5px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
     .hr-window-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -17023,8 +17053,14 @@ function saveFinanceRowModal() {
           ? `Termina en ${formatMinutes(status.minutesLeft)} min (${timeLabel(status.window.end)})`
           : `Termina a las ${timeLabel(status.window.end)}`;
       } else {
-        const dayLabel = status.window.date === todayCallDateKey() ? 'Hoy' : formatCallDayLabel(status.window.date);
-        title.textContent = `Próxima ventana: ${dayLabel} ${timeLabel(status.window.start)} (${tierLabel})`;
+        // Pedido del usuario (mockup mockup_hr_live_card_text.html, aprobado): "Próxima ventana" pasa de una sola línea plana a eyebrow + fecha/hora (en azul, mismo acento que el próximo pago en "Fechas de pago") + pastilla de nivel aparte, en vez de todo mezclado en una sola oración.
+        const isToday = status.window.date === todayCallDateKey();
+        const dayLabelRaw = isToday ? 'Hoy' : formatCallDayLabel(status.window.date);
+        const dayLabel = dayLabelRaw.charAt(0).toUpperCase() + dayLabelRaw.slice(1);
+        const datetimeText = `${dayLabel} · ${timeLabel(status.window.start)}`;
+        const chipRgb = tierMeta?.colorRgb || '255,209,92';
+        const chipColorVar = tierMeta?.colorVar || '--warn';
+        title.innerHTML = `<div class="hr-live-eyebrow">Próxima ventana</div><div class="hr-live-main-row"><span class="hr-live-datetime">${escapeHtml(datetimeText)}</span><span class="hr-live-tier-chip" style="background: rgba(${chipRgb}, .16); border: 1px solid rgba(${chipRgb}, .4); color: var(${chipColorVar});">${escapeHtml(tierLabel)}</span></div>`;
         sub.textContent = `Termina a las ${timeLabel(status.window.end)}`;
       }
     }
