@@ -7512,12 +7512,14 @@
       border-radius: 18px;
       padding: 18px 20px;
       margin-bottom: 4px;
-      border: 1.5px solid rgba(var(--good-rgb), .4);
-      background: radial-gradient(circle 200px at 100% 0%, rgba(var(--good-rgb), .14), transparent), rgba(var(--good-rgb), .05);
-    }
-    .hero-today.is-idle {
-      border-color: var(--line-2);
+      border: 1px solid var(--line);
       background: rgba(255,255,255,.03);
+    }
+    /* Solo se tiñe de verde mientras de verdad estás ganando el bono ahora
+       (isActiveNow) — el resto del tiempo la tarjeta se queda neutra. */
+    .hero-today.is-live {
+      border-color: rgba(var(--good-rgb), .4);
+      background: radial-gradient(circle 200px at 100% 0%, rgba(var(--good-rgb), .14), transparent), rgba(var(--good-rgb), .05);
     }
     .hero-today-top {
       display: flex;
@@ -7634,6 +7636,10 @@
     .hr-tl-main { flex: 1 1 160px; min-width: 0; }
     .hr-tl-name { font-weight: 800; font-size: 12.5px; }
     .hr-tl-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+    /* Una fila por cada ventana del día, cuando hay más de una — ver
+       renderHigherRateDayStats(). */
+    .hr-tl-window-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .hr-tl-window-row + .hr-tl-window-row { margin-top: 4px; }
     .hr-tl-pills { display: flex; gap: 6px; flex-wrap: wrap; flex: 0 0 auto; }
 
     .hr-past-toggle {
@@ -17253,7 +17259,6 @@ function saveFinanceRowModal() {
       const liveStatus = higherRateLiveStatus();
       const isActiveNow = !!(liveStatus && liveStatus.active);
       const todayPct = todayWindowsMin > 0 ? Math.min(100, (todayStats.totalMin / todayWindowsMin) * 100) : 0;
-      const isIdleToday = todayWindowsMin <= 0 && todayStats.totalMin <= 0;
 
       const tierBadgeHtml = isActiveNow
         ? higherRateHeroTierBadge(liveStatus.window.tier)
@@ -17267,7 +17272,7 @@ function saveFinanceRowModal() {
         : '';
 
       const heroHtml = `
-        <div class="hero-today ${isIdleToday ? 'is-idle' : ''}">
+        <div class="hero-today ${isActiveNow ? 'is-live' : ''}">
           <div class="hero-today-top">
             <div>
               <span class="hero-today-label ${isActiveNow ? 'tone-active' : ''}">${isActiveNow ? '<span class="pulse-dot" aria-hidden="true"></span>Ganando bono ahora' : 'Higher Rate hoy'}</span>
@@ -17296,17 +17301,21 @@ function saveFinanceRowModal() {
         const dayName = dayNameRaw.charAt(0).toUpperCase() + dayNameRaw.slice(1);
         const dayNum = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(dateObj);
 
-        let name, sub, accentRgb;
+        let mainHtml, accentRgb;
         if (windowsForDay.length) {
-          const first = windowsForDay[0];
-          const meta = HIGHER_RATE_TIERS[first.tier];
-          name = `Ventana ${meta?.label || first.tier}`;
-          const extra = windowsForDay.length - 1;
-          sub = `${timeLabel(first.start)} – ${timeLabel(first.end)}${extra > 0 ? ` · +${extra} más` : ''}`;
-          accentRgb = meta?.colorRgb || '125,140,255';
+          // Acento del día = el nivel de mayor bono entre TODAS sus ventanas
+          // (mismo criterio que dominantHigherRateTier), para un solo color
+          // de tarjeta aunque el día tenga niveles distintos.
+          const dominantWindow = windowsForDay.reduce((a, b) =>
+            (HIGHER_RATE_TIERS[b.tier]?.bonusPerMin || 0) > (HIGHER_RATE_TIERS[a.tier]?.bonusPerMin || 0) ? b : a
+          );
+          accentRgb = HIGHER_RATE_TIERS[dominantWindow.tier]?.colorRgb || '125,140,255';
+          mainHtml = windowsForDay.map(w => {
+            const meta = HIGHER_RATE_TIERS[w.tier];
+            return `<div class="hr-tl-window-row"><span class="hr-tl-name">Ventana ${escapeHtml(meta?.label || w.tier)}</span><span class="hr-tl-sub">${escapeHtml(timeLabel(w.start))} – ${escapeHtml(timeLabel(w.end))}</span></div>`;
+          }).join('');
         } else {
-          name = 'Sin ventanas configuradas';
-          sub = '';
+          mainHtml = `<div class="hr-tl-name">Sin ventanas configuradas</div>`;
           accentRgb = '144,160,190';
         }
 
@@ -17324,10 +17333,7 @@ function saveFinanceRowModal() {
             <div class="hr-tl-rail" aria-hidden="true"><span class="hr-tl-dot"></span></div>
             <div class="hr-tl-card" style="--accent-rgb:${accentRgb};">
               <span class="hr-tl-icon">${iconHtml(windowsForDay.length ? 'medal' : 'calendar')}</span>
-              <div class="hr-tl-main">
-                <div class="hr-tl-name">${escapeHtml(name)}</div>
-                ${sub ? `<div class="hr-tl-sub">${escapeHtml(sub)}</div>` : ''}
-              </div>
+              <div class="hr-tl-main">${mainHtml}</div>
               <div class="hr-tl-pills">${pillsHtml}</div>
             </div>
           </div>
