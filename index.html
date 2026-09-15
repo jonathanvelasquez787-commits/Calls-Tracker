@@ -17212,14 +17212,18 @@ function saveFinanceRowModal() {
     // Pinta la tarjeta "en vivo"/"próxima ventana" de Higher Rate en un
     // set de ids dado — reutilizado tanto por #higherRateModal como por el
     // mismo widget dentro de "Ganancias de hoy" (ver renderHigherRateLiveCard).
-    function renderHigherRateLiveCardInto(ids) {
+    // `hideWhenUpcoming`: pedido del usuario — dentro del modal, "Próxima
+    // ventana" quedó redundante con "Próximos días" (ya muestra lo mismo,
+    // con más detalle) — se oculta la tarjeta por completo en ese caso, solo
+    // mostrándola cuando SÍ estás dentro de una ventana ahora mismo.
+    function renderHigherRateLiveCardInto(ids, { hideWhenUpcoming = false } = {}) {
       const card = document.getElementById(ids.card);
       const icon = document.getElementById(ids.icon);
       const title = document.getElementById(ids.title);
       const sub = document.getElementById(ids.sub);
       if (!card || !icon || !title || !sub) return;
       const status = higherRateLiveStatus();
-      if (!status) {
+      if (!status || (hideWhenUpcoming && !status.active)) {
         card.style.display = 'none';
         return;
       }
@@ -17247,7 +17251,7 @@ function saveFinanceRowModal() {
     }
 
     function renderHigherRateLiveCard() {
-      renderHigherRateLiveCardInto({ card: 'higherRateLiveCard', icon: 'higherRateLiveIcon', title: 'higherRateLiveTitle', sub: 'higherRateLiveSub' });
+      renderHigherRateLiveCardInto({ card: 'higherRateLiveCard', icon: 'higherRateLiveIcon', title: 'higherRateLiveTitle', sub: 'higherRateLiveSub' }, { hideWhenUpcoming: true });
       renderHigherRateLiveCardInto({ card: 'earningsHigherRateLiveCard', icon: 'earningsHigherRateLiveIcon', title: 'earningsHigherRateLiveTitle', sub: 'earningsHigherRateLiveSub' });
     }
 
@@ -17514,6 +17518,11 @@ function saveFinanceRowModal() {
       // tarjeta "en vivo" para que el cambio se refleje AL INSTANTE, sin
       // esperar a que el usuario cierre y reabra el modal.
       renderHigherRateLiveCard();
+      // Bug reportado por el usuario (con captura): editar una ventana ya
+      // existente (ej. su hora de fin) no refrescaba "Próximos días" —
+      // ese bloque se quedaba mostrando el horario viejo hasta reabrir el
+      // modal, porque nada aquí volvía a llamar a renderHigherRateDayStats.
+      renderHigherRateDayStats();
       notifyHigherRateRetroactiveMatches();
       notifyHigherRateMidnightCrossingWindows();
     }
