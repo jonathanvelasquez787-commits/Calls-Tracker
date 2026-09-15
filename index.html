@@ -674,9 +674,9 @@
       :root:not(.theme-dark) .sblk-dot {
         border-color: rgba(var(--accent-blue-2-rgb), .75);
       }
-      /* El relleno líquido de .sblk-fill (rgb(var(--sblk-rgb, var(--rpt-purple-rgb)))) cae siempre al morado de --rpt-purple-rgb porque --sblk-rgb nunca se define — se fija solo el color en modo claro. Ver resumen.md "Bloques del día" si esto cambia de nuevo. */
+      /* El relleno líquido de .sblk-fill (rgb(var(--sblk-rgb, var(--rpt-purple-rgb)))) cae siempre al morado de --rpt-purple-rgb porque --sblk-rgb nunca se define — se fija solo el color en modo claro. Pedido del usuario (con captura): el gris fijo se veía como un tono de blanco distinto al del fondo de página — pasa a usar var(--bg) (el mismo blanco de fuera de las tarjetas) en vez de un gris propio. Ver resumen.md "Bloques del día" si esto cambia de nuevo. */
       :root:not(.theme-dark) .sblk-fill {
-        background: rgb(107, 107, 107);
+        background: var(--bg);
       }
     }
     html.theme-light .action-btn:not(.is-active) {
@@ -1103,7 +1103,7 @@
     }
     /* Ver comentario gemelo en la rama @media de arriba. */
     html.theme-light .sblk-fill {
-      background: rgb(107, 107, 107);
+      background: var(--bg);
     }
 
     * { box-sizing: border-box; }
