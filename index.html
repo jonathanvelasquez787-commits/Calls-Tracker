@@ -16850,6 +16850,11 @@ function saveFinanceRowModal() {
       settings.higherRateWindows = newWindows;
       // saveAll en vez de saveSettingsOnly: freezeHigherRateBonusesForWindowIds puede haber marcado `calls` con `frozenHigherRateBonus` nuevo
       saveAll();
+      // v487 — Este es el único punto de guardado que corre tras agregar,
+      // editar (fecha/hora/nivel) una ventana — se refresca aquí la
+      // tarjeta "en vivo" para que el cambio se refleje AL INSTANTE, sin
+      // esperar a que el usuario cierre y reabra el modal.
+      renderHigherRateLiveCard();
       notifyHigherRateRetroactiveMatches();
       notifyHigherRateMidnightCrossingWindows();
     }
@@ -16917,6 +16922,10 @@ function saveFinanceRowModal() {
       // persistir `calls` (algunas pueden haber quedado con
       // frozenHigherRateBonus nuevo).
       saveAll();
+      // v487 — Ver comentario gemelo en saveHigherRateWindowsFromEditor():
+      // borrar una ventana también debe reflejarse de inmediato en la
+      // tarjeta "en vivo" (ej. si borraste la que estaba activa ahora).
+      renderHigherRateLiveCard();
     }
 
     // Antes de que una ventana de Higher Rate desaparezca de settings.higherRateWindows (por CUALQUIER camino:
