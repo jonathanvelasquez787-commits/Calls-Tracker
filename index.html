@@ -382,9 +382,9 @@
       :root:not(.theme-dark) .sblk-diagnostic.tone-warn { color: var(--pale-warn); }
       :root:not(.theme-dark) .sblk-diagnostic.tone-bad { color: var(--pale-bad); }
       :root:not(.theme-dark) .sblk-card .sblk-meta-line[style] {
-        color: transparent !important;
-        -webkit-text-fill-color: transparent !important;
-        background-image: linear-gradient(to bottom, #fff 0%, #fff var(--sblk-pct, 0%), var(--muted) var(--sblk-pct, 0%), var(--muted) 100%) !important;
+        color: var(--text) !important;
+        -webkit-text-fill-color: var(--text) !important;
+        background-image: none !important;
       }
       /* Pedido del usuario : REVERSIÓN EXPLÍCITA de En se separó la tarjeta de Shift a rojo fuerte (--danger-red-rgb) para que no se confundiera con el rosa/magenta que --cyan-rgb resuelve en este tema. */
       /* Pedido del usuario: la insignia de tipo (Work/Break/Lunch, extremo derecho de cada bloque) y los badges de estado (Completo/Tarde/ Hecho/etc., .slot-status) pasan de "pastilla pálida" a sólida con texto blanco */
@@ -678,6 +678,20 @@
       :root:not(.theme-dark) .sblk-fill {
         background: var(--bg);
       }
+      /* El texto de nombre/rango/meta-line usa un degradado de texto (#fff sobre la parte cubierta por el líquido, color normal sobre el resto) pensado para un líquido oscuro/saturado — con el líquido casi blanco (arriba) ese blanco queda ilegible. Se apaga el degradado en modo claro: un solo color de texto, cubierto o no. */
+      :root:not(.theme-dark) .sblk-card .sblk-name,
+      :root:not(.theme-dark) .sblk-card .sblk-range,
+      :root:not(.theme-dark) .sblk-card .sblk-meta-line,
+      :root:not(.theme-dark) .sblk-card .sblk-bar-label-row {
+        background-image: none;
+        -webkit-background-clip: initial;
+        background-clip: initial;
+        -webkit-text-fill-color: currentColor;
+      }
+      :root:not(.theme-dark) .sblk-card .sblk-name { color: var(--text); }
+      :root:not(.theme-dark) .sblk-card .sblk-range { color: var(--muted-3); }
+      :root:not(.theme-dark) .sblk-card .sblk-meta-line,
+      :root:not(.theme-dark) .sblk-card .sblk-bar-label-row { color: var(--muted); }
     }
     html.theme-light .action-btn:not(.is-active) {
       border-color: var(--line-2);
@@ -815,9 +829,9 @@
     html.theme-light .sblk-diagnostic.tone-warn { color: var(--pale-warn); }
     html.theme-light .sblk-diagnostic.tone-bad { color: var(--pale-bad); }
     html.theme-light .sblk-card .sblk-meta-line[style] {
-      color: transparent !important;
-      -webkit-text-fill-color: transparent !important;
-      background-image: linear-gradient(to bottom, #fff 0%, #fff var(--sblk-pct, 0%), var(--muted) var(--sblk-pct, 0%), var(--muted) 100%) !important;
+      color: var(--text) !important;
+      -webkit-text-fill-color: var(--text) !important;
+      background-image: none !important;
     }
     /* Ver comentario gemelo en la rama @media de arriba (v219) — reversión
        explícita de v217, mismo criterio. */
@@ -1105,6 +1119,20 @@
     html.theme-light .sblk-fill {
       background: var(--bg);
     }
+    /* Ver comentario gemelo en la rama @media de arriba: mismo apagado del degradado de texto blanco. */
+    html.theme-light .sblk-card .sblk-name,
+    html.theme-light .sblk-card .sblk-range,
+    html.theme-light .sblk-card .sblk-meta-line,
+    html.theme-light .sblk-card .sblk-bar-label-row {
+      background-image: none;
+      -webkit-background-clip: initial;
+      background-clip: initial;
+      -webkit-text-fill-color: currentColor;
+    }
+    html.theme-light .sblk-card .sblk-name { color: var(--text); }
+    html.theme-light .sblk-card .sblk-range { color: var(--muted-3); }
+    html.theme-light .sblk-card .sblk-meta-line,
+    html.theme-light .sblk-card .sblk-bar-label-row { color: var(--muted); }
 
     * { box-sizing: border-box; }
     html, body { min-height: 100%; }
