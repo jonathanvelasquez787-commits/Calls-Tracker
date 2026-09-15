@@ -7494,38 +7494,167 @@
       background: rgba(var(--blue-rgb), .14);
       border-color: rgba(var(--blue-rgb), .35);
     }
-    .hr-day-group { margin-top: 12px; }
-    .hr-day-group:first-child { margin-top: 2px; }
-    .hr-day-group-title {
-      font-size: 12px;
-      font-weight: 900;
-      letter-spacing: -.01em;
+    .hr-count-pill.tone-muted {
       color: var(--muted);
-      margin-bottom: 6px;
+      background: rgba(255,255,255,.05);
+      border-color: var(--line);
     }
-    .hr-day-row {
+    .hr-count-pill .ic-svg { width: 10px; height: 10px; }
+    /* Pedido del usuario (mockup mockup_hr_daystats_desktop.html, aprobado):
+       "Tiempo y bono por día" pasa de una lista plana de filas a una tarjeta
+       hero para Hoy + un timeline (mismo lenguaje visual que Horario/Bloques
+       del día) para Próximos/Pasados. Vista mobile pendiente de mockup/
+       aprobación aparte — solo escritorio por ahora. */
+    .hero-today {
+      position: relative;
+      overflow: hidden;
+      isolation: isolate;
+      border-radius: 18px;
+      padding: 18px 20px;
+      margin-bottom: 4px;
+      border: 1.5px solid rgba(var(--good-rgb), .4);
+      background: radial-gradient(circle 200px at 100% 0%, rgba(var(--good-rgb), .14), transparent), rgba(var(--good-rgb), .05);
+    }
+    .hero-today.is-idle {
+      border-color: var(--line-2);
+      background: rgba(255,255,255,.03);
+    }
+    .hero-today-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .hero-today-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10.5px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--muted);
+    }
+    .hero-today-label.tone-active { color: var(--good); }
+    .hero-today-label .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--good);
+      flex: 0 0 auto;
+      box-shadow: 0 0 0 3px rgba(var(--good-rgb), .22);
+      animation: hero-today-pulse 1.7s infinite;
+    }
+    @keyframes hero-today-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+    .hero-today-date { font-size: 13px; font-weight: 800; color: var(--text); margin-top: 4px; }
+    .hero-today-tier {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 11px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+    .hero-today-tier .ic-svg { width: 12px; height: 12px; }
+    .hero-today-figures { display: flex; align-items: flex-end; gap: 26px; margin-top: 16px; flex-wrap: wrap; }
+    .hero-fig-value { font-size: 30px; font-weight: 900; letter-spacing: -.02em; line-height: 1; }
+    .hero-fig-label { font-size: 11px; color: var(--muted); font-weight: 700; margin-top: 6px; }
+    .hero-today-track { margin-top: 14px; height: 7px; border-radius: 99px; background: rgba(255,255,255,.07); overflow: hidden; }
+    .hero-today-track > div { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--good), var(--teal)); }
+    .hero-today-foot { display: flex; justify-content: space-between; margin-top: 7px; font-size: 11px; color: var(--muted-3); }
+
+    .hr-tl-group-label {
+      font-weight: 900;
+      font-size: 11.5px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--muted-3);
+      margin: 18px 0 8px;
+      padding-left: 1px;
+    }
+    .hr-tl-item {
+      display: grid;
+      grid-template-columns: 78px 20px 1fr;
+      gap: 10px;
+      align-items: stretch;
+      padding: 0 0 14px;
+    }
+    .hr-tl-item:last-child { padding-bottom: 0; }
+    .hr-tl-date { padding-top: 12px; text-align: right; font-size: 11.5px; font-weight: 800; color: var(--muted-3); line-height: 1.3; }
+    .hr-tl-date b { display: block; color: var(--muted); font-size: 12.5px; font-weight: 900; }
+    .hr-tl-rail { position: relative; display: flex; justify-content: center; }
+    .hr-tl-rail::before {
+      content: '';
+      position: absolute;
+      top: 4px;
+      bottom: -10px;
+      left: 50%;
+      width: 1.5px;
+      transform: translateX(-50%);
+      background: var(--line-2);
+    }
+    .hr-tl-item:last-child .hr-tl-rail::before { bottom: 50%; }
+    .hr-tl-dot {
+      position: relative;
+      z-index: 1;
+      width: 11px;
+      height: 11px;
+      margin-top: 10px;
+      border-radius: 50%;
+      background: var(--bg);
+      border: 1.5px solid rgba(var(--dot-rgb, 125,140,255), .75);
+    }
+    .hr-tl-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 11px 13px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(var(--accent-rgb, 125,140,255), .06);
+      border-left: 3px solid rgba(var(--accent-rgb, 125,140,255), .55);
+    }
+    .hr-tl-item.is-empty .hr-tl-card { background: rgba(255,255,255,.02); border-left-color: var(--line-2); }
+    .hr-tl-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 9px;
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(var(--accent-rgb, 125,140,255), .16);
+      color: rgb(var(--accent-rgb, 125,140,255));
+    }
+    .hr-tl-icon .ic-svg { width: 13px; height: 13px; }
+    .hr-tl-main { flex: 1 1 160px; min-width: 0; }
+    .hr-tl-name { font-weight: 800; font-size: 12.5px; }
+    .hr-tl-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+    .hr-tl-pills { display: flex; gap: 6px; flex-wrap: wrap; flex: 0 0 auto; }
+
+    .hr-past-toggle {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
-      flex-wrap: wrap;
-      padding: 9px 12px;
-      margin-bottom: 6px;
-      border-radius: 12px;
+      gap: 10px;
+      width: 100%;
+      margin-top: 16px;
+      padding: 11px 13px;
+      border-radius: 14px;
       border: 1px solid var(--line);
       background: rgba(255,255,255,.03);
+      color: var(--text);
+      font-weight: 800;
+      font-size: 12px;
+      cursor: pointer;
     }
-    .hr-day-row.is-today {
-      border-color: rgba(var(--good-rgb), .35);
-      background: rgba(var(--good-rgb), .07);
-    }
-    .hr-day-row-label { font-weight: 800; font-size: 12.5px; }
-    .hr-day-row-pills { display: flex; gap: 6px; flex-wrap: wrap; }
-    @media (max-width: 620px) {
-      .hr-day-row { padding: 8px 10px; }
-      .hr-day-row-label { font-size: 11.5px; }
-      .hr-day-row-pills { width: 100%; }
-    }
+    .hr-past-toggle-left { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+    .hr-past-toggle .chev { color: var(--muted); transition: transform .18s ease; }
+    .hr-past-toggle[data-open="true"] .chev { transform: rotate(180deg); }
     /* Pedido del usuario (v482, backlog): estado EN VIVO de Higher Rate —
        si estás dentro de una ventana ahora mismo (cuánto falta para que
        termine) o cuándo es la próxima que viene, sin tener que revisar la
@@ -9138,6 +9267,7 @@
 
 <div class="hr-section-head">
 <div class="hr-section-title">Tiempo y bono por día</div>
+<div class="hr-count-pill" id="higherRateDayStatsCountPill">0 próximas</div>
 </div>
 <div id="higherRateDayStats"></div>
 
@@ -17070,59 +17200,166 @@ function saveFinanceRowModal() {
       renderHigherRateLiveCardInto({ card: 'earningsHigherRateLiveCard', icon: 'earningsHigherRateLiveIcon', title: 'earningsHigherRateLiveTitle', sub: 'earningsHigherRateLiveSub' });
     }
 
-    // Mismas 2 píldoras de siempre (tiempo real en llamada + bono ganado, y
-    // duración total de ventana) pero por CADA fecha con ventanas configuradas,
-    // agrupadas en Hoy / Próximos días / Días pasados.
+    // Acordeón "Días pasados" dentro de "Tiempo y bono por día" — vive en
+    // memoria, no en localStorage (mismo patrón que earningsViewMode/blocksViewMode).
+    let higherRateHistoryOpen = false;
+
+    // Nivel más "valioso" (mayor bono/min) presente en un breakdown de
+    // minutos por tier (ver higherRateStatsForDay) — mismo criterio de
+    // desempate que ya usa higherRateBonusForCall al elegir entre ventanas
+    // traslapadas.
+    function dominantHigherRateTier(breakdown) {
+      const entries = Object.keys(breakdown || {}).filter(t => breakdown[t] > 0);
+      if (!entries.length) return null;
+      return entries.reduce((a, b) => (HIGHER_RATE_TIERS[b]?.bonusPerMin || 0) > (HIGHER_RATE_TIERS[a]?.bonusPerMin || 0) ? b : a);
+    }
+
+    function higherRateHeroTierBadge(tierKey) {
+      const meta = HIGHER_RATE_TIERS[tierKey];
+      if (!meta) return '';
+      return `<span class="hero-today-tier" style="background: rgba(${meta.colorRgb}, .16); border: 1px solid rgba(${meta.colorRgb}, .4); color: var(${meta.colorVar});">${iconHtml('medal')} ${escapeHtml(meta.label)} +${money(meta.bonusPerMin)}/min</span>`;
+    }
+
+    // "Tiempo y bono por día" (mockup mockup_hr_daystats_desktop.html,
+    // aprobado): tarjeta hero para Hoy (bono ganado, tiempo en llamada,
+    // ventana total, % aprovechado) + timeline de Próximos días / Días
+    // pasados (colapsado por default, ver higherRateHistoryOpen).
     function renderHigherRateDayStats() {
       const wrap = document.getElementById('higherRateDayStats');
       if (!wrap) return;
       const todayKey = todayCallDateKey();
       const today = todayRange();
-      const dates = new Set([todayKey]);
+      const dates = new Set();
       (settings.higherRateWindows || []).forEach(w => {
         const key = callDateKeyFromValue(w.date);
-        if (key) dates.add(key);
+        if (key && key !== todayKey) dates.add(key);
       });
 
-      const groups = { today: [], future: [], past: [] };
-      [...dates].forEach(key => {
+      const future = [];
+      const past = [];
+      dates.forEach(key => {
         const d = callDateToDate(key);
         if (!d) return;
-        if (key === todayKey) groups.today.push(key);
-        else if (d < today) groups.past.push(key);
-        else groups.future.push(key);
+        (d < today ? past : future).push(key);
       });
-      groups.future.sort((a, b) => callDateToDate(a) - callDateToDate(b));
-      groups.past.sort((a, b) => callDateToDate(b) - callDateToDate(a));
+      future.sort((a, b) => callDateToDate(a) - callDateToDate(b));
+      past.sort((a, b) => callDateToDate(b) - callDateToDate(a));
 
       const tomorrowKey = todayCallDateKey(new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1));
-      const rowHtml = (key) => {
+
+      // ---- Tarjeta hero de Hoy ----
+      const todayStats = higherRateStatsForDay(todayKey);
+      const todayWindowsMin = higherRateWindowsTodayTotalMin(todayKey);
+      const liveStatus = higherRateLiveStatus();
+      const isActiveNow = !!(liveStatus && liveStatus.active);
+      const todayPct = todayWindowsMin > 0 ? Math.min(100, (todayStats.totalMin / todayWindowsMin) * 100) : 0;
+      const isIdleToday = todayWindowsMin <= 0 && todayStats.totalMin <= 0;
+
+      const tierBadgeHtml = isActiveNow
+        ? higherRateHeroTierBadge(liveStatus.window.tier)
+        : higherRateHeroTierBadge(dominantHigherRateTier(todayStats.breakdown));
+
+      const todayDateRaw = new Intl.DateTimeFormat('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }).format(today);
+      const todayDateLabel = `Hoy · ${todayDateRaw.charAt(0).toUpperCase() + todayDateRaw.slice(1)}`;
+
+      const footHtml = todayWindowsMin > 0
+        ? `<div class="hero-today-foot"><span>${Math.round(todayPct)}% de la ventana aprovechada</span><span>${isActiveNow ? `Termina a las ${timeLabel(liveStatus.window.end)}` : ''}</span></div>`
+        : '';
+
+      const heroHtml = `
+        <div class="hero-today ${isIdleToday ? 'is-idle' : ''}">
+          <div class="hero-today-top">
+            <div>
+              <span class="hero-today-label ${isActiveNow ? 'tone-active' : ''}">${isActiveNow ? '<span class="pulse-dot" aria-hidden="true"></span>Ganando bono ahora' : 'Higher Rate hoy'}</span>
+              <div class="hero-today-date">${escapeHtml(todayDateLabel)}</div>
+            </div>
+            ${tierBadgeHtml}
+          </div>
+          <div class="hero-today-figures">
+            <div><div class="hero-fig-value" style="color:var(--good);">+${money(todayStats.totalBonus)}</div><div class="hero-fig-label">Bono ganado hoy</div></div>
+            <div><div class="hero-fig-value">${escapeHtml(formatBlockDurationLabel(todayStats.totalMin))}</div><div class="hero-fig-label">en llamada dentro de ventana</div></div>
+            <div><div class="hero-fig-value" style="font-size:20px; color:var(--muted);">${escapeHtml(formatBlockDurationLabel(todayWindowsMin))}</div><div class="hero-fig-label">ventana total de hoy</div></div>
+          </div>
+          ${todayWindowsMin > 0 ? `<div class="hero-today-track"><div style="width:${todayPct}%;"></div></div>` : ''}
+          ${footHtml}
+        </div>
+      `;
+
+      // ---- Timeline de Próximos días / Días pasados ----
+      const tlItemHtml = (key, isFuture) => {
         const stats = higherRateStatsForDay(key);
-        const windowsMin = higherRateWindowsTodayTotalMin(key);
-        const isToday = key === todayKey;
-        const isFuture = (callDateToDate(key) || today) > today;
-        const label = isToday ? 'Hoy' : key === tomorrowKey ? 'Mañana' : formatCallDayLabel(key);
-        const livePill = stats.totalMin > 0
-          ? `${formatBlockDurationLabel(stats.totalMin)} en llamada · +${money(stats.totalBonus)}`
-          : isFuture ? 'Todavía no empieza' : 'Sin llamadas en Higher Rate';
-        const windowPill = windowsMin > 0 ? `${formatBlockDurationLabel(windowsMin)} de ventana` : 'Sin ventanas';
+        const windowsForDay = (settings.higherRateWindows || [])
+          .filter(w => callDateKeyFromValue(w.date) === key)
+          .sort((a, b) => toMinutes(formatHHMM(a.start)) - toMinutes(formatHHMM(b.start)));
+        const dateObj = callDateToDate(key);
+        const dayNameRaw = key === tomorrowKey ? 'Mañana' : new Intl.DateTimeFormat('es-MX', { weekday: 'long' }).format(dateObj);
+        const dayName = dayNameRaw.charAt(0).toUpperCase() + dayNameRaw.slice(1);
+        const dayNum = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(dateObj);
+
+        let name, sub, accentRgb;
+        if (windowsForDay.length) {
+          const first = windowsForDay[0];
+          const meta = HIGHER_RATE_TIERS[first.tier];
+          name = `Ventana ${meta?.label || first.tier}`;
+          const extra = windowsForDay.length - 1;
+          sub = `${timeLabel(first.start)} – ${timeLabel(first.end)}${extra > 0 ? ` · +${extra} más` : ''}`;
+          accentRgb = meta?.colorRgb || '125,140,255';
+        } else {
+          name = 'Sin ventanas configuradas';
+          sub = '';
+          accentRgb = '144,160,190';
+        }
+
+        const windowsMinForDay = higherRateWindowsTodayTotalMin(key);
+        const pillsHtml = [
+          stats.totalMin > 0
+            ? `<span class="hr-count-pill tone-live">${iconHtml('flame')} ${escapeHtml(formatBlockDurationLabel(stats.totalMin))} en llamada · +${money(stats.totalBonus)}</span>`
+            : `<span class="hr-count-pill tone-muted">${isFuture ? 'Todavía no empieza' : 'Sin llamadas en Higher Rate'}</span>`,
+          windowsMinForDay > 0 ? `<span class="hr-count-pill tone-window">${escapeHtml(formatBlockDurationLabel(windowsMinForDay))} de ventana</span>` : '',
+        ].filter(Boolean).join('');
+
         return `
-          <div class="hr-day-row ${isToday ? 'is-today' : ''}">
-            <span class="hr-day-row-label">${escapeHtml(label)}</span>
-            <span class="hr-day-row-pills">
-              <span class="hr-count-pill tone-live" title="Tiempo real en llamada dentro de una ventana de Higher Rate ese día, y el bono que ganaste por eso.">${escapeHtml(livePill)}</span>
-              <span class="hr-count-pill tone-window" title="Duración total de tus ventanas de Higher Rate ese día, las hayas aprovechado o no.">${escapeHtml(windowPill)}</span>
-            </span>
+          <div class="hr-tl-item ${windowsForDay.length ? '' : 'is-empty'}" style="--dot-rgb:${accentRgb};">
+            <div class="hr-tl-date">${escapeHtml(dayName)}<b>${escapeHtml(dayNum)}</b></div>
+            <div class="hr-tl-rail" aria-hidden="true"><span class="hr-tl-dot"></span></div>
+            <div class="hr-tl-card" style="--accent-rgb:${accentRgb};">
+              <span class="hr-tl-icon">${iconHtml(windowsForDay.length ? 'medal' : 'calendar')}</span>
+              <div class="hr-tl-main">
+                <div class="hr-tl-name">${escapeHtml(name)}</div>
+                ${sub ? `<div class="hr-tl-sub">${escapeHtml(sub)}</div>` : ''}
+              </div>
+              <div class="hr-tl-pills">${pillsHtml}</div>
+            </div>
           </div>
         `;
       };
-      const groupHtml = (title, keys) => keys.length
-        ? `<div class="hr-day-group"><div class="hr-day-group-title">${escapeHtml(title)}</div>${keys.map(rowHtml).join('')}</div>`
+
+      const futureHtml = future.length
+        ? `<div class="hr-tl-group-label">Próximos días</div><div class="hr-tl">${future.map(k => tlItemHtml(k, true)).join('')}</div>`
         : '';
 
-      wrap.innerHTML = groupHtml('Hoy', groups.today)
-        + groupHtml('Próximos días', groups.future)
-        + groupHtml('Días pasados', groups.past);
+      const pastHtml = past.length
+        ? `
+          <button type="button" class="hr-past-toggle" id="higherRatePastToggleBtn" data-open="${higherRateHistoryOpen ? 'true' : 'false'}">
+            <span class="hr-past-toggle-left">${iconHtml('history')} Días pasados (${past.length})</span>
+            ${iconHtml('chevronDown', 'chev')}
+          </button>
+          <div class="hr-tl" id="higherRatePastList" style="margin-top:14px;${higherRateHistoryOpen ? '' : ' display:none;'}">${past.map(k => tlItemHtml(k, false)).join('')}</div>
+        `
+        : '';
+
+      wrap.innerHTML = heroHtml + futureHtml + pastHtml;
+
+      const countPillEl = document.getElementById('higherRateDayStatsCountPill');
+      if (countPillEl) countPillEl.textContent = `${future.length} ${future.length === 1 ? 'próxima' : 'próximas'}`;
+
+      const pastToggleBtn = document.getElementById('higherRatePastToggleBtn');
+      if (pastToggleBtn) {
+        pastToggleBtn.addEventListener('click', () => {
+          higherRateHistoryOpen = !higherRateHistoryOpen;
+          renderHigherRateDayStats();
+        });
+      }
     }
 
     function renderHigherRateWindowsEditor(windows) {
