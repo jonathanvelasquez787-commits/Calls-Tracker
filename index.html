@@ -674,9 +674,9 @@
       :root:not(.theme-dark) .sblk-dot {
         border-color: rgba(var(--accent-blue-2-rgb), .75);
       }
-      /* El relleno líquido de .sblk-fill (rgb(var(--sblk-rgb, var(--rpt-purple-rgb)))) cae siempre al morado de --rpt-purple-rgb porque --sblk-rgb nunca se define — se fija solo el color en modo claro. Pedido del usuario (con captura): el gris fijo se veía como un tono de blanco distinto al del fondo de página — pasa a usar var(--bg) (el mismo blanco de fuera de las tarjetas) en vez de un gris propio. Ver resumen.md "Bloques del día" si esto cambia de nuevo. */
+      /* Pedido del usuario: el relleno líquido de .sblk-fill necesitaba notarse (con var(--bg), el blanco de fuera de la tarjeta, casi desaparecía) pero sin volver al gris plano de antes — pasa a un tinte suave del mismo acento índigo que ya usa el borde izquierdo de estas tarjetas (--accent-blue-2). Ver resumen.md "Bloques del día" si esto cambia de nuevo. */
       :root:not(.theme-dark) .sblk-fill {
-        background: var(--bg);
+        background: rgba(var(--accent-blue-2-rgb), .16);
       }
       /* El texto de nombre/rango/meta-line usa un degradado de texto (#fff sobre la parte cubierta por el líquido, color normal sobre el resto) pensado para un líquido oscuro/saturado — con el líquido casi blanco (arriba) ese blanco queda ilegible. Se apaga el degradado en modo claro: un solo color de texto, cubierto o no. */
       :root:not(.theme-dark) .sblk-card .sblk-name,
@@ -1117,7 +1117,7 @@
     }
     /* Ver comentario gemelo en la rama @media de arriba. */
     html.theme-light .sblk-fill {
-      background: var(--bg);
+      background: rgba(var(--accent-blue-2-rgb), .16);
     }
     /* Ver comentario gemelo en la rama @media de arriba: mismo apagado del degradado de texto blanco. */
     html.theme-light .sblk-card .sblk-name,
