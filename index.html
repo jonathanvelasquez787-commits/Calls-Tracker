@@ -304,6 +304,15 @@
       :root:not(.theme-dark) .gap-edit-btn:hover {
         background: #E6E6E6; /* --btn-secondary-bg mezclado ~10% con negro (hover) */
       }
+      /* Pedido del usuario (con captura): el botón ☰ se veía como una cajita gris flotando sobre el fondo blanco de la tarjeta del hero — se quita el fondo/borde propio para que se funda con ese mismo blanco. */
+      :root:not(.theme-dark) .menu-toggle-btn {
+        background: var(--panel);
+        border-color: transparent;
+      }
+      :root:not(.theme-dark) .menu-toggle-btn:hover,
+      :root:not(.theme-dark) .menu-toggle-btn:focus-visible {
+        background: var(--btn-secondary-bg);
+      }
       /* Botones del header (Auto/Horario/Higher Rate/Avisos/Ajustes) — antes casi sin fondo (4% de blanco sobre fondo ya claro = casi invisible, "botones débiles y pálidos"). Fondo neutro más presente para que se lean como botones de verdad. */
       :root:not(.theme-dark) .hero-action-btn:not(.danger) {
         background: var(--btn-secondary-bg);
@@ -758,6 +767,15 @@
     }
     html.theme-light .gap-edit-btn:hover {
       background: #E6E6E6; /* --btn-secondary-bg mezclado ~10% con negro (hover) */
+    }
+    /* Ver comentario gemelo en la rama @media de arriba. */
+    html.theme-light .menu-toggle-btn {
+      background: var(--panel);
+      border-color: transparent;
+    }
+    html.theme-light .menu-toggle-btn:hover,
+    html.theme-light .menu-toggle-btn:focus-visible {
+      background: var(--btn-secondary-bg);
     }
     html.theme-light .hero-action-btn:not(.danger) {
       background: var(--btn-secondary-bg);
