@@ -8087,6 +8087,14 @@
 </div>
 <div id="financePreviewRows"></div>
 </div>
+<!-- Pedido del usuario: estado de Higher Rate (en vivo/próxima ventana) también dentro de "Ganancias de hoy", debajo de "Próximos pendientes" — mismo dato/tarjeta que ya vive en #higherRateModal (ver renderHigherRateLiveCardInto), pintado en 2 lugares a la vez. -->
+<div class="hr-live-card" id="earningsHigherRateLiveCard" style="display:none; margin-top:10px;">
+<span class="hr-live-icon" id="earningsHigherRateLiveIcon" aria-hidden="true"></span>
+<div class="hr-live-text">
+<div class="hr-live-title" id="earningsHigherRateLiveTitle">—</div>
+<div class="hr-live-sub" id="earningsHigherRateLiveSub"></div>
+</div>
+</div>
 </div>
 </div>
 <div id="earningsCycleView" style="display:none;">
@@ -16726,11 +16734,14 @@ function saveFinanceRowModal() {
       return null;
     }
 
-    function renderHigherRateLiveCard() {
-      const card = document.getElementById('higherRateLiveCard');
-      const icon = document.getElementById('higherRateLiveIcon');
-      const title = document.getElementById('higherRateLiveTitle');
-      const sub = document.getElementById('higherRateLiveSub');
+    // Pinta la tarjeta "en vivo"/"próxima ventana" de Higher Rate en un
+    // set de ids dado — reutilizado tanto por #higherRateModal como por el
+    // mismo widget dentro de "Ganancias de hoy" (ver renderHigherRateLiveCard).
+    function renderHigherRateLiveCardInto(ids) {
+      const card = document.getElementById(ids.card);
+      const icon = document.getElementById(ids.icon);
+      const title = document.getElementById(ids.title);
+      const sub = document.getElementById(ids.sub);
       if (!card || !icon || !title || !sub) return;
       const status = higherRateLiveStatus();
       if (!status) {
@@ -16752,6 +16763,11 @@ function saveFinanceRowModal() {
         title.textContent = `Próxima ventana: ${dayLabel} ${timeLabel(status.window.start)} (${tierLabel})`;
         sub.textContent = `Termina a las ${timeLabel(status.window.end)}`;
       }
+    }
+
+    function renderHigherRateLiveCard() {
+      renderHigherRateLiveCardInto({ card: 'higherRateLiveCard', icon: 'higherRateLiveIcon', title: 'higherRateLiveTitle', sub: 'higherRateLiveSub' });
+      renderHigherRateLiveCardInto({ card: 'earningsHigherRateLiveCard', icon: 'earningsHigherRateLiveIcon', title: 'earningsHigherRateLiveTitle', sub: 'earningsHigherRateLiveSub' });
     }
 
     function updateHigherRateTodayStats() {
@@ -18370,6 +18386,7 @@ function render() {
       renderTable();
       renderDayStatsCards();
       renderFinancePreview();
+      renderHigherRateLiveCard();
       updateLiveActivityBar();
       updateCallsStatusCard();
       updateSidebarProgressWidget();
@@ -19467,11 +19484,10 @@ function render() {
       checkBreakStartAlarm();
       checkBreakEndAlarm();
       checkProductiveBreakEarnedAlarm();
-      // v487 — Cuenta regresiva en vivo de "Estás en una ventana ahora" —
-      // solo se recalcula mientras el modal está abierto, para no hacer
-      // trabajo de más el resto del tiempo.
-      const higherRateModalEl = document.getElementById('higherRateModal');
-      if (higherRateModalEl && higherRateModalEl.classList.contains('open')) renderHigherRateLiveCard();
+      // Cuenta regresiva en vivo de "Estás en una ventana ahora" — se
+      // repinta cada segundo, ya que ahora vive tanto en el modal como en
+      // "Ganancias de hoy" (siempre visible en Inicio).
+      renderHigherRateLiveCard();
     }, 1000);
     render();
   </script>
