@@ -8072,7 +8072,7 @@
 </div>
 <div class="table-tags" id="earningsTagsRow"></div>
 <div class="gh-goal-card">
-<div class="gh-goal-top"><span>Meta diaria</span><b id="goalAmountBadge">Meta $0.00</b></div>
+<div class="gh-goal-top"><span id="goalDailyLabel">Meta diaria</span><b id="goalAmountBadge">Meta $0.00</b></div>
 <div class="gh-goal-sub-row">
 <span class="gh-goal-subitem" id="goalAmountConvertedText"></span>
 <span class="gh-goal-subitem" id="goalMinBadge">Meta 59.0 min</span>
@@ -8910,7 +8910,12 @@
 <input id="goalCurrencyInput" inputmode="decimal" min="0" step="0.01" type="number"/>
 </div>
 </div>
-<div class="note" style="margin:0;">Se sincronizan solas con tu tasa por minuto de abajo.</div>
+<div class="note" style="margin:0;">Se sincronizan solas con tu tasa por minuto de abajo. Al guardar, eliges si el cambio vale solo para el día que estás viendo o para siempre.</div>
+<div class="mc-warning-box" id="goalDayOverrideNote" style="display:none;">
+<svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+<span id="goalDayOverrideNoteText"></span>
+<button class="gap-edit-btn" id="clearDayGoalOverrideBtn" type="button" style="flex:0 0 auto;">Usar meta general</button>
+</div>
 </div>
 
 <div class="divider"></div>
@@ -9241,6 +9246,26 @@ $0.72"></textarea>
 <button class="mc-btn-warn-pill" id="useAutoCycleGoalBtn" type="button">Usar automático</button>
 <button class="mc-btn-warn-pill" data-close-modal="cycleGoalModal" type="button" style="background:transparent; border-color:var(--line); color:var(--text);">Cancelar</button>
 </div>
+</div>
+</div>
+<!-- Alcance de la meta editada en Ajustes: solo el día activo o la meta de siempre. -->
+<div aria-hidden="true" class="modal-overlay" id="goalScopeModal">
+<div aria-labelledby="goalScopeModalTitle" aria-modal="true" class="modal-card" role="dialog" style="width: min(460px, 100%);">
+<div class="modal-head mc-modal-head">
+<div class="mc-header-icon" aria-hidden="true"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3v18"/><path d="M5 4h9l-1 3 1 3H5"/></svg></div>
+<div>
+<h3 id="goalScopeModalTitle">¿Para cuándo es esta meta?</h3>
+<p id="goalScopeSummary">—</p>
+</div>
+<button aria-label="Cerrar" class="modal-close" data-close-modal="goalScopeModal" type="button">×</button>
+</div>
+
+<div class="modal-actions mc-action-row" style="flex-direction:column; gap:8px;">
+<button class="mc-btn-primary cyan" id="goalScopeGlobalBtn" type="button" style="width:100%;"><svg class="ic-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2 21 6 17 10"/><path d="M3 12v-2a4 4 0 0 1 4-4h14"/><path d="M7 22 3 18 7 14"/><path d="M21 12v2a4 4 0 0 1-4 4H3"/></svg> Meta general, todos los días</button>
+<button class="mc-btn-primary blue" id="goalScopeDayBtn" type="button" style="width:100%;">Solo hoy</button>
+<button class="mc-btn-warn-pill" data-close-modal="goalScopeModal" type="button" style="width:100%; justify-content:center; background:transparent; border-color:var(--line); color:var(--text);">Cancelar</button>
+</div>
+<p class="alert-hint" id="goalScopeDayHint" style="margin-top:10px;"></p>
 </div>
 </div>
 <!-- Editor de "Meta anual" (Calendario de productividad, vista anual) — mismo patrón simple que #cycleGoalModal (reemplaza el window.prompt() que usaba antes). -->
@@ -10116,6 +10141,9 @@ $0.72"></textarea>
         cycleGoalOverrides: {},
         // Pedido del usuario: Meta anual del Calendario de productividad (vista anual) — mismo patrón que cycleGoalOverrides de arriba, aquí con clave = año ("YYYY") en vez de fecha de ciclo.
         yearGoalOverrides: {},
+        // Meta diaria "solo para este día" — clave = dayKey "MM/DD/YYYY",
+        // valor { min, usd }. Vacío = se usa la meta general de arriba.
+        dailyGoalOverrides: {},
         // Pedido del usuario: fecha desde la que "empieza" el historial para la vista anual (mes de arranque del año que la contiene + piso de autoCalYearGoal) — vacío = automático (la llamada más antigua en `calls`, ver effectiveHistoryStartDate()).
         historyStartDateOverride: '',
         // Pedido del usuario: página "Finanzas" — categorías fijas (ver FINANCE_CATEGORIES), cada una con sus propias filas de gasto/meta.
@@ -10235,6 +10263,20 @@ $0.72"></textarea>
         const val = Number(settings.yearGoalOverrides[key]);
         if (!/^\d{4}$/.test(key) || !Number.isFinite(val) || val <= 0) delete settings.yearGoalOverrides[key];
         else settings.yearGoalOverrides[key] = val;
+      });
+      // Mismo criterio defensivo, con clave = día "MM/DD/YYYY" y valor { min, usd }.
+      if (!settings.dailyGoalOverrides || typeof settings.dailyGoalOverrides !== 'object' || Array.isArray(settings.dailyGoalOverrides)) {
+        settings.dailyGoalOverrides = {};
+      }
+      Object.keys(settings.dailyGoalOverrides).forEach((key) => {
+        const raw = settings.dailyGoalOverrides[key];
+        const min = Number(raw && raw.min);
+        const usd = Number(raw && raw.usd);
+        if (!/^\d{2}\/\d{2}\/\d{4}$/.test(key) || !Number.isFinite(min) || min < 0 || !Number.isFinite(usd) || usd < 0) {
+          delete settings.dailyGoalOverrides[key];
+        } else {
+          settings.dailyGoalOverrides[key] = { min, usd };
+        }
       });
       // Ver comentario junto a historyStartDateOverride en defaultSettings(): vacío = automático, cualquier otro valor debe ser una fecha real "YYYY-MM-DD" o se descarta.
       if (typeof settings.historyStartDateOverride !== 'string' || (settings.historyStartDateOverride && (!/^\d{4}-\d{2}-\d{2}$/.test(settings.historyStartDateOverride) || Number.isNaN(new Date(`${settings.historyStartDateOverride}T00:00:00`).getTime())))) {
@@ -12677,7 +12719,8 @@ function calDayStatus(dayKey) {
 // renderHeader) — sin esto, un día que alcanza la meta de dólares gracias
 // al bono seguía viéndose "amarillo" (por debajo de meta) aunque el
 // propio badge "+N" de la celda ya mostrara ese mismo bono.
-function calDayTier(dayKey, goalMin) {
+// goalMin por default es la meta efectiva de ESE día (ver effectiveDailyGoal).
+function calDayTier(dayKey, goalMin = effectiveDailyGoal(dayKey).min) {
   const status = calDayStatus(dayKey);
   if (status === 'off') return 'cal-tier-off';
   if (status === 'nodata') return 'cal-tier-nodata';
@@ -12773,7 +12816,7 @@ function renderCalendarMonth() {
     const status = calDayStatus(dayKey);
     const productiveMin = productiveMinutesForDay(dayKey);
     const bonusMin = Math.round(calDailyEquivalentHigherRateMin(dayKey));
-    const tier = calDayTier(dayKey, goalMin);
+    const tier = calDayTier(dayKey);
     const bonusHtml = bonusMin > 0 ? `<span class="cal-day-bonus">+${bonusMin}</span>` : '';
     const starHtml = tier === 'cal-tier-8hrpp' ? `<span class="cal-day-star" aria-hidden="true">${iconHtml('star', 'ic-fill')}</span>` : '';
     // Pedido del usuario: un día libre por una razón concreta (vacaciones,
@@ -12855,13 +12898,14 @@ function autoCalYearGoal(offset = calYearOffset) {
   const daysInYear = ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) ? 366 : 365;
   const historyStart = effectiveHistoryStartDate();
   const historyStartRange = historyStart ? todayRange(historyStart) : null;
-  let workDays = 0;
+  let total = 0;
   for (let i = 0; i < daysInYear; i++) {
     const d = new Date(year, 0, 1 + i);
     if (historyStartRange && d < historyStartRange) continue;
-    if (!dayIsEffectivelyOff(todayCallDateKey(d))) workDays++;
+    const dKey = todayCallDateKey(d);
+    if (!dayIsEffectivelyOff(dKey)) total += effectiveDailyGoal(dKey).usd;
   }
-  return Number(settings.earningsGoal || 0) * workDays;
+  return total;
 }
 
 function getCalYearGoalOverride(offset = calYearOffset) {
@@ -12968,7 +13012,6 @@ function renderCalYear() {
   const today = todayRange();
   const year = today.getFullYear() + calYearOffset;
   const isCurrentYear = calYearOffset === 0;
-  const goalMin = Number(settings.productiveGoalMin) || 0;
 
   if (label) label.textContent = String(year);
   if (nextBtn) nextBtn.disabled = calYearOffset >= 0;
@@ -13022,7 +13065,7 @@ function renderCalYear() {
       // un caso especial aquí. Mismo criterio que renderCalendarMonth()
       // (pinta el mes completo, sin cortar en "hoy").
       monthTotal += importedCallStats(callsForDay(dayKey), dayKey).earnings;
-      const tier = calDayTier(dayKey, goalMin);
+      const tier = calDayTier(dayKey);
       cells.push({ empty: false, tier });
     }
     yearTotal += monthTotal;
@@ -13228,6 +13271,40 @@ function reportsAdherenceStats() {
 }
 
 // Ganancias del ciclo: reutiliza cycleEarningsForOffset(0) tal cual (mismo dato que ya pinta "Ganancias del ciclo" en Inicio). "Meta del ciclo" es nueva aquí:
+// Meta diaria efectiva de un día: el override de ese día si existe, si no la
+// meta general de Ajustes. Es el único lugar que debe leerse para comparar
+// contra lo hecho en UN día concreto (header, Reportes del día, racha,
+// calendario) — la meta global cruda solo se usa para promedios/leyendas.
+function getDailyGoalOverride(dayKey) {
+  const normalized = callDateKeyFromValue(dayKey);
+  const raw = settings.dailyGoalOverrides && settings.dailyGoalOverrides[normalized];
+  if (!raw || typeof raw !== 'object') return null;
+  const min = Number(raw.min);
+  const usd = Number(raw.usd);
+  if (!Number.isFinite(min) || min < 0 || !Number.isFinite(usd) || usd < 0) return null;
+  return { min, usd };
+}
+
+function effectiveDailyGoal(dayKey = getActiveDayKey()) {
+  const override = getDailyGoalOverride(dayKey);
+  if (override) return { min: override.min, usd: override.usd, isOverride: true };
+  return { min: Number(settings.productiveGoalMin) || 0, usd: Number(settings.earningsGoal) || 0, isOverride: false };
+}
+
+// value=null borra el override de ese día (vuelve a la meta general).
+function setDailyGoalOverride(dayKey, value) {
+  const normalized = callDateKeyFromValue(dayKey);
+  if (!normalized) return;
+  if (!settings.dailyGoalOverrides || typeof settings.dailyGoalOverrides !== 'object') settings.dailyGoalOverrides = {};
+  const min = Number(value && value.min);
+  const usd = Number(value && value.usd);
+  if (value && Number.isFinite(min) && min >= 0 && Number.isFinite(usd) && usd >= 0) {
+    settings.dailyGoalOverrides[normalized] = { min, usd };
+  } else {
+    delete settings.dailyGoalOverrides[normalized];
+  }
+}
+
 function cycleGoalKeyForOffset(offset = 0) {
   const { start } = cycleBoundsForOffset(offset);
   return `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}`;
@@ -13235,13 +13312,14 @@ function cycleGoalKeyForOffset(offset = 0) {
 
 function autoCycleGoal(offset = 0) {
   const { start } = cycleBoundsForOffset(offset);
-  let workDays = 0;
+  let total = 0;
   for (let i = 0; i < CYCLE_LENGTH_DAYS; i++) {
     const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
-    // Antes miraba cfg.off crudo (dayConfigFor.off) — ahora usa dayIsEffectivelyOff, que además respeta el "Estado" forzado desde "Editar día" (Resumen semanal):
-    if (!dayIsEffectivelyOff(todayCallDateKey(d))) workDays++;
+    // dayIsEffectivelyOff respeta además el "Estado" forzado desde "Editar día" (Resumen semanal).
+    const dKey = todayCallDateKey(d);
+    if (!dayIsEffectivelyOff(dKey)) total += effectiveDailyGoal(dKey).usd;
   }
-  return Number(settings.earningsGoal || 0) * workDays;
+  return total;
 }
 
 function getCycleGoalOverride(offset = 0) {
@@ -13363,7 +13441,7 @@ function dayComplianceStatus(dayKey) {
   const adherence = dayAdherence(dayKey);
   if (!adherence) return isToday ? 'pending' : 'off';
   const goalPct = Number(settings.adherenceGoalPct) || 95;
-  const goalMin = Number(settings.productiveGoalMin) || 0;
+  const goalMin = effectiveDailyGoal(dayKey).min;
   const meetsAdherence = adherence.scorePct >= goalPct;
   const meetsProductivity = goalMin <= 0 || productiveMinutesForDay(dayKey) >= goalMin - 0.5;
   return (meetsAdherence && meetsProductivity) ? 'compliant' : 'failed';
@@ -13423,6 +13501,32 @@ function reportsWeekBillableDropped(offset = 0) {
 
 // Proyección de ganancias del ciclo actual al ritmo de hoy: promedio diario
 // ganado hasta ahora × los 14 días del ciclo completo (CYCLE_LENGTH_DAYS).
+// Cuánto falta para la meta del ciclo actual y a qué ritmo diario hay que ir
+// en los días laborales que quedan (hoy incluido, según Horario/"Editar día").
+function cycleGoalPace() {
+  const cycle = cycleEarningsForOffset(0);
+  const goal = effectiveCycleGoal(0);
+  const remainingUsd = Math.max(0, goal - cycle.earnings);
+  const today = todayRange();
+  const end = todayRange(cycle.end);
+  let workDaysLeft = 0;
+  const cursor = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  let guard = 0;
+  while (cursor <= end && guard++ < CYCLE_LENGTH_DAYS + 2) {
+    if (!dayIsEffectivelyOff(todayCallDateKey(cursor))) workDaysLeft++;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  const rate = Number(settings.rate) > 0 ? Number(settings.rate) : RATE;
+  const perDayUsd = workDaysLeft > 0 ? remainingUsd / workDaysLeft : null;
+  return {
+    remainingUsd,
+    workDaysLeft,
+    perDayUsd,
+    perDayHours: (perDayUsd !== null && rate > 0) ? perDayUsd / rate / 60 : null,
+    met: remainingUsd <= 0.004,
+  };
+}
+
 function reportsCycleProjection() {
   const cycle = cycleEarningsForOffset(0);
   const today = todayRange();
@@ -13485,8 +13589,9 @@ function renderReportsDashboard() {
   const kpi = reportsKpiData(dayKey);
   const goalsGrid = document.getElementById('rptGoalsGrid');
   if (goalsGrid) {
-    const goalMin = Number(settings.productiveGoalMin || 0);
-    const goalUsd = Number(settings.earningsGoal || 0);
+    const dayGoalForReports = effectiveDailyGoal(dayKey);
+    const goalMin = dayGoalForReports.min;
+    const goalUsd = dayGoalForReports.usd;
     const goalAdherence = Number(settings.adherenceGoalPct || 95);
     const productivePct = goalMin > 0 ? Math.min(100, (kpi.productiveMin / goalMin) * 100) : 0;
     const earningsPct = goalUsd > 0 ? Math.min(100, (kpi.earnings / goalUsd) * 100) : 0;
@@ -13652,8 +13757,19 @@ function renderReportsDashboard() {
   if (cycleGrid) {
     const c = reportsCycleBreakdown();
     const proj = reportsCycleProjection();
+    const pace = cycleGoalPace();
     const projDelta = proj.projected - c.goal;
     const projTone = projDelta >= 0 ? 'good' : 'pink';
+    const paceText = pace.met
+      ? 'Meta alcanzada'
+      : pace.workDaysLeft === 0
+        ? 'Sin días laborales'
+        : `~${pace.perDayHours.toFixed(1)} h/día`;
+    const paceSubText = pace.met
+      ? 'Todo lo que ganes de aquí en adelante es extra'
+      : pace.workDaysLeft === 0
+        ? `Faltan ${money(pace.remainingUsd)}${financeConvertedInline(pace.remainingUsd)} y ya no quedan días laborales en el ciclo`
+        : `Faltan ${money(pace.remainingUsd)}${financeConvertedInline(pace.remainingUsd)} en ${pace.workDaysLeft} ${pace.workDaysLeft === 1 ? 'día laboral' : 'días laborales'} — ${money(pace.perDayUsd)}${financeConvertedInline(pace.perDayUsd)} por día`;
     cycleGrid.innerHTML = `
       <div class="rpt-mini-card rpt-cycle-card">
         <div class="gh-ring-wrap" style="flex-direction:row; justify-content:flex-start; gap:12px; margin-bottom:12px;">
@@ -13678,10 +13794,12 @@ function renderReportsDashboard() {
       </div>
       <div class="rpt-mini-card">
         <div class="rpt-mini-title">${iconHtml('chart')} PROYECCIÓN DEL CICLO</div>
-        <div class="rpt-bw-metric"><span>Al ritmo de hoy</span><b>${money(proj.projected)}</b></div>
+        <div class="rpt-bw-metric"><span>Al ritmo de hoy</span><b>${money(proj.projected)}${financeConvertedInline(proj.projected)}</b></div>
         <div class="rpt-bw-metric"><span>Días transcurridos</span><b>${proj.daysElapsed}/${CYCLE_LENGTH_DAYS}</b></div>
         <div class="rpt-bw-metric"><span>Días restantes</span><b>${proj.daysRemaining}</b></div>
-        <div class="rpt-bw-metric"><span>vs tu meta del ciclo</span><b style="color:var(--${projTone});">${projDelta >= 0 ? '+' : ''}${money(projDelta)}</b></div>
+        <div class="rpt-bw-metric"><span>vs tu meta del ciclo</span><b style="color:var(--${projTone});">${projDelta >= 0 ? '+' : ''}${money(projDelta)}${financeConvertedInline(Math.abs(projDelta))}</b></div>
+        <div class="rpt-bw-metric"><span>Para llegar a tu meta</span><b style="color:var(--${pace.met ? 'good' : 'text'});">${escapeHtml(paceText)}</b></div>
+        <div class="rpt-act-row" style="border-bottom:none; padding-top:2px;"><span class="rpt-act-left" style="font-size:11px; line-height:1.4;">${paceSubText}</span></div>
       </div>
     `;
   }
@@ -14487,17 +14605,19 @@ function saveFinanceRowModal() {
   toast(isMeta ? 'Meta agregada' : 'Gasto agregado');
 }
 
-    function syncGoals(source) {
-      if (syncingGoals) return;
-      syncingGoals = true;
+    // Lee los 3 campos de meta y devuelve los valores ya sincronizados entre
+    // sí, SIN guardar nada — quién guarda (y con qué alcance) lo decide
+    // applyGoalValues().
+    function computeGoalsFromInputs(source) {
       const minInput = document.getElementById('productiveGoalInput');
       const usdInput = document.getElementById('earningsGoalInput');
       const currencyInput = document.getElementById('goalCurrencyInput');
+      const current = effectiveDailyGoal(getActiveDayKey());
       let minutes = Number(minInput.value);
       let dollars = Number(usdInput.value);
       let currencyAmount = Number(currencyInput?.value);
-      if (!Number.isFinite(minutes)) minutes = settings.productiveGoalMin;
-      if (!Number.isFinite(dollars)) dollars = settings.earningsGoal;
+      if (!Number.isFinite(minutes)) minutes = current.min;
+      if (!Number.isFinite(dollars)) dollars = current.usd;
       // BUG-020 (QA ) — Pedido del usuario: los `<input type="number" min="0">` de este formulario (Meta en minutos/Meta en dólares/Meta en tu moneda) no bloquean por completo un valor negativo o en notación…
       minutes = Math.max(0, minutes);
       dollars = Math.max(0, dollars);
@@ -14516,17 +14636,103 @@ function saveFinanceRowModal() {
       // BUG-020 — Segundo clamp, justo antes de guardar: los 3 renglones de arriba (source==='minutes'/'dollars'/'currency') recalculan minutes/dollars a partir de otro campo
       minutes = Math.max(0, minutes);
       dollars = Math.max(0, dollars);
-      settings.productiveGoalMin = Number(minutes);
-      settings.earningsGoal = Number(dollars);
-      state.productiveGoalMin = settings.productiveGoalMin;
-      state.earningsGoal = settings.earningsGoal;
-      minInput.value = formatMinutes(settings.productiveGoalMin);
-      usdInput.value = settings.earningsGoal.toFixed(2);
-      if (currencyInput && exchangeRate > 0) currencyInput.value = currencyCeilFromUsdAmount(settings.earningsGoal, exchangeRate).toFixed(2);
-      saveStateOnly();
+      return { minutes: Number(minutes), dollars: Number(dollars) };
+    }
+
+    // scope 'day' guarda la meta SOLO para ese día; 'global' guarda la meta de
+    // siempre y borra el override de ese día, para que la nueva general
+    // también aplique ahí.
+    function applyGoalValues(minutes, dollars, scope, dayKey) {
+      if (scope === 'day') {
+        setDailyGoalOverride(dayKey, { min: minutes, usd: dollars });
+      } else {
+        settings.productiveGoalMin = Number(minutes);
+        settings.earningsGoal = Number(dollars);
+        state.productiveGoalMin = settings.productiveGoalMin;
+        state.earningsGoal = settings.earningsGoal;
+        setDailyGoalOverride(dayKey, null);
+        saveStateOnly();
+      }
       saveSettingsOnly();
-      syncingGoals = false;
+      refreshGoalInputs();
       render();
+    }
+
+    // Repinta los 3 campos de meta con el valor efectivo del día activo.
+    function refreshGoalInputs() {
+      const minInput = document.getElementById('productiveGoalInput');
+      const usdInput = document.getElementById('earningsGoalInput');
+      const currencyInput = document.getElementById('goalCurrencyInput');
+      const exchangeRate = Number(settings.exchangeRate) > 0 ? Number(settings.exchangeRate) : 0;
+      const goal = effectiveDailyGoal(getActiveDayKey());
+      if (minInput) minInput.value = formatMinutes(goal.min);
+      if (usdInput) usdInput.value = goal.usd.toFixed(2);
+      if (currencyInput && exchangeRate > 0) currencyInput.value = currencyCeilFromUsdAmount(goal.usd, exchangeRate).toFixed(2);
+    }
+
+    // Guarda como meta general, sin preguntar — para cambios internos que no
+    // nacen de que el usuario edite la meta (ej. al cambiar la tasa por minuto).
+    function syncGoals(source) {
+      if (syncingGoals) return;
+      syncingGoals = true;
+      const { minutes, dollars } = computeGoalsFromInputs(source);
+      applyGoalValues(minutes, dollars, 'global', getActiveDayKey());
+      syncingGoals = false;
+    }
+
+    // Mientras esto tenga valor, los 3 campos de meta no se repintan solos
+    // (formatGoalFields los salta) para no pisar lo que el usuario acaba de
+    // escribir mientras elige el alcance.
+    let pendingGoalChange = null;
+
+    function requestGoalChange(source) {
+      if (syncingGoals) return;
+      const dayKey = getActiveDayKey();
+      const { minutes, dollars } = computeGoalsFromInputs(source);
+      const current = effectiveDailyGoal(dayKey);
+      if (Math.abs(current.min - minutes) < 0.005 && Math.abs(current.usd - dollars) < 0.005) {
+        refreshGoalInputs();
+        return;
+      }
+      pendingGoalChange = { minutes, dollars, dayKey };
+      const isToday = dayKey === todayCallDateKey();
+      const dayLabel = isToday ? 'hoy' : formatCallDayLabel(dayKey);
+      const summaryEl = document.getElementById('goalScopeSummary');
+      const dayBtnEl = document.getElementById('goalScopeDayBtn');
+      const dayHintEl = document.getElementById('goalScopeDayHint');
+      if (summaryEl) summaryEl.textContent = `Meta nueva: ${formatMinutes(minutes)} min · ${money(dollars)}${convertedAmountText(dollars) ? ` (${convertedAmountText(dollars)})` : ''}`;
+      if (dayBtnEl) dayBtnEl.innerHTML = `${iconHtml('calendar')} Solo ${escapeHtml(dayLabel)}`;
+      if (dayHintEl) dayHintEl.textContent = `"Solo ${dayLabel}" deja tu meta de siempre intacta y aplica esta solo a ese día.`;
+      openModal('goalScopeModal');
+    }
+
+    function applyPendingGoalChange(scope) {
+      if (!pendingGoalChange) return;
+      const { minutes, dollars, dayKey } = pendingGoalChange;
+      pendingGoalChange = null;
+      closeModal('goalScopeModal');
+      applyGoalValues(minutes, dollars, scope, dayKey);
+      toast(scope === 'day'
+        ? `Meta de ${dayKey === todayCallDateKey() ? 'hoy' : formatCallDayLabel(dayKey)}: ${formatMinutes(minutes)} min · ${money(dollars)}`
+        : `Meta general: ${formatMinutes(minutes)} min · ${money(dollars)}`);
+    }
+
+    function cancelPendingGoalChange() {
+      if (!pendingGoalChange) return;
+      pendingGoalChange = null;
+      refreshGoalInputs();
+    }
+
+    // Quita el override del día activo desde Ajustes, sin tener que volver a
+    // teclear la meta general.
+    function clearActiveDayGoalOverride() {
+      const dayKey = getActiveDayKey();
+      if (!getDailyGoalOverride(dayKey)) return;
+      setDailyGoalOverride(dayKey, null);
+      saveSettingsOnly();
+      refreshGoalInputs();
+      render();
+      toast('Ese día vuelve a usar tu meta general');
     }
 
     // Cuando se edita la tasa por minuto en Metas: se guarda la nueva tasa y se recalcula la Meta en dólares a partir de la Meta en minutos ya guardada (mismo criterio que el flujo existente de "source==='minutes'" en syncGoals)
@@ -15558,8 +15764,23 @@ function saveFinanceRowModal() {
       const rateInput = document.getElementById('rateInput');
       const exchangeInput = document.getElementById('exchangeRateInput');
       const currencyInput = document.getElementById('currencyLabelInput');
-      if (document.activeElement !== minInput) minInput.value = formatMinutes(settings.productiveGoalMin);
-      if (document.activeElement !== usdInput) usdInput.value = Number(settings.earningsGoal || 0).toFixed(2);
+      // Los 3 campos de meta muestran la meta EFECTIVA del día activo (puede
+      // ser un override de ese día, ver effectiveDailyGoal).
+      const activeDayGoal = effectiveDailyGoal(getActiveDayKey());
+      if (!pendingGoalChange && document.activeElement !== minInput) minInput.value = formatMinutes(activeDayGoal.min);
+      if (!pendingGoalChange && document.activeElement !== usdInput) usdInput.value = activeDayGoal.usd.toFixed(2);
+      const goalDayOverrideNote = document.getElementById('goalDayOverrideNote');
+      const goalDayOverrideNoteText = document.getElementById('goalDayOverrideNoteText');
+      if (goalDayOverrideNote && goalDayOverrideNoteText) {
+        if (activeDayGoal.isOverride) {
+          const activeDayKeyForNote = getActiveDayKey();
+          const dayLabel = activeDayKeyForNote === todayCallDateKey() ? 'hoy' : formatCallDayLabel(activeDayKeyForNote);
+          goalDayOverrideNoteText.textContent = `Meta especial solo para ${dayLabel}. Tu meta general sigue en ${formatMinutes(Number(settings.productiveGoalMin) || 0)} min · ${money(Number(settings.earningsGoal) || 0)}.`;
+          goalDayOverrideNote.style.display = '';
+        } else {
+          goalDayOverrideNote.style.display = 'none';
+        }
+      }
       if (nameInput && document.activeElement !== nameInput) nameInput.value = String(settings.userName || '');
       if (emojiInput && document.activeElement !== emojiInput) emojiInput.value = String(settings.userEmoji || '');
       if (rateInput && document.activeElement !== rateInput) rateInput.value = Number(settings.rate || RATE).toFixed(2);
@@ -15574,8 +15795,8 @@ function saveFinanceRowModal() {
       if (goalCurrencyField) goalCurrencyField.style.display = hasCurrency ? '' : 'none';
       if (hasCurrency) {
         if (goalCurrencyLabelEl) goalCurrencyLabelEl.textContent = `Meta en ${currencyLabelTrimmed}`;
-        if (goalCurrencyInput && document.activeElement !== goalCurrencyInput) {
-          goalCurrencyInput.value = currencyCeilFromUsdAmount(Number(settings.earningsGoal || 0), Number(settings.exchangeRate)).toFixed(2);
+        if (goalCurrencyInput && !pendingGoalChange && document.activeElement !== goalCurrencyInput) {
+          goalCurrencyInput.value = currencyCeilFromUsdAmount(activeDayGoal.usd, Number(settings.exchangeRate)).toFixed(2);
         }
       }
       syncEmojiPickerSelection('emojiPickerMetas', String(settings.userEmoji || ''));
@@ -17113,8 +17334,9 @@ function renderHeader() {
   const connected = hasShift ? connectedMinutesForDay(dayKey) : 0;
   const productive = productiveMinutesForDay(dayKey);
   const stats = importedCallStats(dayCalls);
-  const goalMin = Number(settings.productiveGoalMin || 0);
-  const goalUsd = Number(settings.earningsGoal || 0);
+  const dayGoal = effectiveDailyGoal(dayKey);
+  const goalMin = dayGoal.min;
+  const goalUsd = dayGoal.usd;
   const goalPct = goalUsd > 0 ? Math.min(100, (stats.earnings / goalUsd) * 100) : 0;
   // Pedido del usuario: si aplica un bono de Higher Rate en las llamadas de hoy, lograr la meta debería tomar MENOS minutos
   const rateForGoal = Number(settings.rate) > 0 ? Number(settings.rate) : RATE;
@@ -17129,6 +17351,8 @@ function renderHeader() {
   const earningsGoalRingEl = document.getElementById('earningsGoalRing');
   if (earningsGoalRingEl) earningsGoalRingEl.style.setProperty('--ring-pct', String(goalPct));
   // Pedido del usuario: estas 4 metas (Meta $, ≈ conversión, Meta min, restantes) pasaron de píldora a texto plano (ver .goal-plain-row en el CSS)
+  const goalDailyLabelEl = document.getElementById('goalDailyLabel');
+  if (goalDailyLabelEl) goalDailyLabelEl.textContent = dayGoal.isOverride ? 'Meta solo de este día' : 'Meta diaria';
   document.getElementById('goalAmountBadge').innerHTML = `<span class="gp-label">Meta</span><span class="gp-value">${escapeHtml(money(goalUsd))}</span>`;
   const goalAmountConvertedEl = document.getElementById('goalAmountConvertedText');
   if (goalAmountConvertedEl) {
@@ -18447,6 +18671,9 @@ function render() {
     }
 
     function closeModal(id) {
+      // Cerrar por × / click afuera / Escape equivale a cancelar el cambio de
+      // meta que estaba esperando alcance.
+      if (id === 'goalScopeModal') cancelPendingGoalChange();
       const modal = document.getElementById(id);
       if (!modal) return;
       modal.classList.remove('open');
@@ -18467,6 +18694,7 @@ function render() {
       closeModal('higherRateModal');
       closeModal('notificationsModal');
       closeModal('cycleGoalModal');
+      closeModal('goalScopeModal');
       closeModal('calYearGoalModal');
       closeModal('calHistoryStartModal');
       closeModal('financeRowModal');
@@ -18970,9 +19198,12 @@ function render() {
     document.getElementById('callInput').addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') importCalls();
     });
-    document.getElementById('productiveGoalInput').addEventListener('change', () => syncGoals('minutes'));
-    document.getElementById('earningsGoalInput').addEventListener('change', () => syncGoals('dollars'));
-    document.getElementById('goalCurrencyInput').addEventListener('change', () => syncGoals('currency'));
+    document.getElementById('productiveGoalInput').addEventListener('change', () => requestGoalChange('minutes'));
+    document.getElementById('earningsGoalInput').addEventListener('change', () => requestGoalChange('dollars'));
+    document.getElementById('goalCurrencyInput').addEventListener('change', () => requestGoalChange('currency'));
+    document.getElementById('goalScopeDayBtn').addEventListener('click', () => applyPendingGoalChange('day'));
+    document.getElementById('goalScopeGlobalBtn').addEventListener('click', () => applyPendingGoalChange('global'));
+    document.getElementById('clearDayGoalOverrideBtn').addEventListener('click', clearActiveDayGoalOverride);
     document.getElementById('userNameInput').addEventListener('change', (e) => {
       settings.userName = e.target.value.trim().slice(0, 40);
       saveSettingsOnly();
