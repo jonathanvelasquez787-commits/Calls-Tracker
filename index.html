@@ -304,6 +304,10 @@
       :root:not(.theme-dark) .gap-edit-btn:hover {
         background: #E6E6E6; /* --btn-secondary-bg mezclado ~10% con negro (hover) */
       }
+      /* Pedido del usuario: revierte a blanco sólido en modo claro (ver comentario junto a `body` en el CSS base) — el fondo azul marino (--panel-navy) de arriba es SOLO para modo oscuro. */
+      :root:not(.theme-dark) body {
+        background: var(--bg-page);
+      }
       /* Pedido del usuario (con captura): el botón ☰ se veía como una cajita gris flotando sobre el fondo blanco de la tarjeta del hero — se quita el fondo/borde propio para que se funda con ese mismo blanco. */
       :root:not(.theme-dark) .menu-toggle-btn {
         background: var(--panel);
@@ -767,6 +771,10 @@
     }
     html.theme-light .gap-edit-btn:hover {
       background: #E6E6E6; /* --btn-secondary-bg mezclado ~10% con negro (hover) */
+    }
+    /* Ver comentario gemelo en la rama @media de arriba: mismo revert a blanco sólido, aquí forzado "Claro". */
+    html.theme-light body {
+      background: var(--bg-page);
     }
     /* Ver comentario gemelo en la rama @media de arriba. */
     html.theme-light .menu-toggle-btn {
@@ -1547,14 +1555,11 @@
       font-size: 12.5px;
       color: var(--muted);
     }
-    /* Bug reportado por el usuario: "Ganancias de hoy" (y en general la parte de arriba de la página) se ponía cada vez más verde/turquesa según más secciones expandibles se abrían (Bloques del día, Tabla d… */
+    /* Pedido del usuario: en modo oscuro, el fondo general de toda la app pasa a ser el mismo azul marino (--panel-navy) que ya usan las tarjetas — antes usaba su propio degradado oscuro (--bg-2/--bg), más negro que las secciones. En modo claro esto se revierte a blanco sólido (ver las 2 ramas de tema claro, más abajo). */
     body {
       margin: 0;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background:
-        radial-gradient(circle 45vh at top left, var(--glow-1), transparent),
-        radial-gradient(circle 32vh at top right, var(--glow-2), transparent),
-        linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 100%);
+      background: var(--panel-navy);
       color: var(--text);
       -webkit-tap-highlight-color: transparent;
     }
