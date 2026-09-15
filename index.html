@@ -10360,6 +10360,17 @@ $0.72"></textarea>
       return Math.ceil((currencyAmount / exchangeRate) * 100) / 100;
     }
 
+    // Dirección inversa de usdCeilFromCurrencyAmount: convierte una META en
+    // dólares a la moneda secundaria, redondeando SIEMPRE hacia arriba —
+    // para que la meta mostrada/editada en esa moneda nunca se vea más
+    // floja que la meta real en dólares. Usar esta función (no un
+    // `* exchangeRate` seguido de `.toFixed(2)` plano) en cualquier lugar
+    // que muestre o edite una meta convertida a moneda secundaria.
+    function currencyCeilFromUsdAmount(usdAmount, exchangeRate) {
+      if (!Number.isFinite(usdAmount) || !Number.isFinite(exchangeRate) || exchangeRate <= 0) return 0;
+      return Math.ceil(usdAmount * exchangeRate * 100) / 100;
+    }
+
     function convertedAmountText(usdAmount) {
       const rate = Number(settings.exchangeRate);
       const label = String(settings.currencyLabel || '').trim();
@@ -14498,8 +14509,8 @@ function saveFinanceRowModal() {
       if (source === 'minutes') dollars = minutes * rate;
       if (source === 'dollars') minutes = dollars / rate;
       if (source === 'currency' && exchangeRate > 0) {
-        if (!Number.isFinite(currencyAmount)) currencyAmount = dollars * exchangeRate;
-        dollars = currencyAmount / exchangeRate;
+        if (!Number.isFinite(currencyAmount)) currencyAmount = currencyCeilFromUsdAmount(dollars, exchangeRate);
+        dollars = usdCeilFromCurrencyAmount(currencyAmount, exchangeRate);
         minutes = dollars / rate;
       }
       // BUG-020 — Segundo clamp, justo antes de guardar: los 3 renglones de arriba (source==='minutes'/'dollars'/'currency') recalculan minutes/dollars a partir de otro campo
@@ -14511,7 +14522,7 @@ function saveFinanceRowModal() {
       state.earningsGoal = settings.earningsGoal;
       minInput.value = formatMinutes(settings.productiveGoalMin);
       usdInput.value = settings.earningsGoal.toFixed(2);
-      if (currencyInput && exchangeRate > 0) currencyInput.value = (settings.earningsGoal * exchangeRate).toFixed(2);
+      if (currencyInput && exchangeRate > 0) currencyInput.value = currencyCeilFromUsdAmount(settings.earningsGoal, exchangeRate).toFixed(2);
       saveStateOnly();
       saveSettingsOnly();
       syncingGoals = false;
@@ -15564,7 +15575,7 @@ function saveFinanceRowModal() {
       if (hasCurrency) {
         if (goalCurrencyLabelEl) goalCurrencyLabelEl.textContent = `Meta en ${currencyLabelTrimmed}`;
         if (goalCurrencyInput && document.activeElement !== goalCurrencyInput) {
-          goalCurrencyInput.value = (Number(settings.earningsGoal || 0) * Number(settings.exchangeRate)).toFixed(2);
+          goalCurrencyInput.value = currencyCeilFromUsdAmount(Number(settings.earningsGoal || 0), Number(settings.exchangeRate)).toFixed(2);
         }
       }
       syncEmojiPickerSelection('emojiPickerMetas', String(settings.userEmoji || ''));
@@ -17126,7 +17137,7 @@ function renderHeader() {
     const currencyLabelTrimmed = String(settings.currencyLabel || '').trim();
     const hasCurrency = Number.isFinite(exchangeRate) && exchangeRate > 0 && !!currencyLabelTrimmed;
     if (hasCurrency) {
-      const convertedValue = (goalUsd * exchangeRate).toFixed(2);
+      const convertedValue = currencyCeilFromUsdAmount(goalUsd, exchangeRate).toFixed(2);
       goalAmountConvertedEl.innerHTML = `<span class="gp-label">≈</span><span class="gp-value">${escapeHtml(currencyLabelTrimmed)} ${convertedValue}</span>`;
       goalAmountConvertedEl.style.display = '';
     } else {
@@ -17172,7 +17183,7 @@ function renderHeader() {
     const cycleCurrencyLabelTrimmed = String(settings.currencyLabel || '').trim();
     const cycleHasCurrency = Number.isFinite(cycleExchangeRate) && cycleExchangeRate > 0 && !!cycleCurrencyLabelTrimmed;
     if (cycleHasCurrency) {
-      const cycleConvertedValue = (cycleGoalAmount * cycleExchangeRate).toFixed(2);
+      const cycleConvertedValue = currencyCeilFromUsdAmount(cycleGoalAmount, cycleExchangeRate).toFixed(2);
       cycleGoalAmountConvertedEl.innerHTML = `<span class="gp-label">≈</span><span class="gp-value">${escapeHtml(cycleCurrencyLabelTrimmed)} ${cycleConvertedValue}</span>`;
       cycleGoalAmountConvertedEl.style.display = '';
     } else {
